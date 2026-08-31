@@ -74,3 +74,29 @@ def normalize(df):
     df["ts"] = df["ts"].astype(int)
     df = df.sort_values("ts").reset_index(drop=True)
     return df
+
+
+def load_sqlite(db_path):
+    """Lee la tabla events de la BD del radar y la normaliza a formato Event.
+
+    El formato Event espera columnas: timestamp, author, text, url, hashtags,
+    mentions, action, source. En la BD centralizada el autor no existe como
+    columna: se deriva de source (la fuente es el "actor" a nivel de campaña).
+    """
+    import sqlite3
+    con = sqlite3.connect(db_path)
+    df = pd.read_sql("SELECT timestamp, source, title, url, text, language FROM events", con)
+    con.close()
+    if df.empty:
+        return df
+    df["author"] = df["source"]
+    df["text"] = df["text"].fillna("").astype(str)
+    df["url"] = df["url"].fillna("").astype(str)
+    df["hashtags"] = ""
+    df["mentions"] = ""
+    df["action"] = "post"
+    df["timestamp"] = df["timestamp"].astype(int)
+    df["ts"] = df["timestamp"]
+    df = df[["ts", "author", "text", "url", "hashtags", "mentions", "action", "source"]]
+    df = df[df["ts"].notna()].sort_values("ts").reset_index(drop=True)
+    return df

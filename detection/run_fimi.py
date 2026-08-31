@@ -49,10 +49,13 @@ def main():
     t0 = time.time()
 
     # --- INGEST + NORMALIZE ---
-    from normalizer.ingest import load, normalize
+    from normalizer.ingest import load, normalize, load_sqlite
     print(f"[1/7] Ingest {args.input}")
-    raw = load(args.input)
-    df = normalize(raw)
+    if str(args.input).endswith(".db"):
+        df = load_sqlite(args.input)
+    else:
+        raw = load(args.input)
+        df = normalize(raw)
     print(f"      {len(df)} eventos, {df['author'].nunique()} cuentas")
 
     # --- FEATURES ---

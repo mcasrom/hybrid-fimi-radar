@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-DB = ROOT / "data" / "ecr.db"
+DB = ROOT / "data" / "radar.db"
 OUT = ROOT / "data" / "raw" / f"events_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.json"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ECR-capture/0.1"
 
@@ -67,7 +67,7 @@ def _bsky_login(env_path=None):
     El endpoint público de búsqueda (public.api.bsky.app) da 403; la API
     autenticada (api.bsky.app) funciona con la cuenta del operador.
     """
-    env_path = env_path or "/home/miguelc/electoral-radar/.bsky_creds.env"
+    env_path = env_path or "/home/miguelc/hybrid-fimi-radar/.bsky_creds.env"
     env = {}
     if Path(env_path).exists():
         for line in open(env_path):
@@ -123,14 +123,13 @@ def grab_bluesky(query, n=50):
 
 
 def store_sqlite(events):
-    """Inserta eventos en SQLite (tabla events)."""
-    con = sqlite3.connect(DB)
-    con.execute("""CREATE TABLE IF NOT EXISTS events (
-        timestamp INTEGER, author TEXT, text TEXT, url TEXT, hashtags TEXT,
-        mentions TEXT, action TEXT, source TEXT)""")
-    con.executemany("INSERT OR IGNORE INTO events VALUES (?,?,?,?,?,?,?,?)",
-                    [(e["timestamp"], e["author"], e["text"], e["url"], e["hashtags"],
-                      e["mentions"], e["action"], e["source"]) for e in events])
+    """Inserta eventos en SQLite (tabla events, esquema centralizado)."""
+    from normalizer.schema import get_conn
+    con = get_conn(DB)
+    con.executemany(
+        "INSERT OR IGNORE INTO events (timestamp, source, title, url, text)"
+        " VALUES (?,?,?,?,?)",
+        [(e["timestamp"], e["source"], e["text"][:120], e["url"], e["text"]) for e in events])
     con.commit()
     n = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     con.close()
@@ -203,6 +202,25 @@ def grab_mastodon(query, instance="mastodon.social", n=50):
     return out
 
 
+def grab_rss_feed(name, url, n=40):
+    """RSS oficial/mediático vía feedparser (fuente prioritaria del prompt)."""
+    out = []
+    try:
+        import feedparser
+        feed = feedparser.parse(url)
+        for e in feed.entries[:n]:
+            ts = int(time.mktime(e.get("published_parsed") or e.get("updated_parsed") or time.gmtime()))
+            title = e.get("title", "")
+            link = e.get("link", "")
+            summary = (e.get("summary") or "")[:200]
+            out.append({"timestamp": ts, "author": f"rss:{name}", "text": title,
+                        "url": link, "hashtags": "", "mentions": "",
+                        "action": "post", "source": f"rss:{name}", "summary": summary})
+    except Exception as e:
+        print(f"  rss:{name} error: {e}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-analyze", action="store_true")
@@ -234,6 +252,14 @@ def main():
     for q in masto_queries:
         print(f"  mastodon/{q} ...")
         events += grab_mastodon(q)
+    # RSS oficiales/mediáticos (fuente prioritaria: FUENTE OFICIAL > RSS > WEB)
+    for kind in ("official", "media"):
+        for s in cfg.get("sources", {}).get(kind, []):
+            name = s.get("name", kind)
+            url = s.get("url", "")
+            if url:
+                print(f"  rss/{name} ...")
+                events += grab_rss_feed(name, url)
 
     if not events:
         print("  No hay fuentes configuradas (config.yaml -> capture) o no se capturó nada.")
