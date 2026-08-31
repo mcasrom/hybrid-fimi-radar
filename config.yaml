@@ -60,57 +60,84 @@ features:
   - 1
   - 2
   top_hashtags: 50
-sources:
-  official:
-  - name: El Faro de Ceuta
-    url: https://elfarodeceuta.com/feed/
-    type: media
-  - name: Ceuta TV
-    url: https://ceutatv.com/feed/
-    type: media
-  - name: Melilla Hoy
-    url: https://www.melillahoy.es/rss
-    type: media
-  media:
-  - name: El Pais Espana
-    url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
-    type: media
-  - name: BBC Mundo
-    url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
-    type: media
-  - name: Al Jazeera
-    url: https://www.aljazeera.com/xml/rss/all.xml
-    type: media
-  - name: El Mundo
-    url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
-    type: media
-  opendata:
-  - name: MITECO embalses
-    url: https://estadoembalses.es/api/embalses
-    type: opendata
-  social:
-  - name: Bluesky (cuenta operador)
-    url: https://bsky.app
-    type: social
-  - name: Telegram público
-    url: https://t.me/s/
-    type: social
-capture:
-  telegram_channels:
-  - elfarodeceuta
-  - maldita_es
-  bluesky_queries:
-  - Ceuta Melilla
-  - frontera Marruecos
-  - migración España
-  news_queries:
-  - Ceuta Melilla frontera
-  - migración Canarias
-  - España Marruecos
-  subreddits:
-  - spain
-  - es
-  mastodon_queries:
-  - Ceuta
-  - migración
-  max_per_source: 50
+feeds:
+- nombre: El Faro de Ceuta
+  url: https://elfarodeceuta.com/feed/
+  tipo: official
+- nombre: Ceuta TV
+  url: https://ceutatv.com/feed/
+  tipo: official
+- nombre: Melilla Hoy
+  url: https://www.melillahoy.es/rss
+  tipo: official
+- nombre: El Pais Espana
+  url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
+  tipo: media
+- nombre: BBC Mundo
+  url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
+  tipo: media
+- nombre: Al Jazeera
+  url: https://www.aljazeera.com/xml/rss/all.xml
+  tipo: media
+- nombre: El Mundo
+  url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
+  tipo: media
+- nombre: MITECO embalses
+  url: https://estadoembalses.es/api/embalses
+  tipo: opendata
+- nombre: Yabiladi Maroc (FR)
+  url: https://www.yabiladi.com/rss/
+  tipo: media
+  pais: MA
+- nombre: Algerie360 (FR)
+  url: https://www.algerie360.com/feed/
+  tipo: media
+  pais: DZ
+- nombre: Hespress Maroc (FR)
+  url: https://fr.hespress.com/feed/
+  tipo: media
+  pais: MA
+- nombre: TSA Algerie (FR)
+  url: https://www.tsa-algerie.com/feed/
+  tipo: media
+  pais: DZ
+- nombre: AMI Mauritanie (FR)
+  url: https://fr.ami.mr/feed
+  tipo: oficial
+  pais: MR
+keywords:
+- palabra: Ceuta
+  plataformas:
+  - bluesky
+  - mastodon
+- palabra: Melilla
+  plataformas:
+  - bluesky
+  - mastodon
+- palabra: frontera Marruecos
+  plataformas:
+  - bluesky
+- palabra: migración España
+  plataformas:
+  - bluesky
+- palabra: Ceuta Melilla frontera
+  plataformas:
+  - google-news
+- palabra: migración Canarias
+  plataformas:
+  - google-news
+- palabra: España Marruecos
+  plataformas:
+  - google-news
+- palabra: Ceuta
+  plataformas:
+  - mastodon
+- palabra: migración
+  plataformas:
+  - mastodon
+telegram_canales:
+- elfarodeceuta
+- maldita_es
+subreddits:
+- spain
+- es

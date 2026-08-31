@@ -229,37 +229,56 @@ def main():
 
     import yaml
     cfg = yaml.safe_load(open(args.config))
-    channels = cfg.get("capture", {}).get("telegram_channels", TELEGRAM_CHANNELS)
-    queries = cfg.get("capture", {}).get("bluesky_queries", BLUESKY_QUERIES)
-    news_queries = cfg.get("capture", {}).get("news_queries", ["elecciones espana", "voto espana", "Ceuta"])
-    subreddits = cfg.get("capture", {}).get("subreddits", ["spain", "es"])
-    masto_queries = cfg.get("capture", {}).get("mastodon_queries", ["elecciones espana", "politica espana"])
+
+    # ---- Nueva estructura (config reorganizado) ----
+    feeds = cfg.get("feeds", []) or []
+    keywords = cfg.get("keywords", []) or []
+    channels = cfg.get("telegram_canales", TELEGRAM_CHANNELS)
+    subreddits = cfg.get("subreddits", ["spain", "es"])
+
+    # compatibilidad con estructura antigua si existe
+    if not feeds:
+        feeds = []
+        for kind, items in (cfg.get("sources", {}) or {}).items():
+            for it in items:
+                feeds.append({"nombre": it.get("name", kind), "url": it.get("url", ""), "tipo": kind})
+    if not keywords and cfg.get("capture"):
+        cap = cfg["capture"]
+        keywords = ([{"palabra": q, "plataformas": ["bluesky"]} for q in cap.get("bluesky_queries", [])] +
+                    [{"palabra": q, "plataformas": ["google-news"]} for q in cap.get("news_queries", [])] +
+                    [{"palabra": q, "plataformas": ["mastodon"]} for q in cap.get("mastodon_queries", [])])
+        channels = channels or cap.get("telegram_channels", [])
+        subreddits = subreddits or cap.get("subreddits", ["spain", "es"])
+
+    # derivar queries por plataforma desde keywords
+    bsky_q = [k["palabra"] for k in keywords if "bluesky" in k.get("plataformas", [])]
+    news_q = [k["palabra"] for k in keywords if "google-news" in k.get("plataformas", [])]
+    masto_q = [k["palabra"] for k in keywords if "mastodon" in k.get("plataformas", [])]
 
     print(f"[captura] {datetime.utcnow().isoformat()} UTC")
     events = []
     for ch in channels:
         print(f"  telegram/{ch} ...")
         events += grab_telegram(ch)
-    for q in queries:
+    for q in bsky_q:
         print(f"  bluesky/{q} ...")
         events += grab_bluesky(q)
-    for q in news_queries:
+    for q in news_q:
         print(f"  google-news/{q} ...")
         events += grab_google_news(q)
     for s in subreddits:
         print(f"  reddit/{s} ...")
         events += grab_reddit_rss(s)
-    for q in masto_queries:
+    for q in masto_q:
         print(f"  mastodon/{q} ...")
         events += grab_mastodon(q)
-    # RSS oficiales/mediáticos (fuente prioritaria: FUENTE OFICIAL > RSS > WEB)
-    for kind in ("official", "media"):
-        for s in cfg.get("sources", {}).get(kind, []):
-            name = s.get("name", kind)
-            url = s.get("url", "")
-            if url:
-                print(f"  rss/{name} ...")
-                events += grab_rss_feed(name, url)
+    # RSS feeds (todos los tipos)
+    for s in feeds:
+        name = s.get("nombre") or s.get("name") or "feed"
+        url = s.get("url", "")
+        if url:
+            print(f"  rss/{name} ...")
+            events += grab_rss_feed(name, url)
 
     if not events:
         print("  No hay fuentes configuradas (config.yaml -> capture) o no se capturó nada.")
