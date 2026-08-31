@@ -89,6 +89,7 @@ def main():
     con.close()
 
     # narrativas amplificadas (mismo titular en varias fuentes)
+    narr_kpi = None  # se rellena en el bloque de narrativas amplificadas
     try:
         import sys as _sys
         _sys.path.insert(0, str(ROOT))
@@ -97,20 +98,40 @@ def main():
         narr_html = ""
         narratives = detect_narrative_amplification(ev_df, {"thresholds": {"near_duplicate_threshold": 0.7, "min_amp_sources": 3}})
         if narratives:
-            for n in narratives[:10]:
-                narr_html += (f"<div style='border-left:3px solid #f97316;padding:8px 12px;margin:8px 0;"
-                              f"background:#fff7ed;border-radius:6px'>"
-                              f"<b style='font-size:.9rem'>{n['seed'][:60]}</b>"
-                              f"<br><span style='font-size:.8rem;color:#64748b'>"
-                              f"{n['n_sources']} fuentes ({', '.join(n['source_names'][:4])}) · "
-                              f"{n['n_events']} eventos · ventana {n['window_hours']}h</span></div>")
-            narr_block = (f"<div class='card'><h3>Narrativas amplificadas</h3>"
+            # KPI de narrativas amplificadas
+            narr_kpi = kpi("Narrativas amplificadas", len(narratives),
+                           f"top: {narratives[0]['seed'][:28]}...", "#fff7ed")
+            # gráfico SVG de barras horizontales (impacto visual rápido)
+            top_n = narratives[:8]
+            max_ev = max(n["n_events"] for n in top_n) or 1
+            H = 30 + len(top_n) * 34
+            parts = [f'<svg viewBox="0 0 700 {H}" style="width:100%;height:auto;font-family:system-ui">']
+            for i, n in enumerate(top_n):
+                y = 30 + i * 34
+                w = int((n["n_events"] / max_ev) * 420)
+                # color por nº de fuentes: 3=ámbar, 4=naranja, 5+=rojo
+                col = "#f97316" if n["n_sources"] >= 5 else ("#fb923c" if n["n_sources"] >= 4 else "#fbbf24")
+                label = n["seed"][:34]
+                parts.append(f'<text x="330" y="{y+15}" font-size="10.5" text-anchor="end" fill="#334155" font-weight="600">{label}</text>')
+                parts.append(f'<rect x="338" y="{y+3}" width="{max(10, w)}" height="20" rx="5" fill="{col}"/>')
+                parts.append(f'<text x="{338+w+10}" y="{y+18}" font-size="11" fill="#0f172a" font-weight="800">{n["n_events"]}</text>')
+                parts.append(f'<text x="{338+w+34}" y="{y+18}" font-size="9.5" fill="#64748b">{n["n_sources"]} fuentes · {n["window_hours"]}h</text>')
+            parts.append(f'<text x="338" y="{H-6}" font-size="9" fill="#94a3b8">Barras: nº de eventos · color: nº de fuentes que comparten el titular (ámbar=3, naranja=4, rojo=5+)</text>')
+            parts.append("</svg>")
+            narr_svg = "".join(parts)
+            narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap'>"
+                          f"{narr_kpi}"
+                          f"<div style='flex:1;min-width:260px'><h3 style='margin:0'>Narrativas amplificadas</h3>"
                           f"<p class='caption'>Mismo titular compartido por varias fuentes en una ventana. "
                           f"Indica amplificación de una noticia, no coordinación de cuentas. Sin atribución.</p>"
-                          f"{narr_html}</div>")
+                          f"{narr_svg}</div></div></div>")
         else:
-            narr_block = ("<div class='card'><h3>Narrativas amplificadas</h3>"
-                          "<p class='caption'>Ninguna narrativa compartida por ≥3 fuentes distintas en la ventana actual.</p></div>")
+            narr_kpi = kpi("Narrativas amplificadas", 0, "ninguna ≥3 fuentes", "#f8fafc")
+            narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap'>"
+                          f"{narr_kpi}"
+                          f"<div style='flex:1;min-width:260px'><h3 style='margin:0'>Narrativas amplificadas</h3>"
+                          f"<p class='caption'>Ninguna narrativa compartida por ≥3 fuentes distintas en la ventana actual.</p>"
+                          f"</div></div></div>")
     except Exception as e:
         narr_block = ""
 
@@ -120,10 +141,13 @@ def main():
     n_crit = sum(1 for c in clusters if c[11] and c[11] >= 80) if clusters else 0
     n_high = sum(1 for c in clusters if c[11] and 60 <= c[11] < 80) if clusters else 0
     n_anom = sum(1 for c in clusters if c[11] and 40 <= c[11] < 60) if clusters else 0
+    if narr_kpi is None:
+        narr_kpi = kpi("Narrativas amplificadas", 0, "sin datos", "#f8fafc")
     cards = "".join([
         kpi("Eventos", n_events, "capturados", "#eff6ff"),
         kpi("Fuentes", n_sources, "activas", "#f0fdf4"),
         kpi("Clusters", len(clusters), "detectados", "#fafaf9"),
+        narr_kpi,
         kpi("CRITICAL", n_crit, "80-100", "#fee2e2"),
         kpi("HIGH", n_high, "60-79", "#ffedd5"),
         kpi("Anómalos", n_anom, "40-59", "#fef9c3"),
