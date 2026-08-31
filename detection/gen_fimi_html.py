@@ -48,6 +48,30 @@ def svg_score_bar(score, band):
 
 
 def main():
+    # cargar config para inventario de fuentes y keywords
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(ROOT / "config.yaml"))
+        feeds = cfg.get("feeds", [])
+        keywords = cfg.get("keywords", [])
+        telegram = cfg.get("telegram_canales", [])
+        subreddits = cfg.get("subreddits", [])
+    except Exception:
+        feeds, keywords, telegram, subreddits = [], [], [], []
+
+    feeds_html = ""
+    for f in feeds:
+        pais = f.get("pais", "")
+        feeds_html += (f"<li>{f.get('nombre','?')} "
+                       f"<span style='color:#94a3b8;font-size:.8rem'>· {f.get('url','')}"
+                       f"{' · ' + pais if pais else ''}</span></li>")
+    kw_html = ""
+    for k in keywords:
+        kw_html += (f"<li><code>{k.get('palabra','?')}</code> → "
+                    f"{', '.join(k.get('plataformas', []))}</li>")
+    tg_html = " · ".join(f"<code>{c}</code>" for c in telegram) or "—"
+    sr_html = " · ".join(f"<code>r/{s}</code>" for s in subreddits) or "—"
+
     if not DB.exists():
         html = f"<html><body><h1>Sin datos aún</h1><p>El radar capturará en el próximo ciclo (6h).</p></body></html>"
         OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -145,6 +169,26 @@ primero se observa la anomalía, después se evalúan hipótesis; la atribución
 <div class="kpis">{cards}</div>
 
 {body}
+
+<div class="card">
+<h3>Fuentes y búsquedas activas</h3>
+<p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras. Para añadir o
+quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
+<div style="display:flex;gap:24px;flex-wrap:wrap">
+  <div style="flex:1;min-width:260px">
+    <b style="font-size:.9rem">RSS / feeds ({len(feeds)})</b>
+    <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{feeds_html}</ul>
+  </div>
+  <div style="flex:1;min-width:260px">
+    <b style="font-size:.9rem">Palabras clave ({len(keywords)})</b>
+    <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{kw_html}</ul>
+    <b style="font-size:.9rem">Telegram</b>
+    <p style="font-size:.82rem;color:#334155">{tg_html}</p>
+    <b style="font-size:.9rem">Reddit</b>
+    <p style="font-size:.82rem;color:#334155">{sr_html}</p>
+  </div>
+</div>
+</div>
 
 <div class="card">
 <h3>Metodología</h3>
