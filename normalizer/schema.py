@@ -63,13 +63,37 @@ CREATE TABLE IF NOT EXISTS assessments (
     FOREIGN KEY(cluster_id) REFERENCES clusters(id)
 );
 
-CREATE TABLE IF NOT EXISTS evidence (
+ CREATE TABLE IF NOT EXISTS evidence (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     cluster_id INTEGER, timestamp INTEGER, source TEXT,
+     original_url TEXT, raw TEXT, normalized TEXT,
+     features TEXT, algorithm TEXT, parameters TEXT,
+     score REAL, decision TEXT,
+     FOREIGN KEY(cluster_id) REFERENCES clusters(id)
+ );
+
+-- Hallazgos positivos persistidos (historial de resultados, no se pierde
+-- cuando el evento deja de ser noticia). Fecha de primera/last detección.
+CREATE TABLE IF NOT EXISTS findings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cluster_id INTEGER, timestamp INTEGER, source TEXT,
-    original_url TEXT, raw TEXT, normalized TEXT,
-    features TEXT, algorithm TEXT, parameters TEXT,
-    score REAL, decision TEXT,
-    FOREIGN KEY(cluster_id) REFERENCES clusters(id)
+    fecha INTEGER,                 -- fecha de detección (epoch día)
+    tipo TEXT,                     -- amplificacion_narrativa | cluster | cascada
+    titulo TEXT,
+    detalle TEXT,
+    n_sources INTEGER, n_events INTEGER,
+    window_hours REAL,
+    fuentes TEXT,
+    intensidad REAL,
+    url TEXT
+);
+
+-- Informes diarios (resumen de hallazgos del día)
+CREATE TABLE IF NOT EXISTS daily_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT UNIQUE,             -- YYYY-MM-DD
+    resumen TEXT,
+    n_findings INTEGER,
+    created_at INTEGER
 );
 """
 

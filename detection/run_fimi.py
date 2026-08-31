@@ -150,6 +150,15 @@ def main():
     report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0)
     rep_path = ROOT / "reports" / f"fimi_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.md"
     rep_path.write_text(report, encoding="utf-8")
+
+    # --- PERSISTIR hallazgos positivos (historial) + informe diario ---
+    from detection.persistencia import persist_findings_from_run, build_daily_report
+    inserted, total_findings = persist_findings_from_run(conn, narratives, summary, cascades)
+    diario = build_daily_report(conn, narratives, list(summary.values()) if summary else [])
+    daily_path = ROOT / "reports" / "informe_diario.md"
+    daily_path.write_text(diario, encoding="utf-8")
+    print(f"      hallazgos nuevos: {inserted} (total historial: {total_findings})")
+    print(f"      informe diario: {daily_path}")
     conn.close()
 
     print(f"\nHecho en {time.time()-t0:.1f}s · {n_assessed} clusters evaluados")

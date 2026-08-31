@@ -86,6 +86,13 @@ def main():
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
     ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
+    # historial persistido de hallazgos
+    try:
+        findings = con.execute(
+            "SELECT id, fecha, tipo, titulo, detalle, n_sources, n_events, window_hours"
+            " FROM findings ORDER BY fecha DESC LIMIT 30").fetchall()
+    except Exception:
+        findings = []
     con.close()
 
     # narrativas amplificadas (mismo titular en varias fuentes)
@@ -166,6 +173,31 @@ def main():
                           f"</div></div></div>")
     except Exception as e:
         narr_block = ""
+    # historial de hallazgos persistidos
+    import html as _html
+    hist_rows = ""
+    for f in findings:
+        hid, fecha, tipo, titulo, detalle, nsrc, nev, wh = f[:8]
+        fecha_s = ""
+        try:
+            import datetime as _dt
+            fecha_s = _dt.datetime.utcfromtimestamp(fecha).strftime("%d/%m")
+        except Exception:
+            pass
+        ic = {"amplificacion_narrativa": "📣", "cluster": "🕸️", "cascada": "⚡"}.get(tipo, "•")
+        col = "#f97316" if tipo == "amplificacion_narrativa" else ("#7c3aed" if tipo == "cluster" else "#0891b2")
+        hist_rows += (f"<div style='display:flex;gap:10px;padding:8px 10px;border-left:3px solid {col};"
+                      f"background:#f8fafc;border-radius:6px;margin:6px 0;align-items:center'>"
+                      f"<span style='font-size:1rem'>{ic}</span>"
+                      f"<div style='flex:1'><div style='font-size:.85rem;color:#1e293b;font-weight:600'>"
+                      f"{_html.escape(str(titulo)[:70])}</div>"
+                      f"<div style='font-size:.75rem;color:#64748b'>{_html.escape(str(detalle))} · "
+                      f"{fecha_s}</div></div></div>")
+    hist_html = ""
+    if hist_rows:
+        hist_html = (f"<div class='card'><h3>Historial de hallazgos ({len(findings)})</h3>"
+                     f"<p class='caption'>Resultados positivos persistidos: no se pierden cuando el tema "
+                     f"deja de ser noticia. Registro acumulado del radar.</p>{hist_rows}</div>")
 
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
@@ -255,6 +287,8 @@ primero se observa la anomalía, después se evalúan hipótesis; la atribución
 {body}
 
 {narr_block}
+
+{hist_html}
 
 <div class="card">
 <h3>Fuentes y búsquedas activas</h3>
