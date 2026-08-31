@@ -93,6 +93,15 @@ def main():
             " FROM findings ORDER BY fecha DESC LIMIT 30").fetchall()
     except Exception:
         findings = []
+    # narrativas sostenidas (misma narrativa amplificada en >=3 dias = alerta)
+    sostenidas = []
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT))
+        from detection.persistencia import detectar_sostenidas
+        sostenidas = detectar_sostenidas(con, min_dias=3)
+    except Exception:
+        sostenidas = []
     con.close()
 
     # narrativas amplificadas (mismo titular en varias fuentes)
@@ -199,6 +208,31 @@ def main():
                      f"<p class='caption'>Resultados positivos persistidos: no se pierden cuando el tema "
                      f"deja de ser noticia. Registro acumulado del radar.</p>{hist_rows}</div>")
 
+    # ALERTA: narrativas sostenidas (>=3 dias) — señal de campaña sostenida
+    sost_html = ""
+    if sostenidas:
+        sost_rows = ""
+        for s in sostenidas[:8]:
+            fechas = ", ".join(s["fechas"][-5:])
+            sost_rows += (f"<div style='display:flex;gap:10px;padding:10px 12px;border-left:4px solid #dc2626;"
+                          f"background:#fef2f2;border-radius:8px;margin:8px 0;align-items:center'>"
+                          f"<span style='font-size:1.2rem'>🚨</span>"
+                          f"<div style='flex:1'><div style='font-size:.88rem;color:#7f1d1d;font-weight:700'>"
+                          f"{_html.escape(s['titulo'][:70])}</div>"
+                          f"<div style='font-size:.75rem;color:#991b1b'>{s['dias']} días distintos · "
+                          f"últimos: {fechas}</div></div>"
+                          f"<span style='background:#dc2626;color:#fff;border-radius:6px;padding:3px 8px;"
+                          f"font-size:.75rem;font-weight:700'>SOSTENIDA</span></div>")
+        sost_html = (f"<div class='card' style='border:2px solid #dc2626'>"
+                     f"<h3 style='color:#b91c1c;margin-top:0'>🚨 Narrativas sostenidas ({len(sostenidas)})</h3>"
+                     f"<p class='caption'>La misma narrativa se ha amplificado en ≥3 días distintos. "
+                     f"Señal de campaña sostenida (no un titular suelto). Requiere investigación prioritaria.</p>"
+                     f"{sost_rows}</div>")
+    else:
+        sost_html = ("<div class='card'><h3>Narrativas sostenidas</h3>"
+                     "<p class='caption'>Ninguna narrativa amplificada en ≥3 días distintos todavía. "
+                     "El radar sigue acumulando historial para detectarlas.</p></div>")
+
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
     # KPIs
@@ -287,6 +321,8 @@ primero se observa la anomalía, después se evalúan hipótesis; la atribución
 {body}
 
 {narr_block}
+
+{sost_html}
 
 {hist_html}
 

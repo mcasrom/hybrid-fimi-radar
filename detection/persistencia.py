@@ -128,3 +128,37 @@ def persist_findings_from_run(conn, narratives, summary, cascades):
             "evidence": s.get("evidence", {}),
         })
     return persist_findings(conn, narratives, clusters_list, cascades)
+
+
+def detectar_sostenidas(conn, min_dias=3):
+    """Detecta narrativas sostenidas: el mismo título (o muy similar) ha sido
+    hallazgo en >= min_dias días distintos. Señal de campaña sostenida, no de
+    titular suelto.
+
+    Devuelve lista de dicts: {titulo, dias, fechas, tipo}.
+    """
+    rows = conn.execute(
+        "SELECT DISTINCT date(fecha,'unixepoch') as d, substr(titulo,1,60) as t, tipo"
+        " FROM findings WHERE tipo IN ('amplificacion_narrativa','cascada')"
+    ).fetchall()
+    # agrupar por título normalizado (prefijo 40 chars sin puntuación)
+    import re
+    from collections import defaultdict
+    dias_por_titulo = defaultdict(set)
+    tipo_por_titulo = {}
+    for d, t, tipo in rows:
+        key = re.sub(r"[^a-z0-9áéíóúñü ]", "", t.lower())[:40]
+        if key.strip():
+            dias_por_titulo[key].add(d)
+            tipo_por_titulo[key] = tipo
+    sostenidas = []
+    for key, dias in dias_por_titulo.items():
+        if len(dias) >= min_dias:
+            sostenidas.append({
+                "titulo": key,
+                "dias": len(dias),
+                "fechas": sorted(dias),
+                "tipo": tipo_por_titulo.get(key, ""),
+            })
+    sostenidas.sort(key=lambda x: -x["dias"])
+    return sostenidas
