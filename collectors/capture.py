@@ -67,7 +67,7 @@ def _bsky_login(env_path=None):
     El endpoint público de búsqueda (public.api.bsky.app) da 403; la API
     autenticada (api.bsky.app) funciona con la cuenta del operador.
     """
-    env_path = env_path or "/home/miguelc/hybrid-fimi-radar/.bsky_creds.env"
+    env_path = env_path or "/home/deploy/hybrid-fimi-radar/.bsky_creds.env"
     env = {}
     if Path(env_path).exists():
         for line in open(env_path):
