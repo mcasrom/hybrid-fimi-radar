@@ -101,22 +101,36 @@ def main():
             # KPI de narrativas amplificadas
             narr_kpi = kpi("Narrativas amplificadas", len(narratives),
                            f"top: {narratives[0]['seed'][:28]}...", "#fff7ed")
-            # gráfico SVG de barras horizontales (impacto visual rápido)
+            # gráfico SVG: barras por SCORE DE INTENSIDAD.
+            # intensidad = eventos x fuentes / (ventana_horas + 1):
+            # mismo contenido en MENOS tiempo = más amplificación coordinada.
             top_n = narratives[:8]
-            max_ev = max(n["n_events"] for n in top_n) or 1
-            H = 30 + len(top_n) * 34
-            parts = [f'<svg viewBox="0 0 700 {H}" style="width:100%;height:auto;font-family:system-ui">']
+            def _intensity(n):
+                return n["n_events"] * n["n_sources"] / max(n["window_hours"] + 1, 0.5)
+            max_i = max(_intensity(n) for n in top_n) or 1
+            H = 40 + len(top_n) * 46
+            parts = [f'<svg viewBox="0 0 760 {H}" style="width:100%;height:auto;font-family:system-ui">']
             for i, n in enumerate(top_n):
-                y = 30 + i * 34
-                w = int((n["n_events"] / max_ev) * 420)
-                # color por nº de fuentes: 3=ámbar, 4=naranja, 5+=rojo
-                col = "#f97316" if n["n_sources"] >= 5 else ("#fb923c" if n["n_sources"] >= 4 else "#fbbf24")
-                label = n["seed"][:34]
-                parts.append(f'<text x="330" y="{y+15}" font-size="10.5" text-anchor="end" fill="#334155" font-weight="600">{label}</text>')
-                parts.append(f'<rect x="338" y="{y+3}" width="{max(10, w)}" height="20" rx="5" fill="{col}"/>')
-                parts.append(f'<text x="{338+w+10}" y="{y+18}" font-size="11" fill="#0f172a" font-weight="800">{n["n_events"]}</text>')
-                parts.append(f'<text x="{338+w+34}" y="{y+18}" font-size="9.5" fill="#64748b">{n["n_sources"]} fuentes · {n["window_hours"]}h</text>')
-            parts.append(f'<text x="338" y="{H-6}" font-size="9" fill="#94a3b8">Barras: nº de eventos · color: nº de fuentes que comparten el titular (ámbar=3, naranja=4, rojo=5+)</text>')
+                y = 40 + i * 46
+                w = int((_intensity(n) / max_i) * 380)
+                # color por intensidad: gradiente de verde (leve) a rojo (fuerte)
+                ratio = _intensity(n) / max_i
+                if ratio >= 0.8:
+                    col, col_txt = "#dc2626", "#fff"
+                elif ratio >= 0.5:
+                    col, col_txt = "#f97316", "#fff"
+                elif ratio >= 0.3:
+                    col, col_txt = "#fbbf24", "#78350f"
+                else:
+                    col, col_txt = "#22c55e", "#fff"
+                label = n["seed"][:38]
+                # nombre de la narrativa (2 lineas si hace falta) a la izquierda
+                parts.append(f'<text x="368" y="{y+14}" font-size="11" text-anchor="end" fill="#1e293b" font-weight="700">{label}</text>')
+                parts.append(f'<text x="368" y="{y+27}" font-size="9" text-anchor="end" fill="#64748b">{n["n_events"]} eventos · {n["n_sources"]} fuentes · {n["window_hours"]}h</text>')
+                # barra con el número dentro
+                parts.append(f'<rect x="376" y="{y+2}" width="{max(14, w)}" height="26" rx="6" fill="{col}"/>')
+                parts.append(f'<text x="{376 + max(14, w) + 8}" y="{y+20}" font-size="12" fill="#0f172a" font-weight="800">{n["n_events"]} × {n["n_sources"]}f · {n["window_hours"]}h</text>')
+            parts.append(f'<text x="376" y="{H-8}" font-size="9" fill="#94a3b8">Intensidad = eventos × fuentes ÷ ventana en horas. Mismo contenido en MENOS tiempo = mayor amplificación. Color: verde (leve) → ámbar → naranja → rojo (alta).</text>')
             parts.append("</svg>")
             narr_svg = "".join(parts)
             narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap'>"
