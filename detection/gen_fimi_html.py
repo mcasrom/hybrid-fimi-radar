@@ -8,6 +8,7 @@ Sin RAM extra en runtime: lo genera el cron.
 import json
 import sqlite3
 import sys
+import pandas as pd
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -84,7 +85,34 @@ def main():
     assessments = con.execute("SELECT * FROM assessments").fetchall()
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
+    ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
     con.close()
+
+    # narrativas amplificadas (mismo titular en varias fuentes)
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT))
+        from detection.fakenews import detect_narrative_amplification
+        ev_df["ts"] = ev_df["timestamp"]  # la detección espera columna ts
+        narr_html = ""
+        narratives = detect_narrative_amplification(ev_df, {"thresholds": {"near_duplicate_threshold": 0.7, "min_amp_sources": 3}})
+        if narratives:
+            for n in narratives[:10]:
+                narr_html += (f"<div style='border-left:3px solid #f97316;padding:8px 12px;margin:8px 0;"
+                              f"background:#fff7ed;border-radius:6px'>"
+                              f"<b style='font-size:.9rem'>{n['seed'][:60]}</b>"
+                              f"<br><span style='font-size:.8rem;color:#64748b'>"
+                              f"{n['n_sources']} fuentes ({', '.join(n['source_names'][:4])}) · "
+                              f"{n['n_events']} eventos · ventana {n['window_hours']}h</span></div>")
+            narr_block = (f"<div class='card'><h3>Narrativas amplificadas</h3>"
+                          f"<p class='caption'>Mismo titular compartido por varias fuentes en una ventana. "
+                          f"Indica amplificación de una noticia, no coordinación de cuentas. Sin atribución.</p>"
+                          f"{narr_html}</div>")
+        else:
+            narr_block = ("<div class='card'><h3>Narrativas amplificadas</h3>"
+                          "<p class='caption'>Ninguna narrativa compartida por ≥3 fuentes distintas en la ventana actual.</p></div>")
+    except Exception as e:
+        narr_block = ""
 
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
@@ -169,6 +197,8 @@ primero se observa la anomalía, después se evalúan hipótesis; la atribución
 <div class="kpis">{cards}</div>
 
 {body}
+
+{narr_block}
 
 <div class="card">
 <h3>Fuentes y búsquedas activas</h3>

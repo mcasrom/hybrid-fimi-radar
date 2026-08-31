@@ -25,7 +25,7 @@ from features.features import build_features
 from features.bot_signals import bot_signal_score
 from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
-from detection.fakenews import detect_cascades, amplification_signal
+from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
 from detection.scoring import compute_scores, band_for, load_bands
 from attribution.attribution import classify_hypotheses, attribution
@@ -76,7 +76,8 @@ def main():
     print(f"      {len(edges)} aristas")
     cascades = detect_cascades(df, cfg)
     amp = amplification_signal(edges_df, df["author"].nunique())
-    print(f"      {len(cascades)} cascadas")
+    narratives = detect_narrative_amplification(df, cfg)
+    print(f"      {len(cascades)} cascadas, {len(narratives)} narrativas amplificadas")
 
     # --- CLUSTERING ---
     print("[5/7] Clustering (componentes conexas)")
@@ -146,7 +147,7 @@ def main():
 
     # --- REPORT ---
     print("[7/7] Informe")
-    report = _build_report(df, summary, details, bands, amp, cascades, time.time() - t0)
+    report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0)
     rep_path = ROOT / "reports" / f"fimi_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.md"
     rep_path.write_text(report, encoding="utf-8")
     conn.close()
@@ -170,7 +171,7 @@ def _infra_score(detail):
     return min(100, n * 15)
 
 
-def _build_report(df, summary, details, bands, amp, cascades, elapsed):
+def _build_report(df, summary, details, bands, amp, cascades, narratives, elapsed):
     lines = []
     lines.append("# European Hybrid & FIMI Radar — Informe")
     lines.append("")
@@ -206,6 +207,23 @@ def _build_report(df, summary, details, bands, amp, cascades, elapsed):
         for h in hyp[:4]:
             lines.append(f"  - {h['hypothesis']} {h['label']}: {h['score']} — {h['reason'][:50]}")
         lines.append("")
+
+    # Narrativas amplificadas (hecho observable: mismo titular en varias fuentes)
+    lines.append("## Narrativas amplificadas (mismo contenido en varias fuentes)")
+    lines.append("")
+    if narratives:
+        lines.append("| Narrativa | Fuentes | Eventos | Ventana |")
+        lines.append("|---|---|---|---|")
+        for n in narratives[:15]:
+            lines.append(f"| {n['seed'][:50]} | {n['n_sources']} ({', '.join(n['source_names'][:4])}) | "
+                         f"{n['n_events']} | {n['window_hours']}h |")
+        lines.append("")
+        lines.append("*Esto indica AMPLIFICACIÓN de una narrativa (una noticia se propaga), "
+                     "no coordinación de cuentas. Sin atribución de actor.*")
+    else:
+        lines.append("Ninguna narrativa compartida por ≥3 fuentes distintas en esta ventana.")
+    lines.append("")
+
     lines.append("## Advertencias metodológicas")
     lines.append("")
     lines.append("- Los scores indican posible actividad coordinada, NUNCA atribución por defecto.")

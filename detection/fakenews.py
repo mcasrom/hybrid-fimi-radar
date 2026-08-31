@@ -96,3 +96,108 @@ def amplification_signal(edges_df, n_accounts_total):
         return 0.0
     connected = set(near_edges["source"]) | set(near_edges["target"])
     return min(1.0, len(connected) / max(n_accounts_total, 1) * 5)
+
+
+def detect_narrative_amplification(df, config):
+    """Detección de AMPLIFICACIÓN DE NARRATIVA (hecho observable, no atribución).
+
+    Agrupa titulares casi idénticos compartidos por FUENTES/MEDIOS DISTINTOS
+    en una ventana de tiempo. Distingue "una noticia se propaga" (amplificación)
+    de "coordinación entre cuentas" (requiere historia acumulada).
+
+    Devuelve lista de dicts: {seed, n_sources, n_events, time_span_s, sources}.
+    NUNCA atribuye actor: solo dice qué narrativa se está amplificando y desde
+    qué fuentes.
+    """
+    from collections import defaultdict
+    near_thresh = config["thresholds"]["near_duplicate_threshold"]
+    min_sources = max(3, config["thresholds"].get("min_amp_sources", 3))
+
+    if df.empty or len(df) < min_sources:
+        return []
+
+    # normalizar texto: minúsculas, sin puntuación, sin espacios duplicados
+    def norm(t):
+        import re
+        s = str(t).lower()
+        s = re.sub(r"[^a-z0-9áéíóúñü ]", "", s)
+        return re.sub(r"\s+", " ", s).strip()[:60]
+
+    df = df.copy()
+    df["_norm"] = df["text"].fillna("").astype(str).apply(norm)
+    df = df[df["_norm"].str.len() >= 20]  # ignorar textos demasiado cortos
+    if df.empty:
+        return []
+
+    # agrupar por texto normalizado
+    groups = defaultdict(list)
+    for _, r in df.iterrows():
+        groups[r["_norm"]].append(r)
+
+    results = []
+    for norm_t, rows in groups.items():
+        if len(rows) < min_sources:
+            continue
+        # fuentes DISTINTAS (no duplicados del mismo medio)
+        sources = {}
+        for r in rows:
+            src = str(r["source"])
+            # normalizar familia de fuente (El País RSS == El País)
+            fam = _family(src)
+            sources.setdefault(fam, []).append(r)
+        distinct = len(sources)
+        if distinct < min_sources:
+            continue
+        ts = [r["ts"] for r in rows]
+        span = max(ts) - min(ts) if ts else 0
+        results.append({
+            "seed": rows[0]["text"][:80],
+            "n_sources": distinct,
+            "source_names": sorted(sources.keys()),
+            "n_events": len(rows),
+            "time_span_s": int(span),
+            "window_hours": round(span / 3600, 1),
+        })
+
+    results.sort(key=lambda x: -x["n_sources"])
+    return results
+
+
+def _family(src):
+    """Agrupa fuentes del mismo medio (El País RSS vs El País RSS 2, etc.)."""
+    s = str(src).lower()
+    if "elpais" in s or "el país" in s:
+        return "El País"
+    if "google" in s:
+        return "Google News"
+    if "bbc" in s:
+        return "BBC"
+    if "aljazeera" in s:
+        return "Al Jazeera"
+    if "elmundo" in s:
+        return "El Mundo"
+    if "faro" in s:
+        return "El Faro Ceuta"
+    if "melilla hoy" in s:
+        return "Melilla Hoy"
+    if "ceutatv" in s or "ceuta tv" in s:
+        return "Ceuta TV"
+    if "yabiladi" in s:
+        return "Yabiladi"
+    if "algerie360" in s:
+        return "Algerie360"
+    if "hespress" in s:
+        return "Hespress"
+    if "tsa" in s:
+        return "TSA"
+    if "ami mauritanie" in s:
+        return "AMI"
+    if "maldita" in s:
+        return "Maldita"
+    if "reddit" in s:
+        return "Reddit"
+    if "bsky" in s or "bluesky" in s:
+        return "Bluesky"
+    if "masto" in s:
+        return "Mastodon"
+    return s[:14]
