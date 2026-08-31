@@ -150,6 +150,22 @@ def detect_narrative_amplification(df, config):
             continue
         ts = [r["ts"] for r in rows]
         span = max(ts) - min(ts) if ts else 0
+        # muestra de eventos completos (texto entero + fuente + url) para poder
+        # leer la narrativa real, no solo el titular truncado
+        sample = []
+        seen_txt = set()
+        for r in rows[:6]:
+            txt = str(r.get("text") or "")
+            url = str(r.get("url") or "")
+            if txt[:40] in seen_txt:
+                continue
+            seen_txt.add(txt[:40])
+            sample.append({
+                "texto": txt,
+                "fuente": str(r.get("source") or ""),
+                "url": url,
+                "ts": int(r["ts"]),
+            })
         results.append({
             "seed": rows[0]["text"][:80],
             "n_sources": distinct,
@@ -157,6 +173,7 @@ def detect_narrative_amplification(df, config):
             "n_events": len(rows),
             "time_span_s": int(span),
             "window_hours": round(span / 3600, 1),
+            "eventos": sample,
         })
 
     results.sort(key=lambda x: -x["n_sources"])

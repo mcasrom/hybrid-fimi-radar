@@ -123,6 +123,22 @@ def main():
                 # escapar caracteres para HTML seguro
                 import html as _html
                 title = _html.escape(n["seed"][:80])
+                # eventos completos de esta narrativa (desplegable)
+                eventos_html = ""
+                for ev in n.get("eventos", []):
+                    txt = _html.escape(str(ev.get("texto", ""))[:220])
+                    src = _html.escape(str(ev.get("fuente", "")))
+                    url = _html.escape(str(ev.get("url", "")))
+                    dt = ""
+                    try:
+                        import datetime as _dt
+                        dt = _dt.datetime.utcfromtimestamp(ev["ts"]).strftime("%d/%m %H:%M")
+                    except Exception:
+                        pass
+                    url_html = f" · <a href='{url}' target='_blank' style='color:#c2410c'>enlace</a>" if url else ""
+                    eventos_html += (
+                        f"<div style='padding:6px 8px;border-top:1px solid #f1f5f9;font-size:.8rem;color:#334155'>"
+                        f"<b style='color:#c2410c'>{dt}</b> [{src}]{url_html}<br>{txt}</div>")
                 rows += (
                     f"<div style='margin:14px 0;padding:10px 12px;border:1px solid #e2e8f0;"
                     f"border-radius:10px;background:#fff'>"
@@ -131,6 +147,8 @@ def main():
                     f"{n['n_events']} eventos · {n['n_sources']} fuentes · ventana {n['window_hours']}h</div>"
                     f"<div style='background:#f1f5f9;border-radius:6px;height:14px;overflow:hidden'>"
                     f"<div style='width:{pct}%;height:100%;background:{col};border-radius:6px'></div></div>"
+                    f"<details style='margin-top:8px'><summary style='font-size:.8rem;color:#c2410c;cursor:pointer'>"
+                    f"Ver texto completo ({n['n_events']} eventos)</summary>{eventos_html}</details>"
                     f"</div>")
             narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap'>"
                           f"{narr_kpi}"
