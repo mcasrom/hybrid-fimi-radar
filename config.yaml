@@ -1,50 +1,52 @@
-# European Hybrid & FIMI Radar — configuración (explicable, no hardcodeada)
-
 scoring:
   bands:
-    NORMAL: [0, 19]
-    WATCH: [20, 39]
-    ANOMALOUS: [40, 59]
-    HIGH: [60, 79]
-    CRITICAL: [80, 100]
+    NORMAL:
+    - 0
+    - 19
+    WATCH:
+    - 20
+    - 39
+    ANOMALOUS:
+    - 40
+    - 59
+    HIGH:
+    - 60
+    - 79
+    CRITICAL:
+    - 80
+    - 100
   weights:
     synchronization: 0.25
-    content_similarity: 0.20
-    amplification: 0.20
+    content_similarity: 0.2
+    amplification: 0.2
     infrastructure: 0.15
-    network_density: 0.10
-    anomaly: 0.10
-
+    network_density: 0.1
+    anomaly: 0.1
 detection:
   tight_timing_seconds: 60
-  near_duplicate_threshold: 0.70
+  near_duplicate_threshold: 0.7
   burst_interval_s: 10
   burst_min_events: 5
   burst_co_times: 2
   min_cluster_size: 3
   anomaly_percentile: 0.85
-  contamination: 0.10
+  contamination: 0.1
   random_state: 42
-
-# claves raíz que el motor ECR reutilizado espera
 thresholds:
   tight_timing_seconds: 60
-  near_duplicate_threshold: 0.70
+  near_duplicate_threshold: 0.7
   burst_interval_s: 10
   burst_min_events: 5
   burst_co_times: 2
   min_cluster_size: 3
   anomaly_percentile: 0.85
-
 anomaly:
-  contamination: 0.10
+  contamination: 0.1
   random_state: 42
-
 clustering:
   eps: 0.7
   min_samples: 2
   method: both
-
 weights:
   same_url: 3
   same_domain: 1
@@ -52,50 +54,63 @@ weights:
   same_hashtag: 1
   tight_timing: 4
   same_action_pattern: 2
-
 features:
   min_text_len: 20
-  ngram_range: [1, 2]
+  ngram_range:
+  - 1
+  - 2
   top_hashtags: 50
-
-# Fuentes para el primer caso (España-Marruecos-frontera-Ceuta-Melilla-Canarias)
 sources:
   official:
-    - name: Interior España (prensa)
-      url: https://www.interior.gob.es/opencms/es/comunicacion/prensa/noticias/rss.html
-      type: official
-    - name: ACNUR noticias
-      url: https://www.acnur.org/noticias/rss.html
-      type: official
-    - name: Frontex
-      url: https://frontex.europa.eu/rss/media-centre/feed/rss.xml
-      type: official
+  - name: El Faro de Ceuta
+    url: https://elfarodeceuta.com/feed/
+    type: media
+  - name: Ceuta TV
+    url: https://ceutatv.com/feed/
+    type: media
+  - name: Melilla Hoy
+    url: https://www.melillahoy.es/rss
+    type: media
   media:
-    - name: El País España
-      url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
-      type: media
-    - name: BBC Mundo
-      url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
-      type: media
-    - name: Al Jazeera
-      url: https://www.aljazeera.com/xml/rss/all.xml
-      type: media
+  - name: El Pais Espana
+    url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
+    type: media
+  - name: BBC Mundo
+    url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
+    type: media
+  - name: Al Jazeera
+    url: https://www.aljazeera.com/xml/rss/all.xml
+    type: media
+  - name: El Mundo
+    url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
+    type: media
   opendata:
-    - name: MITECO embalses
-      url: https://estadoembalses.es/api/embalses
-      type: opendata
+  - name: MITECO embalses
+    url: https://estadoembalses.es/api/embalses
+    type: opendata
   social:
-    - name: Bluesky (cuenta operador)
-      url: https://bsky.app
-      type: social
-    - name: Telegram público
-      url: https://t.me/s/
-      type: social
-
+  - name: Bluesky (cuenta operador)
+    url: https://bsky.app
+    type: social
+  - name: Telegram público
+    url: https://t.me/s/
+    type: social
 capture:
-  telegram_channels: ["elfarodeceuta", "maldita_es"]
-  bluesky_queries: ["Ceuta Melilla", "frontera Marruecos", "migración España"]
-  news_queries: ["Ceuta Melilla frontera", "migración Canarias", "España Marruecos"]
-  subreddits: ["spain", "es"]
-  mastodon_queries: ["Ceuta", "migración"]
+  telegram_channels:
+  - elfarodeceuta
+  - maldita_es
+  bluesky_queries:
+  - Ceuta Melilla
+  - frontera Marruecos
+  - migración España
+  news_queries:
+  - Ceuta Melilla frontera
+  - migración Canarias
+  - España Marruecos
+  subreddits:
+  - spain
+  - es
+  mastodon_queries:
+  - Ceuta
+  - migración
   max_per_source: 50
