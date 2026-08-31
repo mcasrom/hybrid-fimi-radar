@@ -79,3 +79,23 @@ y preparar el despliegue en Hetzner.
 - La atribución no dice FOREIGN sin infraestructura compartida confirmada.
 - Tests de FP/FN pasan en los 6 escenarios sintéticos.
 - Despliegue a Hetzner SOLO si hay señal real que lo justifique.
+
+## AVANCE 31/08 (mismo día del sprint)
+- DEPLOY Hetzner 24/7: captura + análisis + dashboard en fimi.viajeinteligencia.com.
+- 19 fuentes (Magreb en francés añadidas). Corrección: credenciales Bluesky en ruta del server.
+- Nuevas capacidades implementadas y validadas:
+  - Detección de narrativas amplificadas (mismo titular en ≥3 fuentes).
+  - Persistencia de hallazgos (tabla findings) + informe diario.
+  - Alerta de narrativas sostenidas (≥3 días distintos = campaña sostenida).
+  - Dashboard con KPIs, gráfico de intensidad, historial y texto completo.
+- Análisis de accesos del ecosistema: viabilidad confirmada (4.235 humanos/día).
+- PENDIENTE del sprint (no bloquea): revisar clusters tras ≥5 días de acumulación (S1-S3),
+  calibrar H2/H3 (S7), despliegue PostgreSQL solo si hay señal real (S10).
+
+## AVANCE 31/08 (mismo día del sprint)
+- DEPLOY Hetzner 24/7: captura + análisis + dashboard en fimi.viajeinteligencia.com.
+- 19 fuentes (Magreb en francés añadidas). Credenciales Bluesky en ruta del server.
+- Nuevas capacidades: narrativas amplificadas, persistencia de hallazgos (findings),
+  informe diario, alerta de narrativas sostenidas (>=3 dias), dashboard con historial.
+- Análisis de accesos ecosistema: viabilidad confirmada (4.235 humanos/dia).
+- PENDIENTE: clusters tras >=5 dias de acumulacion, calibrar H2/H3, PostgreSQL si hay señal.
