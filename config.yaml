@@ -28,7 +28,7 @@ detection:
   burst_interval_s: 10
   burst_min_events: 5
   burst_co_times: 2
-  min_cluster_size: 3
+  min_cluster_size: 2
   anomaly_percentile: 0.85
   contamination: 0.1
   random_state: 42
@@ -38,7 +38,7 @@ thresholds:
   burst_interval_s: 10
   burst_min_events: 5
   burst_co_times: 2
-  min_cluster_size: 3
+  min_cluster_size: 2
   anomaly_percentile: 0.85
 anomaly:
   contamination: 0.1
@@ -105,6 +105,48 @@ feeds:
   url: https://fr.ami.mr/feed
   tipo: oficial
   pais: MR
+# === Fuentes añadidas 2026-09-02: análisis + francofonía + OSINT ===
+- nombre: Le Monde Diplomatique
+  url: https://www.monde-diplomatique.fr/rss
+  tipo: analisis
+  idioma: fr
+- nombre: Foreign Affairs
+  url: https://www.foreignaffairs.com/rss.xml
+  tipo: analisis
+  idioma: en
+- nombre: RFI France
+  url: https://www.rfi.fr/fr/rss
+  tipo: media
+  idioma: fr
+- nombre: France 24
+  url: https://www.france24.com/fr/rss
+  tipo: media
+  idioma: fr
+- nombre: EUvsDisinfo
+  url: https://euvsdisinfo.eu/feed/
+  tipo: osint
+  idioma: en
+- nombre: Bellingcat
+  url: https://www.bellingcat.com/feed/
+  tipo: osint
+  idioma: en
+- nombre: Middle East Eye
+  url: https://www.middleeasteye.net/rss
+  tipo: media
+  idioma: en
+- nombre: EUobserver
+  url: https://euobserver.com/rss
+  tipo: media
+  idioma: en
+- nombre: The Intercept
+  url: https://theintercept.com/feed/
+  tipo: investigacion
+  idioma: en
+- nombre: Le Desk Marruecos
+  url: https://ledesk.ma/feed/
+  tipo: media
+  idioma: fr
+  pais: MA
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -135,6 +177,36 @@ keywords:
 - palabra: migración
   plataformas:
   - mastodon
+# === Keywords añadidas 2026-09-02: francofonía + OSINT + FIMI ===
+- palabra: Ceuta crise
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: frontière sud Europe
+  plataformas:
+  - bluesky
+- palabra: migration Maghreb
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: infiltration Ceuta
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: FIMI Europe
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: désinformation Russie Europe
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: inmigración irregular
+  plataformas:
+  - google-news
+- palabra: propaganda rusa Magreb
+  plataformas:
+  - bluesky
 telegram_canales:
 - elfarodeceuta
 - maldita_es

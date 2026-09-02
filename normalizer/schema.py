@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS sources (
 
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp INTEGER, source TEXT, title TEXT, url TEXT,
+    timestamp INTEGER, source TEXT, author TEXT, title TEXT, url TEXT,
     text TEXT, language TEXT, topic TEXT,
     raw_json TEXT,                                -- observación original (auditable)
     features_json TEXT,                           -- características extraídas

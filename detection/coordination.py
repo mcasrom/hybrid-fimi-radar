@@ -24,7 +24,13 @@ import numpy as np
 
 
 def build_edges(df, config):
-    """Construye aristas entre cuentas con evidencia de coordinación."""
+    """Construye aristas entre cuentas con evidencia de coordinación.
+
+    Solo se crean aristas entre cuentas de REDES SOCIALES (bluesky, telegram,
+    reddit, mastodon). Los RSS de medios NO participan en el grafo de
+    coordinación: son fuentes legítimas que cubren los mismos temas por
+    periodismo, no por coordinación.
+    """
     w = config["weights"]
     tight_seconds = config["thresholds"]["tight_timing_seconds"]
     near_thresh = config["thresholds"]["near_duplicate_threshold"]
@@ -33,10 +39,16 @@ def build_edges(df, config):
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
 
-    # eventos agrupados por cuenta
+    # ---- filtro: solo redes sociales para grafo de coordinación ----
+    SOCIAL_PREFIXES = ("bsky:", "tg:", "reddit:", "masto:")
+    def is_social(author):
+        return any(author.startswith(p) for p in SOCIAL_PREFIXES)
+
+    # eventos agrupados por cuenta (solo redes sociales)
     acc_events = defaultdict(list)
     for _, row in df.iterrows():
-        acc_events[row["author"]].append(row)
+        if is_social(row["author"]):
+            acc_events[row["author"]].append(row)
 
     strong_links = defaultdict(float)      # (a,b) -> suma peso fuerte
     weak_links = defaultdict(set)          # (a,b) -> set de señales débiles

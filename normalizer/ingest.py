@@ -63,6 +63,14 @@ def normalize(df):
     df["action"] = df["action"].fillna("post").astype(str)
     df["source"] = df["source"].fillna("").astype(str)
 
+    # normalizar fuentes duplicadas (accentos, variantes)
+    SOURCE_ALIASES = {
+        "rss:El País España": "rss:El Pais Espana",
+        "rss:El País Espana": "rss:El Pais Espana",
+    }
+    df["source"] = df["source"].map(lambda s: SOURCE_ALIASES.get(s, s))
+    df["author"] = df["author"].map(lambda a: SOURCE_ALIASES.get(a, a))
+
     ts = df["timestamp"]
     if pd.api.types.is_numeric_dtype(ts):
         df["ts"] = ts.astype(int)
@@ -79,17 +87,22 @@ def normalize(df):
 def load_sqlite(db_path):
     """Lee la tabla events de la BD del radar y la normaliza a formato Event.
 
-    El formato Event espera columnas: timestamp, author, text, url, hashtags,
-    mentions, action, source. En la BD centralizada el autor no existe como
-    columna: se deriva de source (la fuente es el "actor" a nivel de campaña).
+    El author se lee de la columna author si existe; si no, se deriva de source.
     """
     import sqlite3
     con = sqlite3.connect(db_path)
-    df = pd.read_sql("SELECT timestamp, source, title, url, text, language FROM events", con)
+    # verificar si la columna author existe
+    cols = [r[1] for r in con.execute("PRAGMA table_info(events)").fetchall()]
+    if "author" in cols:
+        df = pd.read_sql("SELECT timestamp, source, author, title, url, text, language FROM events", con)
+        df["author"] = df["author"].fillna(df["source"]).astype(str)
+    else:
+        df = pd.read_sql("SELECT timestamp, source, title, url, text, language FROM events", con)
+        df["author"] = df["source"]
     con.close()
     if df.empty:
         return df
-    df["author"] = df["source"]
+    df["author"] = df["author"].astype(str).str.strip()
     df["text"] = df["text"].fillna("").astype(str)
     df["url"] = df["url"].fillna("").astype(str)
     df["hashtags"] = ""

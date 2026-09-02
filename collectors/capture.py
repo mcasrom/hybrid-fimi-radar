@@ -108,13 +108,37 @@ def grab_bluesky(query, n=50):
         data = json.loads(urllib.request.urlopen(req, timeout=30).read().decode())
         for post in data.get("posts", []):
             author = (post.get("author") or {}).get("handle", "?")
-            ts = int(datetime.fromisoformat(post["record"]["createdAt"].replace("Z", "+00:00")).timestamp())
-            text = post["record"].get("text", "")
+            rec = post.get("record", {})
+            try:
+                ts = int(datetime.fromisoformat(rec["createdAt"].replace("Z", "+00:00")).timestamp())
+            except Exception:
+                ts = int(time.time())
+            text = rec.get("text", "")
             import re as _re
             tags = " ".join(_re.findall(r"#\w+", text))
             mentions = " ".join(_re.findall(r"@\w+", text))
+            # extraer URL: embed external + facets link
+            url_found = ""
+            embed = rec.get("embed")
+            if isinstance(embed, dict):
+                ext = embed.get("external") or {}
+                if ext.get("uri"):
+                    url_found = ext["uri"]
+                elif embed.get("$type", "").endswith("embed.recordWithMedia"):
+                    media = embed.get("media") or {}
+                    mext = media.get("external") or {}
+                    if mext.get("uri"):
+                        url_found = mext["uri"]
+            if not url_found:
+                for f in rec.get("facets", []) or []:
+                    for feat in f.get("features", []) or []:
+                        if isinstance(feat, dict) and feat.get("uri") and feat["uri"].startswith("http"):
+                            url_found = feat["uri"]
+                            break
+                    if url_found:
+                        break
             out.append({"timestamp": ts, "author": f"bsky:{author}", "text": text[:500],
-                        "url": "", "hashtags": tags, "mentions": mentions,
+                        "url": url_found, "hashtags": tags, "mentions": mentions,
                         "action": "post", "source": "bluesky"})
         out = out[:n]
     except Exception as e:
@@ -127,9 +151,9 @@ def store_sqlite(events):
     from normalizer.schema import get_conn
     con = get_conn(DB)
     con.executemany(
-        "INSERT OR IGNORE INTO events (timestamp, source, title, url, text)"
-        " VALUES (?,?,?,?,?)",
-        [(e["timestamp"], e["source"], e["text"][:120], e["url"], e["text"]) for e in events])
+        "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text)"
+        " VALUES (?,?,?,?,?,?)",
+        [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"]) for e in events])
     con.commit()
     n = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     con.close()

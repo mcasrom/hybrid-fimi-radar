@@ -236,9 +236,9 @@ def main():
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
     # KPIs
-    n_crit = sum(1 for c in clusters if c[11] and c[11] >= 80) if clusters else 0
-    n_high = sum(1 for c in clusters if c[11] and 60 <= c[11] < 80) if clusters else 0
-    n_anom = sum(1 for c in clusters if c[11] and 40 <= c[11] < 60) if clusters else 0
+    n_crit = sum(1 for c in clusters if c[9] and c[9] >= 80) if clusters else 0
+    n_high = sum(1 for c in clusters if c[9] and 60 <= c[9] < 80) if clusters else 0
+    n_anom = sum(1 for c in clusters if c[9] and 40 <= c[9] < 60) if clusters else 0
     if narr_kpi is None:
         narr_kpi = kpi("Narrativas amplificadas", 0, "sin datos", "#f8fafc")
     cards = "".join([
