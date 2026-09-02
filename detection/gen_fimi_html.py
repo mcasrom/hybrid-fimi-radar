@@ -251,6 +251,86 @@ def main():
         kpi("Anómalos", n_anom, "40-59", "#fef9c3"),
     ])
 
+    # ============================================================
+    # FUNNEL INTERPRETATIVO — guía visual para leer el radar
+    # ============================================================
+    n_clusters = len(clusters)
+    n_crit, n_high, n_anom2 = (n_crit, n_high, n_anom)  # ya calculadas arriba
+    # texto del estado actual para el CTA de compartir (CTR)
+    share_txt = (f"Radar FIMI España-Marruecos {now[:5]}: {n_events} eventos de "
+                 f"{n_sources} fuentes, {n_clusters} cluster{'s' if n_clusters != 1 else ''} "
+                 f"({n_high} HIGH). Agnóstico al actor, sin atribución sin evidencia. "
+                 f"https://fimi.viajeinteligencia.com")
+    import urllib.parse as _up
+    share_url = "https://fimi.viajeinteligencia.com/"
+    tw_url = "https://twitter.com/intent/tweet?text=" + _up.quote(share_txt)
+    bsky_url = "https://bsky.app/intent/compose?text=" + _up.quote(share_txt)
+    steps = [
+        ("01", "Captura", f"<b>{n_events}</b> eventos reales de <b>{n_sources}</b> fuentes: "
+         "medios ES/FR/MA, RSS, Bluesky, Telegram y Reddit. Sin cuentas ni rastreo.",
+         "Todo lo que el radar observa es <b>público</b>. La fuente más amplia del embudo.",
+         "#eff6ff", "#1d4ed8"),
+        ("02", "Amplificación", "Un <b>mismo titular se repite</b> en varias fuentes en pocas horas. "
+         "Hecho observable: la noticia se propaga.", "Indica <b>eco</b> de una narrativa. "
+         "Aún no es coordinación ni atribución.", "#e0f2fe", "#0369a1"),
+        ("03", "Coordinación", "Cuentas distintas publican el <b>mismo enlace o texto casi idéntico</b> "
+         "en una ventana corta.", "Señal de posible <b>comportamiento coordinado</b>. "
+         "El radar une esas cuentas en un cluster.", "#fef3c7", "#b45309"),
+        ("04", "Cluster y score", "El radar puntúa el grupo <b>0–100</b> y lo clasifica en banda "
+         "NORMAL→WATCH→ANÓMALO→HIGH→CRITICAL.", "Cuanto más alto, más señales de actividad "
+         "coordinada <b>observables</b>. Ver KPIs de arriba.", "#fed7aa", "#c2410c"),
+        ("05", "Atribución", "¿Quién está detrás? Solo con <b>evidencia organizativa o financiera</b>.",
+         "Sin prueba suficiente → <b>UNKNOWN</b>. Ese 'no sé quién' <b>es un resultado válido</b>, "
+         "no un fallo.", "#fecaca", "#b91c1c"),
+    ]
+    funnel_cards = ""
+    n_st = len(steps)
+    for i, (num, title, what, means, bg, fg) in enumerate(steps):
+        width = round(100 - (100 / n_st) * i * 0.8, 1)  # 100,84,68,52,36
+        funnel_cards += f"""
+      <div style="max-width:{width}%;margin:10px auto 0;background:{bg};border-left:5px solid {fg};
+                  border-radius:10px;padding:12px 16px;box-shadow:0 1px 3px rgba(15,23,42,.08)">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="background:{fg};color:#fff;border-radius:999px;width:26px;height:26px;
+                       min-width:26px;display:inline-flex;align-items:center;justify-content:center;
+                       font-size:.8rem;font-weight:800">{num}</span>
+          <div style="flex:1">
+            <div style="font-weight:800;color:{fg};font-size:.95rem">{title}</div>
+            <div style="font-size:.86rem;color:#0f172a;line-height:1.5">{what}</div>
+            <div style="font-size:.78rem;color:#334155;margin-top:5px;line-height:1.45">
+              <b style="color:{fg}">→ Significa:</b> {means}</div>
+          </div>
+        </div>
+      </div>"""
+    funnel_html = f"""
+  <div id="funnel" style="background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);border:1px solid #e2e8f0;
+       border-radius:16px;padding:22px 18px 20px;margin:20px 0;box-shadow:0 2px 6px rgba(15,23,42,.05)">
+    <div style="text-align:center;margin-bottom:16px">
+      <span style="display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.12em;
+                   color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
+                   padding:4px 12px">CÓMO LEER ESTE RADAR</span>
+      <h2 style="font-size:1.25rem;margin:.4rem 0 .2rem">Del ruido a la señal: el embudo de interpretación</h2>
+      <p style="color:#64748b;font-size:.88rem;margin:0">Cada nivel filtra la información y se acerca al fondo.
+         Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
+    </div>
+    {funnel_cards}
+    <div style="text-align:center;margin-top:18px;padding-top:16px;border-top:1px dashed #e2e8f0">
+      <p style="font-size:.86rem;color:#334155;margin:0 0 10px"><b>¿Has visto una señal que merezca difundirse?</b>
+         Comparte este estado del radar (se actualiza cada 6 h):</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <a href="{tw_url}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
+                  color:#fff;background:#0f1419;border-radius:8px;padding:9px 16px;text-decoration:none">𝕏 Compartir en X</a>
+        <a href="{bsky_url}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
+                  color:#fff;background:#1185fe;border-radius:8px;padding:9px 16px;text-decoration:none">🦋 Compartir en Bluesky</a>
+        <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
+                  color:#fff;background:#13C3A5;border-radius:8px;padding:9px 16px;text-decoration:none">☕ Apoyar en Ko-fi</a>
+      </div>
+    </div>
+  </div>"""
+
     # cuerpo de clusters
     body = ""
     if not clusters:
@@ -288,13 +368,19 @@ def main():
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>European Hybrid &amp; FIMI Radar · España-Marruecos</title>
-<meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en la frontera sur de Europa. Actualizado cada 6h.">
+<meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en la frontera sur de Europa (España-Marruecos-Ceuta-Melilla). {n_events} eventos, {n_clusters} clusters. Actualizado cada 6h.">
+<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, migración, coordinación de cuentas, amplificación de narrativas">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="European Hybrid &amp; FIMI Radar">
-<meta property="og:description" content="Detección de coordinación y anomalías en la frontera sur de Europa. Agnóstico al actor.">
+<meta property="og:title" content="FIMI Radar · {n_events} eventos, {n_clusters} clusters de coordinación">
+<meta property="og:description" content="Radar OSINT agnóstico al actor en la frontera sur de Europa. {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FIMI Radar · España-Marruecos">
+<meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#c2410c">
 <style>
 :root{{color-scheme:light}}
 body{{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f8fafc;color:#0f172a}}
@@ -315,6 +401,8 @@ a{{color:#c2410c}}
 <p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en la
 frontera sur de Europa (España-Marruecos-Ceuta-Melilla-Canarias). <strong>Agnóstico al actor</strong>:
 primero se observa la anomalía, después se evalúan hipótesis; la atribución nunca se presume.</p>
+
+{funnel_html}
 
 <div class="kpis">{cards}</div>
 
