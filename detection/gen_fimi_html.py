@@ -303,33 +303,66 @@ def main():
         </div>
       </div>"""
     funnel_html = f"""
-  <div id="funnel" style="background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);border:1px solid #e2e8f0;
-       border-radius:16px;padding:22px 18px 20px;margin:20px 0;box-shadow:0 2px 6px rgba(15,23,42,.05)">
-    <div style="text-align:center;margin-bottom:16px">
-      <span style="display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.12em;
-                   color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
-                   padding:4px 12px">CÓMO LEER ESTE RADAR</span>
-      <h2 style="font-size:1.25rem;margin:.4rem 0 .2rem">Del ruido a la señal: el embudo de interpretación</h2>
-      <p style="color:#64748b;font-size:.88rem;margin:0">Cada nivel filtra la información y se acerca al fondo.
-         Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
-    </div>
-    {funnel_cards}
-    <div style="text-align:center;margin-top:18px;padding-top:16px;border-top:1px dashed #e2e8f0">
-      <p style="font-size:.86rem;color:#334155;margin:0 0 10px"><b>¿Has visto una señal que merezca difundirse?</b>
-         Comparte este estado del radar (se actualiza cada 6 h):</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <a href="{tw_url}" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
-                  color:#fff;background:#0f1419;border-radius:8px;padding:9px 16px;text-decoration:none">𝕏 Compartir en X</a>
-        <a href="{bsky_url}" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
-                  color:#fff;background:#1185fe;border-radius:8px;padding:9px 16px;text-decoration:none">🦋 Compartir en Bluesky</a>
-        <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;
-                  color:#fff;background:#13C3A5;border-radius:8px;padding:9px 16px;text-decoration:none">☕ Apoyar en Ko-fi</a>
+  <button id="btnComoLeer" type="button"
+     onclick="funnelOpen()"
+     style="margin:0 0 4px;cursor:pointer;border:1px solid #c2410c;background:#fff7ed;color:#c2410c;
+            border-radius:999px;padding:7px 16px;font-weight:700;font-size:.82rem;font-family:inherit;
+            display:inline-flex;align-items:center;gap:6px">🗺️ Cómo leer este radar</button>
+  <div id="funnelOverlay" role="dialog" aria-modal="true" aria-labelledby="funnelTitle"
+     style="position:fixed;inset:0;z-index:999;display:none;align-items:flex-start;justify-content:center;
+            overflow-y:auto;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);padding:24px 14px">
+    <div style="background:#fff;max-width:640px;width:100%;border-radius:16px;padding:20px 20px 18px;
+                box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
+      <button type="button" onclick="funnelClose(false)"
+        aria-label="Cerrar"
+        style="position:sticky;top:0;float:right;cursor:pointer;border:none;background:#f1f5f9;color:#0f172a;
+               border-radius:999px;width:30px;height:30px;font-size:1rem;font-weight:700;line-height:1">✕</button>
+      <div style="text-align:center;margin-bottom:12px">
+        <span style="display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.12em;
+                     color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
+                     padding:4px 12px">CÓMO LEER ESTE RADAR</span>
+        <h2 id="funnelTitle" style="font-size:1.2rem;margin:.5rem 0 .2rem">Del ruido a la señal: el embudo de interpretación</h2>
+        <p style="color:#64748b;font-size:.86rem;margin:0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
+           Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
+      </div>
+      {funnel_cards}
+      <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px dashed #e2e8f0">
+        <p style="font-size:.86rem;color:#334155;margin:0 0 10px"><b>¿Has visto una señal que merezca difundirse?</b>
+           Comparte este estado del radar (se actualiza cada 6 h):</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <a href="{tw_url}" target="_blank" rel="noopener noreferrer"
+             style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
+                    color:#fff;background:#0f1419;border-radius:8px;padding:9px 15px;text-decoration:none">𝕏 Compartir en X</a>
+          <a href="{bsky_url}" target="_blank" rel="noopener noreferrer"
+             style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
+                    color:#fff;background:#1185fe;border-radius:8px;padding:9px 15px;text-decoration:none">🦋 Compartir en Bluesky</a>
+          <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
+             style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
+                    color:#fff;background:#13C3A5;border-radius:8px;padding:9px 15px;text-decoration:none">☕ Apoyar en Ko-fi</a>
+        </div>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;cursor:pointer;
+                      font-size:.78rem;color:#64748b">
+          <input type="checkbox" id="funnelNoMostrar" style="accent-color:#c2410c"> No volver a mostrar esta guía
+        </label>
       </div>
     </div>
-  </div>"""
+  </div>
+  <script>
+  (function(){{
+    var O=document.getElementById('funnelOverlay');
+    var B=document.getElementById('btnComoLeer');
+    var T=document.getElementById('funnelNoMostrar');
+    var K='fimi_funnel_visto';
+    function show(){{ O.style.display='flex'; }}
+    function hide(dont){{ O.style.display='none'; if(dont&&T&&T.checked){{ try{{ localStorage.setItem(K,'1'); }}catch(e){{}} }} }}
+    window.funnelOpen=function(){{ if(T){{ T.checked=false; }} show(); }};
+    window.funnelClose=function(dont){{ hide(dont); }};
+    if(O){{ O.addEventListener('click',function(e){{ if(e.target===O){{ hide(T?T.checked:false); }} }}); }}
+    var visto='0'; try{{ visto=localStorage.getItem(K)||'0'; }}catch(e){{}}
+    if(B){{ if(visto==='1'){{ B.style.display='none'; }} }}
+    if(O&&visto!=='1'){{ show(); }}
+  }})();
+  </script>"""
 
     # cuerpo de clusters
     body = ""
