@@ -50,7 +50,7 @@ def svg_score_bar(score, band):
 
 def kpi_banda_alerta(clus):
     """KPI con la banda de alerta máxima de una lista de clusters."""
-    max_o = max((c[9] or 0) for c in clus) if clus else 0
+    max_o = max((c["overall_score"] or 0) for c in clus) if clus else 0
     b = band_of(max_o)
     col = BAND_COLORS[b]
     if not clus:
@@ -70,8 +70,9 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
                 'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
     b = ""
     for c in clus:
-        cid, created, label, ctype, coord, amp, anom, infra, net, overall, conf = c[:11]
-        overall = overall or 0
+        cid = c["id"]
+        label = c["cluster_label"]
+        overall = c["overall_score"] or 0
         band = band_of(overall)
         col = BAND_COLORS[band]
         # nº de cuentas del cluster: se lee del texto del assessment
@@ -79,8 +80,8 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
         import re as _re
         n_cuentas = None
         for _a in asm:
-            if _a[1] == cid:
-                m = _re.search(r"(\d+)\s+cuentas?", str(_a[9] or ""))
+            if _a["cluster_id"] == cid:
+                m = _re.search(r"(\d+)\s+cuentas?", str(_a["assessment"] or ""))
                 if m:
                     n_cuentas = int(m.group(1))
                 break
@@ -89,17 +90,20 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
         b += (f'<div class="card"><h3>{label} — {overall:.0f}/100 '
               f'<span style="color:{col}">({band})</span>{cuentas_html}</h3>')
         b += svg_score_bar(overall, band)
-        b += (f'<p class="caption">Coordinación {coord or 0:.0f} · Amplificación {amp or 0:.0f} · '
-              f'Anomalía {anom or 0:.0f} · Infraestructura {infra or 0:.0f} · '
-              f'Densidad red {net or 0:.0f} · Confianza: {conf}</p>')
+        b += (f'<p class="caption">Coordinación {c["coordination_score"] or 0:.0f} · '
+              f'Amplificación {c["amplification_score"] or 0:.0f} · '
+              f'Anomalía {c["anomaly_score"] or 0:.0f} · '
+              f'Infraestructura {c["infrastructure_score"] or 0:.0f} · '
+              f'Densidad red {c["network_density"] or 0:.0f} · Confianza: {c["confidence"]}</p>')
         # buscar assessment
         for a in asm:
-            if a[1] == cid:
-                b += (f'<p style="font-size:.9rem;color:#334155"><b>Atribución:</b> {a[11]} · '
-                      f'confianza {a[12]}<br>')
-                b += f'<b>Evidencia:</b> {a[13]}<br><b>Falta:</b> {a[14]}</p>'
+            if a["cluster_id"] == cid:
+                b += (f'<p style="font-size:.9rem;color:#334155"><b>Atribución:</b> '
+                      f'{a["attribution"]} · confianza {a["attribution_confidence"]}<br>')
+                b += f'<b>Evidencia:</b> {a["attribution_evidence"]}<br>' \
+                     f'<b>Falta:</b> {a["missing_evidence"]}</p>'
                 try:
-                    hyp = json.loads(a[9]) if a[9] else []
+                    hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
                     if hyp:
                         b += '<p style="font-size:.82rem;color:#475569"><b>Hipótesis:</b> '
                         b += (" · ".join(f"{h['hypothesis']} {h['label']} ({h['score']})"
@@ -150,6 +154,7 @@ def main():
         return
 
     con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row  # acceso por nombre de columna (robusto al orden)
     clusters = con.execute("SELECT * FROM clusters ORDER BY overall_score DESC").fetchall()
     assessments = con.execute("SELECT * FROM assessments").fetchall()
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
@@ -170,7 +175,7 @@ def main():
         else:
             _ev = con.execute("SELECT COUNT(*) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
             _src = con.execute("SELECT COUNT(DISTINCT source) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
-        _cl = [c for c in clusters if len(c) > 3 and c[3] == _t]
+        _cl = [c for c in clusters if c["tema_id"] == _t]
         por_tema[_t] = {"eventos": _ev, "fuentes": _src, "clusters": _cl}
     # historial persistido de hallazgos
     try:
@@ -322,9 +327,9 @@ def main():
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
     # KPIs globales (resumen para SEO/share; el detalle por tema va en pestañas)
-    n_crit = sum(1 for c in clusters if c[9] and c[9] >= 80) if clusters else 0
-    n_high = sum(1 for c in clusters if c[9] and 60 <= c[9] < 80) if clusters else 0
-    n_anom = sum(1 for c in clusters if c[9] and 40 <= c[9] < 60) if clusters else 0
+    n_crit = sum(1 for c in clusters if c["overall_score"] and c["overall_score"] >= 80) if clusters else 0
+    n_high = sum(1 for c in clusters if c["overall_score"] and 60 <= c["overall_score"] < 80) if clusters else 0
+    n_anom = sum(1 for c in clusters if c["overall_score"] and 40 <= c["overall_score"] < 60) if clusters else 0
     if narr_kpi is None:
         narr_kpi = kpi("Narrativas amplificadas", 0, "sin datos", "#f8fafc")
 
@@ -339,7 +344,7 @@ def main():
         _nombre = _meta.get("nombre", _t)
         _estado = _meta.get("estado", "produccion")
         _discl = _meta.get("disclaimer", "")
-        _tema_cl = [c for c in clusters if len(c) > 3 and c[3] == _t]
+        _tema_cl = [c for c in clusters if c["tema_id"] == _t]
         _cards_t = "".join([
             kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
             kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
