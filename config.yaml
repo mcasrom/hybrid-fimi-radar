@@ -147,6 +147,16 @@ feeds:
   tipo: media
   idioma: fr
   pais: MA
+# === Catálogo de temas activos ===
+# estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
+temas:
+  frontera_sur:
+    estado: produccion
+    nombre: Frontera Sur (España-Marruecos)
+  geopolitica_ue_marruecos:
+    estado: produccion
+    nombre: Geopolítica UE-Marruecos
+
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -205,6 +215,39 @@ keywords:
   plataformas:
   - google-news
 - palabra: propaganda rusa Magreb
+  plataformas:
+  - bluesky
+  - google-news
+# === Keywords geopolitica_ue_marruecos (tema nuevo, solapa con frontera_sur) ===
+- palabra: relaciones España Marruecos diplomacia
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: acuerdo bilateral España Marruecos
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - google-news
+- palabra: política exterior UE Magreb
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: Marruecos Unión Europea relaciones
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - google-news
+- palabra: Sahara occidental diplomacia
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: accord Maroc Union européenne
+  tema: geopolitica_ue_marruecos
+  plataformas:
+  - google-news
+- palabra: diplomatie Maroc UE
+  tema: geopolitica_ue_marruecos
   plataformas:
   - bluesky
 telegram_canales:

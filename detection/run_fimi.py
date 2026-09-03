@@ -48,12 +48,13 @@ def main():
 
     cfg = load_config(args.config)
     t0 = time.time()
+    tema = getattr(args, "tema", None) or "frontera_sur"
 
     # --- INGEST + NORMALIZE ---
     from normalizer.ingest import load, normalize, load_sqlite
-    print(f"[1/7] Ingest {args.input}")
+    print(f"[1/7] Ingest {args.input} (tema={tema})")
     if str(args.input).endswith(".db"):
-        df = load_sqlite(args.input)
+        df = load_sqlite(args.input, tema=tema)
     else:
         raw = load(args.input)
         df = normalize(raw)
@@ -109,7 +110,6 @@ def main():
     # snapshot del tema: se borran los clusters previos (y sus dependencias)
     # antes de insertar los detectados en este ciclo. El historial (findings)
     # se conserva aparte, con su fecha, y no se toca aqui.
-    tema = getattr(args, "tema", None) or "frontera_sur"
     old_ids = [r[0] for r in conn.execute("SELECT id FROM clusters WHERE tema_id=?", (tema,))]
     if old_ids:
         ph = ",".join("?" * len(old_ids))

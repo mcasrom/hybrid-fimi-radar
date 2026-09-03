@@ -84,20 +84,41 @@ def normalize(df):
     return df
 
 
-def load_sqlite(db_path):
+def load_sqlite(db_path, tema=None):
     """Lee la tabla events de la BD del radar y la normaliza a formato Event.
 
     El author se lee de la columna author si existe; si no, se deriva de source.
+    Si tema se indica, devuelve SOLO los eventos de ese tema (many-to-many via
+    event_temas). Si la tabla event_temas no existe (BD vieja), filtra por la
+    columna legacy events.tema_id.
     """
     import sqlite3
     con = sqlite3.connect(db_path)
-    # verificar si la columna author existe
     cols = [r[1] for r in con.execute("PRAGMA table_info(events)").fetchall()]
-    if "author" in cols:
-        df = pd.read_sql("SELECT timestamp, source, author, title, url, text, language FROM events", con)
-        df["author"] = df["author"].fillna(df["source"]).astype(str)
+    sel_base = "timestamp, source, author, title, url, text, language"
+    if "author" not in cols:
+        sel_base = "timestamp, source, title, url, text, language"
+    # filtro por tema (multi-tema): event_temas si existe, si no events.tema_id
+    tema_ids = None
+    if tema:
+        has_et = con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='event_temas'").fetchone()
+        if has_et:
+            tema_ids = [r[0] for r in con.execute(
+                "SELECT event_id FROM event_temas WHERE tema_id=?", (tema,))]
+        elif "tema_id" in cols:
+            tema_ids = [r[0] for r in con.execute(
+                "SELECT id FROM events WHERE tema_id=?", (tema,))]
+    if tema_ids is not None:
+        if not tema_ids:
+            df = pd.DataFrame(columns=["timestamp", "source", "author", "title", "url", "text", "language"])
+        else:
+            ph = ",".join("?" * len(tema_ids))
+            df = pd.read_sql(f"SELECT {sel_base} FROM events WHERE id IN ({ph})", con,
+                             params=tema_ids)
     else:
-        df = pd.read_sql("SELECT timestamp, source, title, url, text, language FROM events", con)
+        df = pd.read_sql(f"SELECT {sel_base} FROM events", con)
+    if "author" not in df.columns:
         df["author"] = df["source"]
     con.close()
     if df.empty:
