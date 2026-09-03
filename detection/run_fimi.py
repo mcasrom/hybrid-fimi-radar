@@ -43,6 +43,7 @@ def main():
     ap.add_argument("--input", default=str(ROOT / "data" / "raw" / "events.csv"))
     ap.add_argument("--db", default=str(ROOT / "data" / "radar.db"))
     ap.add_argument("--config", default=None)
+    ap.add_argument("--tema", default=None, help="Tema/dominio (frontera_sur, geopolitica_ue_marruecos, politica_nacional). Default: frontera_sur")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -102,6 +103,23 @@ def main():
     print("[6/7] Scoring + atribución + persistencia SQLite")
     bands = load_bands(cfg)
     conn = get_conn(args.db)
+
+    # Snapshot del estado actual: la tabla clusters es la VISTA ACTIVA (los
+    # clusters que el dashboard muestra ahora mismo). Cada ciclo REEMPLAZA el
+    # snapshot del tema: se borran los clusters previos (y sus dependencias)
+    # antes de insertar los detectados en este ciclo. El historial (findings)
+    # se conserva aparte, con su fecha, y no se toca aqui.
+    tema = getattr(args, "tema", None) or "frontera_sur"
+    old_ids = [r[0] for r in conn.execute("SELECT id FROM clusters WHERE tema_id=?", (tema,))]
+    if old_ids:
+        ph = ",".join("?" * len(old_ids))
+        conn.execute(f"DELETE FROM indicators WHERE cluster_id IN ({ph})", old_ids)
+        conn.execute(f"DELETE FROM assessments WHERE cluster_id IN ({ph})", old_ids)
+        conn.execute(f"DELETE FROM evidence WHERE cluster_id IN ({ph})", old_ids)
+        conn.execute(f"DELETE FROM clusters WHERE id IN ({ph})", old_ids)
+        conn.commit()
+        print(f"      snapshot previo reemplazado: {len(old_ids)} clusters del tema '{tema}'")
+
     n_assessed = 0
     for label, s in summary.items():
         comp = {
@@ -131,7 +149,7 @@ def main():
             "INSERT INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
             " amplification_score, anomaly_score, infrastructure_score, network_density,"
             " overall_score, confidence) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (int(time.time()), label, "mixed", "frontera_sur", s.get("coordination_score", 0),
+            (int(time.time()), label, "mixed", tema, s.get("coordination_score", 0),
              comp["amplification"], comp["anomaly"], comp["infrastructure"],
              comp["network_density"], overall, att["confidence"]))
         cluster_id = cur.lastrowid
