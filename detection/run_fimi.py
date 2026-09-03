@@ -115,6 +115,13 @@ def main():
         overall, _ = compute_scores(comp, cfg)
         band = band_for(overall, bands)
 
+        # FIX: el historial (tabla findings) debe guardar el score que tenia el
+        # cluster EN EL MOMENTO de deteccion, no su valor actual. cluster_summary
+        # no devuelve overall_score, asi que lo inyectamos aqui para que
+        # persist_findings_from_run(conn, narratives, summary, ...) lo persista
+        # real (antes caia a 0 por .get("overall_score", 0)).
+        summary[label]["overall_score"] = overall
+
         hyp = classify_hypotheses({**s, "accounts": s.get("accounts", 0)})
         att = attribution(hyp, infra_shared=_infra_score(details.get(label, {})) > 30)
         n_assessed += 1
