@@ -48,6 +48,70 @@ def svg_score_bar(score, band):
             f'<span style="width:70px;color:{col};font-weight:700">{band}</span></div>')
 
 
+def kpi_banda_alerta(clus):
+    """KPI con la banda de alerta máxima de una lista de clusters."""
+    max_o = max((c[9] or 0) for c in clus) if clus else 0
+    b = band_of(max_o)
+    col = BAND_COLORS[b]
+    if not clus:
+        return kpi("Banda de alerta", "—", "sin clusters", "#f8fafc")
+    return (f'<div style="flex:1 1 150px;background:#f8fafc;border-radius:12px;padding:14px 16px;'
+            f'box-shadow:0 1px 3px rgba(0,0,0,.06)">'
+            f'<div style="font-size:.72rem;color:#475569;font-weight:600;text-transform:uppercase">Banda de alerta</div>'
+            f'<div style="font-size:1.6rem;font-weight:800;color:{col};line-height:1.2">{b}</div>'
+            f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
+
+
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
+    """Renderiza las tarjetas de clusters (vista activa) para una lista dada."""
+    if not clus:
+        return (f'<div class="card"><h3>{titulo_vacio}</h3>'
+                '<p class="caption">Con la historia acumulada hasta ahora no hay señal de '
+                'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
+    b = ""
+    for c in clus:
+        cid, created, label, ctype, coord, amp, anom, infra, net, overall, conf = c[:11]
+        overall = overall or 0
+        band = band_of(overall)
+        col = BAND_COLORS[band]
+        # nº de cuentas del cluster: se lee del texto del assessment
+        # ("Cluster X con N cuentas, banda ..."). Usa import re local.
+        import re as _re
+        n_cuentas = None
+        for _a in asm:
+            if _a[1] == cid:
+                m = _re.search(r"(\d+)\s+cuentas?", str(_a[9] or ""))
+                if m:
+                    n_cuentas = int(m.group(1))
+                break
+        cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
+                        if n_cuentas is not None else "")
+        b += (f'<div class="card"><h3>{label} — {overall:.0f}/100 '
+              f'<span style="color:{col}">({band})</span>{cuentas_html}</h3>')
+        b += svg_score_bar(overall, band)
+        b += (f'<p class="caption">Coordinación {coord or 0:.0f} · Amplificación {amp or 0:.0f} · '
+              f'Anomalía {anom or 0:.0f} · Infraestructura {infra or 0:.0f} · '
+              f'Densidad red {net or 0:.0f} · Confianza: {conf}</p>')
+        # buscar assessment
+        for a in asm:
+            if a[1] == cid:
+                b += (f'<p style="font-size:.9rem;color:#334155"><b>Atribución:</b> {a[11]} · '
+                      f'confianza {a[12]}<br>')
+                b += f'<b>Evidencia:</b> {a[13]}<br><b>Falta:</b> {a[14]}</p>'
+                try:
+                    hyp = json.loads(a[9]) if a[9] else []
+                    if hyp:
+                        b += '<p style="font-size:.82rem;color:#475569"><b>Hipótesis:</b> '
+                        b += (" · ".join(f"{h['hypothesis']} {h['label']} ({h['score']})"
+                                         for h in hyp[:4]))
+                        b += "</p>"
+                except Exception:
+                    pass
+                break
+        b += "</div>"
+    return b
+
+
 def main():
     # cargar config para inventario de fuentes y keywords
     try:
@@ -57,8 +121,13 @@ def main():
         keywords = cfg.get("keywords", [])
         telegram = cfg.get("telegram_canales", [])
         subreddits = cfg.get("subreddits", [])
+        temas_cfg = cfg.get("temas", {})
     except Exception:
-        feeds, keywords, telegram, subreddits = [], [], [], []
+        feeds, keywords, telegram, subreddits, temas_cfg = [], [], [], [], {}
+    # temas activos (catálogo config.yaml); frontera_sur siempre existe
+    temas = list(temas_cfg.keys()) or ["frontera_sur"]
+    if "frontera_sur" not in temas:
+        temas.insert(0, "frontera_sur")
 
     feeds_html = ""
     for f in feeds:
@@ -86,6 +155,23 @@ def main():
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
     ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
+    # agregación por tema (multi-tema): eventos/fuentes via event_temas, clusters via tema_id
+    has_et = con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='event_temas'").fetchone()
+    por_tema = {}
+    for _t in temas:
+        if has_et:
+            _ev = con.execute(
+                "SELECT COUNT(*) FROM events e JOIN event_temas t ON t.event_id=e.id WHERE t.tema_id=?",
+                (_t,)).fetchone()[0]
+            _src = con.execute(
+                "SELECT COUNT(DISTINCT e.source) FROM events e JOIN event_temas t ON t.event_id=e.id"
+                " WHERE t.tema_id=?", (_t,)).fetchone()[0]
+        else:
+            _ev = con.execute("SELECT COUNT(*) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
+            _src = con.execute("SELECT COUNT(DISTINCT source) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
+        _cl = [c for c in clusters if len(c) > 3 and c[3] == _t]
+        por_tema[_t] = {"eventos": _ev, "fuentes": _src, "clusters": _cl}
     # historial persistido de hallazgos
     try:
         findings = con.execute(
@@ -235,21 +321,57 @@ def main():
 
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
-    # KPIs
+    # KPIs globales (resumen para SEO/share; el detalle por tema va en pestañas)
     n_crit = sum(1 for c in clusters if c[9] and c[9] >= 80) if clusters else 0
     n_high = sum(1 for c in clusters if c[9] and 60 <= c[9] < 80) if clusters else 0
     n_anom = sum(1 for c in clusters if c[9] and 40 <= c[9] < 60) if clusters else 0
     if narr_kpi is None:
         narr_kpi = kpi("Narrativas amplificadas", 0, "sin datos", "#f8fafc")
-    cards = "".join([
-        kpi("Eventos", n_events, "capturados", "#eff6ff"),
-        kpi("Fuentes", n_sources, "activas", "#f0fdf4"),
-        kpi("Clusters", len(clusters), "detectados", "#fafaf9"),
-        narr_kpi,
-        kpi("CRITICAL", n_crit, "80-100", "#fee2e2"),
-        kpi("HIGH", n_high, "60-79", "#ffedd5"),
-        kpi("Anómalos", n_anom, "40-59", "#fef9c3"),
-    ])
+
+    # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
+    # Cada pestaña muestra: eventos, fuentes, clusters y banda de alerta del tema.
+    tema_tabs = ""
+    tema_panes = ""
+    for i, _t in enumerate(temas):
+        d = por_tema.get(_t, {"eventos": 0, "fuentes": 0, "clusters": []})
+        _cl = d["clusters"]
+        _meta = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        _nombre = _meta.get("nombre", _t)
+        _estado = _meta.get("estado", "produccion")
+        _discl = _meta.get("disclaimer", "")
+        _tema_cl = [c for c in clusters if len(c) > 3 and c[3] == _t]
+        _cards_t = "".join([
+            kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
+            kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
+            kpi("Clusters", len(_tema_cl), "activos", "#fafaf9"),
+            kpi_banda_alerta(_tema_cl),
+        ])
+        _badge_piloto = ""
+        if _estado == "piloto":
+            _badge_piloto = ("<div style='margin:10px 0;padding:10px 14px;background:#fef2f2;border:1px solid "
+                             "#fecaca;border-radius:8px;font-size:.8rem;color:#991b1b;line-height:1.45'>"
+                             "<b>⚠️ Tema en fase piloto:</b> " + (_discl or
+                             "en calibración, los umbrales aún se ajustan.") + "</div>")
+        _cl_txt = ""
+        if not _tema_cl:
+            _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
+        else:
+            _cl_txt = render_cluster_cards(_tema_cl, assessments)
+        _sel = " style='background:#c2410c;color:#fff;border-color:#c2410c'" if i == 0 else ""
+        tema_tabs += (f"<button type='button' data-tema='{_t}' onclick='fimiTab(\"{_t}\")'"
+                      f" style='cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;"
+                      f"border-radius:999px;padding:7px 14px;font-weight:600;font-size:.82rem;"
+                      f"font-family:inherit;{_sel if i == 0 else _sel}'>{_nombre}"
+                      f"<span style='opacity:.75;font-weight:400'> · {_estado}</span></button>")
+        tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
+                       f"{'' if i == 0 else ' hidden'}>{_badge_piloto}"
+                       f"<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
+    tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
+               f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
+               f"Cada pestaña muestra un dominio del catálogo. Las secciones de narrativas, historial y "
+               f"metodología de abajo son el resumen global del radar.</div>"
+               f"{tema_panes}")
+
 
     # ============================================================
     # FUNNEL INTERPRETATIVO — guía visual para leer el radar
@@ -372,52 +494,7 @@ def main():
   }})();
   </script>"""
 
-    # cuerpo de clusters
-    body = ""
-    if not clusters:
-        body = ('<div class="card"><h3>Sin clusters activos</h3>'
-                '<p class="caption">Con la historia acumulada hasta ahora no hay señal de '
-                'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
-    else:
-        for c in clusters:
-            cid, created, label, ctype, coord, amp, anom, infra, net, overall, conf = c[:11]
-            overall = overall or 0
-            band = band_of(overall)
-            col = BAND_COLORS[band]
-            # nº de cuentas del cluster: se lee del texto del assessment
-            # ("Cluster X con N cuentas, banda ..."). Usa import re local.
-            import re as _re
-            n_cuentas = None
-            for _a in assessments:
-                if _a[1] == cid:
-                    m = _re.search(r"(\d+)\s+cuentas?", str(_a[9] or ""))
-                    if m:
-                        n_cuentas = int(m.group(1))
-                    break
-            cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
-                            if n_cuentas is not None else "")
-            body += (f'<div class="card"><h3>{label} — {overall:.0f}/100 '
-                     f'<span style="color:{col}">({band})</span>{cuentas_html}</h3>')
-            body += svg_score_bar(overall, band)
-            body += (f'<p class="caption">Coordinación {coord or 0:.0f} · Amplificación {amp or 0:.0f} · '
-                     f'Anomalía {anom or 0:.0f} · Infraestructura {infra or 0:.0f} · '
-                     f'Densidad red {net or 0:.0f} · Confianza: {conf}</p>')
-            # buscar assessment
-            for a in assessments:
-                if a[1] == cid:
-                    body += f'<p style="font-size:.9rem;color:#334155"><b>Atribución:</b> {a[11]} · confianza {a[12]}<br>'
-                    body += f'<b>Evidencia:</b> {a[13]}<br><b>Falta:</b> {a[14]}</p>'
-                    try:
-                        hyp = json.loads(a[9]) if a[9] else []
-                        if hyp:
-                            body += '<p style="font-size:.82rem;color:#475569"><b>Hipótesis:</b> '
-                            body += " · ".join(f"{h['hypothesis']} {h['label']} ({h['score']})" for h in hyp[:4])
-                            body += "</p>"
-                    except Exception:
-                        pass
-                    break
-            body += "</div>"
-
+    # cuerpo de clusters (por tema)
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -443,6 +520,7 @@ main{{max-width:960px;margin:0 auto;padding:20px 16px 56px}}
 .card h3{{margin-top:0;font-size:1.02rem}}
 .caption{{font-size:.84rem;color:#64748b;margin:.3rem 0}}
 .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}}
+.fimi-pane[hidden], .fimi-pane.hidden{{display:none}}
 a{{color:#c2410c}}
 </style></head>
 <body>
@@ -453,14 +531,13 @@ a{{color:#c2410c}}
 <a href="https://radar.viajeinteligencia.com/pulso-espana.html">💓 pulso</a></p>
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
 <p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en la
-frontera sur de Europa (España-Marruecos-Ceuta-Melilla-Canarias). <strong>Agnóstico al actor</strong>:
-primero se observa la anomalía, después se evalúan hipótesis; la atribución nunca se presume.</p>
+frontera sur de Europa (España-Marruecos-Ceuta-Melilla-Canarias) y dominios asociados.
+<strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
+la atribución nunca se presume.</p>
 
 {funnel_html}
 
-<div class="kpis">{cards}</div>
-
-{body}
+{tabs_ui}
 
 {narr_block}
 
@@ -513,6 +590,29 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo ni cuentas. Los servidores los paga su autor.</p>
 </footer>
 </main>
+<script>
+(function(){{
+  function fimiTab(t){{
+    var i, p, b;
+    var btns=document.querySelectorAll('[data-tema]');
+    for(i=0;i<btns.length;i++){{ b=btns[i];
+      if(b.getAttribute('data-tema')===t){{
+        b.style.background='#c2410c';b.style.color='#fff';b.style.borderColor='#c2410c';
+      }}else{{
+        b.style.background='#fff';b.style.color='#334155';b.style.borderColor='#e2e8f0';
+      }}
+    }}
+    var panes=document.querySelectorAll('.fimi-pane');
+    for(i=0;i<panes.length;i++){{ p=panes[i];
+      if(p.getAttribute('data-tema')===t){{ p.classList.remove('hidden'); }}
+      else {{ p.classList.add('hidden'); }}
+    }}
+  }}
+  window.fimiTab=fimiTab;
+  var hash=(location.hash||'').replace('#','');
+  if(hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')){{ fimiTab(hash); }}
+}})();
+</script>
 </body></html>"""
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
