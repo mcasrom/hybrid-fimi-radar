@@ -147,7 +147,11 @@ def grab_bluesky(query, n=50):
 
 
 def store_sqlite(events):
-    """Inserta eventos en SQLite (tabla events, esquema centralizado)."""
+    """Inserta eventos en SQLite (tabla events, esquema centralizado).
+
+    Cada evento lleva _temas (set de tema_ids). events.tema_id conserva el
+    tema primario (legacy); event_temas guarda la relacion many-to-many para
+    que un evento pueda pertenecer a varios temas sin duplicar la fila."""
     from normalizer.schema import get_conn
     con = get_conn(DB)
     con.executemany(
@@ -155,6 +159,21 @@ def store_sqlite(events):
         " VALUES (?,?,?,?,?,?,?)",
         [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"],
           e.get("tema_id", "frontera_sur")) for e in events])
+    con.commit()
+    # relacion many-to-many: a cada evento (por url o texto) sus temas
+    for e in events:
+        temas = e.get("_temas") or {"frontera_sur"}
+        if not temas:
+            temas = {"frontera_sur"}
+        row = con.execute(
+            "SELECT id FROM events WHERE source=? AND author=? AND timestamp=? AND text=?",
+            (e["source"], e.get("author", ""), e["timestamp"], e["text"])).fetchone()
+        if not row:
+            continue
+        eid = row[0]
+        for t in temas:
+            con.execute("INSERT OR IGNORE INTO event_temas (event_id, tema_id) VALUES (?,?)",
+                        (eid, t))
     con.commit()
     n = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     con.close()
@@ -275,35 +294,48 @@ def main():
         channels = channels or cap.get("telegram_channels", [])
         subreddits = subreddits or cap.get("subreddits", ["spain", "es"])
 
-    # derivar queries por plataforma desde keywords
-    bsky_q = [k["palabra"] for k in keywords if "bluesky" in k.get("plataformas", [])]
-    news_q = [k["palabra"] for k in keywords if "google-news" in k.get("plataformas", [])]
-    masto_q = [k["palabra"] for k in keywords if "mastodon" in k.get("plataformas", [])]
+    # derivar queries por plataforma desde keywords, arrastrando su tema
+    bsky_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "bluesky" in k.get("plataformas", [])]
+    news_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "google-news" in k.get("plataformas", [])]
+    masto_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "mastodon" in k.get("plataformas", [])]
 
     print(f"[captura] {datetime.utcnow().isoformat()} UTC")
     events = []
     for ch in channels:
         print(f"  telegram/{ch} ...")
-        events += grab_telegram(ch)
-    for q in bsky_q:
-        print(f"  bluesky/{q} ...")
-        events += grab_bluesky(q)
-    for q in news_q:
-        print(f"  google-news/{q} ...")
-        events += grab_google_news(q)
+        for e in grab_telegram(ch):
+            e["_temas"] = {"frontera_sur"}
+            events.append(e)
+    for q, tema in bsky_q:
+        print(f"  bluesky/{q} (tema={tema}) ...")
+        for e in grab_bluesky(q):
+            e["_temas"] = {tema}
+            events.append(e)
+    for q, tema in news_q:
+        print(f"  google-news/{q} (tema={tema}) ...")
+        for e in grab_google_news(q):
+            e["_temas"] = {tema}
+            events.append(e)
     for s in subreddits:
         print(f"  reddit/{s} ...")
-        events += grab_reddit_rss(s)
-    for q in masto_q:
-        print(f"  mastodon/{q} ...")
-        events += grab_mastodon(q)
+        for e in grab_reddit_rss(s):
+            e["_temas"] = {"frontera_sur"}
+            events.append(e)
+    for q, tema in masto_q:
+        print(f"  mastodon/{q} (tema={tema}) ...")
+        for e in grab_mastodon(q):
+            e["_temas"] = {tema}
+            events.append(e)
     # RSS feeds (todos los tipos)
     for s in feeds:
         name = s.get("nombre") or s.get("name") or "feed"
         url = s.get("url", "")
+        tema = s.get("tema", "frontera_sur")
         if url:
-            print(f"  rss/{name} ...")
-            events += grab_rss_feed(name, url)
+            print(f"  rss/{name} (tema={tema}) ...")
+            for e in grab_rss_feed(name, url):
+                e["_temas"] = {tema}
+                events.append(e)
 
     if not events:
         print("  No hay fuentes configuradas (config.yaml -> capture) o no se capturó nada.")
@@ -317,6 +349,12 @@ def main():
         if k not in seen:
             seen.add(k)
             uniq.append(e)
+        else:
+            # mismo evento capturado por keyword de otro tema: acumular temas
+            for existing in uniq:
+                if (existing["author"], existing["text"][:80], existing["timestamp"]) == k:
+                    existing.setdefault("_temas", set()).update(e.get("_temas", set()))
+                    break
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     json.dump(uniq, open(OUT, "w"), ensure_ascii=False, indent=1)

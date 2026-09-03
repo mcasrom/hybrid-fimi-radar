@@ -74,6 +74,13 @@ CREATE TABLE IF NOT EXISTS assessments (
      FOREIGN KEY(cluster_id) REFERENCES clusters(id)
  );
 
+CREATE TABLE IF NOT EXISTS event_temas (
+    event_id INTEGER NOT NULL,
+    tema_id TEXT NOT NULL,
+    PRIMARY KEY (event_id, tema_id),
+    FOREIGN KEY(event_id) REFERENCES events(id)
+);
+
 -- Hallazgos positivos persistidos (historial de resultados, no se pierde
 -- cuando el evento deja de ser noticia). Fecha de primera/last detección.
 CREATE TABLE IF NOT EXISTS findings (
@@ -109,6 +116,49 @@ def _ensure_column(conn, table, column, ddl):
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
 
 
+def _ensure_event_temas(conn):
+    """Backfill idempotente de la relacion many-to-many evento<->tema.
+
+    events.tema_id se conserva como tema primario/legacy; event_temas es la
+    fuente de verdad multi-tema. Para los eventos ya existentes (todos con
+    tema_id='frontera_sur'), se crea su fila en event_temas. Es seguro repetir:
+    INSERT OR IGNORE + PK(event_id,tema_id)."""
+    # Backfill: cada evento existente -> su tema_id actual en la relacion
+    conn.execute(
+        "INSERT OR IGNORE INTO event_temas (event_id, tema_id)"
+        " SELECT id, tema_id FROM events WHERE tema_id IS NOT NULL AND tema_id != ''")
+    conn.commit()
+
+
+def _ensure_events_unique(conn):
+    """Dedupe + índice UNIQUE en events sobre la clave natural de captura.
+
+    events no tenía ninguna constraint UNIQUE: el INSERT OR IGNORE de capture
+    no ignoraba nada y cada ciclo de captura re-insertaba eventos ya vistos
+    (13.6k de 16.4k filas eran duplicados), inflando clusters y conteos.
+
+    Clave natural: (source, author, timestamp, substr(text,1,80)) — la misma
+    que capture.py usa para dedupe en memoria. Idempotente: si el índice ya
+    existe, no hace nada.
+    """
+    idx = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='index' AND name='idx_events_natural'").fetchone()
+    if idx:
+        return
+    conn.execute("BEGIN")
+    try:
+        key = "source, author, timestamp, substr(text,1,80)"
+        conn.execute(
+            f"DELETE FROM events WHERE id NOT IN (SELECT MIN(id) FROM events GROUP BY {key})")
+        conn.execute("DELETE FROM event_temas WHERE event_id NOT IN (SELECT id FROM events)")
+        conn.execute(
+            "CREATE UNIQUE INDEX idx_events_natural ON events (source, author, timestamp, substr(text,1,80))")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+
 def get_conn(db_path):
     """Devuelve conexión SQLite con el esquema creado."""
     p = Path(db_path)
@@ -118,5 +168,7 @@ def get_conn(db_path):
     # Migraciones sobre tablas ya existentes (multi-tema, sin romper datos)
     _ensure_column(conn, "events", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_column(conn, "clusters", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
+    _ensure_events_unique(conn)
+    _ensure_event_temas(conn)
     conn.commit()
     return conn
