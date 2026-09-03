@@ -156,6 +156,10 @@ temas:
   geopolitica_ue_marruecos:
     estado: produccion
     nombre: Geopolítica UE-Marruecos
+  politica_nacional:
+    estado: piloto
+    nombre: Política nacional
+    disclaimer: "Este radar está en fase de calibración — el volumen de coordinación legítima en política es alto y el sistema aún está ajustando umbrales."
 
 keywords:
 - palabra: Ceuta
@@ -250,6 +254,31 @@ keywords:
   tema: geopolitica_ue_marruecos
   plataformas:
   - bluesky
+# === Keywords politica_nacional (tema nuevo, estado piloto) ===
+# Riesgo alto de falsos positivos por coordinacion partidista legitima
+# (gabinetes de prensa, movilizacion militante): por eso el tema es PILOTO.
+- palabra: gobierno España oposición
+  tema: politica_nacional
+  plataformas:
+  - google-news
+- palabra: partidos políticos España
+  tema: politica_nacional
+  plataformas:
+  - google-news
+- palabra: congreso senado España
+  tema: politica_nacional
+  plataformas:
+  - google-news
+- palabra: política España elecciones
+  tema: politica_nacional
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: crisis gobierno Sánchez
+  tema: politica_nacional
+  plataformas:
+  - bluesky
+  - google-news
 telegram_canales:
 - elfarodeceuta
 - maldita_es
