@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp INTEGER, source TEXT, author TEXT, title TEXT, url TEXT,
     text TEXT, language TEXT, topic TEXT,
+    tema_id TEXT DEFAULT 'frontera_sur',           -- dominio/alert tematico (multi-tema)
     raw_json TEXT,                                -- observación original (auditable)
     features_json TEXT,                           -- características extraídas
     normalized INTEGER DEFAULT 1
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS clusters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at INTEGER, cluster_label TEXT UNIQUE,
     type TEXT,                                     -- temporal|content|url|mixed
+    tema_id TEXT DEFAULT 'frontera_sur',           -- dominio/alert tematico (multi-tema)
     coordination_score REAL, amplification_score REAL,
     anomaly_score REAL, infrastructure_score REAL,
     network_density REAL, overall_score REAL,
@@ -98,10 +100,23 @@ CREATE TABLE IF NOT EXISTS daily_reports (
 """
 
 
+def _ensure_column(conn, table, column, ddl):
+    """Añade una columna a una tabla SQLite si no existe ya (idempotente).
+    Necesario porque CREATE TABLE IF NOT EXISTS no altera tablas existentes,
+    y la BD de producción ya tiene datos previos a multi-tema."""
+    cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+
 def get_conn(db_path):
     """Devuelve conexión SQLite con el esquema creado."""
     p = Path(db_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(p)
     conn.executescript(SCHEMA)
+    # Migraciones sobre tablas ya existentes (multi-tema, sin romper datos)
+    _ensure_column(conn, "events", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
+    _ensure_column(conn, "clusters", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
+    conn.commit()
     return conn

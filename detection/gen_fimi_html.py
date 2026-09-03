@@ -273,9 +273,12 @@ def main():
         ("02", "Amplificación", "Un <b>mismo titular se repite</b> en varias fuentes en pocas horas. "
          "Hecho observable: la noticia se propaga.", "Indica <b>eco</b> de una narrativa. "
          "Aún no es coordinación ni atribución.", "#e0f2fe", "#0369a1"),
-        ("03", "Coordinación", "Cuentas distintas publican el <b>mismo enlace o texto casi idéntico</b> "
-         "en una ventana corta.", "Señal de posible <b>comportamiento coordinado</b>. "
-         "El radar une esas cuentas en un cluster.", "#fef3c7", "#b45309"),
+        ("03", "Coordinación", "Cuentas de redes sociales distintas publican el <b>mismo enlace o texto "
+         "casi idéntico</b> en una ventana corta (a diferencia del paso 02, donde es el <b>eco editorial</b> "
+         "de los medios/RSS el que se repite: aquí es la pauta de las <b>cuentas</b> la que se iguala).",
+         "Señal de posible <b>comportamiento coordinado</b>. El radar une esas cuentas en un cluster"
+         " — puede ser una campaña de comunicación legítima (partido, ONG, institución) o amplificación "
+         "artificial. El radar no distingue el motivo, solo la estructura.", "#fef3c7", "#b45309"),
         ("04", "Cluster y score", "El radar puntúa el grupo <b>0–100</b> y lo clasifica en banda "
          "NORMAL→WATCH→ANÓMALO→HIGH→CRITICAL.", "Cuanto más alto, más señales de actividad "
          "coordinada <b>observables</b>. Ver KPIs de arriba.", "#fed7aa", "#c2410c"),
@@ -326,6 +329,11 @@ def main():
            Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
       </div>
       {funnel_cards}
+      <div style="margin-top:14px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;
+                  border-radius:8px;font-size:.78rem;color:#78350f;line-height:1.45">
+        <b>Ajuste por tema:</b> el umbral de lo que se considera anómalo se calibra por tema — no todos
+        los temas tienen el mismo volumen de conversación "normal".
+      </div>
       <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px dashed #e2e8f0">
         <p style="font-size:.86rem;color:#334155;margin:0 0 10px"><b>¿Has visto una señal que merezca difundirse?</b>
            Comparte este estado del radar (se actualiza cada 6 h):</p>
@@ -376,7 +384,20 @@ def main():
             overall = overall or 0
             band = band_of(overall)
             col = BAND_COLORS[band]
-            body += f'<div class="card"><h3>{label} — {overall:.0f}/100 <span style="color:{col}">({band})</span></h3>'
+            # nº de cuentas del cluster: se lee del texto del assessment
+            # ("Cluster X con N cuentas, banda ..."). Usa import re local.
+            import re as _re
+            n_cuentas = None
+            for _a in assessments:
+                if _a[1] == cid:
+                    m = _re.search(r"(\d+)\s+cuentas?", str(_a[9] or ""))
+                    if m:
+                        n_cuentas = int(m.group(1))
+                    break
+            cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
+                            if n_cuentas is not None else "")
+            body += (f'<div class="card"><h3>{label} — {overall:.0f}/100 '
+                     f'<span style="color:{col}">({band})</span>{cuentas_html}</h3>')
             body += svg_score_bar(overall, band)
             body += (f'<p class="caption">Coordinación {coord or 0:.0f} · Amplificación {amp or 0:.0f} · '
                      f'Anomalía {anom or 0:.0f} · Infraestructura {infra or 0:.0f} · '

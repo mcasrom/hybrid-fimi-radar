@@ -128,10 +128,10 @@ def main():
 
         # guardar cluster
         cur = conn.execute(
-            "INSERT INTO clusters (created_at, cluster_label, type, coordination_score,"
+            "INSERT INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
             " amplification_score, anomaly_score, infrastructure_score, network_density,"
-            " overall_score, confidence) VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (int(time.time()), label, "mixed", s.get("coordination_score", 0),
+            " overall_score, confidence) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (int(time.time()), label, "mixed", "frontera_sur", s.get("coordination_score", 0),
              comp["amplification"], comp["anomaly"], comp["infrastructure"],
              comp["network_density"], overall, att["confidence"]))
         cluster_id = cur.lastrowid

@@ -151,9 +151,10 @@ def store_sqlite(events):
     from normalizer.schema import get_conn
     con = get_conn(DB)
     con.executemany(
-        "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text)"
-        " VALUES (?,?,?,?,?,?)",
-        [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"]) for e in events])
+        "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text, tema_id)"
+        " VALUES (?,?,?,?,?,?,?)",
+        [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"],
+          e.get("tema_id", "frontera_sur")) for e in events])
     con.commit()
     n = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     con.close()
