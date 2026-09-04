@@ -64,86 +64,187 @@ feeds:
 - nombre: El Faro de Ceuta
   url: https://elfarodeceuta.com/feed/
   tipo: official
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Periódico local Ceuta. Cobertura frontera sur.
 - nombre: Ceuta TV
   url: https://ceutatv.com/feed/
   tipo: official
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: TV local Ceuta. Cobertura frontera sur.
 - nombre: Melilla Hoy
   url: https://www.melillahoy.es/rss
   tipo: official
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Periódico local Melilla. Cobertura frontera sur.
 - nombre: El Pais Espana
   url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
   tipo: media
+  bias: center-left
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/el-pais/
+  note: 'Referencia prensa española. MBFC: Left-Center, High factual.'
 - nombre: BBC Mundo
   url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
   tipo: media
+  bias: least-biased
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/bbc-news/
+  note: 'BBC World Service. MBFC: Least Biased, Mostly Factual.'
 - nombre: Al Jazeera
   url: https://www.aljazeera.com/xml/rss/all.xml
   tipo: media
+  bias: center-left
+  reliability: mixed
+  transparency: low
+  factcheck_url: https://mediabiasfactcheck.com/al-jazeera/
+  note: 'Financiada por Qatar. Sesgo pro-Palestina en opiniones. MBFC: Mixed factual.'
 - nombre: El Mundo
   url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
   tipo: media
+  bias: center-right
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/el-mundo/
+  note: 'Línea conservadora. MBFC: Right-Center, Mostly Factual.'
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
   pais: MA
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Diáspora marroquí en Francia. Crítico con gobierno MA.
 - nombre: Algerie360 (FR)
   url: https://www.algerie360.com/feed/
   tipo: media
   pais: DZ
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Medio argelino francófono. Línea oficial.
 - nombre: Hespress Maroc (FR)
   url: https://fr.hespress.com/feed/
   tipo: media
   pais: MA
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Independiente marroquí. Presión gubernamental.
 - nombre: TSA Algerie (FR)
   url: https://www.tsa-algerie.com/feed/
   tipo: media
   pais: DZ
+  bias: center-left
+  reliability: mostly-factual
+  transparency: medium
+  note: Independiente argelino. Línea opositora.
 - nombre: AMI Mauritanie (FR)
   url: https://fr.ami.mr/feed
   tipo: oficial
   pais: MR
+  bias: state
+  reliability: mostly-factual
+  transparency: medium
+  note: Agencia oficial Mauritania.
 # === Fuentes añadidas 2026-09-02: análisis + francofonía + OSINT ===
 - nombre: Le Monde Diplomatique
   url: https://www.monde-diplomatique.fr/rss
   tipo: analisis
   idioma: fr
+  bias: center-left
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/le-monde-bias/
+  note: 'Análisis geopolítico. MBFC: Left-Center, High factual.'
 - nombre: Foreign Affairs
   url: https://www.foreignaffairs.com/rss.xml
   tipo: analisis
   idioma: en
+  bias: least-biased
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/foreign-affairs/
+  note: 'CFR. Análisis. MBFC: Least Biased, High factual.'
 - nombre: RFI France
   url: https://www.rfi.fr/fr/rss
   tipo: media
   idioma: fr
+  bias: least-biased
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
+  note: 'Radio pública francesa. MBFC: Least Biased, Mostly Factual.'
 - nombre: France 24
   url: https://www.france24.com/fr/rss
   tipo: media
   idioma: fr
+  bias: least-biased
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/france24/
+  note: 'TV pública francesa. Verificador IFCN. MBFC: Least Biased, High.'
 - nombre: EUvsDisinfo
   url: https://euvsdisinfo.eu/feed/
   tipo: osint
   idioma: en
+  bias: center-left
+  reliability: mostly-factual
+  transparency: medium
+  factcheck_url: https://mediabiasfactcheck.com/eu-vs-disinformation-bias/
+  note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo anti-derecha.
 - nombre: Bellingcat
   url: https://www.bellingcat.com/feed/
   tipo: osint
   idioma: en
+  bias: center-left
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/bellingcat/
+  note: OSINT independiente. Investigaciones originales. Países Bajos.
 - nombre: Middle East Eye
   url: https://www.middleeasteye.net/rss
   tipo: media
   idioma: en
+  bias: center-left
+  reliability: mostly-factual
+  transparency: low
+  factcheck_url: https://mediabiasfactcheck.com/middle-east-eye/
+  note: 'Cobertura ME. Vínculos con Qatar cuestionados. MBFC: Mostly Factual.'
 - nombre: EUobserver
   url: https://euobserver.com/rss
   tipo: media
   idioma: en
+  bias: center-left
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/eu-observer/
+  note: 'Periodismo UE independiente. Bruselas. MBFC: Left-Center, High.'
 - nombre: The Intercept
   url: https://theintercept.com/feed/
   tipo: investigacion
   idioma: en
+  bias: left
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/the-intercept/
+  note: 'Investigación. Incidente de fabricación 2016. MBFC: Left, Mostly Factual.'
 - nombre: Le Desk Marruecos
   url: https://ledesk.ma/feed/
   tipo: media
   idioma: fr
   pais: MA
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Independiente marroquí. Línea pro-democrática.
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
 temas:
@@ -156,8 +257,8 @@ temas:
   politica_nacional:
     estado: piloto
     nombre: Política nacional
-    disclaimer: "Este radar está en fase de calibración — el volumen de coordinación legítima en política es alto y el sistema aún está ajustando umbrales."
-
+    disclaimer: Este radar está en fase de calibración — el volumen de coordinación legítima en política es alto y el sistema
+      aún está ajustando umbrales.
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -188,7 +289,6 @@ keywords:
 - palabra: migración
   plataformas:
   - mastodon
-# === Keywords añadidas 2026-09-02: francofonía + OSINT + FIMI ===
 - palabra: Ceuta crise
   plataformas:
   - bluesky
