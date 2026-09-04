@@ -131,10 +131,10 @@ def _cluster_comps(c, a):
     }
 
 
-def _cluster_detail_html(c, a, comps):
-    """Detalle completo de un cluster: barra overall + componentes con barra
-    (X/100) + atribución + hipótesis (solo 2 más probables). Sin frases por
-    componente: están en la leyenda única."""
+def _cluster_detail_html(c, a, comps, contenido=None):
+    """Detalle completo de un cluster: contenido real (titulares) + barra
+    overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
+    más probables). Sin frases por componente: están en la leyenda única."""
     import re as _re
     overall = c["overall_score"] or 0
     band = band_of(overall)
@@ -153,6 +153,28 @@ def _cluster_detail_html(c, a, comps):
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{cuentas_html}</div>')
+
+    # CONTENIDO REAL del cluster: de qué habla (titulares + enlaces). Se
+    # muestran los 2-3 textos más repetidos del cluster, con su fuente.
+    content_html = ""
+    if contenido:
+        import html as _html_esc
+        list_items = ""
+        for item in contenido[:3]:
+            txt = _html_esc.escape(str(item.get("text", "")))[:180]
+            url = _html_esc.escape(str(item.get("url", "")))
+            freq = item.get("n", 1)
+            url_html = (f' · <a href="{url}" target="_blank" rel="noopener noreferrer" '
+                        f'style="color:#c2410c;font-size:.76rem">fuente</a>' if url else "")
+            freq_html = (f' <span style="color:#94a3b8;font-size:.72rem">(x{freq})</span>'
+                         if freq > 1 else "")
+            list_items += (f'<div style="font-size:.84rem;color:#1e293b;line-height:1.4;'
+                           f'padding:4px 0">{txt}{freq_html}{url_html}</div>')
+        content_html = (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;'
+                        f'padding:8px 12px;margin:6px 0">'
+                        f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
+                        f'text-transform:uppercase;margin-bottom:2px">De qué habla este cluster</div>'
+                        f'{list_items}</div>')
 
     # barras de componentes (X/100 junto a la barra)
     bars = ""
@@ -200,15 +222,16 @@ def _cluster_detail_html(c, a, comps):
         except Exception:
             pass
 
-    return h + svg_score_bar(overall, band) + bars + attr + hyp_html
+    return h + content_html + svg_score_bar(overall, band) + bars + attr + hyp_html
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
     defecto. El resto (ANOMALOUS/WATCH) queda resumido en un bloque colapsado
     "ver los N restantes", y dentro de él cada uno puede expandirse.
+    contenido_map: dict cluster_id -> [ {text,url,n}, ... ] titulares reales.
     """
     if not clus:
         return (f'<div class="card"><h3>{titulo_vacio}</h3>'
@@ -216,6 +239,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
                 'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
     # índice assessments por cluster_id
     asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
+    contenido_map = contenido_map or {}
     order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
     expandidos = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
     resto = [c for c in order if band_of(c["overall_score"] or 0) not in EXPANDED_BANDS]
@@ -225,7 +249,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
     for c in expandidos:
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
-        out += (f'<div class="card">{_cluster_detail_html(c, a, comps)}</div>')
+        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]))}</div>')
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): bloque colapsado ---
     if resto:
@@ -242,7 +266,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
                           f'<summary style="cursor:pointer;font-size:.86rem;color:#334155">'
                           f'{c["cluster_label"]} — <b style="color:{col}">{overall:.0f}/100'
                           f'</b> <span style="color:{col}">({band})</span> · ver detalle</summary>'
-                          f'<div style="margin-top:6px">{_cluster_detail_html(c, a, comps)}</div>'
+                          f'<div style="margin-top:6px">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]))}</div>'
                           f'</details>')
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -295,6 +319,31 @@ def main():
     con.row_factory = sqlite3.Row  # acceso por nombre de columna (robusto al orden)
     clusters = con.execute("SELECT * FROM clusters ORDER BY overall_score DESC").fetchall()
     assessments = con.execute("SELECT * FROM assessments").fetchall()
+    # contenido real por cluster (cluster_events): cluster_id -> top titulares
+    # agrupados por frecuencia, para mostrar DE QUÉ habla cada cluster.
+    contenido_map = {}
+    try:
+        ce = con.execute(
+            "SELECT ce.cluster_id, ce.text, ce.url, ce.ts FROM cluster_events ce"
+            " ORDER BY ce.cluster_id, ce.ts").fetchall()
+        from collections import OrderedDict
+        _acc = OrderedDict()
+        for r in ce:
+            _t = (str(r["text"] or "")).strip()
+            if not _t:
+                continue
+            _key = r["cluster_id"]
+            bucket = _acc.setdefault(_key, {})
+            entry = bucket.get(_t)
+            if entry:
+                entry["n"] += 1
+            else:
+                bucket[_t] = {"text": _t, "url": str(r["url"] or ""), "n": 1}
+        for _cid, _bucket in _acc.items():
+            contenido_map[_cid] = sorted(_bucket.values(),
+                                         key=lambda x: -x["n"])[:4]
+    except Exception:
+        contenido_map = {}
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
     ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
@@ -521,7 +570,8 @@ def main():
             _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
-            _cl_txt = render_component_legend() + render_cluster_cards(_tema_cl, assessments)
+            _cl_txt = render_component_legend() + render_cluster_cards(
+                _tema_cl, assessments, contenido_map=contenido_map)
         _sel = " style='background:#c2410c;color:#fff;border-color:#c2410c'" if i == 0 else ""
         tema_tabs += (f"<button type='button' data-tema='{_t}' data-estado='{_estado}'"
                       f" onclick='fimiTab(\"{_t}\")'"
