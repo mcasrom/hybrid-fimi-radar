@@ -1043,6 +1043,38 @@ def main():
         f"style='color:#fff;background:#1185fe;border-radius:8px;padding:9px 16px;text-decoration:none;"
         f"font-size:.85rem;font-weight:700'>🦋 Compartir estado (Bluesky)</a>"
         f"</div>")
+
+    # --- FORMULARIO NEWSLETTER POR EMAIL (vista resumen) ---
+    # checkboxes de tema + email + envío a /api/subscribe (doble opt-in).
+    def _nombre_tema_clean(_t):
+        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        return re.sub(r"\s*\(.*\)\s*", "", _m.get("nombre", _t)).strip().title()
+
+    _email_checks = []
+    for _t in temas[:6]:
+        _email_checks.append(
+            f"<label style='display:inline-flex;align-items:center;gap:6px;"
+            f"font-size:.82rem;color:#334155;margin:2px 12px 2px 0;cursor:pointer'>"
+            f"<input type='checkbox' value='{_t}'> {_nombre_tema_clean(_t)}</label>")
+    newsletter_form = (
+        "<div id='newsletterBox' style='margin-top:20px;padding:18px 20px;border:1px solid #e2e8f0;"
+        "border-radius:14px;background:#fff'>"
+        "<div style='font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:2px'>"
+        "📬 Newsletter por email</div>"
+        "<div style='font-size:.78rem;color:#64748b;margin-bottom:10px'>Resumen semanal (cada lunes) "
+        "con el estado de los diales de los temas que elijas. Doble opt-in: confirmarás por email "
+        "antes de recibir nada. Baja en un clic desde cada correo.</div>"
+        f"<div style='margin-bottom:8px'>{''.join(_email_checks)}</div>"
+        "<div style='display:flex;gap:8px;flex-wrap:wrap;max-width:380px'>"
+        "<input id='nlEmail' type='email' placeholder='tu@email.com' "
+        "style='flex:1;min-width:200px;padding:9px 12px;border:1px solid #d0d5dd;border-radius:8px;"
+        "font-size:.85rem;font-family:inherit'>"
+        "<button id='nlBtn' type='button' onclick='newsletterClick()' "
+        "style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:8px;"
+        "padding:9px 16px;font-weight:700;font-size:.85rem;font-family:inherit'>Suscribirme</button>"
+        "</div>"
+        "<div id='nlMsg' style='font-size:.8rem;color:#16a34a;margin-top:8px;min-height:1.2em'></div>"
+        "</div>")
     resumen_html = (
         f"<div id='vistaResumen'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 4px'><b>¿Qué está pasando ahora?</b> "
@@ -1050,6 +1082,7 @@ def main():
         f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px'>"
         f"{dial_cards}</div>"
         f"{_share_resumen_buttons}"
+        f"{newsletter_form}"
         f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
         f"Tendencia: hallazgos de hoy frente a hace 48 h por tema. Actualizado cada 6 h.</div>"
         f"</div>")
@@ -1174,7 +1207,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
-  <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo ni cuentas. Los servidores los paga su autor.</p>
+  <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo. Los servidores los paga su autor; el newsletter solo usa tu email para el envío y nada más.</p>
   {version_html}
 </footer>
 </main>
@@ -1265,6 +1298,45 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   }}
   window.abrirDetalle=abrirDetalle;
   window.volverResumen=volverResumen;
+
+  // Newsletter por email (vista resumen): POST /api/subscribe (doble opt-in).
+  window.newsletterClick = function(){{
+    var box=document.getElementById('newsletterBox');
+    var email=(document.getElementById('nlEmail').value||'').trim().toLowerCase();
+    var msg=document.getElementById('nlMsg');
+    var btn=document.getElementById('nlBtn');
+    if(!msg){{ return; }}
+    msg.style.color='#16a34a';
+    if(!email){{ msg.textContent='Escribe un email válido.'; msg.style.color='#dc2626'; return; }}
+    var temas=[];
+    var cbs=document.querySelectorAll('#newsletterBox input[type=checkbox]');
+    for(var i=0;i<cbs.length;i++){{ if(cbs[i].checked){{ temas.push(cbs[i].value); }} }}
+    if(temas.length===0){{ msg.textContent='Marca al menos un tema.'; msg.style.color='#dc2626'; return; }}
+    btn.disabled=true; msg.textContent='Enviando…';
+    fetch('/api/subscribe',{{
+      method:'POST',
+      headers:{{'Content-Type':'application/json'}},
+      body:JSON.stringify({{email:email, temas:temas}})
+    }}).then(function(r){{ return r.json(); }}).then(function(d){{
+      btn.disabled=false;
+      if(d && d.ok){{
+        msg.textContent='✅ Revisa tu email y confirma la suscripción (doble opt-in).';
+      }}else{{
+        msg.textContent='No se pudo suscribir: '+(d&&d.error?d.error:'inténtalo más tarde.');
+        msg.style.color='#dc2626';
+      }}
+    }}).catch(function(){{
+      btn.disabled=false;
+      msg.textContent='Error de red. Inténtalo de nuevo.'; msg.style.color='#dc2626';
+    }});
+  }};
+
+  // Mensaje al volver de confirmar/baja (query param de email_api).
+  var q=(location.search||'').replace('?','').split('&');
+  for(var i=0;i<q.length;i++){{
+    if(q[i]==='confirmado=1'){{ alert('✅ Suscripción confirmada. Cada lunes recibirás el resumen.'); }}
+    else if(q[i]==='baja=1'){{ alert('Te has dado de baja del newsletter del radar.'); }}
+  }}
 
   var hash=(location.hash||'').replace('#','');
   // deep-link #tema abre directamente el detalle de ese tema
