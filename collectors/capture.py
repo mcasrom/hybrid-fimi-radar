@@ -357,6 +357,10 @@ def main():
                     break
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    # _temas es un set (no serializable a JSON): convertir a lista para el dump
+    for e in uniq:
+        if isinstance(e.get("_temas"), set):
+            e["_temas"] = sorted(e["_temas"])
     json.dump(uniq, open(OUT, "w"), ensure_ascii=False, indent=1)
     total = store_sqlite(uniq)
     print(f"  capturados {len(uniq)} eventos nuevos; total en SQLite: {total}")
