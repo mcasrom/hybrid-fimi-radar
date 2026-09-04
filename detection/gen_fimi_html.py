@@ -517,8 +517,6 @@ def main():
             # KPI de narrativas amplificadas
             narr_kpi = kpi("Narrativas amplificadas", len(narratives),
                            f"top: {narratives[0]['seed'][:28]}...", "#fff7ed")
-            # gráfico con BARRAS HTML/CSS (más fiables y legibles que SVG:
-            # título completo sin cortar + barra con color por intensidad).
             # intensidad = eventos x fuentes / (ventana_horas + 1)
             top_n = narratives[:8]
             def _intensity(n):
@@ -536,9 +534,8 @@ def main():
                     col = "#fbbf24"
                 else:
                     col = "#22c55e"
-                # escapar caracteres para HTML seguro
                 import html as _html
-                title = _html.escape(n["seed"][:80])
+                title = _html.escape(n["seed"][:110])
                 # eventos completos de esta narrativa (desplegable)
                 eventos_html = ""
                 for ev in n.get("eventos", []):
@@ -555,24 +552,31 @@ def main():
                     eventos_html += (
                         f"<div style='padding:6px 8px;border-top:1px solid #f1f5f9;font-size:.8rem;color:#334155'>"
                         f"<b style='color:#c2410c'>{dt}</b> [{src}]{url_html}<br>{txt}</div>")
+                # fila de ancho COMPLETO (igual que el resto del dashboard): título,
+                # métricas, barra de intensidad y desplegable del texto.
                 rows += (
-                    f"<div style='margin:14px 0;padding:10px 12px;border:1px solid #e2e8f0;"
+                    f"<div style='margin:10px 0;padding:12px 14px;border:1px solid #e2e8f0;"
                     f"border-radius:10px;background:#fff'>"
-                    f"<div style='font-size:.9rem;font-weight:600;color:#1e293b;line-height:1.35'>{title}</div>"
+                    f"<div style='display:flex;justify-content:space-between;gap:10px;align-items:baseline'>"
+                    f"<div style='font-size:.9rem;font-weight:600;color:#1e293b;line-height:1.35;flex:1'>{title}</div>"
+                    f"<span style='font-size:.78rem;color:{col};font-weight:700;white-space:nowrap'>{pct}%</span></div>"
                     f"<div style='font-size:.78rem;color:#64748b;margin:2px 0 8px'>"
                     f"{n['n_events']} eventos · {n['n_sources']} fuentes · ventana {n['window_hours']}h</div>"
-                    f"<div style='background:#f1f5f9;border-radius:6px;height:14px;overflow:hidden'>"
-                    f"<div style='width:{pct}%;height:100%;background:{col};border-radius:6px'></div></div>"
+                    f"<div style='height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden'>"
+                    f"<div style='width:{pct}%;height:100%;background:{col};border-radius:5px'></div></div>"
                     f"<details style='margin-top:8px'><summary style='font-size:.8rem;color:#c2410c;cursor:pointer'>"
                     f"Ver texto completo ({n['n_events']} eventos)</summary>{eventos_html}</details>"
                     f"</div>")
-            narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap'>"
-                          f"{narr_kpi}"
-                          f"<div style='flex:1;min-width:280px'><h3 style='margin:0'>Narrativas amplificadas</h3>"
-                          f"<p class='caption'>Mismo titular compartido por varias fuentes en una ventana. "
-                          f"Indica amplificación de una noticia, no coordinación de cuentas. Sin atribución. "
-                          f"Intensidad = eventos × fuentes ÷ ventana en horas (menos tiempo = más amplificación).</p>"
-                          f"{rows}</div></div></div>")
+            # cabecera del bloque con KPI compacto integrado a la izquierda
+            narr_block = (
+                f"<div class='card'><h3 style='margin:0 0 2px'>Narrativas amplificadas "
+                f"<span style='color:#c2410c;font-size:.9rem'>({len(top_n)})</span></h3>"
+                f"<p class='caption'>Mismo titular compartido por varias fuentes en una ventana. "
+                f"Indica amplificación de una noticia, no coordinación de cuentas. Sin atribución. "
+                f"Intensidad = eventos × fuentes ÷ ventana en horas (menos tiempo = más amplificación).</p>"
+                f"<div style='display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap'>"
+                f"{narr_kpi}"
+                f"<div style='flex:1;min-width:0'>{rows}</div></div></div>")
         else:
             narr_kpi = kpi("Narrativas amplificadas", 0, "ninguna ≥3 fuentes", "#f8fafc")
             narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap'>"
