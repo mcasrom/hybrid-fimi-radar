@@ -6,6 +6,7 @@ data/processed/
 data/radar.db
 data/ecr.db
 data/promocion_*.json
+data/fuentes_estado.json
 .bsky_creds.env
 .streamlit/
 logs/
