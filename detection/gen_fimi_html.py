@@ -82,14 +82,132 @@ def kpi_banda_alerta(clus):
             f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
-    """Renderiza las tarjetas de clusters (vista activa) para una lista dada.
+COMPONENT_LABELS = {
+    "coordination_score": "Coordinación",
+    "anomaly_score": "Anomalía",
+    "infrastructure_score": "Infraestructura",
+    "network_density": "Densidad de red",
+}
 
-    Presentación interpretable sin conocer el motor:
-    - cada componente con su máximo real (/100) y una frase en lenguaje llano;
-    - la amplificación es una señal GLOBAL del tema (no por cluster), así que
-      NO se repite aquí; se muestra una sola vez a nivel de pestaña;
-    - hipótesis H1-H6 traducidas a español, top 2-3 por probabilidad.
+EXPANDED_BANDS = ("CRITICAL", "HIGH")  # solo estas muestran detalle por defecto
+
+
+def render_component_legend():
+    """Leyenda única de los componentes (qué mide cada uno). Se muestra una
+    sola vez, arriba del listado de clusters, no repetida en cada tarjeta."""
+    rows = ""
+    for key in ("coordination_score", "anomaly_score",
+                "infrastructure_score", "network_density"):
+        label = COMPONENT_LABELS[key]
+        frase = COMPONENT_ES[key]
+        rows += (f'<div style="display:flex;gap:10px;align-items:flex-start;min-width:170px;flex:1 1 40%">'
+                 f'<b style="color:#334155;font-size:.82rem;min-width:110px">{label}</b>'
+                 f'<span style="font-size:.76rem;color:#64748b;line-height:1.4">{frase}</span></div>')
+    return (f'<div class="card" style="padding:14px 16px;background:#f8fafc">'
+            f'<h3 style="font-size:.9rem;margin:0 0 8px">Cómo leer los componentes (0-100)</h3>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:8px 18px">{rows}</div>'
+            f'<p class="caption" style="margin:8px 0 0">Las barras miden cada señal de 0 a 100. '
+            f'El score global pondera estos 4 componentes + la amplificación del tema.</p></div>')
+
+
+def _cluster_comps(c, a):
+    """Componentes 0-100 de un cluster: preferir el assessment (ya normalizado,
+    ej. coordination_score del assessment = synchronization=coord*12 cap 100);
+    si no hay assessment, derivar con las mismas fórmulas que run_fimi."""
+    if a:
+        return {
+            "coordination_score": a["coordination_score"] or 0,
+            "anomaly_score": a["anomaly_score"] or 0,
+            "infrastructure_score": a["infrastructure_score"] or 0,
+            "network_density": a["network_density"] or 0,
+        }
+    coord = c["coordination_score"] or 0
+    return {
+        "coordination_score": min(100.0, coord * 12),
+        "anomaly_score": c["anomaly_score"] or 0,
+        "infrastructure_score": c["infrastructure_score"] or 0,
+        "network_density": min(100.0, coord * 6),
+    }
+
+
+def _cluster_detail_html(c, a, comps):
+    """Detalle completo de un cluster: barra overall + componentes con barra
+    (X/100) + atribución + hipótesis (solo 2 más probables). Sin frases por
+    componente: están en la leyenda única."""
+    import re as _re
+    overall = c["overall_score"] or 0
+    band = band_of(overall)
+    col = BAND_COLORS[band]
+    n_cuentas = None
+    if a:
+        m = _re.search(r"(\d+)\s+cuentas?", str(a["assessment"] or ""))
+        if m:
+            n_cuentas = int(m.group(1))
+    cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
+                    if n_cuentas is not None else "")
+
+    h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
+         f'<b style="font-size:1.02rem">{c["cluster_label"]}</b>'
+         f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
+         f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
+         f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
+         f'{cuentas_html}</div>')
+
+    # barras de componentes (X/100 junto a la barra)
+    bars = ""
+    for key in ("coordination_score", "anomaly_score",
+                "infrastructure_score", "network_density"):
+        val = comps.get(key, 0) or 0
+        val = max(0.0, min(100.0, val))
+        bcol = BAND_COLORS[band_of(val)]
+        bars += (f'<div style="display:flex;align-items:center;gap:8px;margin:5px 0">'
+                 f'<span style="font-size:.8rem;color:#475569;width:118px;min-width:118px">'
+                 f'{COMPONENT_LABELS[key]}</span>'
+                 f'<div style="flex:1;height:9px;background:#f1f5f9;border-radius:5px;overflow:hidden">'
+                 f'<div style="width:{val:.0f}%;height:100%;background:{bcol};border-radius:5px"></div>'
+                 f'</div>'
+                 f'<b style="font-size:.8rem;color:#334155;width:46px;text-align:right">'
+                 f'{val:.0f}/100</b></div>')
+
+    # atribución
+    attr = ""
+    if a:
+        attr = (f'<p style="font-size:.8rem;color:#475569;border-top:1px dashed #e2e8f0;'
+                f'padding-top:6px;margin:8px 0 4px">'
+                f'<b>Atribución:</b> {a["attribution"]} · confianza {a["attribution_confidence"]}'
+                f' — {a["attribution_evidence"]}</p>')
+
+    # hipótesis: solo las 2 más probables
+    hyp_html = ""
+    if a:
+        try:
+            hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
+            hyp = sorted(hyp, key=lambda x: -(x.get("score") or 0))
+            if hyp:
+                chips = ""
+                for x in hyp[:2]:
+                    code = x.get("hypothesis", "?")
+                    es = HYPOTHESIS_ES.get(code, {"t": x.get("label", code), "d": ""})
+                    pct = int(round((x.get("score") or 0) * 100))
+                    chips += (f'<span style="display:inline-flex;align-items:center;gap:8px;'
+                              f'background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;'
+                              f'border-radius:999px;padding:3px 12px;font-size:.78rem;margin:2px 6px 2px 0">'
+                              f'<b>{es["t"]}</b><span style="color:#c2410c;font-weight:700">{pct}%</span>'
+                              f'</span>')
+                hyp_html = (f'<div style="margin-top:2px"><span style="font-size:.74rem;color:#94a3b8">'
+                            f'Explicación más probable: </span>{chips}</div>')
+        except Exception:
+            pass
+
+    return h + svg_score_bar(overall, band) + bars + attr + hyp_html
+
+
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
+    """Renderiza los clusters de un tema.
+
+    Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
+    defecto. El resto (ANOMALOUS/WATCH) queda resumido en un bloque colapsado
+    "ver los N restantes", y dentro de él cada uno puede expandirse.
     """
     if not clus:
         return (f'<div class="card"><h3>{titulo_vacio}</h3>'
@@ -97,106 +215,42 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
                 'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
     # índice assessments por cluster_id
     asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
-    b = ""
-    for c in clus:
-        cid = c["id"]
-        label = c["cluster_label"]
-        overall = c["overall_score"] or 0
-        band = band_of(overall)
-        col = BAND_COLORS[band]
-        a = asm_by_cid.get(cid)
-        import re as _re
-        # nº de cuentas del cluster: del texto del assessment
-        n_cuentas = None
-        if a:
-            m = _re.search(r"(\d+)\s+cuentas?", str(a["assessment"] or ""))
-            if m:
-                n_cuentas = int(m.group(1))
-        cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
-                        if n_cuentas is not None else "")
+    order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
+    expandidos = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
+    resto = [c for c in order if band_of(c["overall_score"] or 0) not in EXPANDED_BANDS]
 
-        # Componentes en escala 0-100: preferir el assessment (ya normalizado,
-        # ej. coordination_score del assessment = synchronization=coord*12 cap 100);
-        # si no hay assessment, derivar con las mismas fórmulas que run_fimi.
-        if a:
-            comps = {
-                "coordination_score": a["coordination_score"] or 0,
-                "anomaly_score": a["anomaly_score"] or 0,
-                "infrastructure_score": a["infrastructure_score"] or 0,
-                "network_density": a["network_density"] or 0,
-            }
-        else:
-            coord = c["coordination_score"] or 0
-            comps = {
-                "coordination_score": min(100.0, coord * 12),
-                "anomaly_score": c["anomaly_score"] or 0,
-                "infrastructure_score": c["infrastructure_score"] or 0,
-                "network_density": min(100.0, coord * 6),
-            }
+    out = ""
+    # --- clusters HIGH/CRITICAL: detalle completo visible ---
+    for c in expandidos:
+        a = asm_by_cid.get(c["id"])
+        comps = _cluster_comps(c, a)
+        out += (f'<div class="card">{_cluster_detail_html(c, a, comps)}</div>')
 
-        # Cabecera + barra de overall
-        b += (f'<div class="card"><h3 style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
-              f'<span>{label}</span>'
-              f'<span style="font-size:1.3rem;color:{col}">{overall:.0f}/100</span>'
-              f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
-              f'border-radius:999px;padding:2px 10px;font-weight:700">{band}</span>'
-              f'{cuentas_html}</h3>')
-        b += svg_score_bar(overall, band)
+    # --- resto (ANOMALOUS/WATCH/NORMAL): bloque colapsado ---
+    if resto:
+        rest_rows = ""
+        for c in resto:
+            a = asm_by_cid.get(c["id"])
+            comps = _cluster_comps(c, a)
+            overall = c["overall_score"] or 0
+            band = band_of(overall)
+            col = BAND_COLORS[band]
+            # línea compacta + detalle plegable dentro
+            rest_rows += (f'<details style="margin:6px 0;border:1px solid #e2e8f0;border-radius:8px;'
+                          f'padding:6px 10px">'
+                          f'<summary style="cursor:pointer;font-size:.86rem;color:#334155">'
+                          f'{c["cluster_label"]} — <b style="color:{col}">{overall:.0f}/100'
+                          f'</b> <span style="color:{col}">({band})</span> · ver detalle</summary>'
+                          f'<div style="margin-top:6px">{_cluster_detail_html(c, a, comps)}</div>'
+                          f'</details>')
+        plural = "clusters" if len(resto) != 1 else "cluster"
+        out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
+                f'<details><summary style="cursor:pointer;font-weight:600;color:#475569;font-size:.9rem">'
+                f'Ver los {len(resto)} {plural} restantes '
+                f'(WATCH/ANOMALOUS, sin nivel de alerta)</summary>'
+                f'<div style="margin-top:8px">{rest_rows}</div></details></div>')
 
-        # Componentes con su máximo y frase
-        for key in ("coordination_score", "anomaly_score",
-                    "infrastructure_score", "network_density"):
-            val = comps.get(key, 0) or 0
-            label_comp = {
-                "coordination_score": "Coordinación",
-                "anomaly_score": "Anomalía",
-                "infrastructure_score": "Infraestructura",
-                "network_density": "Densidad de red",
-            }[key]
-            frase = COMPONENT_ES[key]
-            b += (
-                f'<div style="display:flex;align-items:center;gap:10px;margin:7px 0">'
-                f'<div style="flex:1;min-width:0">'
-                f'<div style="display:flex;justify-content:space-between;font-size:.82rem">'
-                f'<b style="color:#334155">{label_comp}</b>'
-                f'<span style="color:#475569;font-weight:700">{val:.0f}/100</span></div>'
-                f'<div style="font-size:.72rem;color:#94a3b8;line-height:1.35">{frase}</div>'
-                f'<div style="height:7px;background:#f1f5f9;border-radius:4px;margin-top:3px;overflow:hidden">'
-                f'<div style="width:{min(100,val):.0f}%;height:100%;background:{BAND_COLORS[band_of(val)]};'
-                f'border-radius:4px"></div></div>'
-                f'</div></div>')
-
-        # Atribución (solo si hay assessment)
-        if a:
-            b += (f'<p style="font-size:.84rem;color:#334155;border-top:1px dashed #e2e8f0;'
-                  f'padding-top:8px;margin-top:8px"><b>Atribución:</b> {a["attribution"]} · '
-                  f'confianza {a["attribution_confidence"]}<br>')
-            b += f'<b>Evidencia:</b> {a["attribution_evidence"]}<br>' \
-                 f'<b>Falta:</b> {a["missing_evidence"]}</p>'
-            # Hipótesis traducidas, top 2-3 por score (mayor a menor)
-            try:
-                hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
-                hyp = sorted(hyp, key=lambda h: -(h.get("score") or 0))
-                if hyp:
-                    rows_h = ""
-                    for h in hyp[:3]:
-                        code = h.get("hypothesis", "?")
-                        es = HYPOTHESIS_ES.get(code, {"t": h.get("label", code), "d": ""})
-                        pct = int(round((h.get("score") or 0) * 100))
-                        rows_h += (
-                            f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
-                            f'border-top:1px solid #f1f5f9">'
-                            f'<b style="color:#334155;font-size:.82rem;min-width:44px">{es["t"]}</b>'
-                            f'<span style="font-size:.78rem;color:#64748b;flex:1">{es["d"]}</span>'
-                            f'<span style="font-size:.8rem;color:#c2410c;font-weight:700">{pct}%</span>'
-                            f'</div>')
-                    b += (f'<div style="font-size:.78rem;color:#94a3b8;margin-top:2px">'
-                          f'<b>¿Qué puede explicar este patrón?</b> (hipótesis alternativas, '
-                          f'de más a menos probable)</div>{rows_h}')
-            except Exception:
-                pass
-        b += "</div>"
-    return b
+    return out
 
 
 def main():
@@ -461,7 +515,8 @@ def main():
         if not _tema_cl:
             _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
         else:
-            _cl_txt = render_cluster_cards(_tema_cl, assessments)
+            # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
+            _cl_txt = render_component_legend() + render_cluster_cards(_tema_cl, assessments)
         _sel = " style='background:#c2410c;color:#fff;border-color:#c2410c'" if i == 0 else ""
         tema_tabs += (f"<button type='button' data-tema='{_t}' onclick='fimiTab(\"{_t}\")'"
                       f" style='cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;"
