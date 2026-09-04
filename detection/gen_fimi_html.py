@@ -567,16 +567,15 @@ def main():
                     f"<details style='margin-top:8px'><summary style='font-size:.8rem;color:#c2410c;cursor:pointer'>"
                     f"Ver texto completo ({n['n_events']} eventos)</summary>{eventos_html}</details>"
                     f"</div>")
-            # cabecera del bloque con KPI compacto integrado a la izquierda
+            # bloque a ancho COMPLETO: h3 + caption + filas full-width, sin
+            # KPI lateral que desplace el contenido a una columna estrecha.
             narr_block = (
                 f"<div class='card'><h3 style='margin:0 0 2px'>Narrativas amplificadas "
                 f"<span style='color:#c2410c;font-size:.9rem'>({len(top_n)})</span></h3>"
                 f"<p class='caption'>Mismo titular compartido por varias fuentes en una ventana. "
                 f"Indica amplificación de una noticia, no coordinación de cuentas. Sin atribución. "
                 f"Intensidad = eventos × fuentes ÷ ventana en horas (menos tiempo = más amplificación).</p>"
-                f"<div style='display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap'>"
-                f"{narr_kpi}"
-                f"<div style='flex:1;min-width:0'>{rows}</div></div></div>")
+                f"{rows}</div>")
         else:
             narr_kpi = kpi("Narrativas amplificadas", 0, "ninguna ≥3 fuentes", "#f8fafc")
             narr_block = (f"<div class='card'><div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap'>"
