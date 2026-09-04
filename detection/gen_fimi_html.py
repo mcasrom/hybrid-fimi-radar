@@ -1135,11 +1135,22 @@ def main():
 <meta property="og:description" content="Radar OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="FIMI Radar · Multi-tema">
 <meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FIMI Radar">
 <style>
 :root{{color-scheme:light}}
 body{{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f8fafc;color:#0f172a}}
@@ -1180,6 +1191,8 @@ la atribución nunca se presume.</p>
 
 {hist_html}
 
+{detalle_wrap_close}
+
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
 <p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras. Para añadir o
@@ -1214,7 +1227,6 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 </div>
 
 {salud_html}
-{detalle_wrap_close}
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
@@ -1226,6 +1238,11 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   {version_html}
 </footer>
 </main>
+<script>
+if ('serviceWorker' in navigator) {{
+  navigator.serviceWorker.register('/sw.js').catch(function(e){{ console.warn('SW no registrado', e); }});
+}}
+</script>
 <script>
 (function(){{
   var shareMap = window.FIMI_SHARE || {{}};
