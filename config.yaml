@@ -259,6 +259,18 @@ temas:
     nombre: Política nacional
     disclaimer: Este radar está en fase de calibración — el volumen de coordinación legítima en política es alto y el sistema
       aún está ajustando umbrales.
+    # Tuning por tema (piloto): la coordinación humano/partidista legítima tiene
+    # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
+    # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,
+    # evitando marcar ruido político ordinario como amenaza.
+    scoring:
+      weights:
+        synchronization: 0.15
+        content_similarity: 0.15
+        amplification: 0.10
+        infrastructure: 0.10
+        network_density: 0.10
+        anomaly: 0.40
 keywords:
 - palabra: Ceuta
   plataformas:

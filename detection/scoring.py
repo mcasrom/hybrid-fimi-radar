@@ -31,12 +31,25 @@ def band_for(score, bands):
     return "NORMAL"
 
 
-def compute_scores(components, config):
+def _tema_weights(config, tema):
+    """Pesos específicos del tema (config->temas-><tema>->scoring->weights).
+
+    Permite calibrar por tema: p.ej. politica_nacional (piloto) da mucho más
+    peso a la anomalía para no marcar como ANOMALOUS la coordinación humana
+    partidista legítima (sync+contenido altos pero anomalía ~0).
+    """
+    if not tema:
+        return {}
+    return (config or {}).get("temas", {}).get(tema, {}).get("scoring", {}).get("weights", {}) or {}
+
+
+def compute_scores(components, config, tema=None):
     """Combina componentes en overall_score ponderado.
 
     components: dict con synchronization, content_similarity, amplification,
     infrastructure, network_density (0-100) y anomaly (0-100).
-    weights: configurables en config.yaml->scoring->weights.
+    weights: configurables en config.yaml->scoring->weights, con override por
+    tema en config.yaml->temas-><tema>->scoring->weights (merge sobre global).
     """
     w = (config or {}).get("scoring", {}).get("weights", {})
     default_w = {
@@ -46,6 +59,7 @@ def compute_scores(components, config):
     }
     for k, v in default_w.items():
         w.setdefault(k, v)
+    w.update(_tema_weights(config, tema))
 
     overall = sum(components.get(k, 0) * w.get(k, 0) for k in default_w)
     overall = round(min(100.0, max(0.0, overall)), 1)

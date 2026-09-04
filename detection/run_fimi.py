@@ -133,7 +133,7 @@ def main():
             "network_density": min(100, s.get("coordination_score", 0) * 6),
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
-        overall, _ = compute_scores(comp, cfg)
+        overall, _ = compute_scores(comp, cfg, tema=tema)
         band = band_for(overall, bands)
 
         # FIX: el historial (tabla findings) debe guardar el score que tenia el
@@ -202,7 +202,7 @@ def main():
 
     # --- REPORT ---
     print("[7/7] Informe")
-    report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0)
+    report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0, cfg, tema)
     rep_path = ROOT / "reports" / f"fimi_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.md"
     rep_path.write_text(report, encoding="utf-8")
 
@@ -240,7 +240,7 @@ def _infra_score(detail):
     return min(100, n * 15)
 
 
-def _build_report(df, summary, details, bands, amp, cascades, narratives, elapsed):
+def _build_report(df, summary, details, bands, amp, cascades, narratives, elapsed, cfg=None, tema=None):
     lines = []
     lines.append("# European Hybrid & FIMI Radar — Informe")
     lines.append("")
@@ -262,14 +262,14 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             "network_density": min(100, s.get("coordination_score", 0) * 6),
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
-        overall, _ = compute_scores(comp, load_bands(None))
+        overall, _ = compute_scores(comp, cfg, tema=tema)
         hyp = classify_hypotheses(s)
         att = attribution(hyp, infra_shared=comp["infrastructure"] > 30)
         lines.append(f"### {label} — {s.get('accounts',0)} cuentas")
         lines.append(f"- Coordinación {comp['synchronization']:.0f} · Amplificación {comp['amplification']:.0f} · "
                      f"Anomalía {comp['anomaly']:.0f} · Infraestructura {comp['infrastructure']:.0f} · "
                      f"Densidad red {comp['network_density']:.0f}")
-        lines.append(f"- **Overall {overall:.0f}/100** · banda {band_for(overall, load_bands(None))}")
+        lines.append(f"- **Overall {overall:.0f}/100** · banda {band_for(overall, bands)}")
         lines.append(f"- Atribución: {att['actor']} · confianza {att['confidence']}")
         lines.append(f"- Hipótesis principal: {hyp[0]['label']} (score {hyp[0]['score']})")
         lines.append("")
