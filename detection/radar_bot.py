@@ -139,7 +139,7 @@ def my_subs(destino):
 
 
 def main():
-    if not TOKEN or not TOKEN.startswith("4") or ":" not in TOKEN:
+    if not TOKEN or ":" not in TOKEN:
         print("[bot] FIMI_TELEGRAM_BOT_TOKEN no configurado en env/.env — saliendo.")
         return
     print(f"[bot] arrancando, {len(TEMAS)} temas: {TEMAS}")
