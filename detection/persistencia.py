@@ -22,9 +22,10 @@ def _epoch_day():
     return int(datetime.now(timezone.utc).timestamp())
 
 
-def persist_findings(conn, narratives, clusters=None, cascades=None):
+def persist_findings(conn, narratives, clusters=None, cascades=None, tema_id="frontera_sur"):
     """Persiste los hallazgos del ciclo, sin duplicar los del mismo día.
 
+    tema_id: tema al que pertenecen estos hallazgos (para tendencia por tema).
     Devuelve (insertados, total_acumulado).
     """
     hoy = _today()
@@ -43,13 +44,13 @@ def persist_findings(conn, narratives, clusters=None, cascades=None):
             continue
         conn.execute(
             "INSERT INTO findings (fecha, tipo, titulo, detalle, n_sources, n_events,"
-            " window_hours, fuentes, intensidad, url) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            " window_hours, fuentes, intensidad, url, tema_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (_epoch_day(), "amplificacion_narrativa", titulo,
              f"{n['n_events']} eventos, {n['n_sources']} fuentes, ventana {n.get('window_hours',0)}h",
              n.get("n_sources", 0), n.get("n_events", 0), n.get("window_hours", 0),
              json.dumps(n.get("source_names", []), ensure_ascii=False),
              n.get("n_events", 0) * n.get("n_sources", 0) / max(n.get("window_hours", 1) + 1, 0.5),
-             ""))
+             "", tema_id))
         inserted += 1
 
     # clusters (si los hay)
@@ -59,12 +60,12 @@ def persist_findings(conn, narratives, clusters=None, cascades=None):
             continue
         conn.execute(
             "INSERT INTO findings (fecha, tipo, titulo, detalle, n_sources, n_events,"
-            " window_hours, fuentes, intensidad, url) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            " window_hours, fuentes, intensidad, url, tema_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (_epoch_day(), "cluster", titulo,
              f"score {c.get('overall_score',0):.0f}/100, {c.get('accounts',0)} cuentas",
              c.get("accounts", 0), c.get("events", 0), 0,
              json.dumps(c.get("evidence", {}), ensure_ascii=False),
-             c.get("overall_score", 0), ""))
+             c.get("overall_score", 0), "", tema_id))
         inserted += 1
 
     # cascadas
@@ -74,11 +75,11 @@ def persist_findings(conn, narratives, clusters=None, cascades=None):
             continue
         conn.execute(
             "INSERT INTO findings (fecha, tipo, titulo, detalle, n_sources, n_events,"
-            " window_hours, fuentes, intensidad, url) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            " window_hours, fuentes, intensidad, url, tema_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (_epoch_day(), "cascada", titulo,
              f"{c.get('n_accounts',0)} cuentas, {c.get('n_events',0)} eventos",
              c.get("n_accounts", 0), c.get("n_events", 0), c.get("time_span_s", 0) / 3600,
-             "[]", c.get("speed_accounts_hour", 0), ""))
+             "[]", c.get("speed_accounts_hour", 0), "", tema_id))
         inserted += 1
 
     conn.commit()
@@ -118,7 +119,7 @@ def build_daily_report(conn, narratives, clusters):
     return resumen
 
 
-def persist_findings_from_run(conn, narratives, summary, cascades):
+def persist_findings_from_run(conn, narratives, summary, cascades, tema_id="frontera_sur"):
     """Wrapper: persiste narrativas + clusters (del summary) + cascadas."""
     clusters_list = []
     for label, s in (summary or {}).items():
@@ -127,7 +128,7 @@ def persist_findings_from_run(conn, narratives, summary, cascades):
             "accounts": s.get("accounts", 0), "events": s.get("events", 0),
             "evidence": s.get("evidence", {}),
         })
-    return persist_findings(conn, narratives, clusters_list, cascades)
+    return persist_findings(conn, narratives, clusters_list, cascades, tema_id=tema_id)
 
 
 def detectar_sostenidas(conn, min_dias=3):

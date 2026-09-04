@@ -200,7 +200,7 @@ def main():
 
     # --- PERSISTIR hallazgos positivos (historial) + informe diario ---
     from detection.persistencia import persist_findings_from_run, build_daily_report, detectar_sostenidas
-    inserted, total_findings = persist_findings_from_run(conn, narratives, summary, cascades)
+    inserted, total_findings = persist_findings_from_run(conn, narratives, summary, cascades, tema_id=tema)
     diario = build_daily_report(conn, narratives, list(summary.values()) if summary else [])
     daily_path = ROOT / "reports" / "informe_diario.md"
     daily_path.write_text(diario, encoding="utf-8")

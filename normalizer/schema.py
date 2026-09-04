@@ -106,7 +106,8 @@ CREATE TABLE IF NOT EXISTS findings (
     window_hours REAL,
     fuentes TEXT,
     intensidad REAL,
-    url TEXT
+    url TEXT,
+    tema_id TEXT DEFAULT 'frontera_sur'  -- tema al que pertenece el hallazgo
 );
 
 -- Informes diarios (resumen de hallazgos del día)
@@ -181,6 +182,7 @@ def get_conn(db_path):
     # Migraciones sobre tablas ya existentes (multi-tema, sin romper datos)
     _ensure_column(conn, "events", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_column(conn, "clusters", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
+    _ensure_column(conn, "findings", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()

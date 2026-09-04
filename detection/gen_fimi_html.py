@@ -83,6 +83,35 @@ def kpi_banda_alerta(clus):
             f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
 
 
+def render_dial_svg(etiqueta, valor, color):
+    """Velocímetro SVG simple (sin librería). valor 0-100, color de banda.
+
+    Semicírculo base gris + aguja que apunta a la posición del valor.
+    El color de la aguja y de la etiqueta indica el estado (banda).
+    """
+    import math as _m
+    cx, cy, r = 100, 100, 72
+    L = _m.pi * r  # longitud del semicírculo
+    # punto del arco superior para un porcentaje (0% izquierda, 100% derecha)
+    theta = _m.radians(180 - 180.0 * (min(100, max(0, valor)) / 100.0))
+    px = cx + r * _m.cos(theta)
+    py = cy - r * _m.sin(theta)
+    # aguja más corta que el radio
+    nx = cx + (r - 14) * _m.cos(theta)
+    ny = cy - (r - 14) * _m.sin(theta)
+    path_d = f"M {cx - r} {cy} A {r} {r} 0 0 1 {cx + r} {cy}"
+    return (f'<svg viewBox="0 0 200 112" width="180" height="101" role="img" '
+            f'aria-label="{etiqueta}: {valor:.0f}/100">'
+            f'<path d="{path_d}" fill="none" stroke="#e2e8f0" stroke-width="11" '
+            f'stroke-linecap="round" stroke-dasharray="{L:.1f} {L:.1f}"/>'
+            f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" '
+            f'stroke="{color}" stroke-width="4" stroke-linecap="round"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="6" fill="{color}"/>'
+            f'<text x="{cx - r - 4}" y="{cy + 8}" font-size="9" fill="#94a3b8">0</text>'
+            f'<text x="{cx + r + 1}" y="{cy + 8}" font-size="9" fill="#94a3b8">100</text>'
+            f'</svg>')
+
+
 COMPONENT_LABELS = {
     "coordination_score": "Coordinación",
     "anomaly_score": "Anomalía",
@@ -427,6 +456,52 @@ def main():
         sostenidas = detectar_sostenidas(con, min_dias=3)
     except Exception:
         sostenidas = []
+
+    # --- TENDENCIA POR TEMA (para la vista resumen de diales) ---
+    # Métrica: nº de hallazgos del tema HOY vs hace 48h (2 días). Subiendo si
+    # hoy > hace48, o hay cluster HIGH/CRITICAL nuevo hoy que no estaba hace 48h.
+    # findings.tema_id ahora existe (migración); los anteriores son frontera_sur.
+    import datetime as _dtc
+    from datetime import timedelta as _td
+    _hoy_d = datetime.now(timezone.utc).date()
+    _hace48 = _hoy_d - _td(days=2)
+    tendencias = {}
+    try:
+        for _t in temas:
+            _hoy_n = con.execute(
+                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND date(fecha,'unixepoch')=?",
+                (_t, _hoy_d.isoformat())).fetchone()[0]
+            _h48_n = con.execute(
+                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND date(fecha,'unixepoch')=?",
+                (_t, _hace48.isoformat())).fetchone()[0]
+            # clusters HIGH/CRITICAL del tema HOY en vista activa
+            _cl_tema = [c for c in clusters if c["tema_id"] == _t]
+            _high_hoy = sum(1 for c in _cl_tema if (c["overall_score"] or 0) >= 60)
+            # clusters HIGH/CRITICAL hace 48h (findings cluster de ese tema con >=60)
+            _high_48 = con.execute(
+                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND tipo='cluster'"
+                " AND date(fecha,'unixepoch')=? AND intensidad>=60",
+                (_t, _hace48.isoformat())).fetchone()[0]
+            # decidir tendencia
+            if _hoy_n == 0 and _h48_n == 0 and _high_hoy == 0 and _high_48 == 0:
+                estado = "recopilando"
+            elif _high_hoy > _high_48:
+                estado = "subiendo"
+            elif _hoy_n > _h48_n:
+                estado = "subiendo"
+            elif _hoy_n < _h48_n:
+                estado = "bajando"
+            else:
+                estado = "estable"
+            tendencias[_t] = {
+                "estado": estado,
+                "hoy": _hoy_n, "hace48": _h48_n,
+                "high_hoy": _high_hoy, "high_48": _high_48,
+            }
+    except Exception as _exc_t:
+        for _t in temas:
+            tendencias[_t] = {"estado": "estable", "hoy": 0, "hace48": 0,
+                              "high_hoy": 0, "high_48": 0}
     con.close()
 
     # narrativas amplificadas (mismo titular en varias fuentes)
@@ -853,6 +928,72 @@ def main():
   }})();
   </script>"""
 
+    # ============================================================
+    # VISTA RESUMEN (por defecto): diales por tema, nada más
+    # ============================================================
+    # color/valor del dial según tendencia + frase de contexto
+    ESTADO_DIAL = {
+        "subiendo":   {"txt": "Subiendo", "color": "#d97706", "valor": 75},
+        "estable":    {"txt": "Estable",  "color": "#16a34a", "valor": 40},
+        "bajando":    {"txt": "Bajando",  "color": "#64748b", "valor": 20},
+        "recopilando":{"txt": "En recopilación", "color": "#94a3b8", "valor": 10},
+    }
+    dial_cards = ""
+    for _t in temas:
+        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        _nombre = _m.get("nombre", _t)
+        _estado_cfg = _m.get("estado", "produccion")
+        _tr = tendencias.get(_t, {"estado": "estable", "hoy": 0, "hace48": 0,
+                                  "high_hoy": 0, "high_48": 0})
+        # contexto: piloto -> aviso; si no, frase de tendencia
+        if _estado_cfg == "piloto":
+            _frase = "piloto en calibración — lectura con cautela"
+            _estado_dial = "recopilando"
+            _estilo = ESTADO_DIAL["recopilando"]
+        else:
+            _estado_dial = _tr.get("estado", "estable")
+            _estilo = ESTADO_DIAL.get(_estado_dial, ESTADO_DIAL["estable"])
+            if _estado_dial == "recopilando":
+                _frase = "sin datos suficientes aún (se está acumulando histórico)"
+            elif _estado_dial == "subiendo":
+                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+                if _tr["high_hoy"] > _tr["high_48"]:
+                    _frase = f"{_tr['high_hoy']} clusters en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
+            elif _estado_dial == "bajando":
+                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+            else:
+                _frase = f"{_tr['hoy']} hallazgos hoy, sin cambio frente a hace 48h"
+        dial_cards += (
+            f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;"
+            f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
+            f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;"
+            f"letter-spacing:.04em'>{_nombre}</div>"
+            f"{render_dial_svg(_nombre, _estilo['valor'], _estilo['color'])}"
+            f"<div style='font-size:1.5rem;font-weight:800;color:{_estilo['color']};line-height:1.1'>"
+            f"{_estilo['txt']}</div>"
+            f"<div style='font-size:.8rem;color:#64748b;margin:4px 0 10px;min-height:2.4em;line-height:1.35'>"
+            f"{_frase}</div>"
+            f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
+            f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
+            f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
+            f"Ver detalle de este tema</button></div>")
+    resumen_html = (
+        f"<div id='vistaResumen'>"
+        f"<p style='font-size:.9rem;color:#334155;margin:10px 0 4px'><b>¿Qué está pasando ahora?</b> "
+        f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px'>"
+        f"{dial_cards}</div>"
+        f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
+        f"Tendencia: hallazgos de hoy frente a hace 48 h por tema. Actualizado cada 6 h.</div>"
+        f"</div>")
+    # el detalle completo queda oculto por defecto, detrás de "ver detalle"
+    detalle_wrap_open = "<div id='vistaDetalle' hidden>"
+    detalle_wrap_close = "</div>"
+    resumen_html += (f"<button type='button' onclick='volverResumen()' id='btnVolver' hidden "
+                     f"style='cursor:pointer;border:1px solid #c2410c;background:#fff;color:#c2410c;"
+                     f"border-radius:999px;padding:7px 16px;font-weight:700;font-size:.84rem;"
+                     f"font-family:inherit'>← Volver al resumen</button>")
+
     # cuerpo de clusters (por tema)
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
@@ -893,6 +1034,10 @@ a{{color:#c2410c}}
 catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
  <strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
 la atribución nunca se presume.</p>
+
+{resumen_html}
+
+{detalle_wrap_open}
 
 <script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
@@ -937,6 +1082,8 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 - Actualizado automáticamente cada 6h. Última actualización: {now}.
 </p>
 </div>
+
+{detalle_wrap_close}
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
@@ -1015,10 +1162,34 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
     pane.scrollIntoView({{behavior:'smooth', block:'nearest'}});
   }}
   window.fimiResto=fimiResto;
+
+  // Navegación 2 vistas: resumen (diales) por defecto; detalle tras pulsar.
+  function abrirDetalle(t){{
+    var R=document.getElementById('vistaResumen');
+    var D=document.getElementById('vistaDetalle');
+    var B=document.getElementById('btnVolver');
+    if(R){{ R.style.display='none'; }}
+    if(D){{ D.removeAttribute('hidden'); }}
+    if(B){{ B.removeAttribute('hidden'); }}
+    fimiTab(t);
+    window.scrollTo({{top:0, behavior:'smooth'}});
+  }}
+  function volverResumen(){{
+    var R=document.getElementById('vistaResumen');
+    var D=document.getElementById('vistaDetalle');
+    var B=document.getElementById('btnVolver');
+    if(R){{ R.style.display='block'; }}
+    if(D){{ D.setAttribute('hidden',''); }}
+    if(B){{ B.setAttribute('hidden',''); }}
+    window.scrollTo({{top:0, behavior:'smooth'}});
+  }}
+  window.abrirDetalle=abrirDetalle;
+  window.volverResumen=volverResumen;
+
   var hash=(location.hash||'').replace('#','');
-  var inicial = (hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')) ? hash : (document.querySelector('[data-tema]')||{{}}).getAttribute('data-tema');
-  if(inicial){{ fimiTab(inicial); }}
-}})();
+  // deep-link #tema abre directamente el detalle de ese tema
+  if(hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')){{ abrirDetalle(hash); }}
+}});
 </script>
 </body></html>"""
 
