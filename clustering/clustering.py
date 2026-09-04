@@ -48,13 +48,24 @@ def community_labels(graph):
     return label
 
 
-def merge_clusters(feat_df, graph, config):
+def _label_prefix(tema):
+    """Prefijo único por tema para los labels de cluster.
+
+    La columna clusters.cluster_label es UNIQUE GLOBAL en la BD, pero el
+    contador de cluster resetea a 0 en cada run Y por cada tema. Sin prefijo,
+    dos temas distintos generan 'cluster_000'... y chocan (IntegrityError).
+    """
+    return f"{tema}_" if tema else ""
+
+
+def merge_clusters(feat_df, graph, config, tema=None):
     """Combina DBSCAN (features) y comunidades (grafo) en cluster_id definitivo.
 
     - Si DBSCAN da cluster (no -1), se usa ese cluster_id.
     - Si no, se usa la comunidad del grafo si el nodo tiene vecinos.
     - Si nada, cluster_id = -1 (sin cluster, normal).
     """
+    pfx = _label_prefix(tema)
     out = feat_df.copy()
     out["cluster_id"] = out["cluster_id"] if "cluster_id" in out.columns else -1
     comm = community_labels(graph)
@@ -64,24 +75,27 @@ def merge_clusters(feat_df, graph, config):
     for a, row in out.iterrows():
         c = row["cluster_id"]
         if c is not None and c != -1:
-            final.append(f"dbscan_{int(c)}")
+            final.append(f"{pfx}dbscan_{int(c)}")
         else:
             co = row["community_id"]
             if co != -1:
-                final.append(f"comm_{int(co)}")
+                final.append(f"{pfx}comm_{int(co)}")
             else:
                 final.append(None)
     out["cluster_label"] = final
     return out
 
 
-def cluster_by_components(feat_df, edges_df, config):
+def cluster_by_components(feat_df, edges_df, config, tema=None):
     """Clustering por COMPONENTES CONEXAS del grafo de coordinación fuerte.
 
     Este es el método principal y el que hace pasar el TEST: cada grupo real de
     coordinación (B temporal, C URL, D texto, E mixto) forma su propia componente
     conexa en el grafo de aristas fuertes, por lo que queda aislado de las
     cuentas normales A (que no tienen aristas fuertes).
+
+    `tema` se usa como prefijo del label para garantizar unicidad global
+    (cluster_label es UNIQUE en la BD y el contador resetea por tema/run).
     """
     g = nx.Graph()
     if isinstance(edges_df, pd.DataFrame):
@@ -100,10 +114,11 @@ def cluster_by_components(feat_df, edges_df, config):
     comps = list(nx.connected_components(g))
     big = [c for c in comps if len(c) >= config["thresholds"]["min_cluster_size"]]
     big_sorted = sorted(big, key=len, reverse=True)
+    pfx = _label_prefix(tema)
     label_map = {}
     for i, comp in enumerate(big_sorted):
         for node in comp:
-            label_map[node] = f"cluster_{i:03d}"
+            label_map[node] = f"{pfx}cluster_{i:03d}"
 
     for a in out.index:
         if a in label_map:

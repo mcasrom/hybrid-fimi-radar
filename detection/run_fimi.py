@@ -83,7 +83,7 @@ def main():
 
     # --- CLUSTERING ---
     print("[5/7] Clustering (componentes conexas)")
-    merged = cluster_by_components(scored, edges_df, cfg)
+    merged = cluster_by_components(scored, edges_df, cfg, tema=tema)
     summary = cluster_summary(merged, edges_df, cfg)
     details = {}
     sub_clustered = None
