@@ -1141,10 +1141,11 @@ a{{color:#c2410c}}
 </style></head>
 <body>
 <main>
-<p style="font-size:.85rem"><a href="https://radar.viajeinteligencia.com">← radar</a> ·
-<a href="https://radar.viajeinteligencia.com/enjambre-granada.html">🌍 enjambre</a> ·
-<a href="https://radar.viajeinteligencia.com/nivel-embalses.html">💧 embalses</a> ·
-<a href="https://radar.viajeinteligencia.com/pulso-espana.html">💓 pulso</a></p>
+<p style="font-size:.82rem">
+<a href="#metodologia" style="color:#c2410c">Metodología</a> · 
+<a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · 
+<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a>
+</p>
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
 <p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en el
 catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
@@ -1168,7 +1169,7 @@ la atribución nunca se presume.</p>
 {hist_html}
 
 <div class="card">
-<h3>Fuentes y búsquedas activas</h3>
+<h3 id="fuentes">Fuentes y búsquedas activas</h3>
 <p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras. Para añadir o
 quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 <div style="display:flex;gap:24px;flex-wrap:wrap">
@@ -1188,7 +1189,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 </div>
 
 <div class="card">
-<h3>Metodología</h3>
+<h3 id="metodologia">Metodología</h3>
 <p class="caption">
 - Fuentes: Bluesky (autenticado), Telegram público, Google News RSS, medios internacionales y RSS oficiales.<br>
 - Bot de Telegram <b><a href="https://t.me/Sieg_politica_bot" target="_blank" rel="noopener noreferrer" style="color:#229ed9">@Sieg_politica_bot</a></b>: suscríbete para recibir avisos cuando cambie el estado de tus temas.
@@ -1204,11 +1205,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Ecosistema ViajeInteligencia</b><br>
-    <a href="https://www.viajeinteligencia.com" style="color:#c2410c">Principal</a> ·
-    <a href="https://nearme.viajeinteligencia.com" style="color:#c2410c">NearMe</a> ·
-    <a href="https://radar.viajeinteligencia.com" style="color:#c2410c">Radar</a> ·
-    <a href="https://radar.viajeinteligencia.com/estado.html" style="color:#c2410c">Estado de fuentes</a>
+    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
