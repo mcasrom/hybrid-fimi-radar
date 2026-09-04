@@ -1035,15 +1035,15 @@ catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
  <strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
 la atribución nunca se presume.</p>
 
-{resumen_html}
+ {resumen_html}
 
-{detalle_wrap_open}
+ {funnel_html}
+
+ {detalle_wrap_open}
 
 <script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
-{funnel_html}
-
-{tabs_ui}
+ {tabs_ui}
 
 {narr_block}
 
@@ -1189,7 +1189,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   var hash=(location.hash||'').replace('#','');
   // deep-link #tema abre directamente el detalle de ese tema
   if(hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')){{ abrirDetalle(hash); }}
-}});
+}})();
 </script>
 </body></html>"""
 
