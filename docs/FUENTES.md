@@ -1,66 +1,118 @@
 # Fuentes y palabras clave — European Hybrid & FIMI Radar
 
-Todo se configura en `config.yaml`. Este documento es el inventario real (verificado 31/08/2026).
+Todo se configura en `config.yaml`. Este documento es el inventario real + notas de
+fiabilidad editorial (verificado 04/09/2026).
 
 ## Cómo añadir / eliminar
 
 1. Editar `config.yaml`.
-2. Para **añadir un feed**: añadir una entrada a la lista `feeds`:
+2. Para **añadir un feed RSS** (la metadata editorial es IMPORTANTE para la auditoría):
    ```yaml
    feeds:
      - nombre: "Nombre visible"
        url: "https://.../feed/"
-       tipo: media        # media | oficial | opendata
+       tipo: media        # media | oficial | analisis | osint | investigacion | opendata
        pais: MA           # opcional: MA, DZ, MR, ES, etc.
+       bias: center-left  # OP -> least-biased | center | center-left | center-right | left | right | state
+       reliability: mostly-factual  # OP -> high | mostly-factual | mixed
+       transparency: medium         # OP -> high | medium | low
+       factcheck_url: "https://mediabiasfactcheck.com/..."  # OP -> enlace MBFC
+       note: "Contexto editorial breve donde sea útil."
    ```
-3. Para **añadir palabras de búsqueda**: añadir a `keywords`:
-   ```yaml
-   keywords:
-     - palabra: "Ceuta"
-       plataformas: [bluesky, mastodon]   # donde se busca: bluesky | google-news | mastodon
-   ```
+   Los campos `bias/reliability/transparency` alimentan la card **"Salud y fiabilidad
+   de las fuentes"** del dashboard y se usan para marcar fuentes a usar con cautela
+   en el análisis FIMI. Investígalos (Media Bias/Fact Check, Ad Fontes, NewsGuard).
+3. Para **añadir palabras de búsqueda**: añadir a `keywords` (ver sección abajo).
 4. Para **eliminar**: quitar la entrada. El cron 6h lo aplica en el siguiente ciclo.
 5. Guardar y el cron lo recoge automáticamente (no hace falta reiniciar nada).
 
-> Nota: para verificar que un feed responde, probar con:
-> `python -c "import feedparser; print(len(feedparser.parse('URL').entries))"`
+## Metadata editorial aplicada (auditoría 2026-09-04)
 
-## Feeds RSS activos (13)
+Fechada en MBFC + Ad Fontes. 22 feeds, 22 con `bias`, 13 con `factcheck_url` formal.
 
-| # | Nombre | País | Tipo | URL |
-|---|---|---|---|---|
-| 1 | El Faro de Ceuta | ES (Ceuta) | media | https://elfarodeceuta.com/feed/ |
-| 2 | Ceuta TV | ES (Ceuta) | media | https://ceutatv.com/feed/ |
-| 3 | Melilla Hoy | ES (Melilla) | media | https://www.melillahoy.es/rss |
-| 4 | El País España | ES | media | https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada |
-| 5 | BBC Mundo | UK | media | https://feeds.bbci.co.uk/news/world/europe/rss.xml |
-| 6 | Al Jazeera | QA | media | https://www.aljazeera.com/xml/rss/all.xml |
-| 7 | El Mundo | ES | media | https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml |
-| 8 | MITECO embalses | ES | opendata | https://estadoembalses.es/api/embalses |
-| 9 | Yabiladi Maroc (FR) | MA | media | https://www.yabiladi.com/rss/ |
-| 10 | Algerie360 (FR) | DZ | media | https://www.algerie360.com/feed/ |
-| 11 | Hespress Maroc (FR) | MA | media | https://fr.hespress.com/feed/ |
-| 12 | TSA Algérie (FR) | DZ | media | https://www.tsa-algerie.com/feed/ |
-| 13 | AMI Mauritanie (FR) | MR | oficial | https://fr.ami.mr/feed |
+| Sesgo (bias) | N | Fuentes |
+|---|---|---|
+| least-biased (neutral) | 5 | BBC Mundo, Foreign Affairs, France 24, RFI France (+1) |
+| center (centro) | 6 | El Faro de Ceuta, Ceuta TV, Melilla Hoy, Yabiladi, Hespress, Le Desk |
+| center-left (centro-izq) | 8 | El País, Al Jazeera, Le Monde Diplo, TSA, EUvsDisinfo, Bellingcat, MEE, EUobserver |
+| center-right (centro-der) | 1 | El Mundo |
+| left (izquierda) | 1 | The Intercept |
+| state (estatal) | 1 | AMI Mauritanie |
 
-## Palabras clave activas (9)
+### Fiabilidad (reliability)
+- **high (5)**: El País, Le Monde Diplo, Foreign Affairs, France 24, EUobserver
+- **mostly-factual (15)**: mayoría
+- **mixed (2)**: Al Jazeera (MBFC: Left-Center, Mixed factual), EUvsDisinfo (proyecto
+  EEAS/UE, contrarrelato ruso, sesgo anti-derecha según MBFC)
+- **low (0)**: ninguna
 
-| Palabra | Plataformas |
-|---|---|
-| Ceuta | bluesky, mastodon |
-| Melilla | bluesky, mastodon |
-| frontera Marruecos | bluesky |
-| migración España | bluesky |
-| Ceuta Melilla frontera | google-news |
-| migración Canarias | google-news |
-| España Marruecos | google-news |
-| Ceuta | mastodon |
-| migración | mastodon |
+### Fuentes a usar con cautela en análisis FIMI
+- **Al Jazeera** (reliability mixed, transparency low) — financiada por Qatar, sesgo
+  pro-Palestina marcado en opinión.
+- **EUvsDisinfo** (sesgo anti-derecha) — es la HERRAMIENTA oficial de la UE para detectar
+  desinfo rusa, no una fuente neutra.
+- **Middle East Eye** (transparency low) — vínculos con Qatar cuestionados (Wikipedia).
+- **AMI Mauritanie** (state) — agencia oficial MR, refleja posición del gobierno.
+
+## Corroboration score (dinámico, automático)
+
+`detection/health_fuentes.py` calcula para cada fuente el % de eventos corroborados por
+>=-1 evento de OTRA fuente en la misma ventana (±2h, 90d). Es un proxy de independencia:
+
+- **Baja corroboration** (Bellingcat 60%, Le Monde Diplo 74%) = fuentes de análisis/OSINT
+  que publican **investigaciones originales** sin paralelo de agencia — esperado, NO es
+  bandera roja.
+- **Alta corroboration** (breaking news al 95-100%) = noticias cubiertas en simultáneo por
+  varias fuentes; válido pero menos "único".
+
+Interpretación: una fuente con corroboration BAJA y además fiabilidad mixed/low desbloquea
+alerta de precaución.
+
+## Feeds RSS activos
+
+| # | Nombre | País | Tipo | Sesgo | Fiabilidad |
+|---|---|---|---|---|---|
+| 1 | El Faro de Ceuta | ES (Ceuta) | media | centro | mayormente factual |
+| 2 | Ceuta TV | ES (Ceuta) | media | centro | mayormente factual |
+| 3 | Melilla Hoy | ES (Melilla) | media | centro | mayormente factual |
+| 4 | El País España | ES | media | centro-izq | alta |
+| 5 | BBC Mundo | UK | media | neutral | mayormente factual |
+| 6 | Al Jazeera | QA | media | centro-izq | mixta (aviso) |
+| 7 | El Mundo | ES | media | centro-der | mayormente factual |
+| 8 | Yabiladi Maroc (FR) | MA | media | centro | mayormente factual |
+| 9 | Algerie360 (FR) | DZ | media | centro | mayormente factual |
+| 10 | Hespress Maroc (FR) | MA | media | centro | mayormente factual |
+| 11 | TSA Algérie (FR) | DZ | media | centro-izq | mayormente factual |
+| 12 | AMI Mauritanie (FR) | MR | oficial | estatal | mayormente factual |
+| 13 | Le Monde Diplomatique | FR | análisis | centro-izq | alta |
+| 14 | Foreign Affairs | US | análisis | neutral | alta |
+| 15 | RFI France | FR | media | neutral | mayormente factual |
+| 16 | France 24 | FR | media | neutral | alta |
+| 17 | EUvsDisinfo | BE | OSINT | centro-izq | mixta (aviso) |
+| 18 | Bellingcat | NL | OSINT | centro-izq | mayormente factual |
+| 19 | Middle East Eye | UK | media | centro-izq | mayormente factual (aviso transp.) |
+| 20 | EUobserver | BE | media | centro-izq | alta |
+| 21 | The Intercept | US | investigación | izquierda | mayormente factual |
+| 22 | Le Desk Marruecos | MA | media | centro | mayormente factual (403 CF) |
+
+## Palabras clave activas
+
+Bloque por tema (los `tema:` asignan el evento al tema; si no lleva `tema:`, es global):
+
+- **Global** (tema ausente): Ceuta, Melilla, frontera Marruecos, migración España,
+  Ceuta Melilla frontera, migración Canarias, España Marruecos, Ceuta, migración,
+  Ceuta crise, frontière sud Europe, migration Maghreb, infiltration Ceuta,
+  FIMI Europe, désinformation Russie Europe, inmigración irregular, propaganda rusa Magreb
+- **geopolitica_ue_marruecos**: relaciones España Marruecos diplomacia, acuerdo bilateral
+  España Marruecos, política exterior UE Magreb, Marruecos Unión Europea relaciones,
+  Sahara occidental diplomacia, accord Maroc Union européenne, diplomatie Maroc UE
+- **politica_nacional** (PILOTO): gobierno España oposición, partidos políticos España,
+  congreso senado España, política España elecciones, crisis de gobierno
 
 ## Canales Telegram (2)
 
 - `elfarodeceuta` (El Faro de Ceuta)
-- `maldita_es` (Maldita, verificadores)
+- `maldita_es` (Maldita, verificadores anti-desinfo)
 
 ## Subreddits (2)
 
@@ -91,6 +143,5 @@ Todo se configura en `config.yaml`. Este documento es el inventario real (verifi
 Verificado por el health monitor de fuentes: **Le Desk** (`https://ledesk.ma/feed/`) y otras
 cabeceras marroquíes (Telquel, Medias24, L'Economiste, Maroc Hebdo, Le360) devuelven **403
 Cloudflare** ("Just a moment", anti-bot JS) que el fetch del radar no puede saltar sin navegador
-headless. Le Desk se MANTIENE en config como candidato futuro (reintentar si Cloudflare lo permite);
-mientras tanto aparecerá como "inactiva" en el health monitor (esperado, no es fallo de config).
-**Cabeceras MA accesibles hoy**: Yabiladi (MA) y Hespress (MA) — ya configuradas. No duplicar.
+headless. Le Desk se MANTIENE en config como candidato futuro; mientras tanto aparecerá
+"inactiva" en el health monitor (esperado). **Cabeceras MA accesibles**: Yabiladi y Hespress.
