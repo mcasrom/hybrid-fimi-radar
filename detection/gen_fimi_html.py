@@ -531,26 +531,42 @@ def main():
         for f in findings.get(_tipo, []):
             hid, fecha, tipo, titulo, detalle, nsrc, nev, wh = f[:8]
             fecha_s = _fmt_fecha(fecha)
-            # en clusters, resaltar la banda si viene en el detalle ("score X/100, N cuentas")
             det = str(detalle or "")
-            rows_t += (f"<div style='display:flex;gap:10px;padding:7px 10px;border-left:3px solid {_color};"
-                       f"background:#f8fafc;border-radius:6px;margin:5px 0;align-items:center'>"
+            # en clusters: chip de banda con color (score X/100 en el detalle)
+            chip_banda = ""
+            if _tipo == "cluster":
+                _ms = re.search(r"score\s+(\d+)/100", det)
+                if _ms:
+                    _sc = int(_ms.group(1))
+                    _bd = band_of(_sc)
+                    _bc = BAND_COLORS.get(_bd, "#94a3b8")
+                    chip_banda = (f"<span style='display:inline-block;font-size:.68rem;font-weight:700;"
+                                  f"color:{_bc};border:1px solid {_bc};border-radius:999px;"
+                                  f"padding:0 6px;margin-left:6px'>{_bd}</span>")
+            rows_t += (f"<div style='display:flex;gap:10px;padding:6px 10px;border-left:3px solid {_color};"
+                       f"background:#f8fafc;border-radius:6px;margin:4px 0;align-items:center'>"
                        f"<div style='flex:1'><div style='font-size:.84rem;color:#1e293b;font-weight:600'>"
                        f"{_html.escape(str(titulo)[:80])}</div>"
-                       f"<div style='font-size:.74rem;color:#64748b'>{_html.escape(det)} · "
-                       f"{fecha_s}</div></div></div>")
+                       f"<div style='font-size:.74rem;color:#64748b'>{_html.escape(det)}"
+                       f"{chip_banda} · {fecha_s}</div></div></div>")
         if not rows_t:
             continue
-        hist_blocks += (f"<div style='margin:12px 0'><h4 style='font-size:.9rem;margin:0 0 4px;"
-                        f"color:{_color}'>{_titulo} <span style='color:#94a3b8;font-weight:400'>"
-                        f"({len(findings.get(_tipo, []))} recientes)</span></h4>"
-                        f"<p style='font-size:.74rem;color:#94a3b8;margin:0 0 4px'>{_desc}</p>"
-                        f"{rows_t}</div>")
+        _n = len(findings.get(_tipo, []))
+        # cada tipo = <details> colapsado por defecto (evita scroll largo).
+        hist_blocks += (
+            f"<details style='margin:10px 0;border:1px solid #e2e8f0;border-radius:10px;"
+            f"background:#fff;padding:4px 4px'>"
+            f"<summary style='cursor:pointer;font-weight:700;color:{_color};font-size:.9rem;"
+            f"padding:6px 8px;user-select:none'>{_titulo}"
+            f" <span style='color:#94a3b8;font-weight:400'>({_n} recientes) · abrir</span></summary>"
+            f"<div style='padding:2px 6px 8px'><p style='font-size:.74rem;color:#94a3b8;"
+            f"margin:2px 0 6px'>{_desc}</p>{rows_t}</div></details>")
     hist_html = ""
     if hist_blocks:
         hist_html = (f"<div class='card'><h3>Historial de hallazgos</h3>"
                      f"<p class='caption'>Resultados positivos persistidos: no se pierden cuando el tema "
-                     f"deja de ser noticia. Registro acumulado del radar, agrupado por tipo.</p>"
+                     f"deja de ser noticia. Registro acumulado del radar, agrupado por tipo. "
+                     f"Cada bloque se abre al pulsarlo para no ocupar todo el scroll.</p>"
                      f"{hist_blocks}</div>")
 
     # ALERTA: narrativas sostenidas (>=3 dias) — señal de campaña sostenida
