@@ -21,6 +21,26 @@ BAND_COLORS = {
     "HIGH": "#f97316", "CRITICAL": "#dc2626",
 }
 
+# Traducción de hipótesis H1-H6 (attribution.py) a español natural, para que
+# quien no conoce el motor entienda la tarjeta sin códigos internos.
+HYPOTHESIS_ES = {
+    "H1": {"t": "Viralización orgánica", "d": "muchas cuentas distintas lo difunden sin pauta coordinada clara"},
+    "H2": {"t": "Campaña coordinada doméstica", "d": "coordinación dentro del país, sin infraestructura externa compartida"},
+    "H3": {"t": "Operación de influencia extranjera", "d": "coordinación + infraestructura común + narrativa que cruza países"},
+    "H4": {"t": "Amplificación mediática", "d": "el eco lo dan medios establecidos, no cuentas anónimas coordinadas"},
+    "H5": {"t": "Campaña política", "d": "coordinación en el marco electoral o partidista"},
+    "H6": {"t": "Sin evidencia concluyente", "d": "no hay señal suficiente para distinguir entre las anteriores"},
+}
+
+# Componentes que muestra cada tarjeta: frase en lenguaje llano de qué mide.
+# Todos se presentan en su escala real 0-100 (el máximo del componente es 100).
+COMPONENT_ES = {
+    "coordination_score": "Cuentas del grupo publican el mismo contenido o enlaces casi a la vez",
+    "anomaly_score": "Cuánto se desvía el comportamiento de estas cuentas de lo normal",
+    "infrastructure_score": "Comparten dominios, enlaces o la misma base técnica",
+    "network_density": "Qué conectadas están entre sí las cuentas del cluster",
+}
+
 
 def band_of(score):
     if score >= 80: return "CRITICAL"
@@ -63,11 +83,20 @@ def kpi_banda_alerta(clus):
 
 
 def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
-    """Renderiza las tarjetas de clusters (vista activa) para una lista dada."""
+    """Renderiza las tarjetas de clusters (vista activa) para una lista dada.
+
+    Presentación interpretable sin conocer el motor:
+    - cada componente con su máximo real (/100) y una frase en lenguaje llano;
+    - la amplificación es una señal GLOBAL del tema (no por cluster), así que
+      NO se repite aquí; se muestra una sola vez a nivel de pestaña;
+    - hipótesis H1-H6 traducidas a español, top 2-3 por probabilidad.
+    """
     if not clus:
         return (f'<div class="card"><h3>{titulo_vacio}</h3>'
                 '<p class="caption">Con la historia acumulada hasta ahora no hay señal de '
                 'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
+    # índice assessments por cluster_id
+    asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
     b = ""
     for c in clus:
         cid = c["id"]
@@ -75,43 +104,97 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos"):
         overall = c["overall_score"] or 0
         band = band_of(overall)
         col = BAND_COLORS[band]
-        # nº de cuentas del cluster: se lee del texto del assessment
-        # ("Cluster X con N cuentas, banda ..."). Usa import re local.
+        a = asm_by_cid.get(cid)
         import re as _re
+        # nº de cuentas del cluster: del texto del assessment
         n_cuentas = None
-        for _a in asm:
-            if _a["cluster_id"] == cid:
-                m = _re.search(r"(\d+)\s+cuentas?", str(_a["assessment"] or ""))
-                if m:
-                    n_cuentas = int(m.group(1))
-                break
+        if a:
+            m = _re.search(r"(\d+)\s+cuentas?", str(a["assessment"] or ""))
+            if m:
+                n_cuentas = int(m.group(1))
         cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
                         if n_cuentas is not None else "")
-        b += (f'<div class="card"><h3>{label} — {overall:.0f}/100 '
-              f'<span style="color:{col}">({band})</span>{cuentas_html}</h3>')
+
+        # Componentes en escala 0-100: preferir el assessment (ya normalizado,
+        # ej. coordination_score del assessment = synchronization=coord*12 cap 100);
+        # si no hay assessment, derivar con las mismas fórmulas que run_fimi.
+        if a:
+            comps = {
+                "coordination_score": a["coordination_score"] or 0,
+                "anomaly_score": a["anomaly_score"] or 0,
+                "infrastructure_score": a["infrastructure_score"] or 0,
+                "network_density": a["network_density"] or 0,
+            }
+        else:
+            coord = c["coordination_score"] or 0
+            comps = {
+                "coordination_score": min(100.0, coord * 12),
+                "anomaly_score": c["anomaly_score"] or 0,
+                "infrastructure_score": c["infrastructure_score"] or 0,
+                "network_density": min(100.0, coord * 6),
+            }
+
+        # Cabecera + barra de overall
+        b += (f'<div class="card"><h3 style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+              f'<span>{label}</span>'
+              f'<span style="font-size:1.3rem;color:{col}">{overall:.0f}/100</span>'
+              f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
+              f'border-radius:999px;padding:2px 10px;font-weight:700">{band}</span>'
+              f'{cuentas_html}</h3>')
         b += svg_score_bar(overall, band)
-        b += (f'<p class="caption">Coordinación {c["coordination_score"] or 0:.0f} · '
-              f'Amplificación {c["amplification_score"] or 0:.0f} · '
-              f'Anomalía {c["anomaly_score"] or 0:.0f} · '
-              f'Infraestructura {c["infrastructure_score"] or 0:.0f} · '
-              f'Densidad red {c["network_density"] or 0:.0f} · Confianza: {c["confidence"]}</p>')
-        # buscar assessment
-        for a in asm:
-            if a["cluster_id"] == cid:
-                b += (f'<p style="font-size:.9rem;color:#334155"><b>Atribución:</b> '
-                      f'{a["attribution"]} · confianza {a["attribution_confidence"]}<br>')
-                b += f'<b>Evidencia:</b> {a["attribution_evidence"]}<br>' \
-                     f'<b>Falta:</b> {a["missing_evidence"]}</p>'
-                try:
-                    hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
-                    if hyp:
-                        b += '<p style="font-size:.82rem;color:#475569"><b>Hipótesis:</b> '
-                        b += (" · ".join(f"{h['hypothesis']} {h['label']} ({h['score']})"
-                                         for h in hyp[:4]))
-                        b += "</p>"
-                except Exception:
-                    pass
-                break
+
+        # Componentes con su máximo y frase
+        for key in ("coordination_score", "anomaly_score",
+                    "infrastructure_score", "network_density"):
+            val = comps.get(key, 0) or 0
+            label_comp = {
+                "coordination_score": "Coordinación",
+                "anomaly_score": "Anomalía",
+                "infrastructure_score": "Infraestructura",
+                "network_density": "Densidad de red",
+            }[key]
+            frase = COMPONENT_ES[key]
+            b += (
+                f'<div style="display:flex;align-items:center;gap:10px;margin:7px 0">'
+                f'<div style="flex:1;min-width:0">'
+                f'<div style="display:flex;justify-content:space-between;font-size:.82rem">'
+                f'<b style="color:#334155">{label_comp}</b>'
+                f'<span style="color:#475569;font-weight:700">{val:.0f}/100</span></div>'
+                f'<div style="font-size:.72rem;color:#94a3b8;line-height:1.35">{frase}</div>'
+                f'<div style="height:7px;background:#f1f5f9;border-radius:4px;margin-top:3px;overflow:hidden">'
+                f'<div style="width:{min(100,val):.0f}%;height:100%;background:{BAND_COLORS[band_of(val)]};'
+                f'border-radius:4px"></div></div>'
+                f'</div></div>')
+
+        # Atribución (solo si hay assessment)
+        if a:
+            b += (f'<p style="font-size:.84rem;color:#334155;border-top:1px dashed #e2e8f0;'
+                  f'padding-top:8px;margin-top:8px"><b>Atribución:</b> {a["attribution"]} · '
+                  f'confianza {a["attribution_confidence"]}<br>')
+            b += f'<b>Evidencia:</b> {a["attribution_evidence"]}<br>' \
+                 f'<b>Falta:</b> {a["missing_evidence"]}</p>'
+            # Hipótesis traducidas, top 2-3 por score (mayor a menor)
+            try:
+                hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
+                hyp = sorted(hyp, key=lambda h: -(h.get("score") or 0))
+                if hyp:
+                    rows_h = ""
+                    for h in hyp[:3]:
+                        code = h.get("hypothesis", "?")
+                        es = HYPOTHESIS_ES.get(code, {"t": h.get("label", code), "d": ""})
+                        pct = int(round((h.get("score") or 0) * 100))
+                        rows_h += (
+                            f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
+                            f'border-top:1px solid #f1f5f9">'
+                            f'<b style="color:#334155;font-size:.82rem;min-width:44px">{es["t"]}</b>'
+                            f'<span style="font-size:.78rem;color:#64748b;flex:1">{es["d"]}</span>'
+                            f'<span style="font-size:.8rem;color:#c2410c;font-weight:700">{pct}%</span>'
+                            f'</div>')
+                    b += (f'<div style="font-size:.78rem;color:#94a3b8;margin-top:2px">'
+                          f'<b>¿Qué puede explicar este patrón?</b> (hipótesis alternativas, '
+                          f'de más a menos probable)</div>{rows_h}')
+            except Exception:
+                pass
         b += "</div>"
     return b
 
@@ -345,10 +428,27 @@ def main():
         _estado = _meta.get("estado", "produccion")
         _discl = _meta.get("disclaimer", "")
         _tema_cl = [c for c in clusters if c["tema_id"] == _t]
+        # Amplificación: señal GLOBAL del tema (un solo valor por run, no por
+        # cluster). Se muestra una vez a nivel de pestaña con su escala y frase.
+        _amp_tema = None
+        for _cc in _tema_cl:
+            _amp_tema = _cc["amplification_score"] or 0
+            break
+        _amp_kpi = ""
+        if _amp_tema is not None:
+            _amp_kpi = (f'<div style="flex:1 1 150px;background:#fff7ed;border-radius:12px;'
+                        f'padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06)">'
+                        f'<div style="font-size:.72rem;color:#475569;font-weight:600;'
+                        f'text-transform:uppercase">Amplificación del tema</div>'
+                        f'<div style="font-size:1.6rem;font-weight:800;color:#c2410c;line-height:1.2">'
+                        f'{_amp_tema:.0f}/100</div>'
+                        f'<div style="font-size:.76rem;color:#78716c">señal global: cuántas cuentas '
+                        f'distintas repiten el mismo contenido en el tema</div></div>')
         _cards_t = "".join([
             kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
             kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
             kpi("Clusters", len(_tema_cl), "activos", "#fafaf9"),
+            _amp_kpi,
             kpi_banda_alerta(_tema_cl),
         ])
         _badge_piloto = ""

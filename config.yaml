@@ -274,10 +274,10 @@ keywords:
   plataformas:
   - bluesky
   - google-news
-- palabra: crisis gobierno Sánchez
+# Termino institucional sin nombre propio (criterio: no sesgar con lideres)
+- palabra: crisis de gobierno
   tema: politica_nacional
   plataformas:
-  - bluesky
   - google-news
 telegram_canales:
 - elfarodeceuta
