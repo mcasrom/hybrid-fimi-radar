@@ -29,6 +29,7 @@ def init(conn: sqlite3.Connection = None) -> sqlite3.Connection:
     """Garantiza que la tabla existe y devuelve la conexión."""
     if conn is None:
         conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA_SUSCRIPCIONES)
     conn.commit()
     return conn
