@@ -399,13 +399,25 @@ def main():
             _src = con.execute("SELECT COUNT(DISTINCT source) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
         _cl = [c for c in clusters if c["tema_id"] == _t]
         por_tema[_t] = {"eventos": _ev, "fuentes": _src, "clusters": _cl}
-    # historial persistido de hallazgos
+    # historial persistido de hallazgos, agrupado por tipo (top recientes de cada uno)
     try:
-        findings = con.execute(
-            "SELECT id, fecha, tipo, titulo, detalle, n_sources, n_events, window_hours"
-            " FROM findings ORDER BY fecha DESC LIMIT 30").fetchall()
+        _top_n = 12
+        findings = {
+            "amplificacion_narrativa": con.execute(
+                "SELECT id, fecha, tipo, titulo, detalle, n_sources, n_events, window_hours"
+                " FROM findings WHERE tipo='amplificacion_narrativa'"
+                " ORDER BY fecha DESC LIMIT ?", (_top_n,)).fetchall(),
+            "cluster": con.execute(
+                "SELECT id, fecha, tipo, titulo, detalle, n_sources, n_events, window_hours"
+                " FROM findings WHERE tipo='cluster'"
+                " ORDER BY fecha DESC LIMIT ?", (_top_n,)).fetchall(),
+            "cascada": con.execute(
+                "SELECT id, fecha, tipo, titulo, detalle, n_sources, n_events, window_hours"
+                " FROM findings WHERE tipo='cascada'"
+                " ORDER BY fecha DESC LIMIT ?", (_top_n,)).fetchall(),
+        }
     except Exception:
-        findings = []
+        findings = {}
     # narrativas sostenidas (misma narrativa amplificada en >=3 dias = alerta)
     sostenidas = []
     try:
@@ -495,31 +507,51 @@ def main():
                           f"</div></div></div>")
     except Exception as e:
         narr_block = ""
-    # historial de hallazgos persistidos
+    # historial de hallazgos persistidos, agrupado por tipo
     import html as _html
-    hist_rows = ""
-    for f in findings:
-        hid, fecha, tipo, titulo, detalle, nsrc, nev, wh = f[:8]
-        fecha_s = ""
+    import datetime as _dt
+
+    def _fmt_fecha(ts):
         try:
-            import datetime as _dt
-            fecha_s = _dt.datetime.utcfromtimestamp(fecha).strftime("%d/%m")
+            return _dt.datetime.utcfromtimestamp(ts).strftime("%d/%m")
         except Exception:
-            pass
-        ic = {"amplificacion_narrativa": "📣", "cluster": "🕸️", "cascada": "⚡"}.get(tipo, "•")
-        col = "#f97316" if tipo == "amplificacion_narrativa" else ("#7c3aed" if tipo == "cluster" else "#0891b2")
-        hist_rows += (f"<div style='display:flex;gap:10px;padding:8px 10px;border-left:3px solid {col};"
-                      f"background:#f8fafc;border-radius:6px;margin:6px 0;align-items:center'>"
-                      f"<span style='font-size:1rem'>{ic}</span>"
-                      f"<div style='flex:1'><div style='font-size:.85rem;color:#1e293b;font-weight:600'>"
-                      f"{_html.escape(str(titulo)[:70])}</div>"
-                      f"<div style='font-size:.75rem;color:#64748b'>{_html.escape(str(detalle))} · "
-                      f"{fecha_s}</div></div></div>")
+            return ""
+
+    _HIST_TYPES = [
+        ("amplificacion_narrativa", "📣 Narrativas amplificadas", "#f97316",
+         "Mismo titular propagado por varias fuentes (eco mediático, no coordinación)."),
+        ("cluster", "🕸️ Clusters de coordinación", "#7c3aed",
+         "Grupos de cuentas con comportamiento coordinado. Score del momento de detección."),
+        ("cascada", "⚡ Cascadas", "#0891b2",
+         "Ráfagas de publicaciones casi simultáneas de varias cuentas."),
+    ]
+    hist_blocks = ""
+    for _tipo, _titulo, _color, _desc in _HIST_TYPES:
+        rows_t = ""
+        for f in findings.get(_tipo, []):
+            hid, fecha, tipo, titulo, detalle, nsrc, nev, wh = f[:8]
+            fecha_s = _fmt_fecha(fecha)
+            # en clusters, resaltar la banda si viene en el detalle ("score X/100, N cuentas")
+            det = str(detalle or "")
+            rows_t += (f"<div style='display:flex;gap:10px;padding:7px 10px;border-left:3px solid {_color};"
+                       f"background:#f8fafc;border-radius:6px;margin:5px 0;align-items:center'>"
+                       f"<div style='flex:1'><div style='font-size:.84rem;color:#1e293b;font-weight:600'>"
+                       f"{_html.escape(str(titulo)[:80])}</div>"
+                       f"<div style='font-size:.74rem;color:#64748b'>{_html.escape(det)} · "
+                       f"{fecha_s}</div></div></div>")
+        if not rows_t:
+            continue
+        hist_blocks += (f"<div style='margin:12px 0'><h4 style='font-size:.9rem;margin:0 0 4px;"
+                        f"color:{_color}'>{_titulo} <span style='color:#94a3b8;font-weight:400'>"
+                        f"({len(findings.get(_tipo, []))} recientes)</span></h4>"
+                        f"<p style='font-size:.74rem;color:#94a3b8;margin:0 0 4px'>{_desc}</p>"
+                        f"{rows_t}</div>")
     hist_html = ""
-    if hist_rows:
-        hist_html = (f"<div class='card'><h3>Historial de hallazgos ({len(findings)})</h3>"
+    if hist_blocks:
+        hist_html = (f"<div class='card'><h3>Historial de hallazgos</h3>"
                      f"<p class='caption'>Resultados positivos persistidos: no se pierden cuando el tema "
-                     f"deja de ser noticia. Registro acumulado del radar.</p>{hist_rows}</div>")
+                     f"deja de ser noticia. Registro acumulado del radar, agrupado por tipo.</p>"
+                     f"{hist_blocks}</div>")
 
     # ALERTA: narrativas sostenidas (>=3 dias) — señal de campaña sostenida
     sost_html = ""
