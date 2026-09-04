@@ -22,6 +22,13 @@ scoring:
     infrastructure: 0.15
     network_density: 0.1
     anomaly: 0.1
+  # Límite por escala (nº de cuentas): un cluster pequeño (2-3 cuentas) puede
+  # llegar a HIGH pero NO a CRITICAL — la señal de red orquestada a gran escala
+  # debe alarmar más que una pareja de cuentas sincronizadas. Configurable por
+  # tema en temas.<tema>.scoring.scale_min_accounts.
+  scale_min_accounts:
+    HIGH: 2
+    CRITICAL: 10
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7

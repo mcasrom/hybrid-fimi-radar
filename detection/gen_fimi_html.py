@@ -183,6 +183,17 @@ def _cluster_detail_html(c, a, comps, contenido=None):
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{cuentas_html}</div>')
 
+    # GUARDIA DE INTERPRETACIÓN: evita que un lector no experto lea HIGH/CRITICAL
+    # como "campaña extranjera confirmada". La banda es una señal conductual de
+    # coordinación, NO una atribución de actor ni una prueba de orquestación.
+    if band in ("HIGH", "CRITICAL"):
+        h += (f'<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;'
+              f'border-radius:8px;padding:6px 12px;margin:4px 0 8px;font-size:.74rem;line-height:1.35">'
+              f'<b>Interpreta con cautela:</b> {band} = señal de <b>comportamiento coordinado '
+              f'anómalo</b> entre estas cuentas. <b>No</b> implica por sí solo un actor extranjero '
+              f'ni una campaña orquestada: revisa el contenido, la atribución (a menudo '
+              f'UNKNOWN/NO_ATTRIBUTION) y las hipótesis alternativas antes de concluir.</div>')
+
     # CONTENIDO REAL del cluster: de qué habla (titulares + enlaces). Se
     # muestran los 2-3 textos más repetidos del cluster, con su fuente.
     content_html = ""

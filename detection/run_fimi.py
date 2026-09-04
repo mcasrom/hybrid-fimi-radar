@@ -27,7 +27,7 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands
+from detection.scoring import compute_scores, band_for, load_bands, scale_cap
 from attribution.attribution import classify_hypotheses, attribution
 
 
@@ -134,6 +134,9 @@ def main():
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
         overall, _ = compute_scores(comp, cfg, tema=tema)
+        # Límite por escala: con pocas cuentas no se alcanzan bandas altas
+        # (CRITICAL/HIGH) solo por sincronización fuerte. Ver scoring.scale_cap.
+        overall = scale_cap(overall, s.get("accounts", 0), cfg, tema=tema)
         band = band_for(overall, bands)
 
         # FIX: el historial (tabla findings) debe guardar el score que tenia el
@@ -263,6 +266,7 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
         overall, _ = compute_scores(comp, cfg, tema=tema)
+        overall = scale_cap(overall, s.get("accounts", 0), cfg, tema=tema)
         hyp = classify_hypotheses(s)
         att = attribution(hyp, infra_shared=comp["infrastructure"] > 30)
         lines.append(f"### {label} — {s.get('accounts',0)} cuentas")
