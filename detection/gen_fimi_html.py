@@ -935,6 +935,9 @@ def main():
           <a id="linkShareBsky" href="{bsky_url}" target="_blank" rel="noopener noreferrer"
              style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
                     color:#fff;background:#1185fe;border-radius:8px;padding:9px 15px;text-decoration:none">🦋 Compartir en Bluesky</a>
+        <a href="https://t.me/Sieg_politica_bot" target="_blank" rel="noopener noreferrer"
+           style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
+                  color:#fff;background:#229ed9;border-radius:8px;padding:9px 15px;text-decoration:none">Recibir avisos en Telegram</a>
           <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
              style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
                     color:#fff;background:#13C3A5;border-radius:8px;padding:9px 15px;text-decoration:none">☕ Apoyar en Ko-fi</a>
@@ -1042,6 +1045,7 @@ def main():
         f"<a href='{_bsky_agregado}' target='_blank' rel='noopener noreferrer' "
         f"style='color:#fff;background:#1185fe;border-radius:8px;padding:9px 16px;text-decoration:none;"
         f"font-size:.85rem;font-weight:700'>🦋 Compartir estado (Bluesky)</a>"
+        f"<a href='https://t.me/Sieg_politica_bot' target='_blank' rel='noopener noreferrer' style='color:#fff;background:#229ed9;border-radius:8px;padding:9px 16px;text-decoration:none;font-size:.85rem;font-weight:700'>Recibir avisos en Telegram</a>"
         f"</div>")
 
     # --- FORMULARIO NEWSLETTER POR EMAIL (vista resumen) ---
@@ -1187,6 +1191,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 <h3>Metodología</h3>
 <p class="caption">
 - Fuentes: Bluesky (autenticado), Telegram público, Google News RSS, medios internacionales y RSS oficiales.<br>
+- Bot de Telegram <b><a href="https://t.me/Sieg_politica_bot" target="_blank" rel="noopener noreferrer" style="color:#229ed9">@Sieg_politica_bot</a></b>: suscríbete para recibir avisos cuando cambie el estado de tus temas.
 - Señales: sincronización temporal, contenido casi duplicado, amplificación, infraestructura compartida.<br>
 - Scoring 0-100 con bandas NORMAL→CRITICAL. Cada cluster muestra sus componentes.<br>
 - Atribución: módulo separado con taxonomía neutra y confianza NO/LOW/MEDIUM/HIGH.
