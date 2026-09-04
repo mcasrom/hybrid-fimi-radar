@@ -6,6 +6,7 @@ data/radar.db. Salida: /var/www/fimi/index.html (servido por nginx).
 Sin RAM extra en runtime: lo genera el cron.
 """
 import json
+import re
 import sqlite3
 import sys
 import pandas as pd
@@ -474,6 +475,7 @@ def main():
     # Cada pestaña muestra: eventos, fuentes, clusters y banda de alerta del tema.
     tema_tabs = ""
     tema_panes = ""
+    temas_stats = {}
     for i, _t in enumerate(temas):
         d = por_tema.get(_t, {"eventos": 0, "fuentes": 0, "clusters": []})
         _cl = d["clusters"]
@@ -505,12 +507,15 @@ def main():
             _amp_kpi,
             kpi_banda_alerta(_tema_cl),
         ])
-        _badge_piloto = ""
-        if _estado == "piloto":
-            _badge_piloto = ("<div style='margin:10px 0;padding:10px 14px;background:#fef2f2;border:1px solid "
-                             "#fecaca;border-radius:8px;font-size:.8rem;color:#991b1b;line-height:1.45'>"
-                             "<b>⚠️ Tema en fase piloto:</b> " + (_discl or
-                             "en calibración, los umbrales aún se ajustan.") + "</div>")
+        # stats por tema para el texto de compartir (se genera en el momento)
+        _n_high_t = sum(1 for _cc in _tema_cl
+                        if (_cc["overall_score"] or 0) >= 60)
+        temas_stats[_t] = {
+            "nombre": _nombre,
+            "estado": _estado,
+            "clusters": len(_tema_cl),
+            "high": _n_high_t,
+        }
         _cl_txt = ""
         if not _tema_cl:
             _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
@@ -518,35 +523,90 @@ def main():
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(_tema_cl, assessments)
         _sel = " style='background:#c2410c;color:#fff;border-color:#c2410c'" if i == 0 else ""
-        tema_tabs += (f"<button type='button' data-tema='{_t}' onclick='fimiTab(\"{_t}\")'"
+        tema_tabs += (f"<button type='button' data-tema='{_t}' data-estado='{_estado}'"
+                      f" onclick='fimiTab(\"{_t}\")'"
                       f" style='cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;"
                       f"border-radius:999px;padding:7px 14px;font-weight:600;font-size:.82rem;"
                       f"font-family:inherit;{_sel if i == 0 else _sel}'>{_nombre}"
                       f"<span style='opacity:.75;font-weight:400'> · {_estado}</span></button>")
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
-                       f"{'' if i == 0 else ' hidden'}>{_badge_piloto}"
+                       f"{'' if i == 0 else ' hidden'}>"
                        f"<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
+    # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
+    # justo debajo del selector (imposible de no ver al entrar en un tema piloto).
+    piloto_banner = (
+        '<div id="pilotoBanner" class="piloto-banner" hidden>'
+        '<div style="margin:10px 0;padding:12px 14px;background:#fef2f2;border:2px solid #fecaca;'
+        'border-radius:10px;font-size:.85rem;color:#991b1b;line-height:1.5">'
+        '<b>⚠️ Este radar está en fase de calibración</b> — el volumen de coordinación '
+        'legítima en política es alto y el sistema aún está ajustando umbrales. '
+        'Trata los scores de este tema con más cautela que los de frontera sur.</div></div>')
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
+               f"{piloto_banner}"
                f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
                f"Cada pestaña muestra un dominio del catálogo. Las secciones de narrativas, historial y "
                f"metodología de abajo son el resumen global del radar.</div>"
                f"{tema_panes}")
 
 
+    # nombres de temas para intro de página y popup (fuente única)
+    _nombres_temas = []
+    _nombres_intro = []
+    for _t in temas:
+        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        _nn = _m.get("nombre", _t)
+        if _m.get("estado") == "piloto":
+            _nn += " (piloto)"
+        _nombres_temas.append(_nn)
+        _corto = re.sub(r"\s*\(.*\)\s*", "", _nn).strip().lower()
+        _nombres_intro.append(_corto)
+    tema_nombres_html = ", ".join(_nombres_temas) if _nombres_temas else "frontera sur"
+    tema_lista_intro = ", ".join(_nombres_intro) if _nombres_intro else "frontera sur"
+
     # ============================================================
     # FUNNEL INTERPRETATIVO — guía visual para leer el radar
     # ============================================================
     n_clusters = len(clusters)
     n_crit, n_high, n_anom2 = (n_crit, n_high, n_anom)  # ya calculadas arriba
-    # texto del estado actual para el CTA de compartir (CTR)
-    share_txt = (f"Radar FIMI España-Marruecos {now[:5]}: {n_events} eventos de "
-                 f"{n_sources} fuentes, {n_clusters} cluster{'s' if n_clusters != 1 else ''} "
-                 f"({n_high} HIGH). Agnóstico al actor, sin atribución sin evidencia. "
-                 f"https://fimi.viajeinteligencia.com")
+    # texto del estado actual para el CTA de compartir (CTR): se genera POR
+    # TEMA ACTIVO (no agregado global), para no mezclar produccion con piloto.
     import urllib.parse as _up
+
+    def _share_txt_for(tema_id, st):
+        nm = (st.get("nombre") or tema_id).lower()
+        # normalizar nombre para el texto (sin parentesis)
+        nm = re.sub(r"\s*\(.*\)\s*", "", nm).strip()
+        cl = st.get("clusters", 0)
+        hi = st.get("high", 0)
+        piloto = st.get("estado") == "piloto"
+        base = (f"Radar FIMI — {nm.title()} ({now[:5]}): {cl} cluster{'s' if cl != 1 else ''}"
+                f"{', ' + str(hi) + ' HIGH' if hi else ', 0 HIGH'}. "
+                f"{'(piloto, en calibración) ' if piloto else ''}Agnóstico al actor, "
+                f"sin atribución sin evidencia. https://fimi.viajeinteligencia.com")
+        return base
+
+    # por defecto: primer tema del catálogo
+    default_tema = temas[0] if temas else "frontera_sur"
+    default_stat = temas_stats.get(default_tema, {"nombre": default_tema, "estado": "produccion",
+                                                  "clusters": 0, "high": 0})
+    share_txt = _share_txt_for(default_tema, default_stat)
     share_url = "https://fimi.viajeinteligencia.com/"
     tw_url = "https://twitter.com/intent/tweet?text=" + _up.quote(share_txt)
     bsky_url = "https://bsky.app/intent/compose?text=" + _up.quote(share_txt)
+
+    # mapa tema -> {txt, tw, bsky} para que el JS reescriba compartir al cambiar
+    share_by_tema = {}
+    for _t in temas:
+        _st = temas_stats.get(_t, {"nombre": _t, "estado": "produccion",
+                                   "clusters": 0, "high": 0})
+        _txt = _share_txt_for(_t, _st)
+        share_by_tema[_t] = {
+            "txt": _txt,
+            "tw": "https://twitter.com/intent/tweet?text=" + _up.quote(_txt),
+            "bsky": "https://bsky.app/intent/compose?text=" + _up.quote(_txt),
+        }
+    import json as _json
+    share_by_tema_js = _json.dumps(share_by_tema, ensure_ascii=False)
     steps = [
         ("01", "Captura", f"<b>{n_events}</b> eventos reales de <b>{n_sources}</b> fuentes: "
          "medios ES/FR/MA, RSS, Bluesky, Telegram y Reddit. Sin cuentas ni rastreo.",
@@ -607,7 +667,11 @@ def main():
                      color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
                      padding:4px 12px">CÓMO LEER ESTE RADAR</span>
         <h2 id="funnelTitle" style="font-size:1.2rem;margin:.5rem 0 .2rem">Del ruido a la señal: el embudo de interpretación</h2>
-        <p style="color:#64748b;font-size:.86rem;margin:0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
+        <p style="color:#475569;font-size:.84rem;margin:.4rem 0 0;line-height:1.5">Detección de coordinación
+           y amplificación en el catálogo de temas monitorizados ({tema_lista_intro}).
+           Agnóstico al actor: primero se observa la anomalía, después se evalúan hipótesis;
+           la atribución nunca se presume.</p>
+        <p style="color:#64748b;font-size:.86rem;margin:.5rem 0 0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
            Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
       </div>
       {funnel_cards}
@@ -619,11 +683,13 @@ def main():
       <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px dashed #e2e8f0">
         <p style="font-size:.86rem;color:#334155;margin:0 0 10px"><b>¿Has visto una señal que merezca difundirse?</b>
            Comparte este estado del radar (se actualiza cada 6 h):</p>
+        <p id="sharePreview" style="font-size:.74rem;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;
+           border-radius:8px;padding:6px 10px;margin:0 0 10px;line-height:1.4"></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-          <a href="{tw_url}" target="_blank" rel="noopener noreferrer"
+          <a id="linkShareX" href="{tw_url}" target="_blank" rel="noopener noreferrer"
              style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
                     color:#fff;background:#0f1419;border-radius:8px;padding:9px 15px;text-decoration:none">𝕏 Compartir en X</a>
-          <a href="{bsky_url}" target="_blank" rel="noopener noreferrer"
+          <a id="linkShareBsky" href="{bsky_url}" target="_blank" rel="noopener noreferrer"
              style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.84rem;
                     color:#fff;background:#1185fe;border-radius:8px;padding:9px 15px;text-decoration:none">🦋 Compartir en Bluesky</a>
           <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
@@ -658,18 +724,18 @@ def main():
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>European Hybrid &amp; FIMI Radar · España-Marruecos</title>
-<meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en la frontera sur de Europa (España-Marruecos-Ceuta-Melilla). {n_events} eventos, {n_clusters} clusters. Actualizado cada 6h.">
-<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, migración, coordinación de cuentas, amplificación de narrativas">
+<title>European Hybrid &amp; FIMI Radar · Multi-tema</title>
+<meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_events} eventos, {n_clusters} clusters. Actualizado cada 6h.">
+<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, coordinación de cuentas, amplificación de narrativas">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="FIMI Radar · {n_events} eventos, {n_clusters} clusters de coordinación">
-<meta property="og:description" content="Radar OSINT agnóstico al actor en la frontera sur de Europa. {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
+<meta property="og:description" content="Radar OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="FIMI Radar · España-Marruecos">
-<meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor.">
+<meta name="twitter:title" content="FIMI Radar · Multi-tema">
+<meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <style>
@@ -690,10 +756,12 @@ a{{color:#c2410c}}
 <a href="https://radar.viajeinteligencia.com/nivel-embalses.html">💧 embalses</a> ·
 <a href="https://radar.viajeinteligencia.com/pulso-espana.html">💓 pulso</a></p>
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
-<p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en la
-frontera sur de Europa (España-Marruecos-Ceuta-Melilla-Canarias) y dominios asociados.
-<strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
+<p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en el
+catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
+ <strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
 la atribución nunca se presume.</p>
+
+<script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
 {funnel_html}
 
@@ -752,6 +820,30 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 </main>
 <script>
 (function(){{
+  var shareMap = window.FIMI_SHARE || {{}};
+  var estadoActivo = null;
+
+  function updatePilotoBanner(t){{
+    var btn=null, i, bs=document.querySelectorAll('[data-tema]');
+    for(i=0;i<bs.length;i++){{ if(bs[i].getAttribute('data-tema')===t){{ btn=bs[i]; break; }} }}
+    var estado = btn ? (btn.getAttribute('data-estado')||'produccion') : 'produccion';
+    estadoActivo = estado;
+    var bn=document.getElementById('pilotoBanner');
+    if(bn){{ if(estado==='piloto'){{ bn.removeAttribute('hidden'); }} else {{ bn.setAttribute('hidden',''); }} }}
+  }}
+
+  function updateShare(t){{
+    var s=shareMap[t];
+    var x=document.getElementById('linkShareX');
+    var bk=document.getElementById('linkShareBsky');
+    var pv=document.getElementById('sharePreview');
+    if(s){{
+      if(x){{ x.href=s.tw; }}
+      if(bk){{ bk.href=s.bsky; }}
+      if(pv){{ pv.textContent=s.txt; }}
+    }}
+  }}
+
   function fimiTab(t){{
     var i, p, b;
     var btns=document.querySelectorAll('[data-tema]');
@@ -767,10 +859,13 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
       if(p.getAttribute('data-tema')===t){{ p.classList.remove('hidden'); }}
       else {{ p.classList.add('hidden'); }}
     }}
+    updatePilotoBanner(t);
+    updateShare(t);
   }}
   window.fimiTab=fimiTab;
   var hash=(location.hash||'').replace('#','');
-  if(hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')){{ fimiTab(hash); }}
+  var inicial = (hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')) ? hash : (document.querySelector('[data-tema]')||{{}}).getAttribute('data-tema');
+  if(inicial){{ fimiTab(inicial); }}
 }})();
 </script>
 </body></html>"""
