@@ -11,3 +11,6 @@ logs/
 
 # credenciales locales (bot telegram)
 .env
+
+# backups automaticos del mantenimiento
+backups/

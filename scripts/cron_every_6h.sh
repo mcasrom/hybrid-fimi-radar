@@ -18,3 +18,6 @@ done
 find data/raw -name "*.json" -mtime +30 -delete 2>/dev/null
 # Rotar logs mayores de 5MB
 for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail -100 "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
+
+# 5) Mantenimiento: retencion 90d (events/findings) + VACUUM + backup BD rotado a 4
+.venv/bin/python detection/mantenimiento.py >> logs/mantenimiento.log 2>&1

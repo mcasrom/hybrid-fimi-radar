@@ -909,7 +909,7 @@ def main():
         <span style="display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.12em;
                      color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
                      padding:4px 12px">CÓMO LEER ESTE RADAR</span>
-        <h2 id="funnelTitle" style="font-size:1.2rem;margin:.5rem 0 .2rem">Del ruido a la señal: el embudo de interpretación</h2>
+        <h2 id="funnelTitle" style="font-size:1.2rem;margin:.5rem 0 .2rem">Del ruido a la señal: el prisma analítico</h2>
         <p style="color:#475569;font-size:.84rem;margin:.4rem 0 0;line-height:1.5">Detección de coordinación
            y amplificación en el catálogo de temas monitorizados ({tema_lista_intro}).
            Agnóstico al actor: primero se observa la anomalía, después se evalúan hipótesis;
