@@ -21,3 +21,7 @@ for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail
 
 # 5) Mantenimiento: retencion 90d (events/findings) + VACUUM + backup BD rotado a 4
 .venv/bin/python detection/mantenimiento.py >> logs/mantenimiento.log 2>&1
+
+# 6) Checklist de promocion: ventana de validacion de politica_nacional (piloto).
+#    Al cumplir 72h sin errores avisa por Telegram para pasar el tema a produccion.
+.venv/bin/python detection/check_promocion.py >> logs/promocion.log 2>&1

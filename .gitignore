@@ -5,6 +5,7 @@ data/raw/
 data/processed/
 data/radar.db
 data/ecr.db
+data/promocion_*.json
 .bsky_creds.env
 .streamlit/
 logs/
