@@ -81,6 +81,19 @@ CREATE TABLE IF NOT EXISTS event_temas (
     FOREIGN KEY(event_id) REFERENCES events(id)
 );
 
+-- Eventos miembro por cluster (vista activa): permite que el dashboard
+-- muestre el CONTENIDO real que agrupa cada cluster (titulares + url),
+-- no solo métricas. Se puebla cada ciclo junto con el snapshot de clusters.
+CREATE TABLE IF NOT EXISTS cluster_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cluster_id INTEGER NOT NULL,
+    ts INTEGER,                          -- timestamp del evento
+    source TEXT, author TEXT,
+    title TEXT, text TEXT, url TEXT,
+    FOREIGN KEY(cluster_id) REFERENCES clusters(id)
+);
+CREATE INDEX IF NOT EXISTS idx_cluster_events_cluster ON cluster_events(cluster_id);
+
 -- Hallazgos positivos persistidos (historial de resultados, no se pierde
 -- cuando el evento deja de ser noticia). Fecha de primera/last detección.
 CREATE TABLE IF NOT EXISTS findings (

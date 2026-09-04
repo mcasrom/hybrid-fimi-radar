@@ -86,16 +86,18 @@ def main():
     merged = cluster_by_components(scored, edges_df, cfg)
     summary = cluster_summary(merged, edges_df, cfg)
     details = {}
+    sub_clustered = None
     if merged["cluster_label"].notna().any():
         for label in merged["cluster_label"].dropna().unique():
             mem = merged[merged["cluster_label"] == label]
             details[label] = cluster_evidence_details(df, label, mem, edges_df)
-        # persistir miembros por cluster (para evaluar recuperación)
+        # miembros por cluster (para persistir el contenido real en cluster_events)
         ev_idx = merged["cluster_label"].notna()
         sub = df[df["author"].isin(merged[ev_idx].index)].copy()
         lab_map = merged.loc[merged[ev_idx].index, "cluster_label"]
         sub["cluster"] = sub["author"].map(lab_map)
         sub["fecha_utc"] = pd.to_datetime(sub["ts"], unit="s", utc=True).dt.strftime("%Y-%m-%d %H:%M:%S")
+        sub_clustered = sub
         (ROOT / "data" / "processed").mkdir(parents=True, exist_ok=True)
         sub[["cluster", "fecha_utc", "author", "text", "url", "hashtags", "action"]].to_csv(
             ROOT / "data" / "processed" / "cluster_events.csv", index=False, encoding="utf-8")
@@ -113,6 +115,7 @@ def main():
     old_ids = [r[0] for r in conn.execute("SELECT id FROM clusters WHERE tema_id=?", (tema,))]
     if old_ids:
         ph = ",".join("?" * len(old_ids))
+        conn.execute(f"DELETE FROM cluster_events WHERE cluster_id IN ({ph})", old_ids)
         conn.execute(f"DELETE FROM indicators WHERE cluster_id IN ({ph})", old_ids)
         conn.execute(f"DELETE FROM assessments WHERE cluster_id IN ({ph})", old_ids)
         conn.execute(f"DELETE FROM evidence WHERE cluster_id IN ({ph})", old_ids)
@@ -168,6 +171,25 @@ def main():
              f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}.",
              json.dumps(hyp, ensure_ascii=False), att["actor"], att["confidence"],
              att["evidence"], att["missing_evidence"]))
+        # eventos miembros del cluster -> contenido real (para la UI)
+        # cluster_events: 1 fila por evento que forma parte del cluster, con su
+        # texto/titular y url originales. Permite explicar DE QUÉ habla el cluster.
+        if sub_clustered is not None:
+            _mem = sub_clustered[sub_clustered["cluster"] == label]
+            for _, ev in _mem.iterrows():
+                _txt = str(ev.get("text", "") or "").strip()[:500]
+                if not _txt:
+                    continue
+                conn.execute(
+                    "INSERT INTO cluster_events (cluster_id, ts, source, author, title, text, url)"
+                    " VALUES (?,?,?,?,?,?,?)",
+                    (cluster_id,
+                     int(ev.get("ts", 0)) if ev.get("ts") is not None else None,
+                     str(ev.get("source", "") or ""),
+                     str(ev.get("author", "") or ""),
+                     str(_txt)[:200],
+                     _txt,
+                     str(ev.get("url", "") or "")))
     conn.commit()
 
     # --- REPORT ---
