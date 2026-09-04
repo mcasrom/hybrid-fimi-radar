@@ -308,6 +308,16 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # color por banda: ANOMALOUS ámbar, WATCH/NORMAL gris neutro
             barcol_ = "#f59e0b" if band_ == "ANOMALOUS" else "#94a3b8"
             pct_ = max(2.0, min(100.0, overall_))
+            # contexto real (de qué habla) del cluster para verlo sin expandir
+            ctx_ = ""
+            try:
+                import html as _he
+                _topc = (contenido_map.get(cid) or [])
+                if _topc:
+                    ctx_ = (f"<div style='font-size:.72rem;color:#64748b;margin-top:2px;"
+                            f"line-height:1.3'>“{_he.escape(_topc[0].get('text',''))[:78]}”</div>")
+            except Exception:
+                ctx_ = ""
             # fila-barra clicable (div, sin framework)
             bars += (
                 f'<div class="fimi-bar" data-cid="{cid}" '
@@ -315,7 +325,8 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'style="display:flex;align-items:center;gap:10px;padding:7px 8px;'
                 f'border-radius:8px;cursor:pointer;user-select:none;'
                 f'border:1px solid transparent">'
-                f'<b style="min-width:92px;font-size:.82rem;color:#334155">{c["cluster_label"]}</b>'
+                f'<div style="min-width:120px"><b style="min-width:92px;font-size:.82rem;'
+                f'color:#334155">{c["cluster_label"]}</b>{ctx_}</div>'
                 f'<div style="flex:1;height:16px;background:#f1f5f9;border-radius:8px;overflow:hidden">'
                 f'<div style="width:{pct_:.0f}%;height:100%;background:{barcol_};border-radius:8px"></div>'
                 f'</div>'
@@ -611,7 +622,11 @@ def main():
             fecha_s = _fmt_fecha(fecha)
             det = str(detalle or "")
             # en clusters: chip de banda con color (score X/100 en el detalle)
+            # + contexto real (de qué habla). Para findings NUEVOS el titular
+            # dominante se persiste en el propio detalle (tras "|"); para los
+            # antiguos se intenta el lookup por id en cluster_events.
             chip_banda = ""
+            ctx_txt = ""
             if _tipo == "cluster":
                 _ms = re.search(r"score\s+(\d+)/100", det)
                 if _ms:
@@ -621,10 +636,27 @@ def main():
                     chip_banda = (f"<span style='display:inline-block;font-size:.68rem;font-weight:700;"
                                   f"color:{_bc};border:1px solid {_bc};border-radius:999px;"
                                   f"padding:0 6px;margin-left:6px'>{_bd}</span>")
+                # contexto persistido (nuevo formato) o lookup por id (antiguo)
+                if " | " in det:
+                    _builtin = det.split(" | ", 1)[1]
+                    ctx_txt = (f"<div style='font-size:.78rem;color:#334155;font-weight:600;"
+                               f"margin-top:2px'>“{_html.escape(_builtin)[:90]}”</div>")
+                    det = det.split(" | ", 1)[0]
+                else:
+                    try:
+                        _cid = int(re.search(r"cluster_(\d+)", str(titulo)).group(1))
+                        _top = (contenido_map.get(_cid) or [])
+                        if _top:
+                            _first = _top[0].get("text", "")
+                            ctx_txt = (f"<div style='font-size:.78rem;color:#334155;font-weight:600;"
+                                       f"margin-top:2px'>“{_html.escape(_first)[:90]}”</div>")
+                    except Exception:
+                        ctx_txt = ""
             rows_t += (f"<div style='display:flex;gap:10px;padding:6px 10px;border-left:3px solid {_color};"
                        f"background:#f8fafc;border-radius:6px;margin:4px 0;align-items:center'>"
                        f"<div style='flex:1'><div style='font-size:.84rem;color:#1e293b;font-weight:600'>"
                        f"{_html.escape(str(titulo)[:80])}</div>"
+                       f"{ctx_txt}"
                        f"<div style='font-size:.74rem;color:#64748b'>{_html.escape(det)}"
                        f"{chip_banda} · {fecha_s}</div></div></div>")
         if not rows_t:

@@ -176,10 +176,12 @@ def main():
         # texto/titular y url originales. Permite explicar DE QUÉ habla el cluster.
         if sub_clustered is not None:
             _mem = sub_clustered[sub_clustered["cluster"] == label]
+            _texts = []
             for _, ev in _mem.iterrows():
                 _txt = str(ev.get("text", "") or "").strip()[:500]
                 if not _txt:
                     continue
+                _texts.append(_txt)
                 conn.execute(
                     "INSERT INTO cluster_events (cluster_id, ts, source, author, title, text, url)"
                     " VALUES (?,?,?,?,?,?,?)",
@@ -190,6 +192,12 @@ def main():
                      str(_txt)[:200],
                      _txt,
                      str(ev.get("url", "") or "")))
+            # titular dominante (de qué habla el cluster), para persistirlo en
+            # el historial: los ids de cluster no son estables entre ciclos,
+            # así que el contexto real debe guardarse EN el finding al detectarlo.
+            if _texts:
+                from collections import Counter
+                summary[label]["topic_dominant"] = Counter(_texts).most_common(1)[0][0][:180]
     conn.commit()
 
     # --- REPORT ---

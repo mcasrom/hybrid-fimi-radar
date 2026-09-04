@@ -58,11 +58,14 @@ def persist_findings(conn, narratives, clusters=None, cascades=None, tema_id="fr
         titulo = c.get("cluster", "")
         if not titulo or ya_existe(titulo, "cluster", hoy):
             continue
+        _topic = c.get("topic_dominant", "")
+        _detalle = f"score {c.get('overall_score',0):.0f}/100, {c.get('accounts',0)} cuentas"
+        if _topic:
+            _detalle += f" | {_topic}"
         conn.execute(
             "INSERT INTO findings (fecha, tipo, titulo, detalle, n_sources, n_events,"
             " window_hours, fuentes, intensidad, url, tema_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (_epoch_day(), "cluster", titulo,
-             f"score {c.get('overall_score',0):.0f}/100, {c.get('accounts',0)} cuentas",
+            (_epoch_day(), "cluster", titulo, _detalle,
              c.get("accounts", 0), c.get("events", 0), 0,
              json.dumps(c.get("evidence", {}), ensure_ascii=False),
              c.get("overall_score", 0), "", tema_id))
@@ -127,6 +130,7 @@ def persist_findings_from_run(conn, narratives, summary, cascades, tema_id="fron
             "cluster": label, "overall_score": s.get("overall_score", 0),
             "accounts": s.get("accounts", 0), "events": s.get("events", 0),
             "evidence": s.get("evidence", {}),
+            "topic_dominant": s.get("topic_dominant", ""),
         })
     return persist_findings(conn, narratives, clusters_list, cascades, tema_id=tema_id)
 
