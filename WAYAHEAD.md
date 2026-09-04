@@ -99,3 +99,59 @@ y preparar el despliegue en Hetzner.
   informe diario, alerta de narrativas sostenidas (>=3 dias), dashboard con historial.
 - Análisis de accesos ecosistema: viabilidad confirmada (4.235 humanos/dia).
 - PENDIENTE: clusters tras >=5 dias de acumulacion, calibrar H2/H3, PostgreSQL si hay señal.
+
+---
+
+## SPRINT 2026-09-04 — Estado real DESPLEGADO y suscripciones
+
+El radar ya NO es un MVP Streamlit local: es un dashboard HTML estático multi-tema servido por
+nginx (`/var/www/fimi/index.html` generado por `detection/gen_fimi_html.py`) con cron 6h.
+
+### Estado real en producción (fimi.viajeinteligencia.com)
+- **Catálogo multi-tema (config.yaml)**: `frontera_sur` (producción),
+  `geopolitica_ue_marruecos` (producción), `politica_nacional` (PILOTO, con disclaimer).
+  Nótese: `elecciones_2026` NO existe en el catálogo y no debe mencionarse.
+- **Vista resumen de diales SVG** (sin librería) por tema: estado Subiendo/Estable/Bajando/
+  En recopilación + frase de contexto. Detalle técnico en pantalla 2 vía "Ver detalle".
+- Tendencia por tema = hallazgos/clusters HOY vs hace 48h (columna `findings.tema_id`).
+- Iteraciones del dashboard: tarjeta interpretable (componentes 0-100), narrativas a ancho
+  completo, gráfico de barras clicable WATCH/ANOMALOUS, historial agrupado por tipo
+  (`<details>` colapsado), y contexto real por cluster ("De qué habla este cluster") en
+  barras y tarjetas.
+- **Footer**: enlace a GitHub del repo + versión desplegada (git describe).
+
+### Suscripciones (canal Telegram hecho / email pendiente)
+Esquema centralizado en una única tabla `suscripciones`
+(`detection/schema_suscripciones.py`): id hash, canal, destino, temas JSON, frecuencia,
+ultimo_estado, fecha_alta, confirmado. Base para telegram/email/futuros.
+
+- **Telegram (implementado, falta token para activar)**:
+  - `detection/radar_bot.py`: bot dedicado long-poll con `/radar` (teclado inline multi-
+    selección de temas), `/mis`, `/baja`. Token desde `FIMI_TELEGRAM_BOT_TOKEN` (env/`.env`).
+  - `detection/notify_subs_telegram.py`: se añade al cron 6h; compara dial actual vs
+    `ultimo_estado` de cada suscrito y SOLO envía si cambió (on_change, sin spam).
+    politica_nacional añade "(piloto, en calibración)".
+  - `detection/radar_trend.py`: fuente de verdad del estado del dial (mismo criterio que
+    el dashboard), compartida por bot y notificador.
+- **Email (pendiente de activar)**: backend Flask/FastAPI + **Resend** — dominio
+  viajeinteligencia.com ya verificado (`newsletter@viajeinteligencia.com`, sistema
+  `/home/deploy/newsletter/`). Doble opt-in, frecuencia semanal, enlace de baja en cada
+  email. Actualizar el footer "sin cuentas" al activarlo (pide un dato = email).
+
+### PENDIENTE / PRÓXIMO
+1. Poner el token de `@sieg_politica_bot` en `/home/deploy/hybrid-fimi-radar/.env`
+   (`FIMI_TELEGRAM_BOT_TOKEN=...`) y arrancar el bot como PM2 (`radar-fimi-bot`).
+2. Activar la parte email (Flask/FastAPI + Resend + doble opt-in + footer).
+3. Compartir agregado de los 3 diales (X/Bluesky) desde la vista de diales.
+4. Verificar que `geopolitica_ue_marruecos` / `politica_nacional` generan clusters tras
+   un ciclo de cron (captura ya etiqueta eventos: 299 y 293 respectivamente).
+5. Verificar que el historial de clusters nuevos muestre el contexto persistido
+   (los históricos 001-021 no lo recuperan: ids inestables entre ciclos).
+
+### Notas técnicas
+- Los ids de cluster NO son estables entre ciclos (DELETE+re-INSERT con nuevos lastrowid),
+  por eso el contexto de un cluster se persiste EN el finding al detectarlo
+  (`topic_dominant` → detalle `score X/100, N cuentas | <titular>`).
+- `.env` y `reports/` están en `.gitignore` (el token nunca va al repo).
+- Errores de consola de Cloudflare Insights (beacon CORS/sha512) son ruido del navegador,
+  no del código.

@@ -8,3 +8,6 @@ data/ecr.db
 .bsky_creds.env
 .streamlit/
 logs/
+
+# credenciales locales (bot telegram)
+.env

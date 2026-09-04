@@ -11,6 +11,9 @@ for tema in $(.venv/bin/python -c "import yaml; print(' '.join(yaml.safe_load(op
 done
 # 3) Dashboard
 .venv/bin/python detection/gen_fimi_html.py >> logs/fimi.log 2>&1
+# 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
+#    Sin FIMI_TELEGRAM_BOT_TOKEN no envía nada; idempotente, sin spam.
+.venv/bin/python detection/notify_subs_telegram.py >> logs/fimi.log 2>&1
 # Politica de retencion: conservar solo los ultimos 30 dias de raw JSON
 find data/raw -name "*.json" -mtime +30 -delete 2>/dev/null
 # Rotar logs mayores de 5MB

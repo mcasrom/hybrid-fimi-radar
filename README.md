@@ -73,6 +73,25 @@ hybrid-fimi-radar/
 `sources` · `events` · `narratives` · `clusters` · `indicators` · `assessments` · `evidence`
 (esquema en normalizer/schema.py).
 
+## Suscripciones (Telegram / newsletter)
+
+Esquema centralizado en una única tabla para todos los canales:
+`suscripciones (id, canal, destino, temas, frecuencia, ultimo_estado, fecha_alta, confirmado)`.
+Crea la tabla con `python detection/schema_suscripciones.py`.
+
+- **Telegram**: bot dedicado (long-poll, `detection/radar_bot.py`) con `/radar`, `/mis` y
+  `/baja`. El envío de avisos lo hace `detection/notify_subs_telegram.py` (añadido al cron 6h):
+  solo notifica cuando un dial cambia de estado (on_change), comparando contra
+  `ultimo_estado` — sin spam.
+- **Email (pendiente de activar)**: backend Flask/FastAPI + Resend (dominio
+  viajeinteligencia.com ya verificado en `newsletter@viajeinteligencia.com`), doble opt-in,
+  frecuencia semanal, enlace de baja en cada correo.
+- **Estado del dial**: fuente de verdad compartida en `detection/radar_trend.py` (mismo
+  criterio HOY vs hace 48h que los diales de la vista resumen).
+
+El token del bot se lee de `FIMI_TELEGRAM_BOT_TOKEN` (env/`.env`), nunca hardcodeado; `.env`
+está en `.gitignore`.
+
 ## Atribución (separada del detector)
 
 Taxonomía neutra: UNKNOWN / DOMESTIC / FOREIGN_STATE / FOREIGN_NON_STATE /

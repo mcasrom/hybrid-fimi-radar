@@ -1030,6 +1030,18 @@ def main():
                      f"font-family:inherit'>← Volver al resumen</button>")
 
     # cuerpo de clusters (por tema)
+    # versión desplegada (git describe --tags; fallback a último commit corto)
+    try:
+        import subprocess as _sp
+        _ver = (_sp.check_output(["git", "describe", "--tags", "--always"],
+                                 cwd=str(ROOT), stderr=_sp.DEVNULL)
+                .decode().strip())
+    except Exception:
+        _ver = "desarrollo"
+    version_html = (f'<p style="font-size:.74rem;color:#999;margin:6px 0 0">'
+                    f'<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" '
+                    f'rel="noopener noreferrer" style="color:#888">github.com/mcasrom/hybrid-fimi-radar</a>'
+                    f' · <span title="{_ver}">{_ver}</span></p>')
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1131,6 +1143,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
   <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo ni cuentas. Los servidores los paga su autor.</p>
+  {version_html}
 </footer>
 </main>
 <script>
