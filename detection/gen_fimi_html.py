@@ -251,29 +251,64 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         comps = _cluster_comps(c, a)
         out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]))}</div>')
 
-    # --- resto (ANOMALOUS/WATCH/NORMAL): bloque colapsado ---
+    # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
     if resto:
-        rest_rows = ""
-        for c in resto:
-            a = asm_by_cid.get(c["id"])
-            comps = _cluster_comps(c, a)
-            overall = c["overall_score"] or 0
-            band = band_of(overall)
-            col = BAND_COLORS[band]
-            # línea compacta + detalle plegable dentro
-            rest_rows += (f'<details style="margin:6px 0;border:1px solid #e2e8f0;border-radius:8px;'
-                          f'padding:6px 10px">'
-                          f'<summary style="cursor:pointer;font-size:.86rem;color:#334155">'
-                          f'{c["cluster_label"]} — <b style="color:{col}">{overall:.0f}/100'
-                          f'</b> <span style="color:{col}">({band})</span> · ver detalle</summary>'
-                          f'<div style="margin-top:6px">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]))}</div>'
-                          f'</details>')
+        import re as _re2
+
+        def _n_acc(c):
+            """Nº de cuentas del cluster (desempate), del texto del assessment."""
+            a_ = asm_by_cid.get(c["id"])
+            if a_:
+                m_ = _re2.search(r"(\d+)\s+cuentas?", str(a_["assessment"] or ""))
+                if m_:
+                    return int(m_.group(1))
+            return 0
+
+        # orden: score desc; empate -> más cuentas primero
+        resto_sorted = sorted(resto, key=lambda c: (-(c["overall_score"] or 0), -_n_acc(c)))
+
+        bars = ""
+        pool = ""  # detalles pre-renderizados (uno por cluster), ocultos
+        for c in resto_sorted:
+            cid = c["id"]
+            a_ = asm_by_cid.get(cid)
+            comps_ = _cluster_comps(c, a_)
+            overall_ = c["overall_score"] or 0
+            band_ = band_of(overall_)
+            nacc_ = _n_acc(c)
+            # color por banda: ANOMALOUS ámbar, WATCH/NORMAL gris neutro
+            barcol_ = "#f59e0b" if band_ == "ANOMALOUS" else "#94a3b8"
+            pct_ = max(2.0, min(100.0, overall_))
+            # fila-barra clicable (div, sin framework)
+            bars += (
+                f'<div class="fimi-bar" data-cid="{cid}" '
+                f'onclick="fimiResto({cid})" '
+                f'style="display:flex;align-items:center;gap:10px;padding:7px 8px;'
+                f'border-radius:8px;cursor:pointer;user-select:none;'
+                f'border:1px solid transparent">'
+                f'<b style="min-width:92px;font-size:.82rem;color:#334155">{c["cluster_label"]}</b>'
+                f'<div style="flex:1;height:16px;background:#f1f5f9;border-radius:8px;overflow:hidden">'
+                f'<div style="width:{pct_:.0f}%;height:100%;background:{barcol_};border-radius:8px"></div>'
+                f'</div>'
+                f'<span style="min-width:150px;text-align:right;font-size:.78rem;color:#475569;'
+                f'font-weight:600">{overall_:.0f}/100 '
+                f'<span style="color:{barcol_};font-weight:700">{band_}</span>'
+                f' · {nacc_} cuentas</span></div>')
+            # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
+            pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
+                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid))}</div>')
+
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
                 f'<details><summary style="cursor:pointer;font-weight:600;color:#475569;font-size:.9rem">'
                 f'Ver los {len(resto)} {plural} restantes '
                 f'(WATCH/ANOMALOUS, sin nivel de alerta)</summary>'
-                f'<div style="margin-top:8px">{rest_rows}</div></details></div>')
+                f'<p style="font-size:.74rem;color:#94a3b8;margin:8px 0 2px">Pulsa una barra para ver su detalle '
+                f'(solo se muestra uno a la vez).</p>'
+                f'{bars}'
+                f'<div id="fimiRestoPane" style="display:none;margin-top:10px"></div>'
+                f'{pool}'
+                f'</details></div>')
 
     return out
 
@@ -913,6 +948,25 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
     updateShare(t);
   }}
   window.fimiTab=fimiTab;
+
+  // Detalle de los clusters WATCH/ANOMALOUS del gráfico de barras: al clicar
+  // una barra, muestra su panel (uno solo a la vez) sin recargar la página.
+  function fimiResto(cid){{
+    var src=document.querySelector('.fimi-resto-detail[data-cid="'+cid+'"]');
+    var pane=document.getElementById('fimiRestoPane');
+    if(!src||!pane){{ return; }}
+    pane.innerHTML = src.innerHTML;
+    pane.style.display = 'block';
+    var bs=document.querySelectorAll('.fimi-bar');
+    for(var i=0;i<bs.length;i++){{
+      var b=bs[i];
+      var act = parseInt(b.getAttribute('data-cid'),10) === parseInt(cid,10);
+      b.style.background = act ? '#f1f5f9' : 'transparent';
+      b.style.borderColor = act ? '#c2410c' : 'transparent';
+    }}
+    pane.scrollIntoView({{behavior:'smooth', block:'nearest'}});
+  }}
+  window.fimiResto=fimiResto;
   var hash=(location.hash||'').replace('#','');
   var inicial = (hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')) ? hash : (document.querySelector('[data-tema]')||{{}}).getAttribute('data-tema');
   if(inicial){{ fimiTab(inicial); }}
