@@ -1012,12 +1012,44 @@ def main():
             f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
             f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
             f"Ver detalle de este tema</button></div>")
+    # --- COMPARTIR AGREGADO (vista resumen): un solo texto con los 3 diales ---
+    # Se construye desde los mismos datos que pintan los diales (tendencias +
+    # catálogo config) para que el mensaje coincida con lo que se ve en pantalla.
+    def _dial_palabra(_est):
+        return {"subiendo": "Subiendo", "bajando": "Bajando",
+                "estable": "Estable", "recopilando": "En recopilación"}.get(_est, _est)
+
+    _partes_compartir = []
+    for _t in temas:
+        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        _nom = re.sub(r"\s*\(.*\)\s*", "", _m.get("nombre", _t)).strip().title()
+        _cfg_est = _m.get("estado", "produccion")
+        _tend_est = tendencias.get(_t, {}).get("estado", "estable")
+        _est_txt = _dial_palabra(_tend_est)
+        if _cfg_est == "piloto":
+            _est_txt += " (piloto)"
+        _partes_compartir.append(f"{_nom}: {_est_txt}")
+    _txt_agregado = ("Radar FIMI (" + now[:5] + ") — " +
+                     " · ".join(_partes_compartir) +
+                     ". Agnóstico al actor, sin atribución sin evidencia. https://fimi.viajeinteligencia.com")
+    _tw_agregado = "https://twitter.com/intent/tweet?text=" + _up.quote(_txt_agregado)
+    _bsky_agregado = "https://bsky.app/intent/compose?text=" + _up.quote(_txt_agregado)
+    _share_resumen_buttons = (
+        "<div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px'>"
+        f"<a href='{_tw_agregado}' target='_blank' rel='noopener noreferrer' "
+        f"style='color:#fff;background:#0f1419;border-radius:8px;padding:9px 16px;text-decoration:none;"
+        f"font-size:.85rem;font-weight:700'>𝕏 Compartir estado (X)</a>"
+        f"<a href='{_bsky_agregado}' target='_blank' rel='noopener noreferrer' "
+        f"style='color:#fff;background:#1185fe;border-radius:8px;padding:9px 16px;text-decoration:none;"
+        f"font-size:.85rem;font-weight:700'>🦋 Compartir estado (Bluesky)</a>"
+        f"</div>")
     resumen_html = (
         f"<div id='vistaResumen'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 4px'><b>¿Qué está pasando ahora?</b> "
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
         f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px'>"
         f"{dial_cards}</div>"
+        f"{_share_resumen_buttons}"
         f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
         f"Tendencia: hallazgos de hoy frente a hace 48 h por tema. Actualizado cada 6 h.</div>"
         f"</div>")
