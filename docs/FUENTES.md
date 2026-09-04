@@ -86,3 +86,11 @@ Todo se configura en `config.yaml`. Este documento es el inventario real (verifi
 - **Reddit** usa RSS (`r/spain`, `r/es`); el endpoint JSON está bloqueado.
 - Los feeds oficiales de organismos (ACNUR/Frontex/Interior) **no exponen RSS público** — se
   documenta como limitación, no se fuerza.
+
+## Nota: cabeceras marroquíes y Cloudflare (2026-09-04)
+Verificado por el health monitor de fuentes: **Le Desk** (`https://ledesk.ma/feed/`) y otras
+cabeceras marroquíes (Telquel, Medias24, L'Economiste, Maroc Hebdo, Le360) devuelven **403
+Cloudflare** ("Just a moment", anti-bot JS) que el fetch del radar no puede saltar sin navegador
+headless. Le Desk se MANTIENE en config como candidato futuro (reintentar si Cloudflare lo permite);
+mientras tanto aparecerá como "inactiva" en el health monitor (esperado, no es fallo de config).
+**Cabeceras MA accesibles hoy**: Yabiladi (MA) y Hespress (MA) — ya configuradas. No duplicar.
