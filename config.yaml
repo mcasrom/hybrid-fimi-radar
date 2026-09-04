@@ -82,9 +82,6 @@ feeds:
 - nombre: El Mundo
   url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
   tipo: media
-- nombre: MITECO embalses
-  url: https://estadoembalses.es/api/embalses
-  tipo: opendata
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
