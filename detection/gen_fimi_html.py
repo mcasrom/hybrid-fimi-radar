@@ -1111,6 +1111,18 @@ def main():
                     f'<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" '
                     f'rel="noopener noreferrer" style="color:#888">github.com/mcasrom/hybrid-fimi-radar</a>'
                     f' · <span title="{_ver}">{_ver}</span></p>')
+    # --- Salud de las fuentes (health monitor) ---
+    try:
+        import importlib.util
+        _spec = importlib.util.spec_from_file_location("health_fuentes", ROOT / "detection" / "health_fuentes.py")
+        _hf = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_hf)
+        _salud = _hf.analizar()
+        salud_html = _hf._html(_salud)
+    except Exception as _e:
+        salud_html = (f"<div class='card'><h3>Salud de las fuentes</h3>"
+                      f"<p class='caption'>No disponible: {_e}</p></div>")
+
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1201,6 +1213,7 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 </p>
 </div>
 
+{salud_html}
 {detalle_wrap_close}
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
