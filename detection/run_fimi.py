@@ -27,7 +27,7 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands, scale_cap
+from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale
 from attribution.attribution import classify_hypotheses, attribution
 
 
@@ -124,6 +124,12 @@ def main():
         print(f"      snapshot previo reemplazado: {len(old_ids)} clusters del tema '{tema}'")
 
     n_assessed = 0
+    # nº de eventos por cluster (para el piso híbrido de masa: distinguir
+    # "2 cuentas efímeras" de "2 cuentas con volumen sostenido")
+    ev_counts = {}
+    if sub_clustered is not None and len(sub_clustered):
+        ev_counts = sub_clustered["cluster"].value_counts().to_dict()
+
     for label, s in summary.items():
         comp = {
             "synchronization": min(100, s.get("coordination_score", 0) * 12),
@@ -134,10 +140,14 @@ def main():
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
         overall, _ = compute_scores(comp, cfg, tema=tema)
-        # Límite por escala: con pocas cuentas no se alcanzan bandas altas
-        # (CRITICAL/HIGH) solo por sincronización fuerte. Ver scoring.scale_cap.
-        overall = scale_cap(overall, s.get("accounts", 0), cfg, tema=tema)
+        # Escala (05/Sep): bonus por masa + piso híbrido (<3 cuentas => banda
+        # máx WATCH salvo volumen/infra) + cap CRITICAL/HIGH por masa mínima.
+        overall, floored = solve_scale(
+            overall, s.get("accounts", 0), ev_counts.get(label, 0),
+            comp["infrastructure"], cfg, tema=tema)
         band = band_for(overall, bands)
+        s["ruido_volumen"] = floored
+        s["n_events"] = ev_counts.get(label, 0)
 
         # FIX: el historial (tabla findings) debe guardar el score que tenia el
         # cluster EN EL MOMENTO de deteccion, no su valor actual. cluster_summary
@@ -171,7 +181,8 @@ def main():
             " attribution_evidence, missing_evidence) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (cluster_id, comp["synchronization"], comp["amplification"], comp["anomaly"],
              comp["infrastructure"], comp["network_density"], overall, att["confidence"],
-             f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}.",
+             f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}."
+             + (" Posible ruido de bajo volumen." if floored else ""),
              json.dumps(hyp, ensure_ascii=False), att["actor"], att["confidence"],
              att["evidence"], att["missing_evidence"]))
         # eventos miembros del cluster -> contenido real (para la UI)
@@ -266,10 +277,13 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
         overall, _ = compute_scores(comp, cfg, tema=tema)
-        overall = scale_cap(overall, s.get("accounts", 0), cfg, tema=tema)
+        overall, _ = solve_scale(
+            overall, s.get("accounts", 0), s.get("n_events", 0),
+            comp["infrastructure"], cfg, tema=tema)
         hyp = classify_hypotheses(s)
         att = attribution(hyp, infra_shared=comp["infrastructure"] > 30)
-        lines.append(f"### {label} — {s.get('accounts',0)} cuentas")
+        lines.append(f"### {label} — {s.get('accounts',0)} cuentas"
+                     + (" · **_Posible ruido de bajo volumen_**" if s.get("ruido_volumen") else ""))
         lines.append(f"- Coordinación {comp['synchronization']:.0f} · Amplificación {comp['amplification']:.0f} · "
                      f"Anomalía {comp['anomaly']:.0f} · Infraestructura {comp['infrastructure']:.0f} · "
                      f"Densidad red {comp['network_density']:.0f}")

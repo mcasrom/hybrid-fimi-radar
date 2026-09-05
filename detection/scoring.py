@@ -107,3 +107,74 @@ def scale_cap(overall, n_accounts, config, tema=None):
     if order.index(cur) > order.index(allowed):
         return float(bands[allowed][1])  # tope de la banda permitida
     return overall
+
+
+def _tema_scale(config, tema, section, default):
+    """Parámetros de escala: globales config->scoring-><section>, con override
+    por tema (config->temas-><tema>->scoring-><section>). Igual que los pesos."""
+    merged = dict(default)
+    if config:
+        merged.update((config.get("scoring", {}) or {}).get(section, {}) or {})
+    if tema and config:
+        t = (config.get("temas", {}) or {}).get(tema, {}).get("scoring", {})
+        merged.update((t or {}).get(section, {}) or {})
+    return merged
+
+
+def scale_bonus(overall, accounts, config=None, tema=None):
+    """Bonus por escala (Tarea 1 del análisis 05/Sep): a igualdad de
+    componentes, más cuentas puntúan más. Corrige el orden invertido en la
+    vista activa (un cluster de 2 cuentas puntuaba igual o más que uno de 49).
+    bonus = min(cap, cuentas * per_account); acotado para no desbordar el
+    score natural. Config: scoring.scale_bonus = {cap, per_account}."""
+    p = _tema_scale(config, tema, "scale_bonus", {"cap": 3.5, "per_account": 0.08})
+    bonus = min(float(p.get("cap", 3.5)), accounts * float(p.get("per_account", 0.08)))
+    return min(100.0, float(overall) + bonus)
+
+
+def scale_floor(overall, accounts, events, infra, config=None, tema=None):
+    """Piso híbrido de masa (05/Sep): un cluster con pocas cuentas solo puede
+    llegar a WATCH salvo evidencia adicional.
+
+    Regla: cuentas < min_accounts (3) => banda máx WATCH y se etiqueta
+    "posible ruido de bajo volumen", EXCEPTO si tiene >= except_events eventos
+    sostenidos o infraestructura compartida >= except_infra: en ese caso puede
+    alcanzar HIGH (79), pero NUNCA CRITICAL (eso lo fija scale_cap con
+    scale_min_accounts.CRITICAL=10).
+
+    Conserva como señal las parejas de 2 cuentas con volumen (cluster_012=22
+    eventos, cluster_006=31) y tumba a WATCH las parejas efímeras (2-3
+    eventos) que saturaban el top con banda alta.
+    Config: scoring.scale_floor = {min_accounts, except_events, except_infra}."""
+    p = _tema_scale(config, tema, "scale_floor",
+                    {"min_accounts": 3, "except_events": 10, "except_infra": 80})
+    bands = load_bands(config)
+    if accounts < p["min_accounts"]:
+        excepcion = (events >= p["except_events"]) or (infra >= p["except_infra"])
+        if not excepcion:
+            return float(bands["WATCH"][1])  # 39 — posible ruido de bajo volumen
+        return min(float(overall), float(bands["HIGH"][1]))  # 79 máx, nunca CRITICAL
+    return overall
+
+
+def solve_scale(overall, accounts, events, infra, config=None, tema=None):
+    """Aplica la escala completa del cluster (orden correcto):
+    1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima.
+
+    Devuelve (overall_final, floored):
+      floored=True => cae en "posible ruido de bajo volumen" (para marcarlo
+      en el assessment, la tarjeta y el informe)."""
+    overall = scale_bonus(overall, accounts, config, tema)
+    floored = False
+    p = _tema_scale(config, tema, "scale_floor",
+                    {"min_accounts": 3, "except_events": 10, "except_infra": 80})
+    bands = load_bands(config)
+    if accounts < p["min_accounts"]:
+        excepcion = (events >= p["except_events"]) or (infra >= p["except_infra"])
+        if not excepcion:
+            overall = float(bands["WATCH"][1])
+            floored = True
+        else:
+            overall = min(float(overall), float(bands["HIGH"][1]))
+    overall = scale_cap(overall, accounts, config, tema)
+    return overall, floored

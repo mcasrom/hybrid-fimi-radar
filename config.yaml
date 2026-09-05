@@ -29,6 +29,21 @@ scoring:
   scale_min_accounts:
     HIGH: 2
     CRITICAL: 10
+  # Bonus por escala (05/Sep): a igualdad de componentes, más cuentas puntúan
+  # más. Corrige el orden invertido (cluster de 2 cuentas >= cluster de 49).
+  # bonus = min(cap, cuentas*per_account), acotado para no desbordar.
+  scale_bonus:
+    cap: 3.5
+    per_account: 0.08
+  # Piso híbrido de masa (05/Sep): cluster < min_accounts cuentas => banda máx
+  # WATCH ("posible ruido de bajo volumen") SALVO evidencia adicional
+  # (>= except_events eventos sostenidos o infraestructura >= except_infra), en
+  # cuyo caso puede llegar a HIGH (79) pero NUNCA CRITICAL. Configurable por
+  # tema en temas.<tema>.scoring.scale_floor.
+  scale_floor:
+    min_accounts: 3
+    except_events: 10
+    except_infra: 80
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7
