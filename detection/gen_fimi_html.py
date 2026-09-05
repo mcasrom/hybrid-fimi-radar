@@ -808,7 +808,7 @@ def main():
         _max_score = max(_score_list_t) if _score_list_t else 0
         _max_banda = band_of(_max_score)
         _max_color = BAND_COLORS[_max_banda]
-        _anom_max = max(_anom_list_t) if _anom_list_t else 0
+        _anom_max = round(max(_anom_list_t)) if _anom_list_t else 0
         _anom_color = "#dc2626" if _anom_max >= 60 else ("#f59e0b" if _anom_max >= 40 else "#94a3b8")
         _pct_alerta = round(100.0 * _n_alerta / len(_tema_cl)) if _tema_cl else 0
         _amp_val = int(round(_amp_tema or 0))
@@ -821,7 +821,7 @@ def main():
                     f'text-transform:uppercase;letter-spacing:.03em">{label}</div>'
                     f'{render_dial_svg(label, max(0, min(100, valor)), color, ancho=112)}'
                     f'<div style="font-size:1.4rem;font-weight:800;color:{color};line-height:1.05">'
-                    f'{valor}</div>'
+                    f'{valor:.0f}</div>'
                     f'<div style="font-size:.74rem;color:#64748b;line-height:1.3">{sub}</div></div>')
         _gauges_t = "".join([
             _mini_dial("Score top", _max_score, _max_color, f"{_max_banda} · máx cluster"),
