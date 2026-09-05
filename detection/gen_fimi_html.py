@@ -445,6 +445,19 @@ def main():
                                          key=lambda x: -x["n"])[:4]
     except Exception:
         contenido_map = {}
+    # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
+    # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
+    # forma clusters en varios temas (solape frontera_sur/geopolitica: la pareja
+    # carlos1951+saharaenelcorazon salía como geopolitica_001 Y frontera_sur_012).
+    firma_cluster = {}
+    try:
+        _firmas = con.execute(
+            "SELECT ce.cluster_id, ce.author FROM cluster_events ce JOIN clusters cl"
+            " ON cl.id=ce.cluster_id WHERE ce.author!=''").fetchall()
+        for _f in _firmas:
+            firma_cluster.setdefault(_f["cluster_id"], set()).add(_f["author"])
+    except Exception:
+        firma_cluster = {}
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
     ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
@@ -798,6 +811,27 @@ def main():
 
     # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
     # Cada pestaña muestra: eventos, fuentes, clusters y banda de alerta del tema.
+    # A2: dedupe entre temas. El mismo conjunto de cuentas coordinadas puede
+    # formar clusters en varios temas (solape geográfico/temático frontera_sur↔
+    # geopolitica_ue_marruecos: 168/168 eventos compartidos). Para no inflar la
+    # sensación de alerta, cada firma (set de autores) se muestra UNA vez, en el
+    # primer tema del catálogo que la reclama; en los demás se marca como
+    # "duplicado de <tema origen>" y se oculta de la lista de tarjetas.
+    _firma_duenho = {}       # frozenset(auth) -> cluster_label del 1er tema
+    _duplicados = {}         # cluster_label -> cluster_label origen
+    for _t_ord in temas:
+        for _c_ord in clusters:
+            if _c_ord["tema_id"] != _t_ord:
+                continue
+            _sig = frozenset(firma_cluster.get(_c_ord["id"], ()))
+            if not _sig:
+                continue
+            _dueno = _firma_duenho.get(_sig)
+            if _dueno is None:
+                _firma_duenho[_sig] = _c_ord["cluster_label"]
+            else:
+                _duplicados[_c_ord["cluster_label"]] = _dueno
+
     tema_tabs = ""
     tema_panes = ""
     temas_stats = {}
@@ -808,7 +842,24 @@ def main():
         _nombre = _meta.get("nombre", _t)
         _estado = _meta.get("estado", "produccion")
         _discl = _meta.get("disclaimer", "")
-        _tema_cl = [c for c in clusters if c["tema_id"] == _t]
+        _tema_cl_raw = [c for c in clusters if c["tema_id"] == _t]
+        # A2: quitar de este tema los clusters cuyo conjunto de cuentas ya se
+        # muestra en un tema anterior del catálogo (no duplicar hallazgos).
+        _dup_aqui = [c for c in _tema_cl_raw if c["cluster_label"] in _duplicados]
+        _tema_cl = [c for c in _tema_cl_raw if c["cluster_label"] not in _duplicados]
+        _dup_note = ""
+        if _dup_aqui:
+            _origenes = {}
+            for _c in _dup_aqui:
+                _o = _duplicados[_c["cluster_label"]]
+                _origenes.setdefault(_o.split("_cluster_")[0], []).append(_c["cluster_label"])
+            _od = " · ".join(f"{k} ({len(v)} duplicado{'s' if len(v)>1 else ''})"
+                             for k, v in _origenes.items())
+            _dup_note = (f'<div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;'
+                         f'padding:8px 12px;margin:8px 0;font-size:.78rem;color:#475569">'
+                         f'<b>Sin duplicar:</b> {len(_dup_aqui)} cluster(s) de este tema son el mismo '
+                         f'conjunto de cuentas que ya se muestra en {_od}. Se listan una sola vez en '
+                         f'el radar para no inflar la alerta (solape temático).</div>')
         # Amplificación: señal GLOBAL del tema (un solo valor por run, no por
         # cluster). Se muestra una vez a nivel de pestaña con su escala y frase.
         _amp_tema = None
@@ -889,7 +940,12 @@ def main():
         }
         _cl_txt = ""
         if not _tema_cl:
-            _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
+            if _dup_aqui:
+                _cl_txt = ("<p style='font-size:.82rem;color:#64748b;font-style:italic'>"
+                           "Todo lo activo en este tema ya se muestra en otro tema "
+                           "(mismas cuentas coordinadas). Sin hallazgos exclusivos ahora.</p>")
+            else:
+                _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
@@ -902,9 +958,21 @@ def main():
                       f"font-family:inherit;{_sel if i == 0 else _sel}'>{_nombre}"
                       f"<span style='opacity:.75;font-weight:400'> · {_estado}</span></button>")
 
+        _bias_note = ""
+        if _estado == "piloto":
+            # C1: riesgo de sesgo visible en el propio panel (no solo "piloto en
+            # calibración"): en politica_nacional la coordinación partidista
+            # legítima y la opinión editorial se mezclan con señal de campaña.
+            _bias_note = (f'<div style="background:#fef2f2;border:2px solid #fecaca;border-radius:8px;'
+                          f'padding:8px 12px;margin:0 0 8px;font-size:.78rem;color:#7f1d1d;line-height:1.45">'
+                          f'<b>Riesgo de falso positivo por sesgo:</b> en este tema la coordinación '
+                          f'partidista legítima y la opinión editorial de cuentas activas se mezclan '
+                          f'con señal de campaña. El sistema da mucho peso a la anomalía para no '
+                          f'marcarlas como red inorgánica, pero sigue en calibración: interpreta '
+                          f'cualquier alerta como hipótesis, no como veredicto.</div>')
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
-                       f"<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
+                       f"{_bias_note}{_dup_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
     # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
     # justo debajo del selector (imposible de no ver al entrar en un tema piloto).
     piloto_banner = (
@@ -1101,6 +1169,29 @@ def main():
     # ============================================================
     # color/valor y frase del dial se calculan en _estado_tema(_t) para que la
     # vista resumen y las cabeceras de pestaña nunca diverjan.
+    def _resumen_ejecutivo(_t):
+        """B1: 2-3 líneas en texto plano de QUÉ está pasando en el tema hoy.
+        Construido de los clusters EXCLUSIVOS (sin los duplicados entre temas)
+        y de su contenido real (cluster_events). Ideal para el lector que solo
+        quiere "qué pasó hoy" y para compartir en redes."""
+        _cli_t = [c for c in clusters
+                  if c["tema_id"] == _t and c["cluster_label"] not in _duplicados]
+        if not _cli_t:
+            return "Sin clusters exclusivos ahora (lo activo ya se muestra en otro tema)."
+        _n_al = sum(1 for c in _cli_t if (c["overall_score"] or 0) >= 60)
+        _top = max(_cli_t, key=lambda c: c["overall_score"] or 0)
+        _band_top = band_of(_top["overall_score"] or 0)
+        _top_txt = ""
+        _topc = contenido_map.get(_top["id"]) or []
+        if _topc:
+            _tt = re.sub(r"\s+", " ", str(_topc[0].get("text", ""))).strip()
+            if _tt:
+                _top_txt = f' El cluster de mayor alerta habla de: "{_tt[:90]}{"…" if len(_tt) > 90 else ""}".'
+        _dims = f"{len(_cli_t)} clusters exclusivos"
+        if _n_al:
+            _dims += f", {_n_al} en alerta alta (≥60)"
+        return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {_band_top}." + _top_txt
+
     dial_cards = ""
     for _t in temas:
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
@@ -1114,9 +1205,12 @@ def main():
             f"{render_dial_svg(_nombre, _estilo['valor'], _estilo['color'])}"
             f"<div style='font-size:1.5rem;font-weight:800;color:{_estilo['color']};line-height:1.1'>"
             f"{_estilo['txt']}</div>"
-            f"<div style='font-size:.8rem;color:#64748b;margin:4px 0 10px;min-height:2.4em;line-height:1.35'>"
-            f"{_frase}</div>"
-            f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
+             f"<div style='font-size:.8rem;color:#64748b;margin:4px 0 10px;min-height:2.4em;line-height:1.35'>"
+             f"{_frase}</div>"
+             f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
+             f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
+             f"{_resumen_ejecutivo(_t)}</div>"
+             f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
             f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
             f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
             f"Ver detalle de este tema</button>"
