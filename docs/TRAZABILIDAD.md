@@ -32,3 +32,24 @@ el mismo label falla (constraint) y la tabla solo conserva un **único snapshot*
 
 No se reconstruyó con un valor inventado: cada fila se recuperó del snapshot
 real del mismo `cluster_label` y del mismo día.
+
+## 05/Sep — Alineación con detección de campañas (escala + narrativas + atribución)
+
+Trabajo de viabilidad contrastada con el análisis externo (verificado con datos
+reales antes de tocar código; ver docs/SCORING.md y docs/ATRIBUCION-LIMITACIONES.md).
+
+1. **Escala (T1)**: se confirmó el orden invertido (2 cuentas >= 49 cuentas) y se
+   corrigió con `solve_scale` (bonus por masa + piso híbrido + cap existente).
+   Detalle, tablas antes/después y fórmula en docs/SCORING.md. Backups y verificación
+   sobre copia `/tmp/radar_test_t1.db` (BD de prod intacta: 44 clusters tras el test).
+2. **Narrativas alineadas (T2)**: nuevo `detection/narrativas_alineadas.py` agrupa
+   clusters de la vista activa que hablan de lo mismo (TF-IDF + coseno sobre el
+   texto real de cluster_events; sklearn ya en el venv). Bloque nuevo en el dashboard.
+   Verificado en HTML de prueba: 5-6 grupos reales cruzando temas.
+3. **Atribución / señal organizativa (T3)**: documentadas las limitaciones
+   (atribución estructural-únicamente, 44/44 UNKNOWN, UNKNOWN != sin campaña) en
+   docs/ATRIBUCION-LIMITACIONES.md. Nuevo `detection/whois_signal.py` (RDAP público)
+   para clusters HIGH/CRITICAL: verificado (medios consolidados = dominio estable;
+   dominio activista pro-saharaui = privacidad + transferencia 2023).
+4. **Fecha de deploy (T4)**: el footer HTML ahora muestra "generado <fecha UTC>"
+   (marca de generación del archivo, distinguible de la fecha del último commit).
