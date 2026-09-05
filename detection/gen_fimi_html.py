@@ -179,11 +179,23 @@ def _cluster_detail_html(c, a, comps, contenido=None):
     cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
                     if n_cuentas is not None else "")
 
+    ruido = False
+    if a is not None:
+        try:
+            _asm_txt = a["assessment"] if isinstance(a, (dict, sqlite3.Row)) else getattr(a, "assessment", "")
+            ruido = "Posible ruido de bajo volumen" in str(_asm_txt or "")
+        except Exception:
+            ruido = False
+    ruido_html = (f'<span style="display:inline-block;font-size:.72rem;color:#6b7280;border:1px dashed #9ca3af;'
+                  f'border-radius:999px;padding:1px 10px;font-weight:600;background:#f9fafb">'
+                  f'Posible ruido de bajo volumen</span>' if ruido else "")
+
     h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
          f'<b style="font-size:1.02rem">{c["cluster_label"]}</b>'
          f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
+         f'{ruido_html}'
          f'{cuentas_html}</div>')
 
     # GUARDIA DE INTERPRETACIÓN: evita que un lector no experto lea HIGH/CRITICAL
@@ -527,6 +539,22 @@ def main():
         for _t in temas:
             tendencias[_t] = {"estado": "estable", "hoy": 0, "hace48": 0,
                               "high_hoy": 0, "high_48": 0}
+    # Narrativas alineadas (cluster-of-clusters, 05/Sep): une clusters de la
+    # vista activa que hablan de la misma narrativa (TF-IDF + coseno sobre el
+    # texto real de cluster_events). Capa transversal, agnóstica al actor.
+    # Se computa AQUÍ (antes de con.close()) y se renderiza más abajo.
+    _grupos_na = []
+    _na_mod = None
+    try:
+        import importlib.util
+        _spec_na = importlib.util.spec_from_file_location(
+            "narrativas_alineadas", ROOT / "detection" / "narrativas_alineadas.py")
+        _na_mod = importlib.util.module_from_spec(_spec_na)
+        _spec_na.loader.exec_module(_na_mod)
+        _grupos_na = _na_mod.detectar(con)
+    except Exception:
+        _grupos_na = []
+        _na_mod = None
     con.close()
 
     # narrativas amplificadas (mismo titular en varias fuentes)
@@ -610,6 +638,14 @@ def main():
                           f"</div></div></div>")
     except Exception as e:
         narr_block = ""
+    # Narrativas alineadas: render a partir de los grupos ya calculados antes
+    # de cerrar la conexión (arriba, junto al bloque de tendencias).
+    narr_align_block = ""
+    if _na_mod is not None:
+        try:
+            narr_align_block = _na_mod._html(_grupos_na)
+        except Exception:
+            narr_align_block = ""
     # historial de hallazgos persistidos, agrupado por tipo
     import html as _html
     import datetime as _dt
@@ -1219,10 +1255,18 @@ def main():
     except Exception:
         _fecha = ""
     _fecha_sufijo = f" · {_fecha}" if _fecha else ""
+    # Marca de generación verificable en el HTML servido (05/Sep): permite
+    # confirmar que el archivo servido es reciente (diagnóstico de cachés viejas
+    # vistas por revisores externos) y distingue "fecha del último commit" de
+    # "cuándo se generó este HTML". La muestra el footer y también se expone en
+    # una etiqueta meta machine-readable.
+    _gen_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    _gen_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     version_html = (f'<p style="font-size:.74rem;color:#999;margin:6px 0 0">'
                     f'<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" '
                     f'rel="noopener noreferrer" style="color:#888">github.com/mcasrom/hybrid-fimi-radar</a>'
-                    f' · <span title="{_ver}">{_ver}</span>{_fecha_sufijo}</p>')
+                    f' · <span title="{_ver}">{_ver}</span>{_fecha_sufijo}'
+                    f' · <span title="fecha de generación de este HTML">generado {_gen_utc}</span></p>')
     # --- Salud de las fuentes (health monitor) ---
     try:
         import importlib.util
@@ -1298,7 +1342,9 @@ la atribución nunca se presume.</p>
 
  {tabs_ui}
 
-{narr_block}
+ {narr_block}
+
+{narr_align_block}
 
 {sost_html}
 
