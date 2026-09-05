@@ -1025,7 +1025,22 @@ def main():
             f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
             f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
             f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
-            f"Ver detalle de este tema</button></div>")
+            f"Ver detalle de este tema</button>"
+            f"<div style='margin-top:12px;padding-top:10px;border-top:1px dashed #e2e8f0;text-align:center'>"
+            f"<div style='font-size:.72rem;color:#94a3b8;margin-bottom:6px'>¿Te resulta útil este tema?</div>"
+            f"<div style='display:flex;gap:6px;justify-content:center'>"
+            f"<button type='button' data-voto='si' onclick='feedbackClick(\"{_t}\",\"si\",this)' "
+            f"style='cursor:pointer;border:1px solid #d0d5dd;background:#fff;color:#334155;border-radius:8px;"
+            f"padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit'>Sí</button>"
+            f"<button type='button' data-voto='no' onclick='feedbackClick(\"{_t}\",\"no\",this)' "
+            f"style='cursor:pointer;border:1px solid #d0d5dd;background:#fff;color:#334155;border-radius:8px;"
+            f"padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit'>No</button>"
+            f"<button type='button' data-voto='ns' onclick='feedbackClick(\"{_t}\",\"ns\",this)' "
+            f"style='cursor:pointer;border:1px solid #d0d5dd;background:#fff;color:#334155;border-radius:8px;"
+            f"padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit'>No lo sé</button>"
+            f"</div>"
+            f"<div id='fbMsg_{_t}' style='font-size:.72rem;color:#16a34a;margin-top:6px;min-height:1em'></div>"
+            f"</div></div>")
     # --- COMPARTIR AGREGADO (vista resumen): un solo texto con los 3 diales ---
     # Se construye desde los mismos datos que pintan los diales (tendencias +
     # catálogo config) para que el mensaje coincida con lo que se ve en pantalla.
@@ -1090,6 +1105,26 @@ def main():
         "</div>"
         "<div id='nlMsg' style='font-size:.8rem;color:#16a34a;margin-top:8px;min-height:1.2em'></div>"
         "</div>")
+    # --- SUGERIR TEMA (vista resumen): textarea + envío a /api/sugerir (rate-limit por IP) ---
+    # Las sugerencias van a la tabla `sugerencias` (radar.db) y se reenvían al dueño
+    # por Telegram. NO hay votación pública: son un canal privado dueño-usuario.
+    sugerir_form = (
+        "<div style='margin-top:14px;padding:18px 20px;border:1px solid #e2e8f0;"
+        "border-radius:14px;background:#fff'>"
+        "<div style='font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:2px'>"
+        "💡 ¿Qué tema debería vigilar el radar?</div>"
+        "<div style='font-size:.78rem;color:#64748b;margin-bottom:10px'>Sugerencias para ampliar el "
+        "catálogo (frontera sur, UE-Marruecos, política nacional). Llegan directamente al autor.</div>"
+        "<textarea id='sugerirTxt' maxlength='500' rows='2' placeholder='Ej.: desinformación sobre "
+        "migración en Canarias…' "
+        "style='width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d0d5dd;"
+        "border-radius:8px;font-size:.85rem;font-family:inherit;resize:vertical'></textarea>"
+        "<div style='display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap'>"
+        "<button id='sugerirBtn' type='button' onclick='sugerirClick()' "
+        "style='cursor:pointer;border:none;background:#0f172a;color:#fff;border-radius:8px;"
+        "padding:9px 16px;font-weight:700;font-size:.85rem;font-family:inherit'>Enviar sugerencia</button>"
+        "<div id='sugerirMsg' style='font-size:.8rem;color:#16a34a;min-height:1.2em'></div>"
+        "</div></div>")
     resumen_html = (
         f"<div id='vistaResumen'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 4px'><b>¿Qué está pasando ahora?</b> "
@@ -1098,6 +1133,7 @@ def main():
         f"{dial_cards}</div>"
         f"{_share_resumen_buttons}"
         f"{newsletter_form}"
+        f"{sugerir_form}"
         f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
         f"Tendencia: hallazgos de hoy frente a hace 48 h por tema. Actualizado cada 6 h.</div>"
         f"</div>")
@@ -1366,6 +1402,61 @@ if ('serviceWorker' in navigator) {{
         msg.textContent='✅ Revisa tu email y confirma la suscripción (doble opt-in).';
       }}else{{
         msg.textContent='No se pudo suscribir: '+(d&&d.error?d.error:'inténtalo más tarde.');
+        msg.style.color='#dc2626';
+      }}
+    }}).catch(function(){{
+      btn.disabled=false;
+      msg.textContent='Error de red. Inténtalo de nuevo.'; msg.style.color='#dc2626';
+    }});
+  }};
+
+  // Feedback ligero por tema (vista resumen): POST /api/feedback (rate-limit por IP).
+  // Visible solo para el dueño; sin cómputo público de votos.
+  window.feedbackClick = function(tema, voto, btn){{
+    var msg=document.getElementById('fbMsg_'+tema);
+    if(!msg){{ return; }}
+    msg.style.color='#16a34a';
+    msg.textContent='Enviando…';
+    var btns=btn.parentNode.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{ btns[i].disabled=true; btns[i].opacity=0.6; }}
+    fetch('/api/feedback',{{
+      method:'POST',
+      headers:{{'Content-Type':'application/json'}},
+      body:JSON.stringify({{tema:tema, voto:voto}})
+    }}).then(function(r){{ return r.json(); }}).then(function(d){{
+      for(var i=0;i<btns.length;i++){{ btns[i].disabled=false; btns[i].opacity=1; }}
+      if(d && d.ok){{
+        msg.textContent='✅ Gracias por tu opinión.';
+      }}else{{
+        msg.textContent='No se guardó: '+(d&&d.error?d.error:'inténtalo más tarde.');
+        msg.style.color='#dc2626';
+      }}
+    }}).catch(function(){{
+      for(var i=0;i<btns.length;i++){{ btns[i].disabled=false; btns[i].opacity=1; }}
+      msg.textContent='Error de red. Inténtalo de nuevo.'; msg.style.color='#dc2626';
+    }});
+  }};
+
+  // Sugerir tema (vista resumen): POST /api/sugerir (rate-limit por IP).
+  window.sugerirClick = function(){{
+    var txt=(document.getElementById('sugerirTxt').value||'').trim();
+    var msg=document.getElementById('sugerirMsg');
+    var btn=document.getElementById('sugerirBtn');
+    if(!msg){{ return; }}
+    msg.style.color='#16a34a';
+    if(!txt){{ msg.textContent='Escribe una sugerencia primero.'; msg.style.color='#dc2626'; return; }}
+    btn.disabled=true; msg.textContent='Enviando…';
+    fetch('/api/sugerir',{{
+      method:'POST',
+      headers:{{'Content-Type':'application/json'}},
+      body:JSON.stringify({{texto:txt}})
+    }}).then(function(r){{ return r.json(); }}).then(function(d){{
+      btn.disabled=false;
+      if(d && d.ok){{
+        msg.textContent='✅ Sugerencia enviada al autor. ¡Gracias!';
+        document.getElementById('sugerirTxt').value='';
+      }}else{{
+        msg.textContent='No se envió: '+(d&&d.error?d.error:'inténtalo más tarde.');
         msg.style.color='#dc2626';
       }}
     }}).catch(function(){{

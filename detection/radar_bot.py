@@ -6,6 +6,7 @@ Bot dedicado (no comparte polling con nearme_status_bot). Comandos:
   /radar         -> teclado inline multi-selección de temas (elige los que quieras)
   /mis           -> ver sus temas y frecuencia acutales
   /baja          -> borra la suscripción de Telegram de este chat
+  /sugerir TEXTO -> guarda una sugerencia de tema nuevo y la reenvía al dueño
 
 Alta: tras /radar, el usuario marca los temas y pulsa "Confirmar". La fila
 se guarda en la tabla `suscripciones` (canal='telegram', destino=chat_id).
@@ -35,6 +36,7 @@ if sys_path not in sys.path:
 
 import requests  # noqa: E402
 from schema_suscripciones import init  # noqa: E402
+from schema_feedback import init as _init_feedback  # noqa: E402
 from radar_trend import _cargar_temas_activos, NOMBRE_TEMA  # noqa: E402
 
 ENV_FILE = ROOT / ".env"
@@ -138,6 +140,18 @@ def my_subs(destino):
     return sorted(json.loads(row[0])) if row else []
 
 
+def _guardar_sugerencia(chat, texto):
+    """Guarda la sugerencia (tabla sugerencias, canal telegram) y avisa al dueño."""
+    conn = _init_feedback()
+    conn.execute("INSERT INTO sugerencias (texto, canal, ip) VALUES (?,?,?)",
+                 (texto[:500], "telegram", str(chat)))
+    conn.commit()
+    conn.close()
+    owner = int(os.environ.get("FIMI_OWNER_CHAT", "47652516"))
+    send(owner, "📥 <b>Sugerencia de tema</b> para el radar FIMI\n"
+                f"Canal: telegram\n\n{texto}")
+
+
 def main():
     if not TOKEN or ":" not in TOKEN:
         print("[bot] FIMI_TELEGRAM_BOT_TOKEN no configurado en env/.env — saliendo.")
@@ -182,7 +196,8 @@ def main():
             txt = (msg.get("text") or "").strip()
             if txt.startswith("/start") or txt.startswith("/help"):
                 send(chat, "📡 <b>Radar FIMI</b> — alertas de los diales por tema.\n\n"
-                           "/radar — elegir temas\n/mis — tus temas\n/baja — darte de baja\n\n"
+                           "/radar — elegir temas\n/mis — tus temas\n/baja — darte de baja\n"
+                           "/sugerir — proponer un tema nuevo\n\n"
                            "Te aviso SOLO cuando un tema cambia de estado (Subiendo/Bajando/Estable).")
             elif txt.startswith("/radar"):
                 sel[chat] = set()
@@ -193,6 +208,14 @@ def main():
             elif txt.startswith("/baja"):
                 set_subs(chat, [])
                 send(chat, "Listo. Te has dado de baja del radar FIMI.")
+            elif txt.startswith("/sugerir"):
+                sugerencia = txt[len("/sugerir"):].strip()
+                if not sugerencia:
+                    send(chat, "¿Qué tema te gustaría que el radar vigile?\n"
+                               "Ej.: <code>/sugerir deporte electoral en América Latina</code>")
+                else:
+                    _guardar_sugerencia(chat, sugerencia)
+                    send(chat, "📥 Gracias, ¡tu sugerencia ha llegado al radar!")
         time.sleep(1)
 
 

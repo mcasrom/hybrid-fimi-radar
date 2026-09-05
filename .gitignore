@@ -19,3 +19,5 @@ backups/
 
 # informes generados por run_fimi (se regeneran cada ciclo; historial en la BD)
 reports/
+data/*.db-shm
+data/*.db-wal
