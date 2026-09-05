@@ -252,6 +252,20 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Independiente marroquí. Línea pro-democrática.
+# === Sondeo 2026-09-05: fuentes rusas/árabes ===
+# RT en Español: único medio estatal ruso accesible en español (TASS=EN,
+# RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
+# Se vigila como FUENTE DE NARRATIVAS FIMI, no como fuente fiable: su
+# contenido propio es material de análisis de desinformación.
+- nombre: RT en Español
+  url: https://actualidad.rt.com/feeds/all.rss
+  tipo: media
+  idioma: es
+  bias: state
+  reliability: mixed
+  transparency: low
+  factcheck_url: https://mediabiasfactcheck.com/russia-today/
+  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela máx.'
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
 temas:
