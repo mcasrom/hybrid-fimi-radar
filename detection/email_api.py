@@ -262,28 +262,36 @@ class H(BaseHTTPRequestHandler):
         send_email(email, "Radar FIMI · Confirma tu suscripción", html)
 
     def _avisar_dueno(self, texto, canal="web"):
-        """Reenvía una sugerencia de tema al dueño por Telegram (FIMI_OWNER_CHAT)."""
+        """Reenvía una sugerencia de tema al dueño (Telegram + email info-fimi)."""
         token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "") or (load_env(ENV_RADAR) or {}).get("FIMI_TELEGRAM_BOT_TOKEN", "")
-        if ":" not in token:
-            return
-        chat = os.environ.get("FIMI_OWNER_CHAT", "") or (load_env(ENV_RADAR) or {}).get("FIMI_OWNER_CHAT", "47652516")
-        msg = ("📥 <b>Sugerencia de tema</b> para el radar FIMI\n"
-               f"Canal: {canal}\n\n{texto}")
-        data = {
-            "chat_id": str(chat),
-            "text": msg,
-            "parse_mode": "HTML",
-        }
-        req = urllib.request.Request(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            data=urllib.parse.urlencode(data).encode(),
-            headers={"Content-Type": "application/x-www-form-urlencoded",
-                     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Chrome/120"},
+        if ":" in token:
+            chat = os.environ.get("FIMI_OWNER_CHAT", "") or (load_env(ENV_RADAR) or {}).get("FIMI_OWNER_CHAT", "47652516")
+            msg = ("📥 <b>Sugerencia de tema</b> para el radar FIMI\n"
+                   f"Canal: {canal}\n\n{texto}")
+            data = {
+                "chat_id": str(chat),
+                "text": msg,
+                "parse_mode": "HTML",
+            }
+            req = urllib.request.Request(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                data=urllib.parse.urlencode(data).encode(),
+                headers={"Content-Type": "application/x-www-form-urlencoded",
+                         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Chrome/120"},
+            )
+            try:
+                urllib.request.urlopen(req, timeout=15)
+            except Exception as e:
+                print(f"[telegram sugerencia] error: {e}")
+        import html as _h
+        send_email(
+            "info-fimi@viajeinteligencia.com",
+            "[Radar FIMI] Sugerencia de tema · " + texto[:60],
+            f'<h3>📥 Nueva sugerencia de tema</h3>'
+            f'<p><b>Canal:</b> {_h.escape(canal)}</p>'
+            f'<p><b>Sugerencia:</b> {_h.escape(texto)}</p>'
+            f'<p style="color:#888;font-size:.85rem">Radar FIMI · fimi.viajeinteligencia.com</p>',
         )
-        try:
-            urllib.request.urlopen(req, timeout=15)
-        except Exception:
-            pass
 
 
 def main():

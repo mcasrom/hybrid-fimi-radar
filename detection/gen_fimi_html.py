@@ -83,13 +83,16 @@ def kpi_banda_alerta(clus):
             f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
 
 
-def render_dial_svg(etiqueta, valor, color):
+def render_dial_svg(etiqueta, valor, color, ancho=180):
     """Velocímetro SVG simple (sin librería). valor 0-100, color de banda.
 
     Semicírculo base gris + aguja que apunta a la posición del valor.
     El color de la aguja y de la etiqueta indica el estado (banda).
+    ``ancho`` permite usarlo pequeño en cabeceras de pestaña sin que el
+    viewBox se recorte (el alto se escala proporcional al viewBox 200x112).
     """
     import math as _m
+    alto = int(ancho * 112 / 200)
     cx, cy, r = 100, 100, 72
     L = _m.pi * r  # longitud del semicírculo
     # punto del arco superior para un porcentaje (0% izquierda, 100% derecha)
@@ -100,7 +103,7 @@ def render_dial_svg(etiqueta, valor, color):
     nx = cx + (r - 14) * _m.cos(theta)
     ny = cy - (r - 14) * _m.sin(theta)
     path_d = f"M {cx - r} {cy} A {r} {r} 0 0 1 {cx + r} {cy}"
-    return (f'<svg viewBox="0 0 200 112" width="180" height="101" role="img" '
+    return (f'<svg viewBox="0 0 200 112" width="{ancho}" height="{alto}" role="img" '
             f'aria-label="{etiqueta}: {valor:.0f}/100">'
             f'<path d="{path_d}" fill="none" stroke="#e2e8f0" stroke-width="11" '
             f'stroke-linecap="round" stroke-dasharray="{L:.1f} {L:.1f}"/>'
@@ -724,6 +727,39 @@ def main():
     if narr_kpi is None:
         narr_kpi = kpi("Narrativas amplificadas", 0, "sin datos", "#f8fafc")
 
+    # Estado resumido por tema para diales/cabeceras: tendencia, color y frase.
+    ESTADO_DIAL = {
+        "subiendo":   {"txt": "Subiendo", "color": "#d97706", "valor": 75},
+        "estable":    {"txt": "Estable",  "color": "#16a34a", "valor": 40},
+        "bajando":    {"txt": "Bajando",  "color": "#64748b", "valor": 20},
+        "recopilando":{"txt": "En recopilación", "color": "#94a3b8", "valor": 10},
+    }
+
+    def _estado_tema(_t):
+        """Devuelve (estado_dial, estilo, frase) para el tema _t."""
+        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
+        _estado_cfg = _m.get("estado", "produccion")
+        _tr = tendencias.get(_t, {"estado": "estable", "hoy": 0, "hace48": 0,
+                                  "high_hoy": 0, "high_48": 0})
+        if _estado_cfg == "piloto":
+            _frase = "piloto en calibración — lectura con cautela"
+            _estado_dial = "recopilando"
+            _estilo = ESTADO_DIAL["recopilando"]
+        else:
+            _estado_dial = _tr.get("estado", "estable")
+            _estilo = ESTADO_DIAL.get(_estado_dial, ESTADO_DIAL["estable"])
+            if _estado_dial == "recopilando":
+                _frase = "sin datos suficientes aún (se está acumulando histórico)"
+            elif _estado_dial == "subiendo":
+                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+                if _tr["high_hoy"] > _tr["high_48"]:
+                    _frase = f"{_tr['high_hoy']} clusters en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
+            elif _estado_dial == "bajando":
+                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+            else:
+                _frase = f"{_tr['hoy']} hallazgos hoy, sin cambio frente a hace 48h"
+        return _estado_dial, _estilo, _frase
+
     # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
     # Cada pestaña muestra: eventos, fuentes, clusters y banda de alerta del tema.
     tema_tabs = ""
@@ -753,13 +789,59 @@ def main():
                         f'{_amp_tema:.0f}/100</div>'
                         f'<div style="font-size:.76rem;color:#78716c">señal global: cuántas cuentas '
                         f'distintas repiten el mismo contenido en el tema</div></div>')
-        _cards_t = "".join([
-            kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
-            kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
-            kpi("Clusters", len(_tema_cl), "activos", "#fafaf9"),
-            _amp_kpi,
-            kpi_banda_alerta(_tema_cl),
+        # Agregados de las tarjetas para el KPI de cabecera: nº de clusters en
+        # alerta alta, anomalía alta, cuentas implicadas y score máximo, todos
+        # derivados de los datos que se muestran en cada tarjeta.
+        _asm_by_cid_t = {a["cluster_id"]: a for a in assessments} if assessments else {}
+        _tot_cuentas = 0
+        _anom_list_t = []
+        _score_list_t = []
+        for _cc_t in _tema_cl:
+            _aa_t = _asm_by_cid_t.get(_cc_t["id"])
+            if _aa_t:
+                _mm_t = re.search(r"(\d+)\s+cuentas?", str(_aa_t["assessment"] or ""))
+                if _mm_t:
+                    _tot_cuentas += int(_mm_t.group(1))
+            _anom_list_t.append(_cc_t["anomaly_score"] or 0)
+            _score_list_t.append(_cc_t["overall_score"] or 0)
+        _n_alerta = sum(1 for _v in _score_list_t if _v >= 60)
+        _max_score = max(_score_list_t) if _score_list_t else 0
+        _max_banda = band_of(_max_score)
+        _max_color = BAND_COLORS[_max_banda]
+        _anom_max = max(_anom_list_t) if _anom_list_t else 0
+        _anom_color = "#dc2626" if _anom_max >= 60 else ("#f59e0b" if _anom_max >= 40 else "#94a3b8")
+        _pct_alerta = round(100.0 * _n_alerta / len(_tema_cl)) if _tema_cl else 0
+        _amp_val = int(round(_amp_tema or 0))
+        _n_tot = len(_tema_cl)
+        def _mini_dial(label, valor, color, sub):
+            return (f'<div style="flex:0 1 165px;min-width:150px;width:165px;background:#fff;'
+                    f'border:1px solid #e2e8f0;border-radius:16px;padding:12px 8px 8px;'
+                    f'text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)">'
+                    f'<div style="font-size:.72rem;color:#475569;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:.03em">{label}</div>'
+                    f'{render_dial_svg(label, max(0, min(100, valor)), color, ancho=112)}'
+                    f'<div style="font-size:1.4rem;font-weight:800;color:{color};line-height:1.05">'
+                    f'{valor}</div>'
+                    f'<div style="font-size:.74rem;color:#64748b;line-height:1.3">{sub}</div></div>')
+        _gauges_t = "".join([
+            _mini_dial("Score top", _max_score, _max_color, f"{_max_banda} · máx cluster"),
+            _mini_dial("En alerta", _n_alerta, "#dc2626" if _n_alerta else "#94a3b8",
+                       f"{_pct_alerta}% · {_n_alerta} de {_n_tot} clusters ≥60"),
+            _mini_dial("Anomalía máx", _anom_max, _anom_color,
+                       "desviación más alta de un cluster"),
+            _mini_dial("Amplificación", _amp_val, "#c2410c",
+                       "señal global del tema"),
         ])
+        _cards_t = (f'<div class="fimi-gauges" '
+                    f'style="display:flex;flex-wrap:wrap;gap:12px;margin:0 auto 10px;width:100%;justify-content:center">'
+                    f'{_gauges_t}</div>'
+                    f'<div style="display:flex;flex-wrap:wrap;gap:10px;width:100%">' + "".join([
+                        kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
+                        kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
+                        kpi("Clusters", len(_tema_cl), "activos", "#fafaf9"),
+                        kpi("Cuentas", _tot_cuentas, "implicadas en clusters", "#f1f5f9"),
+                        kpi_banda_alerta(_tema_cl),
+                    ]) + '</div>')
         # stats por tema para el texto de compartir (se genera en el momento)
         _n_high_t = sum(1 for _cc in _tema_cl
                         if (_cc["overall_score"] or 0) >= 60)
@@ -783,6 +865,7 @@ def main():
                       f"border-radius:999px;padding:7px 14px;font-weight:600;font-size:.82rem;"
                       f"font-family:inherit;{_sel if i == 0 else _sel}'>{_nombre}"
                       f"<span style='opacity:.75;font-weight:400'> · {_estado}</span></button>")
+
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
                        f"<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
@@ -980,38 +1063,13 @@ def main():
     # ============================================================
     # VISTA RESUMEN (por defecto): diales por tema, nada más
     # ============================================================
-    # color/valor del dial según tendencia + frase de contexto
-    ESTADO_DIAL = {
-        "subiendo":   {"txt": "Subiendo", "color": "#d97706", "valor": 75},
-        "estable":    {"txt": "Estable",  "color": "#16a34a", "valor": 40},
-        "bajando":    {"txt": "Bajando",  "color": "#64748b", "valor": 20},
-        "recopilando":{"txt": "En recopilación", "color": "#94a3b8", "valor": 10},
-    }
+    # color/valor y frase del dial se calculan en _estado_tema(_t) para que la
+    # vista resumen y las cabeceras de pestaña nunca diverjan.
     dial_cards = ""
     for _t in temas:
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
         _nombre = _m.get("nombre", _t)
-        _estado_cfg = _m.get("estado", "produccion")
-        _tr = tendencias.get(_t, {"estado": "estable", "hoy": 0, "hace48": 0,
-                                  "high_hoy": 0, "high_48": 0})
-        # contexto: piloto -> aviso; si no, frase de tendencia
-        if _estado_cfg == "piloto":
-            _frase = "piloto en calibración — lectura con cautela"
-            _estado_dial = "recopilando"
-            _estilo = ESTADO_DIAL["recopilando"]
-        else:
-            _estado_dial = _tr.get("estado", "estable")
-            _estilo = ESTADO_DIAL.get(_estado_dial, ESTADO_DIAL["estable"])
-            if _estado_dial == "recopilando":
-                _frase = "sin datos suficientes aún (se está acumulando histórico)"
-            elif _estado_dial == "subiendo":
-                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
-                if _tr["high_hoy"] > _tr["high_48"]:
-                    _frase = f"{_tr['high_hoy']} clusters en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
-            elif _estado_dial == "bajando":
-                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
-            else:
-                _frase = f"{_tr['hoy']} hallazgos hoy, sin cambio frente a hace 48h"
+        _estado_dial, _estilo, _frase = _estado_tema(_t)
         dial_cards += (
             f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
@@ -1154,10 +1212,17 @@ def main():
                 .decode().strip())
     except Exception:
         _ver = "desarrollo"
+    try:
+        _fecha = (_sp.check_output(["git", "log", "-1", "--format=%ci"],
+                                   cwd=str(ROOT), stderr=_sp.DEVNULL).decode().strip())
+        _fecha = _fecha[:16].replace(" ", " ")  # YYYY-MM-DD HH:MM
+    except Exception:
+        _fecha = ""
+    _fecha_sufijo = f" · {_fecha}" if _fecha else ""
     version_html = (f'<p style="font-size:.74rem;color:#999;margin:6px 0 0">'
                     f'<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" '
                     f'rel="noopener noreferrer" style="color:#888">github.com/mcasrom/hybrid-fimi-radar</a>'
-                    f' · <span title="{_ver}">{_ver}</span></p>')
+                    f' · <span title="{_ver}">{_ver}</span>{_fecha_sufijo}</p>')
     # --- Salud de las fuentes (health monitor) ---
     try:
         import importlib.util
@@ -1217,6 +1282,7 @@ a{{color:#c2410c}}
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a>
 </p>
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
+<p style="color:#475569;font-size:.86rem;margin:.3rem 0 .2rem">FIMI · <em>Foreign Information Manipulation and Interference</em> (Manipulación e Interferencia de Información Extranjera): operaciones híbridas que amplifican, coordinan o distorsionan narrativas para influir en la opinión pública y la política desde fuera de la frontera.</p>
 <p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en el
 catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
  <strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
@@ -1277,11 +1343,11 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a>
+    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
-  <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo. Los servidores los paga su autor; el newsletter solo usa tu email para el envío y nada más.</p>
+  <p style="font-size:.78rem;color:#888;margin:10px 0 0">Proyecto personal, sin rastreo. Los servidores los paga su autor; el newsletter solo usa tu email para el envío y nada más. Contacto: <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">info-fimi@viajeinteligencia.com</a></p>
   {version_html}
 </footer>
 </main>
@@ -1328,8 +1394,8 @@ if ('serviceWorker' in navigator) {{
     }}
     var panes=document.querySelectorAll('.fimi-pane');
     for(i=0;i<panes.length;i++){{ p=panes[i];
-      if(p.getAttribute('data-tema')===t){{ p.classList.remove('hidden'); }}
-      else {{ p.classList.add('hidden'); }}
+      if(p.getAttribute('data-tema')===t){{ p.removeAttribute('hidden'); }}
+      else {{ p.setAttribute('hidden',''); }}
     }}
     updatePilotoBanner(t);
     updateShare(t);

@@ -356,6 +356,22 @@ def main():
                     existing.setdefault("_temas", set()).update(e.get("_temas", set()))
                     break
 
+    # Clasificación por CONTENIDO multi-tema: aunque un evento se haya capturado
+    # por la keyword de un tema (o un feed sin tema -> frontera_sur), si su texto
+    # menciona keywords de otros temas se acumulan TODOS los que matcheen. Esto
+    # corrige el sesgo de captura (los feeds RSS caen en frontera_sur por defecto
+    # y geopolitica/politica quedaban pobres de datos).
+    try:
+        from normalizer.clasificar import temas_por_contenido
+        for e in uniq:
+            extra = temas_por_contenido((e.get("text") or "") + " " + (e.get("title") or ""), keywords)
+            if extra:
+                cur = set(e.get("_temas") or {"frontera_sur"})
+                cur.update(extra)
+                e["_temas"] = sorted(cur)
+    except Exception as _exc:
+        print(f"  clasificacion por contenido error: {_exc}")
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     # _temas es un set (no serializable a JSON): convertir a lista para el dump
     for e in uniq:
