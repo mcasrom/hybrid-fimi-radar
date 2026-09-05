@@ -53,3 +53,31 @@ reales antes de tocar código; ver docs/SCORING.md y docs/ATRIBUCION-LIMITACIONE
    dominio activista pro-saharaui = privacidad + transferencia 2023).
 4. **Fecha de deploy (T4)**: el footer HTML ahora muestra "generado <fecha UTC>"
    (marca de generación del archivo, distinguible de la fecha del último commit).
+
+### Verificación en PRODUCCIÓN (05/Sep, cron 12:38 UTC)
+Ciclo real completo tras el commit b21e473 — sin errores en la sección de hoy
+(los IntegrityError `clusters.cluster_label` del fimi.log son de días previos al
+fix de labels 4ebb0f3/8c46480; al revisar el log mirar SIEMPRE la última
+sección `=== run_fimi ... ===`):
+- 7897 eventos, 29 fuentes, 45 clusters activos (frontera_sur 35, geopolitica 3,
+  politica_nacional 7). Dashboard version `b21e473`, footer "generado
+  2026-09-05 12:38 UTC".
+- Ranking corregido por escala: frontera_sur_cluster_000 (50 cuentas)=81.9
+  CRITICAL y _001 (14 cuentas)=80.2 CRITICAL; pareja 2 cuentas/45 eventos
+  (geopolitica_001)=79 HIGH conservada como señal por volumen. Un cluster de 2
+  cuentas ya no supera a uno de 50.
+- Piso híbrido: 26 clusters marcados "Posible ruido de bajo volumen" (WATCH 39).
+  0 violaciones de la regla: los 2 únicos CRITICAL tienen 54 y 15 cuentas;
+  ningún <3 cuentas sin excepción (>=10 eventos o infra >=80) está en banda
+  alta. Nota: para auditar la masa usar SIEMPRE el regex "con N cuentas" del
+  assessment (el conteo de autores distintos en cluster_events difiere del
+  summary del clustering y da falsos positivos).
+- politica_nacional (piloto) intacta: 7 clusters, max 58.7, 0 HIGH/CRITICAL —
+  el override por tema de scale_floor/scale_bonus no rompe su calibración
+  (anomalía 0.40).
+- whois_signal.py (RDAP) en prod sobre 3 clusters >=79: medios consolidados =
+  "dominio estable"; noteolvidesdelsaharaoccidental.org = registro 2016 /
+  transferencia 2023 / privacidad (señal que lo estructural no ve).
+- Bloque "Narrativas alineadas (cluster-of-clusters)" en vivo: grupo de 7
+  clusters cruzando frontera_sur + politica_nacional sobre gobierno/Marruecos/
+  España.
