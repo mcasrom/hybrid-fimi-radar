@@ -1577,6 +1577,23 @@ def main():
         _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
                              f"<p class='caption'>No disponible: {_e_st}</p></div>")
 
+    # --- Volumen fuera de catálogo (posible tema emergente, pieza #4) ---
+    # Eventos que solo llevan el default frontera_sur y cuyo texto NO matchea
+    # ninguna keyword del catálogo: ese volumen no lo cubre ningún tema. Se
+    # agrupa por términos recurrentes como CANDIDATOS a revisar (el dueño
+    # decide si añade keyword/tema). detection/temas_emergentes.py.
+    try:
+        import importlib.util as _ilu_em
+        _spec_em = _ilu_em.spec_from_file_location(
+            "temas_emergentes", ROOT / "detection" / "temas_emergentes.py")
+        _tem = _ilu_em.module_from_spec(_spec_em)
+        _spec_em.loader.exec_module(_tem)
+        _emer_res = _tem.detectar(dias=14, min_eventos=10)
+        _emer_html = _tem._html(_emer_res)
+    except Exception as _e_em:
+        _emer_html = (f"<div class='card'><h3>Volumen fuera del catálogo</h3>"
+                      f"<p class='caption'>No disponible: {_e_em}</p></div>")
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -1800,6 +1817,8 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 {_salud_temas_html}
 
 {bitacora_html}
+
+{_emer_html}
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
