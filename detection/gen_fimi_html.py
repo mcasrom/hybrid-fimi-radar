@@ -635,7 +635,7 @@ def main():
                     dt = ""
                     try:
                         import datetime as _dt
-                        dt = _dt.datetime.utcfromtimestamp(ev["ts"]).strftime("%d/%m %H:%M")
+                        dt = _dt.datetime.fromtimestamp(ev["ts"], tz=_dt.timezone.utc).strftime("%d/%m %H:%M")
                     except Exception:
                         pass
                     url_html = f" · <a href='{url}' target='_blank' style='color:#c2410c'>enlace</a>" if url else ""
@@ -689,7 +689,7 @@ def main():
 
     def _fmt_fecha(ts):
         try:
-            return _dt.datetime.utcfromtimestamp(ts).strftime("%d/%m")
+            return _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc).strftime("%d/%m")
         except Exception:
             return ""
 
@@ -790,6 +790,38 @@ def main():
         sost_html = ("<div class='card'><h3>Narrativas sostenidas</h3>"
                      "<p class='caption'>Ninguna narrativa amplificada en ≥3 días distintos todavía. "
                      "El radar sigue acumulando historial para detectarlas.</p></div>")
+
+    # --- Narrativas: cabecera combinada sostenidas + amplificadas ---
+    def _strip_outer_card(h):
+        """Extrae el contenido interno de un <div class='card'>...</div>."""
+        i = h.find('>')
+        if i >= 0:
+            h = h[i+1:]
+        j = h.rfind('</div>')
+        if j >= 0:
+            h = h[:j]
+        return h.strip()
+
+    _has_sost = bool(sostenidas)
+    _has_amp = narr_block and "Ninguna narrativa" not in narr_block
+    _nh = []
+    if _has_sost:
+        _nh.append(f"🚨 {len(sostenidas)} sostenida{'s' if len(sostenidas)!=1 else ''} (≥3 días)")
+    if _has_amp:
+        _nh.append("📣 eco mediático en ventana actual")
+    if _has_sost or _has_amp:
+        _sost_inner = _strip_outer_card(sost_html) if _has_sost else ""
+        _amp_inner = _strip_outer_card(narr_block) if _has_amp else ""
+        narrativas_combined = (
+            f"<div class='card'>"
+            f"<h3 style='margin:0 0 2px'>Narrativas</h3>"
+            f"<p class='caption'>{' · '.join(_nh)}.</p>"
+            f"{_sost_inner}"
+            f"{_amp_inner}"
+            f"</div>")
+    else:
+        narrativas_combined = ("<div class='card'><h3>Narrativas</h3>"
+                               "<p class='caption'>Ninguna narrativa detectada en la ventana actual.</p></div>")
 
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
@@ -1587,11 +1619,9 @@ la atribución nunca se presume.</p>
 
  {tabs_ui}
 
- {narr_block}
+ {narrativas_combined}
 
 {narr_align_block}
-
-{sost_html}
 
 {hist_html}
 
