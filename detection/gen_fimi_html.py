@@ -116,6 +116,37 @@ def render_dial_svg(etiqueta, valor, color, ancho=180):
             f'</svg>')
 
 
+def render_sparkline(serie, color, ancho=180):
+    """Mini tendencia SVG (sin librería) de hallazgos por día.
+
+    ``serie`` = lista de (fecha_iso, count). Línea + área rellena de encima
+    del último valor, sin etiquetas dentro (la cabecera con las fechas va
+    fuera, en HTML). Diseño consistente con render_dial_svg.
+    """
+    if not serie:
+        return ""
+    n = len(serie)
+    vals = [v for _, v in serie]
+    vmax = max(vals) or 1
+    W, H = 180, 42
+    pad_l, pad_r, pad_t, pad_b = 3, 3, 5, 6
+    coords = []
+    for i, (d, v) in enumerate(serie):
+        x = pad_l + (W - pad_l - pad_r) * i / (n - 1) if n > 1 else W / 2
+        y = H - pad_b - (H - pad_t - pad_b) * (v / vmax)
+        coords.append((x, y))
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+    area = (f"{coords[0][0]:.1f},{H - pad_b} {pts} {coords[-1][0]:.1f},{H - pad_b}")
+    lx, ly = coords[-1]
+    return (f'<svg viewBox="0 0 {W} {H}" width="{ancho}" height="{int(ancho * H / W)}" '
+            f'role="img" aria-label="Tendencia de hallazgos últimos {n} días">'
+            f'<polygon points="{area}" fill="{color}" opacity="0.12"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2" '
+            f'stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.8" fill="{color}"/>'
+            f'</svg>')
+
+
 COMPONENT_LABELS = {
     "coordination_score": "Coordinación",
     "anomaly_score": "Anomalía",
@@ -576,6 +607,25 @@ def main():
         for _t in temas:
             tendencias[_t] = {"estado": "estable", "hoy": 0, "hace48": 0,
                               "high_hoy": 0, "high_48": 0}
+    # Sparkline (trayectoria 14 días por tema): serie diaria de hallazgos para
+    # la vista resumen, para ver si un tema lleva subiendo o es un pico de hoy.
+    SPARK_DAYS = 14
+    spark_data = {}
+    try:
+        _t0 = int((datetime.now(timezone.utc) - _td(days=SPARK_DAYS - 1)).timestamp())
+        for _t in temas:
+            _rows = con.execute(
+                "SELECT date(fecha,'unixepoch') d, COUNT(*) n FROM findings"
+                " WHERE tema_id=? AND fecha>=? GROUP BY d",
+                (_t, _t0)).fetchall()
+            _map = {r[0]: int(r[1]) for r in _rows}
+            _serie = []
+            for _i in range(SPARK_DAYS):
+                _dd = _hoy_d - _td(days=SPARK_DAYS - 1 - _i)
+                _serie.append((_dd.isoformat(), _map.get(_dd.isoformat(), 0)))
+            spark_data[_t] = _serie
+    except Exception:
+        spark_data = {_t: [] for _t in temas}
     # Narrativas alineadas (cluster-of-clusters, 05/Sep): une clusters de la
     # vista activa que hablan de la misma narrativa (TF-IDF + coseno sobre el
     # texto real de cluster_events). Capa transversal, agnóstica al actor.
@@ -1266,6 +1316,12 @@ def main():
              f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
              f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
              f"{_resumen_ejecutivo(_t)}</div>"
+             f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
+             f"border-radius:8px;text-align:left'>"
+             f"<div style='font-size:.68rem;color:#94a3b8;letter-spacing:.03em;margin-bottom:2px'>"
+             f"Hallazgos por día · últimos {SPARK_DAYS} días</div>"
+             f"{render_sparkline(spark_data.get(_t, []), _estilo['color'])}"
+             f"</div>"
              f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
             f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
             f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
