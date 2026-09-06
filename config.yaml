@@ -291,11 +291,9 @@ temas:
     estado: produccion
     nombre: Geopolítica UE-Marruecos
   politica_nacional:
-    estado: piloto
+    estado: produccion
     nombre: Política nacional
-    disclaimer: Este radar está en fase de calibración — el volumen de coordinación legítima en política es alto y el sistema
-      aún está ajustando umbrales.
-    # Tuning por tema (piloto): la coordinación humano/partidista legítima tiene
+    # Tuning por tema: la coordinación humano/partidista legítima tiene
     # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
     # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,
     # evitando marcar ruido político ordinario como amenaza.
