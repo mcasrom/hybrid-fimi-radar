@@ -21,3 +21,6 @@ backups/
 reports/
 data/*.db-shm
 data/*.db-wal
+
+# Copias de seguridad puntuales
+*.bak-*
