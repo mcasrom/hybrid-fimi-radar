@@ -24,3 +24,6 @@ data/*.db-wal
 
 # Copias de seguridad puntuales
 *.bak-*
+
+# archivos de export/cierre de temas (generados por temas_cli.py)
+data/export/

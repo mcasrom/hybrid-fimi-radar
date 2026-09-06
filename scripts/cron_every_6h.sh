@@ -2,10 +2,17 @@
 cd /home/deploy/hybrid-fimi-radar
 # 1) Captura: eventos nuevos con su tema (keywords/feeds del config)
 .venv/bin/python collectors/capture.py --no-analyze >> logs/capture.log 2>&1
-# 2) Detección por TEMA: cada tema activo del catalogo corre su propio pipeline
+# 2) Detección por TEMA: cada tema ACTIVO del catálogo corre su propio pipeline
 #    (filtra sus eventos via event_temas y reemplaza su snapshot de clusters).
+#    Se salta los temas cerrados (estado != produccion|piloto) — su pipeline se
+#    detiene al cerrarlos con temas_cli.py, y los datos quedan exportados.
 #    La ausencia de senal en un tema es un resultado valido.
-for tema in $(.venv/bin/python -c "import yaml; print(' '.join(yaml.safe_load(open('config.yaml')).get('temas', {}).keys() or ['frontera_sur']))"); do
+for tema in $(.venv/bin/python -c "
+import yaml
+c = yaml.safe_load(open('config.yaml'))
+temas = c.get('temas', {}) or {}
+print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in ('produccion', 'piloto')))
+"); do
   echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
   .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" >> logs/fimi.log 2>&1
 done

@@ -294,10 +294,17 @@ def main():
         channels = channels or cap.get("telegram_channels", [])
         subreddits = subreddits or cap.get("subreddits", ["spain", "es"])
 
-    # derivar queries por plataforma desde keywords, arrastrando su tema
-    bsky_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "bluesky" in k.get("plataformas", [])]
-    news_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "google-news" in k.get("plataformas", [])]
-    masto_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in keywords if "mastodon" in k.get("plataformas", [])]
+    # Derivar queries por plataforma desde keywords, arrastrando su tema.
+    # Un tema CERRADO (estado != produccion|piloto en config) deja de capturarse:
+    # se saltan sus keywords para no seguir trayendo eventos de un tema cerrado.
+    _temas_cfg = cfg.get("temas", {}) or {}
+    _cerrados = {t for t, m in _temas_cfg.items()
+                 if (m or {}).get("estado", "produccion") not in ("produccion", "piloto")}
+    _kw_filt = [k for k in keywords
+                if (k.get("tema") or "frontera_sur") not in _cerrados]
+    bsky_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in _kw_filt if "bluesky" in k.get("plataformas", [])]
+    news_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in _kw_filt if "google-news" in k.get("plataformas", [])]
+    masto_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in _kw_filt if "mastodon" in k.get("plataformas", [])]
 
     print(f"[captura] {datetime.utcnow().isoformat()} UTC")
     events = []
