@@ -58,48 +58,77 @@ def load_env(filepath: Path):
         pass
 
 
+def _parsear_secciones():
+    """Parsea logs/fimi.log → lista de secciones [tema, ts_epoch, traceback].
+
+    El log no lleva día en la cabecera (HH:MM UTC) y se escribe en orden
+    cronológico. Anclamos la ÚLTIMA sección (la más reciente): hoy si su hora
+    <= ahora, ayer si es posterior (p.ej. son las 00:20 y el último run fue
+    18:35). Caminando hacia atrás, cada vez que la HH:MM sube respecto a la
+    siguiente (más reciente), pertenece a un día ANTERIOR.
+    """
+    ahora = time.time()
+    ahora_min = int(time.strftime("%H")) * 60 + int(time.strftime("%M"))
+    secciones = []  # [tema, hhmm, traceback]
+    if not LOGFILE.exists():
+        return secciones
+    try:
+        with open(LOGFILE, errors="ignore") as f:
+            for raw in f:
+                s = raw.strip()
+                if s.startswith("=== run_fimi tema="):
+                    try:
+                        _tema = s.split("tema=")[1].split()[0].strip()
+                        hh, mm = s.split(" ")[-2].split(":")[:2]
+                        _hhmm = int(hh) * 60 + int(mm)
+                    except Exception:
+                        _tema, _hhmm = None, 0
+                    secciones.append([_tema, _hhmm, False])
+                elif secciones and s.startswith("Traceback"):
+                    secciones[-1][2] = True
+    except Exception:
+        return []
+    if not secciones:
+        return secciones
+    _ult_hhmm = secciones[-1][1]
+    _dia_ult = int(ahora // 86400) * 86400
+    if _ult_hhmm > ahora_min:
+        _dia_ult -= 86400  # el último run fue ayer
+    _dias = [0] * len(secciones)
+    _dias[-1] = _dia_ult
+    for _i in range(len(secciones) - 2, -1, -1):
+        _dias[_i] = _dias[_i + 1]
+        if secciones[_i][1] > secciones[_i + 1][1]:
+            _dias[_i] -= 86400  # hora mayor que la siguiente => día anterior
+    return [[_t, _dias[_i] + _hhmm * 60, _tr]
+            for _i, (_t, _hhmm, _tr) in enumerate(secciones)]
+
+
 def count_tracebacks_tema():
     """Nº de secciones de TEMA en logs/fimi.log que terminaron en Traceback.
 
     Cuenta toda la sección entre cabeceras '=== run_fimi tema=X'. Los errores
     de otros temas no cuentan para la promoción de este.
     """
-    n = 0
-    if not LOGFILE.exists():
-        return 0
-    seccion = None
-    has_trace = False
-    with open(LOGFILE, errors="ignore") as f:
-        for raw in f:
-            s = raw.strip()
-            if s.startswith("=== run_fimi tema="):
-                if seccion == TEMA and has_trace:
-                    n += 1
-                try:
-                    seccion = s.split("tema=")[1].split()[0].strip()
-                except Exception:
-                    seccion = None
-                has_trace = False
-            elif seccion == TEMA and s.startswith("Traceback"):
-                has_trace = True
-    if seccion == TEMA and has_trace:
-        n += 1
-    return n
+    return sum(1 for _t, _ts, _tr in _parsear_secciones()
+               if _t == TEMA and _tr)
 
 
 def ciclos_snapshot(inicio):
-    """Ciclos de snapshot completos del tema dentro de la ventana: nº de
-    created_at distintos (un run inserta todos sus clusters en el mismo segundo)."""
-    try:
-        c = sqlite3.connect(DB)
-        n = c.execute(
-            "SELECT COUNT(DISTINCT created_at) FROM clusters WHERE tema_id=? AND created_at>=?",
-            (TEMA, int(inicio)),
-        ).fetchone()[0]
-        c.close()
-        return n or 0
-    except Exception:
-        return 0
+    """Ciclos de snapshot completos y EXITOSOS del tema dentro de la ventana.
+
+    Se cuentan las secciones '=== run_fimi tema=TEMA ... ===' del log que NO
+    terminaron en Traceback y cuyo timestamp es >= inicio. NO se usa la tabla
+    clusters: run_fimi hace DELETE + re-INSERT del snapshot del tema en cada
+    ciclo, así que COUNT(DISTINCT created_at) de clusters siempre devuelve 1
+    (solo queda el created_at del último run). Bug detectado 06/Sep (ciclos
+    ok estancado en 1/8). El log rota a >5MB con tail -100 en el cron: si la
+    rotación borra secciones viejas de la ventana se pierden ciclos, pero es
+    la única fuente estable de "runs completos" y la ventana (72h ~12 runs)
+    cabe de sobra en un log de 5MB.
+    """
+    return sum(1 for _t, _ts, _tr in _parsear_secciones()
+               if _t == TEMA and not _tr and _ts >= inicio)
 
 
 def clusters_resumen():
