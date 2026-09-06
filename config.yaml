@@ -445,12 +445,6 @@ keywords:
 - palabra: 2026 midterms interference
   plataformas: *id001
   tema: eeuu_politica
-- palabra: Trump Putin interferencia
-  plataformas: *id001
-  tema: eeuu_politica
-- palabra: censura redes EEUU elecciones
-  plataformas: *id001
-  tema: eeuu_politica
 telegram_canales:
 - elfarodeceuta
 - maldita_es

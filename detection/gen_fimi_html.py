@@ -1872,6 +1872,14 @@ la atribución nunca se presume.</p>
 
  {tabs_ui}
 
+<div style="border-top:2px solid #e2e8f0;margin:26px 0 4px;padding-top:4px"></div>
+<div style="font-size:.78rem;color:#94a3b8;margin:2px 0 12px">
+<b>Resumen global del radar</b> — las secciones de abajo (Narrativas, Historial,
+Salud y Bitácora) NO pertenecen a la pestaña activa: son el estado de TODO el
+catálogo (todos los temas juntos). Usa la pestaña de arriba para ver solo un
+tema; estas secciones son la vista de conjunto.
+</div>
+
  {narrativas_combined}
 
 {narr_align_block}
