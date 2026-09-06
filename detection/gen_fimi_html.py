@@ -1780,6 +1780,7 @@ a{{color:#c2410c}}
 <body>
 <main>
 <p style="font-size:.82rem">
+<a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · 
 <a href="#metodologia" style="color:#c2410c">Metodología</a> · 
 <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · 
 <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · 
@@ -1810,6 +1811,58 @@ la atribución nunca se presume.</p>
 {hist_html}
 
 {detalle_wrap_close}
+
+<div class="card" id="que-es-fimi">
+<h3 style="margin-bottom:6px">Qué es FIMI Radar</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>FIMI</b> — <i>Foreign Information Manipulation and Interference</i> (Manipulación e
+Interferencia de Información Extranjera) — es el término que usan la UE y sus servicios de
+inteligencia para describir operaciones híbridas: campañas que amplifican, coordinan o
+distorsionan narrativas para influir en la opinión pública desde fuera de la frontera de un país.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Este radar es una herramienta <b>OSINT</b> (<i>open-source intelligence</i>) que observa, en
+tiempo casi real, tres fenómenos concretos sobre información pública:
+</p>
+<ul style="font-size:.84rem;color:#334155;padding-left:18px;line-height:1.7;margin:6px 0">
+  <li><b>Amplificación</b> — cuándo un mismo titular o narrativa se repite en múltiples fuentes en una ventana de tiempo corta.</li>
+  <li><b>Coordinación</b> — cuándo cuentas de redes sociales distintas publican el mismo contenido casi de forma simultánea, más allá de lo que explicaría el interés orgánico.</li>
+  <li><b>Anomalías</b> — comportamientos que se desvían de lo que es habitual para un tema o cuenta dado.</li>
+</ul>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Qué NO hace</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El radar <b>no atribuye</b>. Detectar coordinación no significa identificar quién está detrás ni
+por qué. Puede ser una campaña de comunicación legítima (un partido, una ONG, una institución
+movilizando a sus seguidores), un eco periodístico normal, o efectivamente una operación de
+interferencia — el radar mide la estructura del fenómeno, no el motivo. Cuando no hay evidencia
+suficiente para ir más allá, la conclusión es <b>UNKNOWN</b> — y eso se considera un resultado
+válido, no un fallo del sistema.
+</p>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Objetivo</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Dar a periodistas, investigadores y cualquier persona interesada una vista pública y verificable
+de cómo se mueve la información en torno a temas concretos, sin necesidad de acceso a herramientas
+de pago ni a datos privados de plataformas. Todo lo que el radar observa es público: RSS de medios,
+Bluesky, Telegram público, Reddit y Google News.
+</p>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Temas monitorizados hoy</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El catálogo es dinámico y se amplía cuando hay señal real que lo justifique: actualmente cubre
+Frontera Sur (España-Marruecos), Geopolítica UE-Marruecos y Política nacional.
+</p>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Cómo se decide qué vigilar</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El propio radar analiza el volumen de eventos que no encajan en ningún tema activo y señala patrones
+recurrentes que podrían justificar ampliar el catálogo — pero la decisión de añadir, mantener o
+cerrar un tema es siempre humana. El sistema avisa; no decide.
+</p>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Transparencia</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El código es abierto (GitHub), las fuentes y su fiabilidad están documentadas y auditables en tiempo
+real, y el proyecto no hace seguimiento de sus visitantes. Es un proyecto personal, sin financiación
+externa ni afiliación institucional.
+</p>
+</div>
 
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
@@ -1858,7 +1911,7 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
