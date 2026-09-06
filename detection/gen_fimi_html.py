@@ -1064,34 +1064,27 @@ def main():
                    "geopolitica_ue_marruecos": "#0ea5e9",
                    "politica_nacional": "#7c3aed"}.get(_t, "#c2410c")
         if i == 0:
-            # pestaña activa: fondo con su color de acento
-            _tab_style = (f"border-color:{_accent};background:{_accent};color:#fff;"
+            # pestaña activa: fondo con su color de acento, texto NEGRO
+            _tab_style = (f"border-color:{_accent};background:{_accent};color:#000;"
                           f"box-shadow:0 1px 3px rgba(15,23,42,.15)")
             _dot = ""
-            _name_color = "#fff"
         else:
-            # inactivas: punto de color + nombre, borde suave del acento
-            _tab_style = (f"border-color:{_accent}55;background:#fff;color:#334155;"
+            # inactivas: punto de color + nombre negro, borde suave del acento
+            _tab_style = (f"border-color:{_accent}55;background:#fff;color:#000;"
                           f"border-left:3px solid {_accent}")
             _dot = (f"<span style='display:inline-block;width:8px;height:8px;"
                     f"border-radius:50%;background:{_accent};margin-right:6px'></span>")
-            _name_color = "#334155"
         _estado_label = {"produccion": "Producción",
                          "piloto": "Piloto",
                          "candidato_a_cierre": "Candidato a cierre",
                          "cerrado": "Cerrado"}.get(_estado, _estado)
-        _estado_color = {"produccion": "#16a34a", "piloto": "#d97706",
-                         "candidato_a_cierre": "#ea580c", "cerrado": "#64748b"}.get(
-                             _estado, "#94a3b8")
-        if i == 0:
-            _estado_color = "#ffffffcc"  # sobre el fondo de acento de la activa
         _badge_est = (f"<span class='fimi-tab-badge' style='opacity:.9;font-weight:600;"
-                      f"font-size:.7rem;color:{_estado_color}'> · {_estado_label}</span>")
+                      f"font-size:.7rem;color:#000'> · {_estado_label}</span>")
         tema_tabs += (f"<button type='button' data-tema='{_t}' data-estado='{_estado}'"
                       f" data-accent='{_accent}' onclick='fimiTab(\"{_t}\")'"
                       f" style='cursor:pointer;border:1px solid #e2e8f0;border-radius:999px;"
                       f"padding:7px 14px;font-weight:600;font-size:.82rem;font-family:inherit;"
-                      f"{_tab_style}'>{_dot}<span style='color:{_name_color}'>{_nombre}</span>"
+                      f"{_tab_style}'>{_dot}<span style='color:#000'>{_nombre}</span>"
                       f"{_badge_est}</button>")
 
         _bias_note = ""
@@ -1911,16 +1904,13 @@ if ('serviceWorker' in navigator) {{
       var ac=(b.getAttribute('data-accent')||'#c2410c');
       var bg=b.querySelector('.fimi-tab-badge');
       if(b.getAttribute('data-tema')===t){{
-        b.style.background=ac;b.style.color='#fff';b.style.borderColor=ac;
+        b.style.background=ac;b.style.color='#000';b.style.borderColor=ac;
         b.style.boxShadow='0 1px 3px rgba(15,23,42,.15)';
-        if(bg){{ bg.style.color='#ffffffcc'; }}
+        if(bg){{ bg.style.color='#000'; }}
       }}else{{
-        b.style.background='#fff';b.style.color='#334155';
+        b.style.background='#fff';b.style.color='#000';
         b.style.borderColor=ac+'55';b.style.boxShadow='none';
-        if(bg){{
-          var st=(b.getAttribute('data-estado')||'produccion');
-          bg.style.color=(st==='piloto')?'#d97706':((st==='candidato_a_cierre')?'#ea580c':'#16a34a');
-        }}
+        if(bg){{ bg.style.color='#000'; }}
       }}
     }}
     var panes=document.querySelectorAll('.fimi-pane');
