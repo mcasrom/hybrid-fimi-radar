@@ -113,13 +113,13 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/el-pais/
   note: 'Referencia prensa española. MBFC: Left-Center, High factual.'
 - nombre: BBC Mundo
-  url: https://feeds.bbci.co.uk/news/world/europe/rss.xml
+  url: https://feeds.bbci.co.uk/mundo/rss.xml
   tipo: media
   bias: least-biased
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/bbc-news/
-  note: 'BBC World Service. MBFC: Least Biased, Mostly Factual.'
+  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés de BBC Europa por error).'
 - nombre: Al Jazeera
   url: https://www.aljazeera.com/xml/rss/all.xml
   tipo: media
@@ -258,15 +258,15 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/the-intercept/
   note: 'Investigación. Incidente de fabricación 2016. MBFC: Left, Mostly Factual.'
-- nombre: Le Desk Marruecos
-  url: https://ledesk.ma/feed/
+- nombre: Hespress (AR)
+  url: https://www.hespress.com/feed/
   tipo: media
-  idioma: fr
+  idioma: ar
   pais: MA
   bias: center
-  reliability: mostly-factual
-  transparency: medium
-  note: Independiente marroquí. Línea pro-democrática.
+  reliability: mixed
+  transparency: low
+  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con Yabiladi/TSA Algerie.'
 # === Sondeo 2026-09-05: fuentes rusas/árabes ===
 # RT en Español: único medio estatal ruso accesible en español (TASS=EN,
 # RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
