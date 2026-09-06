@@ -1480,10 +1480,12 @@ def main():
         _ingesta_line = ""
     resumen_html = (
         f"<div id='vistaResumen'>"
+        f"<div style='border-bottom:1px solid #e2e8f0;padding-bottom:14px;margin:0 0 18px'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 2px'><b>¿Qué está pasando ahora?</b> "
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
         f"{_ingesta_line}"
-        f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px'>"
+        f"</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center'>"
         f"{dial_cards}</div>"
         f"{_share_resumen_buttons}"
         f"{newsletter_form}"
