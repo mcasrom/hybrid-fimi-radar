@@ -119,7 +119,8 @@ feeds:
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/bbc-news/
-  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés de BBC Europa por error).'
+  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés
+    de BBC Europa por error).'
 - nombre: Al Jazeera
   url: https://www.aljazeera.com/xml/rss/all.xml
   tipo: media
@@ -221,7 +222,8 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   factcheck_url: https://mediabiasfactcheck.com/eu-vs-disinformation-bias/
-  note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo anti-derecha.
+  note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo 
+    anti-derecha.
 - nombre: Bellingcat
   url: https://www.bellingcat.com/feed/
   tipo: osint
@@ -266,7 +268,10 @@ feeds:
   bias: center
   reliability: mixed
   transparency: low
-  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con Yabiladi/TSA Algerie.'
+  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye
+    a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí
+    líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con
+    Yabiladi/TSA Algerie.'
 # === Sondeo 2026-09-05: fuentes rusas/árabes ===
 # RT en Español: único medio estatal ruso accesible en español (TASS=EN,
 # RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
@@ -280,7 +285,8 @@ feeds:
   reliability: mixed
   transparency: low
   factcheck_url: https://mediabiasfactcheck.com/russia-today/
-  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela máx.'
+  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela
+    máx.'
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
 temas:
@@ -305,6 +311,9 @@ temas:
         infrastructure: 0.10
         network_density: 0.10
         anomaly: 0.40
+  eeuu_politica:
+    estado: piloto
+    nombre: Política y desinformación EEUU
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -422,6 +431,26 @@ keywords:
   tema: politica_nacional
   plataformas:
   - google-news
+- palabra: elecciones medio mandato EEUU 2026
+  plataformas: &id001
+  - bluesky
+  - google-news
+  tema: eeuu_politica
+- palabra: interferencia electoral EEUU
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: desinformación elecciones EEUU
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: 2026 midterms interference
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: Trump Putin interferencia
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: censura redes EEUU elecciones
+  plataformas: *id001
+  tema: eeuu_politica
 telegram_canales:
 - elfarodeceuta
 - maldita_es

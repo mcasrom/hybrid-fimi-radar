@@ -70,13 +70,25 @@ def _backup():
 
 
 def _cargar():
-    return yaml.safe_load(open(CONFIG)) or {}
+    # ruamel round-trip: preserva comentarios y formato del config.yaml al
+    # volcar. yaml.safe_dump borraba los comentarios `#` (documentación del
+    # config: scale_floor, notas de fuentes, tuning por tema...) — bug conocido.
+    from ruamel.yaml import YAML
+    _y = YAML()
+    _y.preserve_quotes = True
+    try:
+        return _y.load(open(CONFIG)) or {}
+    except Exception:
+        return yaml.safe_load(open(CONFIG)) or {}
 
 
 def _guardar(cfg):
-    # escritura YAML conservadora: sin reordenar; safe_dump por defecto
+    # escritura round-trip: sin reordenar y SIN perder comentarios del original
+    from ruamel.yaml import YAML
+    _y = YAML()
+    _y.preserve_quotes = True
     with open(CONFIG, "w") as f:
-        yaml.safe_dump(cfg, f, sort_keys=False, allow_unicode=True)
+        _y.dump(cfg, f)
 
 
 def _regen():
