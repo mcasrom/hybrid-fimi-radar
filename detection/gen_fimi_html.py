@@ -1270,9 +1270,25 @@ def main():
   }})();
   </script>"""
 
-    # ============================================================
+        # ============================================================
     # VISTA RESUMEN (por defecto): diales por tema, nada más
     # ============================================================
+    # Salud de los temas (score 0-100, mismo criterio que check_cierre).
+    # Se computa aquí (antes de los diales) para poder pintar un chip en cada
+    # tarjeta de la vista resumen; la card completa del detalle reutiliza el
+    # mismo dict más abajo (no se recalcula).
+    _salud_temas = {}
+    try:
+        import importlib.util as _ilu0
+        _spec_st = _ilu0.spec_from_file_location("salud_tema", ROOT / "detection" / "salud_tema.py")
+        _st_mod = _ilu0.module_from_spec(_spec_st)
+        _spec_st.loader.exec_module(_st_mod)
+        _salud_temas = _st_mod.salud_por_tema() or {}
+    except Exception as _e_st0:
+        _salud_temas = {}
+    _SALUD_COLOR = {"alta": "#16a34a", "media": "#d97706", "baja": "#dc2626"}
+
+
     # color/valor y frase del dial se calculan en _estado_tema(_t) para que la
     # vista resumen y las cabeceras de pestaña nunca diverjan.
     def _resumen_ejecutivo(_t):
@@ -1303,6 +1319,10 @@ def main():
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
         _nombre = _m.get("nombre", _t)
         _estado_dial, _estilo, _frase = _estado_tema(_t)
+        _st_t = _salud_temas.get(_t) or {}
+        _st_nivel = _st_t.get('nivel') or '—'
+        _st_score = _st_t.get('score') or 0
+        _st_color = _SALUD_COLOR.get(_st_nivel, '#94a3b8')
         dial_cards += (
             f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
@@ -1316,6 +1336,11 @@ def main():
              f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
              f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
              f"{_resumen_ejecutivo(_t)}</div>"
+             f"<div style='margin:0 0 10px;font-size:.74rem;color:#475569;display:flex;justify-content:center;"
+             f"align-items:center;gap:6px'>"
+             f"<span style='color:#94a3b8'>Salud del tema</span>"
+             f"<b style='color:{_st_color}'>{_st_score:.0f}/100 · {_st_nivel}</b>"
+             f"</div>"
              f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
              f"border-radius:8px;text-align:left'>"
              f"<div style='font-size:.68rem;color:#94a3b8;letter-spacing:.03em;margin-bottom:2px'>"
@@ -1503,6 +1528,55 @@ def main():
         salud_html = (f"<div class='card'><h3>Salud de las fuentes</h3>"
                       f"<p class='caption'>No disponible: {_e}</p></div>")
 
+    # --- Salud de los temas (score continuo, mismo criterio que check_cierre) ---
+    # 0-100 por tema: volumen de hallazgos/día, narrativas sostenidas, señal del
+    # último cluster y madurez/calibración. Solo informativo; el cierre lo decide
+    # el dueño (bitacora.py). Ya computado arriba (_salud_temas, en la vista
+    # resumen) para pintar el chip de cada dial; aquí se construye la card.
+    try:
+        if not _salud_temas:
+            raise ValueError("sin datos de salud (¿módulo salud_tema no disponible?)")
+        _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
+                             "<p class='caption'>Score continuo 0-100 por tema (volumen de hallazgos/día, "
+                             "narrativas sostenidas, señal del último cluster y madurez). Mismo criterio que el "
+                             "check de cierre, sin decidir nada: orienta la revisión de mantenimiento del dueño.</p>"
+                             "<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse;"
+                             "font-size:.82rem'>"
+                             "<tr><th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Tema</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Salud</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Nivel</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Volumen</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Sostenidas</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Señal</th>"
+                             "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Op.</th></tr>")
+        for _st_k in sorted(_salud_temas.values(), key=lambda x: x.get("score", 0)):
+            _nm = _st_k.get("nombre", _st_k.get("tema", "?"))
+            _cod = _st_k.get("tema", "")
+            _sc = _st_k.get("score", 0)
+            _lv = _st_k.get("nivel", "—")
+            _col = "#16a34a" if _lv == "alta" else ("#d97706" if _lv == "media" else "#dc2626")
+            _vol = f"{_st_k.get('volumen_por_dia') or 0:.1f}/d"
+            _sost = _st_k.get("sostenidas", 0)
+            _ucs = _st_k.get("ultimo_cluster")
+            _senal = f"{_ucs:.0f} {_st_k.get('banda', '')}" if _ucs is not None else "—"
+            _dop = f"{_st_k.get('dias_operacion') or 0:.0f}d"
+            _salud_temas_html += (f"<tr><td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>{_nm} "
+                                  f"<code style='color:#94a3b8;font-size:.72rem'>{_cod}</code></td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'><b>{_sc:.0f}/100</b></td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9;color:{_col};font-weight:700'>{_lv}</td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>{_vol}</td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>{_sost}</td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>{_senal}</td>"
+                                  f"<td style='padding:5px 8px;border-bottom:1px solid #f1f5f9'>{_dop}</td></tr>")
+        _salud_temas_html += "</table><p class='caption' style='margin-top:8px'>Lectura: "
+        _salud_temas_html += "<b style='color:#16a34a'>alta</b> = tema vivo con señal; "
+        _salud_temas_html += "<b style='color:#d97706'>media</b> = funciona con reservas (piloto/volumen justo/joven); "
+        _salud_temas_html += "<b style='color:#dc2626'>baja</b> = señal débil sostenida, candidato a revisión de cierre "
+        _salud_temas_html += "(el sistema nunca decide; ver Bitácora).</p></div>"
+    except Exception as _e_st:
+        _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
+                             f"<p class='caption'>No disponible: {_e_st}</p></div>")
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -1655,6 +1729,7 @@ a{{color:#c2410c}}
 <p style="font-size:.82rem">
 <a href="#metodologia" style="color:#c2410c">Metodología</a> · 
 <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · 
+<a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · 
 <a href="#bitacora" style="color:#c2410c">Bitácora</a> · 
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a>
 </p>
@@ -1722,11 +1797,13 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 
 {salud_html}
 
+{_salud_temas_html}
+
 {bitacora_html}
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a>
+    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
