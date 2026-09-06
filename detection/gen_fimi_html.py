@@ -941,6 +941,73 @@ def main():
     tema_tabs = ""
     tema_panes = ""
     temas_stats = {}
+    # --- RESÚMENES DE SÍNTESIS POR TEMA (FASE 3) ---
+    # Caja de 4-6 líneas en la parte superior de cada pestaña, combinando datos
+    # YA calculados: salud, cluster de mayor alerta + componentes, narrativas
+    # sostenidas del tema, narrativas alineadas cross-topic y bitácora.
+    # Se computa aquí (con conexión propia a BD) porque `con` se cerró arriba.
+    _resumen_tema_html = {}
+    try:
+        import sqlite3 as _r_sql
+        import sys as _r_sys
+        _r_sys.path.insert(0, str(ROOT))
+        from detection.persistencia import detectar_sostenidas as _ds_sost
+        import importlib.util as _ilu_r
+        _spec_st_r = _ilu_r.spec_from_file_location(
+            "salud_tema", ROOT / "detection" / "salud_tema.py")
+        _st_mod_r = _ilu_r.module_from_spec(_spec_st_r)
+        _spec_st_r.loader.exec_module(_st_mod_r)
+        _salud_r = _st_mod_r.salud_por_tema() or {}
+        _spec_rt = _ilu_r.spec_from_file_location(
+            "resumen_tema", ROOT / "detection" / "resumen_tema.py")
+        _rt_mod = _ilu_r.module_from_spec(_spec_rt)
+        _spec_rt.loader.exec_module(_rt_mod)
+        _rcon = _r_sql.connect(DB)
+        _rcon.row_factory = _r_sql.Row
+        # cuentas por cluster desde assessments (mismo patrón que el loop)
+        _asm_by_cid_r = {a["cluster_id"]: a for a in assessments} if assessments else {}
+        for _t_r in temas:
+            _m_r = temas_cfg.get(_t_r, {}) if isinstance(temas_cfg, dict) else {}
+            _nm_r = _m_r.get("nombre", _t_r)
+            _cl_r = [c for c in clusters if c["tema_id"] == _t_r]
+            # cluster de mayor score con componentes + cuentas + banda
+            _top_r = None
+            if _cl_r:
+                _cc_r = max(_cl_r, key=lambda x: x["overall_score"] or 0)
+                _aa_r = _asm_by_cid_r.get(_cc_r["id"])
+                _mm_r = re.search(r"(\d+)\s+cuentas?", str(_aa_r["assessment"] or "")
+                                  if _aa_r is not None else "")
+                _top_r = dict(_cc_r)
+                _top_r["cuentas"] = int(_mm_r.group(1)) if _mm_r else 0
+                _top_r["banda"] = band_of(_cc_r["overall_score"] or 0)
+            # filas de bitácora del tema
+            _brows_r = [dict(x) for x in _rcon.execute(
+                "SELECT fecha, tipo, motivo FROM bitacora WHERE tema=?"
+                " ORDER BY fecha ASC", (_t_r,))]
+            _lineas_r = _rt_mod.generar_resumen_tema(
+                _t_r, _nm_r,
+                salud=_salud_r.get(_t_r),
+                cluster_top=_top_r,
+                sostenidas_tema=_ds_sost(_rcon, min_dias=3, tema=_t_r),
+                grupos_na=_grupos_na,
+                bitacora_filas=_brows_r,
+            )
+            # render de la caja destacada (resumen visualmente distinguido)
+            import re as _re_r
+            _conv = lambda _s: _re_r.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _s)
+            _items = "".join(
+                f"<div style='margin:5px 0 5px;line-height:1.5'>{_conv(li)}</div>"
+                for li in _lineas_r)
+            _resumen_tema_html[_t_r] = (
+                "<div class='fimi-resumen' style='background:#fffbeb;border:1px solid #fcd34d;"
+                "border-left:4px solid #c2410c;border-radius:10px;padding:10px 14px;margin:0 0 12px'>"
+                "<div style='font-size:.72rem;color:#b45309;font-weight:700;text-transform:uppercase;"
+                "letter-spacing:.05em;margin-bottom:2px'>Resumen del tema</div>"
+                f"{_items}</div>")
+        _rcon.close()
+    except Exception as _e_r:
+        # si falla el resumen, no romper el dashboard: pestañas normales
+        _resumen_tema_html = {}
     for i, _t in enumerate(temas):
         d = por_tema.get(_t, {"eventos": 0, "fuentes": 0, "clusters": []})
         _cl = d["clusters"]
@@ -1101,6 +1168,7 @@ def main():
                           f'cualquier alerta como hipótesis, no como veredicto.</div>')
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
+                       f"{_resumen_tema_html.get(_t, '')}"
                        f"{_bias_note}{_dup_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
     # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
     # justo debajo del selector (imposible de no ver al entrar en un tema piloto).

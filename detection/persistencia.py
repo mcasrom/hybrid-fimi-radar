@@ -135,17 +135,22 @@ def persist_findings_from_run(conn, narratives, summary, cascades, tema_id="fron
     return persist_findings(conn, narratives, clusters_list, cascades, tema_id=tema_id)
 
 
-def detectar_sostenidas(conn, min_dias=3):
+def detectar_sostenidas(conn, min_dias=3, tema=None):
     """Detecta narrativas sostenidas: el mismo título (o muy similar) ha sido
     hallazgo en >= min_dias días distintos. Señal de campaña sostenida, no de
     titular suelto.
 
+    Si ``tema`` se pasa (ej. 'frontera_sur'), filtra por findings.tema_id para
+    obtener las sostenidas SOLO de ese tema (la síntesis por tema lo necesita).
     Devuelve lista de dicts: {titulo, dias, fechas, tipo}.
     """
-    rows = conn.execute(
-        "SELECT DISTINCT date(fecha,'unixepoch') as d, substr(titulo,1,60) as t, tipo"
-        " FROM findings WHERE tipo IN ('amplificacion_narrativa','cascada')"
-    ).fetchall()
+    q = ("SELECT DISTINCT date(fecha,'unixepoch') as d, substr(titulo,1,60) as t, tipo"
+         " FROM findings WHERE tipo IN ('amplificacion_narrativa','cascada')")
+    p = ()
+    if tema:
+        q += " AND tema_id=?"
+        p = (tema,)
+    rows = conn.execute(q, p).fetchall()
     # agrupar por título normalizado (prefijo 40 chars sin puntuación)
     import re
     from collections import defaultdict
