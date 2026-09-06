@@ -1452,6 +1452,10 @@ def main():
          "</div></div>")
     # Línea de última ingesta bajo "¿Qué está pasando ahora?" (vista resumen).
     # = momento de la captura más reciente (events.timestamp), no del build HTML.
+    # Se colorea según frescura para que sirva de indicador de salud del pipeline:
+    #   verde  < 7h  -> ciclo normal (cron cada 6h).
+    #   ámbar  7-13h -> tardando: casi se salta un ciclo.
+    #   rojo   > 13h -> se ha saltado >=1 ciclo: el cron/captura ha fallado.
     if _last_ts:
         _lt_s = datetime.fromtimestamp(_last_ts, tz=timezone.utc)
         _lt_txt = _lt_s.strftime("%d/%m/%Y %H:%M UTC")
@@ -1462,9 +1466,16 @@ def main():
             _lt_rel = f"hace {_min // 60} h {_min % 60:02d} min"
         else:
             _lt_rel = f"hace {_min // 1440} d"
-        _ingesta_line = (f"<p style='font-size:.74rem;color:#94a3b8;margin:2px 0 2px'>"
-                         f"🕒 Última ingesta: <b>{_lt_txt}</b> ({_lt_rel}) · datos de captura, "
-                         f"centinela cada 6 h.</p>")
+        if _min < 420:  # < 7h
+            _lt_color, _lt_icon, _lt_estado = "#16a34a", "🟢", "al día"
+        elif _min < 780:  # 7-13h
+            _lt_color, _lt_icon, _lt_estado = "#d97706", "🟠", "tardando"
+        else:  # > 13h: se saltó al menos un ciclo de 6h
+            _lt_color, _lt_icon, _lt_estado = "#dc2626", "🔴", "cron saltado"
+        _ingesta_line = (f"<p style='font-size:.74rem;color:{_lt_color};margin:2px 0 2px'>"
+                         f"🕒 Última ingesta: <b>{_lt_txt}</b> ({_lt_rel}) · "
+                         f"<b>{_lt_icon} {_lt_estado}</b>"
+                         f"<span style='color:#94a3b8'> · datos de captura, centinela cada 6 h.</span></p>")
     else:
         _ingesta_line = ""
     resumen_html = (
