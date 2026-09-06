@@ -9,6 +9,7 @@ import json
 import re
 import sqlite3
 import sys
+import time
 import pandas as pd
 from datetime import datetime, timezone
 from pathlib import Path
@@ -459,6 +460,12 @@ def main():
     except Exception:
         firma_cluster = {}
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+    # Última ingesta real: momento de la captura más reciente (events.timestamp).
+    # Se muestra en la vista resumen bajo "¿Qué está pasando ahora?".
+    try:
+        _last_ts = con.execute("SELECT MAX(timestamp) FROM events").fetchone()[0]
+    except Exception:
+        _last_ts = None
     # Fuentes de captura: total real en events + desglose por clase.
     # `n_sources` cuenta feeds RSS + plataformas (bluesky/google-news) + canales
     # Telegram + subreddits — NO solo "feeds". El inventario de config.yaml
@@ -1329,11 +1336,29 @@ def main():
         "style='cursor:pointer;border:none;background:#0f172a;color:#fff;border-radius:8px;"
         "padding:9px 16px;font-weight:700;font-size:.85rem;font-family:inherit'>Enviar sugerencia</button>"
         "<div id='sugerirMsg' style='font-size:.8rem;color:#16a34a;min-height:1.2em'></div>"
-        "</div></div>")
+         "</div></div>")
+    # Línea de última ingesta bajo "¿Qué está pasando ahora?" (vista resumen).
+    # = momento de la captura más reciente (events.timestamp), no del build HTML.
+    if _last_ts:
+        _lt_s = datetime.fromtimestamp(_last_ts, tz=timezone.utc)
+        _lt_txt = _lt_s.strftime("%d/%m/%Y %H:%M UTC")
+        _min = int((time.time() - _last_ts) / 60)
+        if _min < 60:
+            _lt_rel = f"hace {max(_min, 1)} min"
+        elif _min < 1440:
+            _lt_rel = f"hace {_min // 60} h {_min % 60:02d} min"
+        else:
+            _lt_rel = f"hace {_min // 1440} d"
+        _ingesta_line = (f"<p style='font-size:.74rem;color:#94a3b8;margin:2px 0 2px'>"
+                         f"🕒 Última ingesta: <b>{_lt_txt}</b> ({_lt_rel}) · datos de captura, "
+                         f"centinela cada 6 h.</p>")
+    else:
+        _ingesta_line = ""
     resumen_html = (
         f"<div id='vistaResumen'>"
-        f"<p style='font-size:.9rem;color:#334155;margin:10px 0 4px'><b>¿Qué está pasando ahora?</b> "
+        f"<p style='font-size:.9rem;color:#334155;margin:10px 0 2px'><b>¿Qué está pasando ahora?</b> "
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
+        f"{_ingesta_line}"
         f"<div style='display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:8px'>"
         f"{dial_cards}</div>"
         f"{_share_resumen_buttons}"
