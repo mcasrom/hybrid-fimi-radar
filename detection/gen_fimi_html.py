@@ -1056,13 +1056,43 @@ def main():
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map)
-        _sel = " style='background:#c2410c;color:#fff;border-color:#c2410c'" if i == 0 else ""
+        # Color de acento por tema: cada dominio del catálogo tiene identidad
+        # visual propia en su pestaña (no todas monótonas en gris/naranja).
+        # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
+        # diplomacia, Política nacional = violeta institucional.
+        _accent = {"frontera_sur": "#c2410c",
+                   "geopolitica_ue_marruecos": "#0ea5e9",
+                   "politica_nacional": "#7c3aed"}.get(_t, "#c2410c")
+        if i == 0:
+            # pestaña activa: fondo con su color de acento
+            _tab_style = (f"border-color:{_accent};background:{_accent};color:#fff;"
+                          f"box-shadow:0 1px 3px rgba(15,23,42,.15)")
+            _dot = ""
+            _name_color = "#fff"
+        else:
+            # inactivas: punto de color + nombre, borde suave del acento
+            _tab_style = (f"border-color:{_accent}55;background:#fff;color:#334155;"
+                          f"border-left:3px solid {_accent}")
+            _dot = (f"<span style='display:inline-block;width:8px;height:8px;"
+                    f"border-radius:50%;background:{_accent};margin-right:6px'></span>")
+            _name_color = "#334155"
+        _estado_label = {"produccion": "Producción",
+                         "piloto": "Piloto",
+                         "candidato_a_cierre": "Candidato a cierre",
+                         "cerrado": "Cerrado"}.get(_estado, _estado)
+        _estado_color = {"produccion": "#16a34a", "piloto": "#d97706",
+                         "candidato_a_cierre": "#ea580c", "cerrado": "#64748b"}.get(
+                             _estado, "#94a3b8")
+        if i == 0:
+            _estado_color = "#ffffffcc"  # sobre el fondo de acento de la activa
+        _badge_est = (f"<span class='fimi-tab-badge' style='opacity:.9;font-weight:600;"
+                      f"font-size:.7rem;color:{_estado_color}'> · {_estado_label}</span>")
         tema_tabs += (f"<button type='button' data-tema='{_t}' data-estado='{_estado}'"
-                      f" onclick='fimiTab(\"{_t}\")'"
-                      f" style='cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;"
-                      f"border-radius:999px;padding:7px 14px;font-weight:600;font-size:.82rem;"
-                      f"font-family:inherit;{_sel if i == 0 else _sel}'>{_nombre}"
-                      f"<span style='opacity:.75;font-weight:400'> · {_estado}</span></button>")
+                      f" data-accent='{_accent}' onclick='fimiTab(\"{_t}\")'"
+                      f" style='cursor:pointer;border:1px solid #e2e8f0;border-radius:999px;"
+                      f"padding:7px 14px;font-weight:600;font-size:.82rem;font-family:inherit;"
+                      f"{_tab_style}'>{_dot}<span style='color:{_name_color}'>{_nombre}</span>"
+                      f"{_badge_est}</button>")
 
         _bias_note = ""
         if _estado == "piloto":
@@ -1878,10 +1908,19 @@ if ('serviceWorker' in navigator) {{
     var i, p, b;
     var btns=document.querySelectorAll('[data-tema]');
     for(i=0;i<btns.length;i++){{ b=btns[i];
+      var ac=(b.getAttribute('data-accent')||'#c2410c');
+      var bg=b.querySelector('.fimi-tab-badge');
       if(b.getAttribute('data-tema')===t){{
-        b.style.background='#c2410c';b.style.color='#fff';b.style.borderColor='#c2410c';
+        b.style.background=ac;b.style.color='#fff';b.style.borderColor=ac;
+        b.style.boxShadow='0 1px 3px rgba(15,23,42,.15)';
+        if(bg){{ bg.style.color='#ffffffcc'; }}
       }}else{{
-        b.style.background='#fff';b.style.color='#334155';b.style.borderColor='#e2e8f0';
+        b.style.background='#fff';b.style.color='#334155';
+        b.style.borderColor=ac+'55';b.style.boxShadow='none';
+        if(bg){{
+          var st=(b.getAttribute('data-estado')||'produccion');
+          bg.style.color=(st==='piloto')?'#d97706':((st==='candidato_a_cierre')?'#ea580c':'#16a34a');
+        }}
       }}
     }}
     var panes=document.querySelectorAll('.fimi-pane');
