@@ -65,6 +65,25 @@ FRONTERA_VOCAB = set("""ceuta melilla migracion migraciones inmigracion inmigran
 emigracion frontera fronteras migrante migrantes salto saltos valla vallas ceuti ceuties
 canoas patera pateras cayuco cayucos acogida refugiado refugiados asilo espana-marruecos""".split())
 
+# Variantes léxicas del MISMO actor/phenómeno → término canónico. Fusión por
+# definición (misma entidad en distinto idioma/adjetivo), NO por co-ocurrencia
+# estadística (que en este pool de feeds generales no separa temas de forma
+# fiable). Evita listar "israel" e "israeli" como dos temas emergentes.
+LEX_VARIANTES = {
+    "israeli": "israel", "israel": "israel",
+    "iranian": "iran", "iran": "iran",
+    "palestinians": "palestina", "palestinian": "palestina", "palestine": "palestina",
+    "maroc": "marruecos", "marocain": "marruecos", "marocaine": "marruecos",
+    "marroqui": "marruecos", "marroquies": "marruecos", "marruecos": "marruecos",
+    "algerie": "argelia", "algerien": "argelia",
+    "ukraine": "ucrania", "ucrania": "ucrania",
+    "russe": "rusia", "russian": "rusia", "russia": "rusia", "rusia": "rusia",
+    "putin": "putin", "zelensky": "zelensky",
+    "netanyahu": "netanyahu",
+    "gaza": "gaza",
+}
+
+
 
 def _norm(s):
     s = unicodedata.normalize("NFD", str(s).lower())
@@ -123,18 +142,22 @@ def detectar(dias=14, min_eventos=10, conn=None):
         if not _matches_any(txt, kws):
             eventos_fuera.append((r["source"], (r["title"] or r["text"] or "").strip()[:160]))
 
-    # Frecuencia de términos (cada evento cuenta una vez por término)
+    # Frecuencia por término CANÓNICO (variantes léxicas fusionadas: israel +
+    # israeli cuentan juntas). Al guardar el ejemplo se conserva el texto real.
     term_eventos = collections.Counter()
     term_sources = {}
     term_ejemplo = {}
+    term_variantes = collections.defaultdict(set)
     for src, txt in eventos_fuera:
         tset = set()
-        for t in _tokens(txt):
-            if t in FRONTERA_VOCAB or t.startswith("#"):
+        for raw in _tokens(txt):
+            if raw in FRONTERA_VOCAB or raw.startswith("#"):
                 continue
-            term_eventos[t] += 1
-            tset.add(t)
-            term_sources.setdefault(t, set()).add(src)
+            canon = LEX_VARIANTES.get(raw, raw)
+            term_eventos[canon] += 1
+            term_variantes[canon].add(raw)
+            tset.add(canon)
+            term_sources.setdefault(canon, set()).add(src)
         for t in tset:
             if t not in term_ejemplo:
                 term_ejemplo[t] = txt[:160]
@@ -146,14 +169,16 @@ def detectar(dias=14, min_eventos=10, conn=None):
         fuentes = len(term_sources.get(t, set()))
         if fuentes < 2:
             continue  # un solo canal no es un "tema emergente"
+        variantes = sorted(v for v in term_variantes[t] if v != t)
         cands.append({
             "termino": t,
+            "variantes": variantes,
             "eventos": n,
             "fuentes": fuentes,
             "ejemplo": (term_ejemplo.get(t) or "")[:160],
         })
     cands.sort(key=lambda c: (-c["eventos"], -c["fuentes"]))
-    return {"total_fuera": len(eventos_fuera), "dias": dias, "candidatos": cands[:10]}
+    return {"total_fuera": len(eventos_fuera), "dias": dias, "candidatos": cands[:12]}
 
 
 def _html(res):
@@ -164,19 +189,30 @@ def _html(res):
                 "casa con alguna keyword del catálogo.</p></div>")
     rows = ""
     for c in cands:
+        variantes = c.get("variantes") or []
+        sub = ""
+        if variantes:
+            sub = (f"<div style='font-size:.72rem;color:#94a3b8;margin-top:2px'>"
+                   f"incluye variantes: {', '.join(variantes)}</div>")
         rows += (f"<div style='margin:8px 0;padding:8px 12px;border:1px solid #e2e8f0;"
                  f"border-radius:8px'>"
                  f"<div style='display:flex;justify-content:space-between;gap:10px;align-items:baseline'>"
                  f"<b style='font-size:.88rem;color:#1e293b'>{c['termino']}</b>"
                  f"<span style='font-size:.78rem;color:#c2410c;font-weight:700'>{c['eventos']} eventos · "
                  f"{c['fuentes']} fuentes</span></div>"
+                 f"{sub}"
                  f"<div style='font-size:.78rem;color:#64748b;margin-top:3px;line-height:1.4'>"
-                 f"{c['ejemplo']}</div></div>")
+                 f"{c['ejemplo']}</div>"
+                 f"<button type='button' onclick='precargarSugerencia(\"{c['termino']}\")' "
+                 f"style='cursor:pointer;border:1px solid #c2410c;background:#fff;color:#c2410c;"
+                 f"border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:700;"
+                 f"font-family:inherit;margin-top:6px'>💡 Sugerir tema: {c['termino']}</button></div>")
     return (f"<div class='card'><h3>Volumen fuera del catálogo (¿tema emergente?)</h3>"
             f"<p class='caption'>{res['total_fuera']} eventos en los últimos {res['dias']}d "
             f"no matchean ninguna keyword de los temas activos (llegaron por feeds generales al "
-            f"default). Términos recurrentes que ningún tema cubre — no son conclusión, son "
-            f"candidatos a revisar. El sistema no añade nada: el catálogo lo decide el dueño.</p>"
+            f"default). Las variantes del mismo actor (p. ej. israel/israeli, marruecos/maroc) se "
+            f"fusionan en una sola fila. No son conclusión, son candidatos a revisar. "
+            f"El sistema no añade nada: el catálogo lo decide el dueño.</p>"
             f"{rows}"
             f"<p class='caption' style='margin-top:6px'>Lectura: si un término repite volumen y "
             f"fuentes, puede merecer una keyword o un tema nuevo en "

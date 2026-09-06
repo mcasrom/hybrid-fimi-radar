@@ -1936,6 +1936,26 @@ if ('serviceWorker' in navigator) {{
   window.abrirDetalle=abrirDetalle;
   window.volverResumen=volverResumen;
 
+  // Pre-cargar el formulario de sugerencia con un término emergente (AJUSTE 4).
+  // Vuelve a la vista resumen (el formulario vive ahí), rellena el textarea y
+  // hace scroll + foco para que el dueño solo tenga que pulsar enviar.
+  window.precargarSugerencia = function(termino){{
+    var R=document.getElementById('vistaResumen');
+    var D=document.getElementById('vistaDetalle');
+    var B=document.getElementById('btnVolver');
+    if(R){{ R.style.display='block'; }}
+    if(D){{ D.setAttribute('hidden',''); }}
+    if(B){{ B.setAttribute('hidden',''); }}
+    var txt=document.getElementById('sugerirTxt');
+    if(txt){{
+      var prop='Sugiero vigilar como posible tema emergente: ' + termino +
+               ' (volumen fuera del catálogo detectado en el radar).';
+      txt.value=prop;
+      txt.focus();
+      txt.scrollIntoView({{behavior:'smooth', block:'center'}});
+    }}
+  }};
+
   // Newsletter por email (vista resumen): POST /api/subscribe (doble opt-in).
   window.newsletterClick = function(){{
     var box=document.getElementById('newsletterBox');

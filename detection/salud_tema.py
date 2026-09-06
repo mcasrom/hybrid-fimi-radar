@@ -137,6 +137,7 @@ def salud_por_tema(conn=None, cfg=None):
         #    _volumen_ventana ya normaliza temas jóvenes (divide por
         #    max(MIN_DIAS_OPERACION, edad)), así que no se gatea por edad.
         s_vol = 0.0
+        por_dia = 0.0
         if inicio is not None:
             _, por_dia = _volumen_ventana(conn, tema, inicio, ventana_inicio)
             s_vol = min(100.0, 100.0 * por_dia / (2.0 * FINDINGS_POR_DIA))
@@ -161,20 +162,22 @@ def salud_por_tema(conn=None, cfg=None):
         score = (W_VOLUMEN * s_vol + W_SOSTENIDAS * s_sost +
                  W_SENAL * s_senal + W_CALIBRACION * s_cal)
         # Techos según estado y madurez: un tema muy joven o en calibración no
-        # debe presentarse como "salud alta" sin trayectoria, salvo que ya sea
-        # producción con señal real (volumen + narrativas + cluster alto).
+        # debe presentarse como "salud alta" sin trayectoria. PERO si ya hay
+        # señal real y sostenida (narrativas ≥3d o cluster HIGH/CRITICAL con
+        # volumen), la juventud no es motivo para ocultar que el tema está
+        # vivo: ocultarlo aplanaría Frontera Sur (joven, 31/día, 37
+        # sostenidas, CRITICAL) junto a temas jóvenes sin señal.
+        _senal_real = (n_sost >= 1) or (ucs is not None and ucs >= 60 and (por_dia or 0) >= FINDINGS_POR_DIA)
         if estado == "cerrado":
             score = 0.0
         elif estado == "candidato_a_cierre":
             score = min(score, 39.0)
-        elif estado != "produccion" or dias_op < MIN_DIAS_OPERACION:
-            # piloto/joven: no presumir "alta" sin trayectoria, pero si trae
-            # señal real (cluster alto + volumen + sostenidas) sí alcanza media
-            # con justicia; solo se topa en ALTA.
+        elif (estado != "produccion" or dias_op < MIN_DIAS_OPERACION) and not _senal_real:
+            # piloto o joven SIN señal real: no presumir "alta" sin trayectoria
             if score >= 70:
                 score = min(score, 69.0)
         else:
-            # producción madura: sin cota artificial
+            # producción madura o joven con señal real: sin cota artificial
             pass
         res[tema] = {
             "tema": tema,
