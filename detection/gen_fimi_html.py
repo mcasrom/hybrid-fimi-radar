@@ -459,7 +459,24 @@ def main():
     except Exception:
         firma_cluster = {}
     n_events = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+    # Fuentes de captura: total real en events + desglose por clase.
+    # `n_sources` cuenta feeds RSS + plataformas (bluesky/google-news) + canales
+    # Telegram + subreddits — NO solo "feeds". El inventario de config.yaml
+    # (card "Fuentes y búsquedas activas") muestra los bloques y coincide.
     n_sources = con.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
+    n_src_feeds = con.execute(
+        "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'rss:%'").fetchone()[0]
+    n_src_tg = con.execute(
+        "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'telegram:%'").fetchone()[0]
+    n_src_reddit = con.execute(
+        "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'reddit:%'").fetchone()[0]
+    n_src_plt = n_sources - n_src_feeds - n_src_tg - n_src_reddit
+    # inventario de plataformas con eventos (bluesky, google-news, ...)
+    _plt_sources = [r[0] for r in con.execute(
+        "SELECT DISTINCT source FROM events WHERE source NOT LIKE 'rss:%'"
+        " AND source NOT LIKE 'telegram:%' AND source NOT LIKE 'reddit:%'"
+        " ORDER BY source").fetchall()]
+    plt_html = " · ".join(f"<code>{_s}</code>" for _s in _plt_sources) or "—"
     ev_df = pd.read_sql("SELECT timestamp, source, title, url, text FROM events", con)
     # agregación por tema (multi-tema): eventos/fuentes via event_temas, clusters via tema_id
     has_et = con.execute(
@@ -1373,6 +1390,114 @@ def main():
         salud_html = (f"<div class='card'><h3>Salud de las fuentes</h3>"
                       f"<p class='caption'>No disponible: {_e}</p></div>")
 
+    # --- Bitácora de temas (transparencia metodológica) ---
+    # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
+    # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
+    # sistema (check_cierre, origen='sistema', sin decidir nada).
+    # Los motivos se escriben en lenguaje metodológico (volumen/señal/calibración),
+    # nunca como atribución a actores — principio agnóstico al actor.
+    _ESTADOS_COLOR = {
+        "produccion": ("#16a34a", "Producción"),
+        "piloto": ("#d97706", "Piloto (calibración)"),
+        "candidato_a_cierre": ("#ea580c", "Candidato a cierre"),
+        "cerrado": ("#64748b", "Cerrado"),
+    }
+    _fmt_d = lambda _u: (datetime.fromtimestamp(_u, tz=timezone.utc).strftime("%d/%m/%Y")
+                         if _u else "—")
+    bitacora_rows = []
+    _bit_by_tema = {}
+    _inicio_findings = {}
+    # `con` ya está cerrado a esta altura (main() lo cierra tras el historial):
+    # abrimos conexión propia de solo lectura para la bitácora.
+    try:
+        _bcon = sqlite3.connect(DB)
+        _bcon.row_factory = sqlite3.Row
+        bitacora_rows = _bcon.execute(
+            "SELECT tema, tipo, fecha, estado_anterior, estado_nuevo, motivo, origen"
+            " FROM bitacora ORDER BY tema, fecha").fetchall()
+        for _t in temas:
+            _v = _bcon.execute(
+                "SELECT MIN(fecha) FROM findings WHERE tema_id=?", (_t,)).fetchone()
+            _inicio_findings[_t] = _v[0] if _v and _v[0] else None
+        _bcon.close()
+    except Exception:
+        bitacora_rows = []
+    for _br in bitacora_rows:
+        _bit_by_tema.setdefault(_br["tema"], []).append(_br)
+    bitacora_cards = ""
+    for _t in temas:
+        _tcfg = temas_cfg.get(_t, {}) or {}
+        _estado = _tcfg.get("estado", "produccion")
+        _nombre = _tcfg.get("nombre", _t)
+        _cerr = [e for e in _bit_by_tema.get(_t, []) if e["tipo"] == "cierre"]
+        _fecha_cierre = _motivo_cierre = None
+        if _cerr:
+            _estado = "cerrado"
+            _fecha_cierre = _cerr[-1]["fecha"]
+            _motivo_cierre = _cerr[-1]["motivo"]
+        _color, _label = _ESTADOS_COLOR.get(_estado, ("#334155", _estado))
+        _inicio = None
+        for _e in _bit_by_tema.get(_t, []):
+            if _e["tipo"] == "inicio" and _e["fecha"]:
+                _inicio = _e["fecha"]
+                break
+        if _inicio is None:
+            _inicio = _inicio_findings.get(_t)
+        _card_sug = ""
+        _sugs = [e for e in _bit_by_tema.get(_t, []) if e["tipo"] == "sugerencia"]
+        if _sugs:
+            _cand = _sugs[-1]
+            _card_sug = (f"<div style='margin-top:8px;padding:8px 10px;border:1px solid #fed7aa;"
+                         f"background:#fff7ed;border-radius:8px;font-size:.8rem;color:#9a3412'>"
+                         f"<b>🗓 Sugerencia del sistema</b> ({_fmt_d(_cand['fecha'])}): "
+                         f"{_cand['motivo'] or ''}<br>"
+                         f"<span style='color:#64748b'>La decisión la toma el dueño "
+                         f"(<code>detection/bitacora.py --nuevo-estado cerrado</code>).</span></div>")
+        _tl = ""
+        for _e in _bit_by_tema.get(_t, []):
+            if _e["tipo"] == "inicio":
+                continue
+            _fecha = _fmt_d(_e["fecha"])
+            _origen = "" if _e["origen"] == "manual" else \
+                " <span style='color:#94a3b8'>(sistema)</span>"
+            if _e["tipo"] == "cierre":
+                _accion = "→ cerrado"
+            elif _e["tipo"] == "cambio_estado":
+                _accion = f"→ {_e['estado_nuevo']}"
+            else:
+                _accion = f"[{_e['tipo']}]"
+            _tl += (f"<li style='margin:4px 0;font-size:.82rem'>"
+                    f"<span style='color:#94a3b8'>{_fecha}</span> {_accion}{_origen}"
+                    f"{(' — ' + (_e['motivo'] or '')) if _e['motivo'] else ''}</li>")
+        if not _tl:
+            _tl = ("<li style='font-size:.82rem;color:#94a3b8'>"
+                   "Sin cambios registrados aún.</li>")
+        _cierre_txt = ""
+        if _fecha_cierre:
+            _cierre_txt = (f"<p class='caption'>Cerrado el <b>{_fmt_d(_fecha_cierre)}</b>"
+                           f" — {_motivo_cierre or ''}</p>")
+        bitacora_cards += (f"<div style='margin:14px 0;padding:14px 16px;"
+                           f"border:1px solid #e2e8f0;border-radius:12px'>"
+                           f"<div style='display:flex;justify-content:space-between;"
+                           f"gap:10px;align-items:baseline;flex-wrap:wrap'>"
+                           f"<b style='font-size:.95rem'>{_nombre}</b>"
+                           f"<span style='font-size:.78rem;font-weight:700;color:{_color};"
+                           f"border:1px solid {_color};border-radius:999px;"
+                           f"padding:2px 10px'>{_label}</span></div>"
+                           f"<p class='caption'>Ingesta desde <b>{_fmt_d(_inicio)}</b>"
+                           f" · código: <code>{_t}</code></p>"
+                           f"{_cierre_txt}{_card_sug}"
+                           f"<ul style='margin:8px 0 0;padding-left:18px'>{_tl}</ul></div>")
+    bitacora_html = (f"<div class='card' id='bitacora'><h3>Bitácora de temas</h3>"
+                     f"<p class='caption'>Ciclo de vida de cada tema monitorizado: inicio de "
+                     f"ingesta, estados y motivos. El estado vigente vive en "
+                     f"<code>config.yaml</code>; esta bitácora registra el historial y las "
+                     f"sugerencias del sistema (que nunca deciden, solo avisan).</p>"
+                     f"{bitacora_cards}"
+                     f"<p class='caption' style='margin-top:10px'>Los motivos se describen en "
+                     f"términos metodológicos (volumen, señal, redundancia, calibración) — "
+                     f"nunca como atribución a actores, en línea con el principio agnóstico "
+                     f"al actor del proyecto.</p></div>")
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1417,6 +1542,7 @@ a{{color:#c2410c}}
 <p style="font-size:.82rem">
 <a href="#metodologia" style="color:#c2410c">Metodología</a> · 
 <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · 
+<a href="#bitacora" style="color:#c2410c">Bitácora</a> · 
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a>
 </p>
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
@@ -1448,19 +1574,23 @@ la atribución nunca se presume.</p>
 
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
-<p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras. Para añadir o
-quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
+<p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras.
+<b>{n_sources} fuentes de captura en total</b> ({n_src_feeds} feeds RSS · {n_src_plt} plataformas
+· {n_src_tg} canales Telegram · {n_src_reddit} subreddits). Para añadir o quitar,
+edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 <div style="display:flex;gap:24px;flex-wrap:wrap">
   <div style="flex:1;min-width:260px">
     <b style="font-size:.9rem">RSS / feeds ({len(feeds)})</b>
     <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{feeds_html}</ul>
+    <b style="font-size:.9rem">Plataformas de búsqueda ({n_src_plt})</b>
+    <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{plt_html}</ul>
   </div>
   <div style="flex:1;min-width:260px">
     <b style="font-size:.9rem">Palabras clave ({len(keywords)})</b>
     <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{kw_html}</ul>
-    <b style="font-size:.9rem">Telegram</b>
+    <b style="font-size:.9rem">Telegram ({n_src_tg})</b>
     <p style="font-size:.82rem;color:#334155">{tg_html}</p>
-    <b style="font-size:.9rem">Reddit</b>
+    <b style="font-size:.9rem">Reddit ({n_src_reddit})</b>
     <p style="font-size:.82rem;color:#334155">{sr_html}</p>
   </div>
 </div>
@@ -1481,9 +1611,11 @@ quitar, edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta)
 
 {salud_html}
 
+{bitacora_html}
+
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a>
+    <b>Radar FIMI</b> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>

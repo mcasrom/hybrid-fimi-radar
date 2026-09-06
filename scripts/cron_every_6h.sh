@@ -28,3 +28,8 @@ for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail
 # 6) Checklist de promocion: ventana de validacion de politica_nacional (piloto).
 #    Al cumplir 72h sin errores avisa por Telegram para pasar el tema a produccion.
 .venv/bin/python detection/check_promocion.py >> logs/promocion.log 2>&1
+
+# 7) Candidatos a cierre (solo avisa, NO decide): si un tema activo lleva señal
+#    débil sostenida (volumen bajo + 0 narrativas sostenidas, o piloto >90d),
+#    notifica al dueño por Telegram y registra una sugerencia en la bitácora.
+.venv/bin/python detection/check_cierre.py >> logs/cierre.log 2>&1
