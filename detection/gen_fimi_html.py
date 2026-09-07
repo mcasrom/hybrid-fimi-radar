@@ -1570,6 +1570,95 @@ def main():
                          f"<span style='color:#94a3b8'> · datos de captura, centinela cada 6 h.</span></p>")
     else:
         _ingesta_line = ""
+    # --- Explicación de scoring: pesos y umbrales por tema (opción 2 del
+    #     próximo sprint FIMI). Exponemos lo que hoy solo vive en config.yaml
+    #     para que el lector sepa qué pesa y cuántas cuentas exige cada banda
+    #     (transparencia: cada tema puede calibrar en config->temas-><tema>
+    #     sobre los valores globales de config->scoring).
+    _scr = (cfg or {}).get("scoring", {}) or {}
+    _w_global = _scr.get("weights", {}) or {}
+    _w_names = {
+        "synchronization": "Sincronización",
+        "content_similarity": "Contenido similar",
+        "amplification": "Amplificación",
+        "infrastructure": "Infraestructura",
+        "network_density": "Densidad de red",
+        "anomaly": "Anomalía",
+    }
+    _w_default = {
+        "synchronization": 0.25, "content_similarity": 0.20,
+        "amplification": 0.20, "infrastructure": 0.15,
+        "network_density": 0.10, "anomaly": 0.10,
+    }
+    _bandas = _scr.get("bands", {}) or {
+        "NORMAL": [0, 19], "WATCH": [20, 39], "ANOMALOUS": [40, 59],
+        "HIGH": [60, 79], "CRITICAL": [80, 100],
+    }
+    _band_order = ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]
+    _w_rows = []
+    for k in ["synchronization", "content_similarity", "amplification",
+              "infrastructure", "network_density", "anomaly"]:
+        pct = int(round((_w_global.get(k, _w_default.get(k, 0))) * 100))
+        _w_rows.append(f"<tr><td>{_w_names.get(k,k)}</td><td>{pct}%</td></tr>")
+    _w_tabla = ("<table style='border-collapse:collapse;font-size:.72rem;width:100%'>"
+                "<tr style='border-bottom:1px solid #e2e8f0;background:#f8fafc'>"
+                "<th style='text-align:left;padding:4px 8px'>Componente</th>"
+                "<th style='text-align:right;padding:4px 8px'>Peso global</th></tr>"
+                + "".join(_w_rows) + "</table>")
+    # bandas
+    _b_chips = []
+    for b in _band_order:
+        lo, hi = _bandas.get(b, [0, 0])
+        _b_chips.append(f"<span style='display:inline-block;margin:2px;padding:2px 8px;"
+                        f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>")
+    _b_html = "".join(_b_chips)
+    # escala global
+    _sma = _scr.get("scale_min_accounts", {}) or {}
+    _s_f = _scr.get("scale_floor", {}) or {}
+    _s_b = _scr.get("scale_bonus", {}) or {}
+    _escala_global = (
+        f"· Masa mínima para banda alta: "
+        f"{_sma.get('HIGH','2')} cuentas en HIGH, "
+        f"{_sma.get('CRITICAL','10')} en CRITICAL.<br>"
+        f"· Piso de masa: &lt;{_s_f.get('min_accounts',3)} cuentas = banda máx WATCH "
+        f"(&quot;posible ruido de bajo volumen&quot;), salvo ≥<b>{_s_f.get('except_events',10)}</b> eventos "
+        f"sostenidos o infraestructura ≥<b>{_s_f.get('except_infra',80)}</b>: entonces hasta HIGH, nunca CRITICAL.<br>"
+        f"· Bonus de masa: +{_s_b.get('per_account',0.08)}×cuentas (tope "
+        f"{_s_b.get('cap',3.5)} pts) a igualdad de componentes."
+    )
+    # overrides por tema (scoring propio)
+    _t_over = []
+    for _t in temas:
+        _ts = (temas_cfg.get(_t, {}) or {}).get("scoring", {}) or {}
+        if not _ts:
+            continue
+        _tw = _ts.get("weights", {}) or {}
+        _partes = []
+        if _tw:
+            _tw_pct = ", ".join(f"{_w_names.get(k,k)} {int(round(v*100))}%" for k, v in _tw.items())
+            _partes.append("pesos: " + _tw_pct)
+        if _ts.get("scale_min_accounts"):
+            _partes.append("mín. cuentas: " +
+                           ", ".join(f"{k} {v}" for k, v in (_ts["scale_min_accounts"]).items()))
+        if _ts.get("scale_floor"):
+            _sf = _ts["scale_floor"]
+            _partes.append("piso: &lt;" + str(_sf.get("min_accounts", 3)) + " cuentas, except. ev "
+                           + str(_sf.get("except_events", 10)))
+        if _partes:
+            _t_over.append(f"<li><b>{_t}</b>: {' · '.join(_partes)}</li>")
+    _t_over_html = ("<ul style='margin:4px 0 0 18px;padding:0'>" + "".join(_t_over) + "</ul>" if _t_over
+                    else "<span style='color:#94a3b8'>Ningún tema define calibración propia (todos usan valores globales).</span>")
+    _scoring_html = (
+        f"<div style='margin-top:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;"
+        f"border-radius:8px;font-size:.72rem;line-height:1.6'>"
+        f"<b style='font-size:.76rem'>Cómo se puntúa (transparencia del modelo)</b><br>"
+        f"<span style='display:inline-block;min-width:150px;vertical-align:top;margin-right:14px'>{_w_tabla}</span>"
+        f"<span style='display:inline-block;vertical-align:top;max-width:520px'>"
+        f"Bandas: {_b_html}<br>{_escala_global}</span>"
+        f"<div style='margin-top:6px;border-top:1px solid #e2e8f0;padding-top:6px'>"
+        f"Calibración por tema (config.yaml → temas): {_t_over_html}</div>"
+        f"</div>"
+    )
     resumen_html = (
         f"<div id='vistaResumen'>"
         f"<div style='border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin:0 0 26px'>"
@@ -1976,6 +2065,7 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
   "No hay evidencia suficiente para atribuir" es un resultado válido.<br>
 - Actualizado automáticamente cada 6h. Última actualización: {now}.
 </p>
+{_scoring_html}
 </div>
 
 {salud_html}
