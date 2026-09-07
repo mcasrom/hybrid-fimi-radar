@@ -195,10 +195,39 @@ def _cluster_comps(c, a):
     }
 
 
-def _cluster_detail_html(c, a, comps, contenido=None):
+def _sostenido_chip(diver):
+    """Clasifica un cluster como 'eco puntual de 1 pieza' vs 'coordinación
+    sostenida' según la diversidad de URLs y la ventana temporal (opción 3).
+
+    diver: dict con {n_ev, n_urls, horas} o None. Criterios (solo lectura):
+      - n_urls<=1 y n_ev>=2 -> eco puntual: varias cuentas comparten la MISMA
+        pieza. No es patrón de larga duración.
+      - n_ev>=10 y horas>=24 y n_urls>=3 -> coordinación sostenida: una misma
+        red vertiendo muchas piezas a lo largo del tiempo.
+    Devuelve el HTML del chip o "" si no aplica. NO toca el scoring: es contexto
+    de interpretación para que el analista no lea el eco de una pieza como una
+    campaña de larga duración (responde a 'no hay trayectoria, solo snapshot')."""
+    if not diver:
+        return ""
+    n_ev = diver.get("n_ev", 0) or 0
+    n_urls = diver.get("n_urls", 0) or 0
+    horas = diver.get("horas", 0) or 0
+    if n_urls <= 1 and n_ev >= 2:
+        return ('<span style="display:inline-block;font-size:.72rem;color:#7c3aed;'
+                'border:1px dashed #a78bfa;border-radius:999px;padding:1px 10px;'
+                'font-weight:600;background:#f5f3ff">ecos de 1 pieza</span>')
+    if n_ev >= 10 and horas >= 24 and n_urls >= 3:
+        return ('<span style="display:inline-block;font-size:.72rem;color:#b45309;'
+                'border:1px solid #f59e0b;border-radius:999px;padding:1px 10px;'
+                'font-weight:600;background:#fffbeb">coordinación sostenida</span>')
+    return ""
+
+
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
-    más probables). Sin frases por componente: están en la leyenda única."""
+    más probables) + chip de trayectoria (eco puntual vs coordinación
+    sostenida). Sin frases por componente: están en la leyenda única."""
     import re as _re
     overall = c["overall_score"] or 0
     band = band_of(overall)
@@ -228,7 +257,9 @@ def _cluster_detail_html(c, a, comps, contenido=None):
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{ruido_html}'
-         f'{cuentas_html}</div>')
+         f'{cuentas_html}'
+         f'{_sostenido_chip(diver)}'
+         f'</div>')
 
     # GUARDIA DE INTERPRETACIÓN: evita que un lector no experto lea HIGH/CRITICAL
     # como "campaña extranjera confirmada". La banda es una señal conductual de
@@ -319,7 +350,7 @@ def _cluster_detail_html(c, a, comps, contenido=None):
     return h + content_html + svg_score_bar(overall, band) + bars + attr + hyp_html
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -334,6 +365,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     # índice assessments por cluster_id
     asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
     contenido_map = contenido_map or {}
+    diversidad_map = diversidad_map or {}
     order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
     expandidos = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
     resto = [c for c in order if band_of(c["overall_score"] or 0) not in EXPANDED_BANDS]
@@ -343,7 +375,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     for c in expandidos:
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
-        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]))}</div>')
+        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]))}</div>')
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
     if resto:
@@ -401,7 +433,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f' · {nacc_} cuentas</span></div>')
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid))}</div>')
+                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid))}</div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -484,6 +516,24 @@ def main():
                                          key=lambda x: -x["n"])[:4]
     except Exception:
         contenido_map = {}
+    # diversidad de piezas por cluster (opción 3): nº de URLs distintas vs nº
+    # de eventos y ventana temporal (min->max ts). Distingue un "eco puntual de
+    # una pieza" (varias cuentas comparten la MISMA url) de una "coordinación
+    # sostenida" (misma red, muchas piezas, ventana larga). Solo lectura, no
+    # toca scoring; da contexto de interpretación al analista.
+    diversidad_map = {}
+    try:
+        _div = con.execute(
+            "SELECT cluster_id, COUNT(*) n_ev, COUNT(DISTINCT url) n_urls,"
+            " MIN(ts) min_ts, MAX(ts) max_ts FROM cluster_events"
+            " GROUP BY cluster_id").fetchall()
+        for r in _div:
+            horas = (r["max_ts"] - r["min_ts"]) / 3600.0
+            diversidad_map[r["cluster_id"]] = {
+                "n_ev": r["n_ev"], "n_urls": r["n_urls"], "horas": horas,
+            }
+    except Exception:
+        diversidad_map = {}
     # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
     # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
     # forma clusters en varios temas (solape frontera_sur/geopolitica: la pareja
@@ -1129,7 +1179,7 @@ def main():
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
-                _tema_cl, assessments, contenido_map=contenido_map)
+                _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
