@@ -261,7 +261,14 @@ def _cluster_detail_html(c, a, comps, contenido=None):
                         f'padding:8px 12px;margin:6px 0">'
                         f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
                         f'text-transform:uppercase;margin-bottom:2px">De qué habla este cluster</div>'
-                        f'{list_items}</div>')
+                        f'{list_items}'
+                        f'<div style="font-size:.72rem;color:#64748b;margin-top:6px;border-top:1px dashed #e2e8f0;'
+                        f'padding-top:5px">'
+                        f'<a href="/api/export?cluster={c["cluster_label"]}&fmt=csv" '
+                        f'style="color:#c2410c;text-decoration:none">📥 Exportar evidencia (CSV)</a>'
+                        f' · <a href="/api/export?cluster={c["cluster_label"]}&fmt=json" '
+                        f'style="color:#c2410c;text-decoration:none">JSON</a>'
+                        f'</div></div>')
 
     # barras de componentes (X/100 junto a la barra)
     bars = ""

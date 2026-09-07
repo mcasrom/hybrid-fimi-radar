@@ -118,6 +118,62 @@ def admin_secret() -> str:
     return os.environ.get("FIMI_ADMIN_SECRET", "") or cfg.get("FIMI_ADMIN_SECRET", "")
 
 
+def exportar_cluster(cluster_label: str, fmt: str = "csv"):
+    """Exporta la evidencia (cluster_events) de un cluster de la vista activa.
+
+    cluster_label es el label p.ej. 'frontera_sur_cluster_000'. El export se
+    limita a clusters de la vista ACTIVA (el snapshot más reciente en
+    clusters), no a la BD histórica, y devuelve los eventos miembros con su
+    fuente/autor/titular/URL para auditoría OSINT o compartir.
+
+    Devuelve (content_type, bytes, filename) o levanta KeyError si no existe.
+    """
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT c.id, c.cluster_label, c.tema_id, c.overall_score, c.created_at"
+            " FROM clusters c WHERE c.cluster_label=? LIMIT 1",
+            (cluster_label,)).fetchone()
+        if not row:
+            raise KeyError("cluster no encontrado en la vista activa")
+        evs = conn.execute(
+            "SELECT ts, source, author, title, text, url FROM cluster_events"
+            " WHERE cluster_id=? ORDER BY ts", (row["id"],)).fetchall()
+    finally:
+        conn.close()
+
+    cid = cluster_label
+    fecha_snap = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(row["created_at"]))
+    lat = [dict(r) for r in evs]
+    if fmt == "json":
+        payload = {
+            "cluster_label": cid,
+            "tema": row["tema_id"],
+            "overall_score": row["overall_score"],
+            "snapshot_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(row["created_at"])),
+            "n_eventos": len(lat),
+            "fuentes": sorted({e["source"] for e in lat}),
+            "autores": sorted({e["author"] for e in lat if e.get("author")}),
+            "eventos": lat,
+        }
+        body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+        return ("application/json", body, f"fimi-evidence-{cid}.json")
+    # CSV
+    import io
+    import csv
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["cluster_label", "tema", "overall_score", "ts_utc",
+                "source", "author", "title", "text", "url"])
+    for e in evs:
+        w.writerow([cid, row["tema_id"], row["overall_score"],
+                    time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(e["ts"])),
+                    e["source"], e["author"], e["title"], e["text"], e["url"]])
+    body = buf.getvalue().encode("utf-8")
+    return ("text/csv; charset=utf-8", body, f"fimi-evidence-{cid}.csv")
+
+
 class H(BaseHTTPRequestHandler):
     def _send(self, code, obj, ctype="application/json"):
         if isinstance(obj, str):
@@ -126,6 +182,15 @@ class H(BaseHTTPRequestHandler):
             body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_download(self, code, body: bytes, ctype, filename):
+        """Envía un fichero como descarga (Content-Disposition attachment)."""
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -178,6 +243,21 @@ class H(BaseHTTPRequestHandler):
                 "SELECT id, texto, canal, created_at AS fecha_alta FROM sugerencias ORDER BY id DESC LIMIT 50")]
             conn.close()
             return self._send(200, {"ok": True, "votos": votos, "sugerencias": sugs})
+        if path == "/api/export":
+            # Evidencia por cluster (OSINT): devuelve cluster_events de un
+            # cluster de la vista activa en CSV/JSON. Datos ya públicos en las
+            # tarjetas; el export facilita auditoría/compartir.
+            cid = (q.get("cluster") or [""])[0]
+            fmt = (q.get("fmt") or ["csv"])[0]
+            if fmt not in ("csv", "json"):
+                return self._send(400, {"error": "fmt invalido (csv|json)"})
+            if not cid:
+                return self._send(400, {"error": "falta cluster"})
+            try:
+                ctype, body, fname = exportar_cluster(cid, fmt)
+            except KeyError:
+                return self._send(404, {"error": f"cluster no encontrado: {cid}"})
+            return self._send_download(200, body, ctype, fname)
         return self._send(404, {"error": "not found"})
 
     def do_POST(self):
