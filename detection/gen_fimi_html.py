@@ -1563,9 +1563,10 @@ def main():
             _lt_color, _lt_icon, _lt_estado = "#d97706", "🟠", "tardando"
         else:  # > 13h: se saltó al menos un ciclo de 6h
             _lt_color, _lt_icon, _lt_estado = "#dc2626", "🔴", "cron saltado"
-        _ingesta_line = (f"<p style='font-size:.74rem;color:{_lt_color};margin:2px 0 2px'>"
-                         f"🕒 Última ingesta: <b>{_lt_txt}</b> ({_lt_rel}) · "
-                         f"<b>{_lt_icon} {_lt_estado}</b>"
+        _ingesta_line = (f"<p id='fimiIngesta' style='font-size:.74rem;color:{_lt_color};margin:2px 0 2px' "
+                         f"data-ts='{int(_last_ts)}' data-txt='{_lt_txt}'>"
+                         f"🕒 Última ingesta: <b>{_lt_txt}</b> (<span id='fimiRel'>{_lt_rel}</span>) · "
+                         f"<b id='fimiEstado'>{_lt_icon} {_lt_estado}</b>"
                          f"<span style='color:#94a3b8'> · datos de captura, centinela cada 6 h.</span></p>")
     else:
         _ingesta_line = ""
@@ -2093,6 +2094,35 @@ if ('serviceWorker' in navigator) {{
   }}
   window.abrirDetalle=abrirDetalle;
   window.volverResumen=volverResumen;
+
+  // Frescura de la última ingesta en TIEMPO REAL (JS): recalcula cada 30s el
+  // "hace X" y el color a partir del timestamp absoluto (data-ts), en vez de
+  // dejar congelado el "hace X" que se escribió al generar el HTML (que quedaba
+  // viejo entre ciclos de 6h y confundía: parecía fresco cuando llevaba horas).
+  function actualizarFrescura(){{
+    var p=document.getElementById('fimiIngesta');
+    if(!p) return;
+    var ts=parseInt(p.getAttribute('data-ts')||'0',10);
+    if(!ts) return;
+    var ahora=Math.floor(Date.now()/1000);
+    var min=Math.max(0, Math.floor((ahora-ts)/60));
+    var rel;
+    if(min<60) rel='hace '+Math.max(min,1)+' min';
+    else if(min<1440) rel='hace '+Math.floor(min/60)+' h '+String(min%60).padStart(2,'0')+' min';
+    else rel='hace '+Math.floor(min/1440)+' d';
+    var color, icono, estado;
+    if(min<420){{ color='#16a34a'; icono='🟢'; estado='al día'; }}
+    else if(min<780){{ color='#d97706'; icono='🟠'; estado='tardando'; }}
+    else {{ color='#dc2626'; icono='🔴'; estado='cron saltado'; }}
+    var relEl=document.getElementById('fimiRel');
+    var estEl=document.getElementById('fimiEstado');
+    if(relEl) relEl.textContent=rel;
+    if(estEl) estEl.textContent=icono+' '+estado;
+    p.style.color=color;
+  }}
+  setInterval(actualizarFrescura, 30000);
+  window.actualizarFrescura = actualizarFrescura;
+  actualizarFrescura();
 
   // Pre-cargar el formulario de sugerencia con un término emergente (AJUSTE 4).
   // Vuelve a la vista resumen (el formulario vive ahí), rellena el textarea y

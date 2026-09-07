@@ -40,3 +40,7 @@ for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail
 #    débil sostenida (volumen bajo + 0 narrativas sostenidas, o piloto >90d),
 #    notifica al dueño por Telegram y registra una sugerencia en la bitácora.
 .venv/bin/python detection/check_cierre.py >> logs/cierre.log 2>&1
+
+# 8) Alerta de ingesta: si la captura lleva >7.5h sin actualizar (se saltó un
+#    ciclo del cron cada 6h), avisa al dueño por Telegram una vez por episodio.
+.venv/bin/python detection/check_ingesta.py >> logs/ingesta.log 2>&1
