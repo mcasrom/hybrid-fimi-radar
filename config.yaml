@@ -314,6 +314,9 @@ temas:
   eeuu_politica:
     estado: piloto
     nombre: Política y desinformación EEUU
+  oriente_medio:
+    estado: piloto
+    nombre: Oriente Medio (Israel-Irán-Gaza)
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -440,6 +443,26 @@ keywords:
 - palabra: 2026 midterms interference
   plataformas: *id001
   tema: eeuu_politica
+- palabra: desinformación conflicto Oriente Medio
+  plataformas: &id002
+  - bluesky
+  - google-news
+  tema: oriente_medio
+- palabra: manipulación informativa Gaza
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: propaganda de guerra Israel Irán
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: campaña de desinformación Israel
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: desinformación guerra Gaza
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: interferencia informativa Irán
+  plataformas: *id002
+  tema: oriente_medio
 telegram_canales:
 - elfarodeceuta
 - maldita_es
