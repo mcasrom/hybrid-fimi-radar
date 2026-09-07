@@ -1991,17 +1991,21 @@ main{{max-width:960px;margin:0 auto;padding:20px 16px 56px}}
 .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}}
 .fimi-pane[hidden], .fimi-pane.hidden{{display:none}}
 a{{color:#c2410c}}
+
+.fimi-nav{{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e2e8f0;padding:0;display:flex;gap:0;box-shadow:0 1px 3px rgba(15,23,42,.06)}}
+.fimi-nav a{{flex:1;text-align:center;padding:11px 8px;font-size:.88rem;font-weight:600;color:#475569;text-decoration:none;border-bottom:3px solid transparent;transition:all .15s}}
+.fimi-nav a:hover{{color:#c2410c;background:#fff7ed}}
+.fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
+.tab-panel{{display:none}}.tab-panel.active{{display:block}}
 </style></head>
 <body>
 <main>
-<p style="font-size:.82rem">
-<a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · 
-<a href="#metodologia" style="color:#c2410c">Metodología</a> · 
-<a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · 
-<a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · 
-<a href="#bitacora" style="color:#c2410c">Bitácora</a> · 
-<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a>
-</p>
+<nav class="fimi-nav" id="fimiNav">
+<a href="#" class="active" data-panel="tabRadar" onclick="fimiPanel('tabRadar');return false">Radar</a>
+<a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
+<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub</a>
+</nav>
+<div id="tabRadar" class="tab-panel active">
 <h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
 <p style="color:#475569;font-size:.86rem;margin:.3rem 0 .2rem">FIMI · <em>Foreign Information Manipulation and Interference</em> (Manipulación e Interferencia de Información Extranjera): operaciones híbridas que amplifican, coordinan o distorsionan narrativas para influir en la opinión pública y la política desde fuera de la frontera.</p>
 <p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en el
@@ -2034,6 +2038,8 @@ tema; estas secciones son la vista de conjunto.
 {hist_html}
 
 {detalle_wrap_close}
+</div><!-- /tabRadar -->
+<div id="tabTransparencia" class="tab-panel">
 
 <div class="card" id="que-es-fimi">
 <h3 style="margin-bottom:6px">Qué es FIMI Radar</h3>
@@ -2132,6 +2138,7 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 {bitacora_html}
 
 {_emer_html}
+</div><!-- /tabTransparencia -->
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
@@ -2384,6 +2391,35 @@ if ('serviceWorker' in navigator) {{
     if(q[i]==='confirmado=1'){{ alert('✅ Suscripción confirmada. Cada lunes recibirás el resumen.'); }}
     else if(q[i]==='baja=1'){{ alert('Te has dado de baja del newsletter del radar.'); }}
   }}
+
+  
+  // Tab switching: Radar | Transparencia
+  window.fimiPanel = function(id){{
+    var panels=document.querySelectorAll('.tab-panel');
+    var links=document.querySelectorAll('.fimi-nav a[data-panel]');
+    for(var i=0;i<panels.length;i++){{
+      if(panels[i].id===id){{ panels[i].classList.add('active'); }}
+      else {{ panels[i].classList.remove('active'); }}
+    }}
+    for(var i=0;i<links.length;i++){{
+      if(links[i].getAttribute('data-panel')===id){{ links[i].classList.add('active'); }}
+      else {{ links[i].classList.remove('active'); }}
+    }}
+    window.scrollTo({{top:0,behavior:'smooth'}});
+  }};
+
+  // Footer anchors that point to Transparencia content: open that tab
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-temas','bitacora','transparencia'];
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){{
+    var h=a.getAttribute('href').replace('#','');
+    if(_transAnchors.indexOf(h)!==-1){{
+      a.addEventListener('click',function(ev){{
+        ev.preventDefault();
+        if(window.fimiPanel){{ window.fimiPanel('tabTransparencia'); }}
+        setTimeout(function(){{ var t=document.getElementById(h); if(t){{ t.scrollIntoView({{behavior:'smooth',block:'start'}}); }} }},50);
+      }});
+    }}
+  }});
 
   var hash=(location.hash||'').replace('#','');
   // deep-link #tema abre directamente el detalle de ese tema
