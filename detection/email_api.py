@@ -253,6 +253,8 @@ class H(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "fmt invalido (csv|json)"})
             if not cid:
                 return self._send(400, {"error": "falta cluster"})
+            if not re.match(r"^[a-z0-9_]+(_cluster_[0-9]{3})?$", cid):
+                return self._send(400, {"error": "cluster_label invalido"})
             try:
                 ctype, body, fname = exportar_cluster(cid, fmt)
             except KeyError:
