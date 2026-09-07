@@ -183,3 +183,30 @@ H4 amplificación mediática · H5 campaña política · H6 desconocido.
   las evidencias de coordinación y las hipótesis posibles con su nivel de confianza.
 - "No existe evidencia suficiente para atribuir a un actor extranjero" es una conclusión válida.
 - Sin LLM como componente principal del detector (solo estadística clásica, explicable).
+
+
+## Seguridad del despliegue
+
+Cabeceras HTTP servidas por nginx (dominio fimi.viajeinteligencia.com, detrás de Cloudflare):
+
+- `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` (HSTS, sin preload)
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Content-Security-Policy`: `default-src 'self'; script-src 'self' 'unsafe-inline'; ...`
+
+La CSP usa `'unsafe-inline'` porque el dashboard es **un único HTML autocontenido**
+(CSS+JS inline generado por `gen_fimi_html.py` cada 6 h). No es una vulnerabilidad
+explotable: el inline lo genera el pipeline propio, no input de usuario. El código inline
+fuera de la CSP (extraer CSS/JS a ficheros externos) permitiría subir la nota de
+[Mozilla Observatory](https://developer.mozilla.org/en-US/observatory/analyze?host=fimi.viajeinteligencia.com)
+de B+ a A+, pero se ha decidido mantener la arquitectura actual.
+
+Estado real (escaneo Mozilla Observatory desde navegador, 2026-09-07): **B+ 80/100,
+11/12 tests**; único fallo = CSP (−20 por `unsafe-inline`). La nota mide el despliegue
+técnico, no la calidad del modelo FIMI.
+
+Otros controles: rate-limit `limit_req` en `/api/*` (429), `.env` y `data/radar.db`
+con permisos 600, validación de `cluster_label` en `/api/export` (solo
+`[a-z0-9_]+(_cluster_[0-9]{3})?`, previene path traversal/SQLi), endpoints de admin con
+`x-admin-secret`.
