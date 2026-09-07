@@ -2131,6 +2131,31 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 {_scoring_html}
 </div>
 
+<div class="card" id="seguridad">
+<h3>Seguridad del despliegue</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Cabeceras HTTP servidas por nginx (detrás de Cloudflare): <code>X-Frame-Options: DENY</code>,
+<code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: strict-origin-when-cross-origin</code>,
+<code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code> (HSTS) y
+<code>Permissions-Policy</code> restringida (cámara/micrófono/geolocalización bloqueadas).
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+La <b>Content-Security-Policy</b> usa <code>script-src 'self' 'unsafe-inline'</code> porque este
+dashboard es un único HTML autocontenido (CSS+JS inline que genera <code>gen_fimi_html.py</code> cada 6 h).
+El inline lo produce el propio pipeline, no input de usuario, por lo que no supone un vector explotable
+en la práctica.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Estado real — <a href="https://developer.mozilla.org/en-US/observatory/analyze?host=fimi.viajeinteligencia.com"
+target="_blank" rel="noopener noreferrer" style="color:#c2410c">Mozilla Observatory</a> (escaneo 2026-09-07):
+<b>B+ 80/100, 11/12 tests</b>. Único fallo: CSP (−20 por <code>unsafe-inline</code>, el diseño autocontenido
+mencionado). La nota mide el despliegue técnico, no la calidad del modelo. Otros controles:
+rate-limit en <code>/api/*</code> (429), <code>.env</code> y <code>data/radar.db</code> con permisos 600,
+validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi) y endpoints de admin con
+<code>x-admin-secret</code>.
+</p>
+</div>
+
 {salud_html}
 
 {_salud_temas_html}
@@ -2142,7 +2167,7 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> Â· <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -2409,7 +2434,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-temas','bitacora','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-temas','bitacora','seguridad','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
