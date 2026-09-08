@@ -1088,20 +1088,32 @@ def main():
                 "desc": "Ensayo de opinión sobre dereliction of duty y la decisión política.",
                 "url": "https://analisis.pruebapublica.com/posts/dereliction-of-duty-lealtad-bunkeriza-moncloa",
             },
-            "eeuu_politica": {
-                "title": "Análisis: Donroe, la nueva Doctrina Monroe",
-                "desc": "Lectura geopolítica de la política exterior estadounidense.",
-                "url": "https://analisis.pruebapublica.com/posts/donroe-la-nueva-version-de-la-doctrina-monroe",
-            },
+            "eeuu_politica": [
+                {
+                    "title": "Análisis: Donroe, la nueva Doctrina Monroe",
+                    "desc": "Lectura geopolítica de la política exterior estadounidense.",
+                    "url": "https://analisis.pruebapublica.com/posts/donroe-la-nueva-version-de-la-doctrina-monroe",
+                },
+                {
+                    "title": "Análisis: neocolonialismo del siglo XXI y el Corolario Trump-Monroe",
+                    "desc": "Cronología de la injerencia hemisférica hasta la operación de Venezuela (2026).",
+                    "url": "https://analisis.pruebapublica.com/posts/neocolonialismo-siglo-xxi-corolario-trump-monroe",
+                },
+            ],
         }.get(_t)
         if _blog_cta:
+            _items = _blog_cta if isinstance(_blog_cta, list) else [_blog_cta]
             _blog_html = (
                 f"<div style='border:1px dashed #c2410c;border-radius:10px;padding:10px 14px;"
                 f"margin:0 0 12px;background:#fffaf5;font-size:.82rem;line-height:1.5'>"
-                f"<b>📚 {_blog_cta['title']}</b><br>"
-                f"<span style='color:#94a3b8;font-size:.75rem'>{_blog_cta['desc']}</span><br>"
-                f"<a href='{_blog_cta['url']}' target='_blank' rel='noopener noreferrer' "
-                f"style='color:#c2410c;font-weight:600'>Leer el análisis en el blog →</a></div>")
+                + "".join(
+                    f"<div style='margin:2px 0'><b>📚 {_c['title']}</b><br>"
+                    f"<span style='color:#94a3b8;font-size:.75rem'>{_c['desc']}</span><br>"
+                    f"<a href='{_c['url']}' target='_blank' rel='noopener noreferrer' "
+                    f"style='color:#c2410c;font-weight:600'>Leer el análisis en el blog →</a></div>"
+                    for _c in _items
+                )
+                + "</div>")
         else:
             _blog_html = ""
         _tema_cl_raw = [c for c in clusters if c["tema_id"] == _t]
