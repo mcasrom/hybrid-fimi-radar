@@ -2049,7 +2049,7 @@ a{{color:#c2410c}}
 .fimi-hero-eyebrow .sep{{color:#fdba74;font-weight:400}}
 .fimi-hero-eyebrow .dot{{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}}
 .fimi-hero h1{{margin:0 0 6px;font-size:1.55rem;line-height:1.25;color:#0f172a;font-weight:800;letter-spacing:-.01em}}
-.fimi-hero .sub{{margin:0 0 18px;font-size:.9rem;color:#475569;line-height:1.55;max-width:76ch}}
+.fimi-hero .sub{{margin:0 0 18px;font-size:.95rem;color:#475569;line-height:1.6;max-width:100%}}
 .fimi-hero .chain{{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 20px}}
 .fimi-hero .step{{background:#fff;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;flex:1 1 150px;min-width:150px;cursor:default;transition:border-color .15s,box-shadow .15s}}
 .fimi-hero .step:hover{{border-color:#fdba74;box-shadow:0 2px 6px rgba(194,65,12,.10)}}
