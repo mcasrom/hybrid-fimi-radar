@@ -341,9 +341,6 @@ keywords:
 - palabra: España Marruecos
   plataformas:
   - google-news
-- palabra: Ceuta
-  plataformas:
-  - mastodon
 - palabra: migración
   plataformas:
   - mastodon

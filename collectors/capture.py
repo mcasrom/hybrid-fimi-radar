@@ -32,6 +32,11 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ECR-capture/0.1"
 TELEGRAM_CHANNELS = []  # p.ej. ["elfarodeceuta", "maldita_es"]
 BLUESKY_QUERIES = []    # p.ej. ["elecciones", "voto"]
 MAX_PER_SOURCE = 100
+# Ventana temporal de captura: descarta eventos mas antiguos que N dias.
+# El radar detecta campanas a corto plazo (la retencion purga events>90d);
+# capturar historico (p.ej. posts de 2025 que devuelven las busquedas) genera
+# clusters de alarma montados sobre datos viejos que la purga borra despues.
+CAPTURE_WINDOW_DAYS = 90
 
 
 def http_get(url):
@@ -343,6 +348,16 @@ def main():
             for e in grab_rss_feed(name, url):
                 e["_temas"] = {tema}
                 events.append(e)
+
+    # Ventana temporal: descartar eventos mas antiguos que CAPTURE_WINDOW_DAYS.
+    # Las busquedas (bluesky searchPosts, google-news RSS) devuelven resultados
+    # historicos; sin este filtro se clusterizan campanas de hace meses/anios como
+    # si fueran senal actual (y la retencion 90d las purga despues del run).
+    _window = int(time.time()) - CAPTURE_WINDOW_DAYS * 86400
+    before = len(events)
+    events = [e for e in events if e.get("timestamp", 0) >= _window]
+    if before - len(events):
+        print(f"  ventana {CAPTURE_WINDOW_DAYS}d: descartados {before - len(events)} eventos antiguos")
 
     if not events:
         print("  No hay fuentes configuradas (config.yaml -> capture) o no se capturó nada.")
