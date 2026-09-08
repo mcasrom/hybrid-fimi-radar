@@ -314,9 +314,33 @@ temas:
   eeuu_politica:
     estado: piloto
     nombre: Política y desinformación EEUU
+    # Tuning por tema (igual que politica_nacional): la coordinación partidista/
+    # editorial legítima sobre política estadounidense tiene sync+contenido
+    # altos pero anomalía baja. Se sube el peso de la anomalía para que SOLO
+    # ella (o señales de infraestructura reales) eleve a ANOMALOUS+, evitando
+    # marcar el eco político ordinario como señal de campaña en el piloto.
+    scoring:
+      weights:
+        synchronization: 0.15
+        content_similarity: 0.15
+        amplification: 0.10
+        infrastructure: 0.10
+        network_density: 0.10
+        anomaly: 0.40
   oriente_medio:
     estado: piloto
     nombre: Oriente Medio (Israel-Irán-Gaza)
+    # Tuning por tema (piloto): el ruido editorial/activista sobre el conflicto
+    # tiene sync+contenido altos con anomalía baja; subir la anomalía evita
+    # marcar coordinación legítima de difusión como campaña inorgánica.
+    scoring:
+      weights:
+        synchronization: 0.15
+        content_similarity: 0.15
+        amplification: 0.10
+        infrastructure: 0.10
+        network_density: 0.10
+        anomaly: 0.40
 keywords:
 - palabra: Ceuta
   plataformas:

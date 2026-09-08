@@ -405,6 +405,23 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # color por banda: ANOMALOUS ámbar, WATCH/NORMAL gris neutro
             barcol_ = "#f59e0b" if band_ == "ANOMALOUS" else "#94a3b8"
             pct_ = max(2.0, min(100.0, overall_))
+            # recorte por piso de masa: el assessment lo marca como ruido de
+            # bajo volumen. Añadir anotación para que los "39/100" repetidos no
+            # parezcan el mismo hallazgo clonado (es un techo de escala, no el
+            # valor real de la señal).
+            _rui = ""
+            try:
+                _asm_s = a_["assessment"] if isinstance(a_, (dict, sqlite3.Row)) else getattr(a_, "assessment", "")
+                if "Posible ruido de bajo volumen" in str(_asm_s or ""):
+                    _rui = ('<span title="Recortado por el piso de masa (<3 cuentas sin '
+                            'volumen o infraestructura suficiente): el score crudo sería '
+                            'más alto, pero la escala lo limita a banda WATCH para no '
+                            'alarmar con señales de bajo volumen." style="display:inline-block;'
+                            'font-size:.66rem;color:#9ca3af;border:1px dashed #d1d5db;'
+                            'border-radius:999px;padding:0 6px;font-weight:600;margin-left:4px">'
+                            'recortado por escala</span>')
+            except Exception:
+                _rui = ""
             # contexto real (de qué habla) del cluster para verlo sin expandir
             ctx_ = ""
             try:
@@ -430,7 +447,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'<span style="min-width:150px;text-align:right;font-size:.78rem;color:#475569;'
                 f'font-weight:600">{overall_:.0f}/100 '
                 f'<span style="color:{barcol_};font-weight:700">{band_}</span>'
-                f' · {nacc_} cuentas</span></div>')
+                f' · {nacc_} cuentas{_rui}</span></div>')
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
                      f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid))}</div>')
