@@ -2033,6 +2033,13 @@ a{{color:#c2410c}}
 .fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
 .tab-panel{{display:none}}.tab-panel.active{{display:block}}
 
+/* ---- BARRA ECOSISTEMA (persistente bajo el nav) ---- */
+.fimi-ecobar{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:.8rem;color:#64748b;background:#fffaf5;border-bottom:1px solid #fde68a;padding:7px 2px}}
+.fimi-ecobar a{{color:#c2410c;text-decoration:none;font-weight:600}}
+.fimi-ecobar a:hover{{text-decoration:underline}}
+.fimi-ecobar .label{{font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:700}}
+.fimi-ecobar .sep{{color:#fdba74;font-weight:400}}
+
 /* ---- HERO "centro de situación" (claro cálido, coherente con la página) ---- */
 .fimi-hero{{background:linear-gradient(180deg,#fff 0%,#fff7ed 78%,#ffedd5 100%);color:#1e293b;border:1px solid #fed7aa;border-radius:18px;padding:24px 26px 22px;margin:6px 0 20px;box-shadow:0 2px 8px rgba(194,65,12,.08);position:relative;overflow:hidden}}
 .fimi-hero::after{{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(194,65,12,.10),transparent 70%)}}
@@ -2066,13 +2073,19 @@ a{{color:#c2410c}}
 <a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub</a>
 </nav>
+<div class="fimi-ecobar">
+  <span class="label">Ecosistema</span>
+  <a href="https://www.viajeinteligencia.com" title="Landing principal">viajeinteligencia.com</a>
+  <span class="sep">·</span>
+  <a href="https://www.viajeinteligencia.com/ecosistema.html" title="Vitrina de todas las herramientas">Herramientas</a>
+  <span class="sep">·</span>
+  <a href="https://analisis.pruebapublica.com" title="Blog de análisis">Blog analisis.pruebapublica.com</a>
+  <span class="sep">·</span>
+  <a href="https://pruebapublica.com" title="Landing pruebapublica">pruebapublica.com</a>
+</div>
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
-    <a href="https://www.viajeinteligencia.com">← viajeinteligencia.com</a>
-    <span class="sep">·</span>
-    <a href="https://www.viajeinteligencia.com/ecosistema.html">Ecosistema</a>
-    <span class="sep">·</span>
     <span><span class="dot" style="background:#c2410c"></span>Radar FIMI · Centro de observación en español</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
