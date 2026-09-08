@@ -1072,6 +1072,38 @@ def main():
         _nombre = _meta.get("nombre", _t)
         _estado = _meta.get("estado", "produccion")
         _discl = _meta.get("disclaimer", "")
+        _blog_cta = {
+            "frontera_sur": {
+                "title": "Análisis: la frontera sur como crisis diplomática",
+                "desc": "Lectura en @pruebapublica sobre Ceuta y la migración como arma.",
+                "url": "https://analisis.pruebapublica.com/posts/ceuta-melilla-2026-crisis-migratoria-arma-diplomatica",
+            },
+            "geopolitica_ue_marruecos": {
+                "title": "Análisis: el tablero del Magreb antes de la tormenta",
+                "desc": "Objetivos de cada actor en el Magreb occidental (UE-Marruecos).",
+                "url": "https://analisis.pruebapublica.com/posts/el-tablero-antes-de-la-tormenta",
+            },
+            "politica_nacional": {
+                "title": "Análisis: lealtad y bunkerización en Moncloa",
+                "desc": "Ensayo de opinión sobre dereliction of duty y la decisión política.",
+                "url": "https://analisis.pruebapublica.com/posts/dereliction-of-duty-lealtad-bunkeriza-moncloa",
+            },
+            "eeuu_politica": {
+                "title": "Análisis: Donroe, la nueva Doctrina Monroe",
+                "desc": "Lectura geopolítica de la política exterior estadounidense.",
+                "url": "https://analisis.pruebapublica.com/posts/donroe-la-nueva-version-de-la-doctrina-monroe",
+            },
+        }.get(_t)
+        if _blog_cta:
+            _blog_html = (
+                f"<div style='border:1px dashed #c2410c;border-radius:10px;padding:10px 14px;"
+                f"margin:0 0 12px;background:#fffaf5;font-size:.82rem;line-height:1.5'>"
+                f"<b>📚 {_blog_cta['title']}</b><br>"
+                f"<span style='color:#94a3b8;font-size:.75rem'>{_blog_cta['desc']}</span><br>"
+                f"<a href='{_blog_cta['url']}' target='_blank' rel='noopener noreferrer' "
+                f"style='color:#c2410c;font-weight:600'>Leer el análisis en el blog →</a></div>")
+        else:
+            _blog_html = ""
         _tema_cl_raw = [c for c in clusters if c["tema_id"] == _t]
         # A2: quitar de este tema los clusters cuyo conjunto de cuentas ya se
         # muestra en un tema anterior del catálogo (no duplicar hallazgos).
@@ -1226,6 +1258,7 @@ def main():
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
                        f"{_resumen_tema_html.get(_t, '')}"
+                       f"{_blog_html}"
                        f"{_bias_note}{_dup_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
     # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
     # justo debajo del selector (imposible de no ver al entrar en un tema piloto).
