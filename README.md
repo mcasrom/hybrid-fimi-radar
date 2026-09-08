@@ -10,7 +10,7 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **4 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitorizados**:
 
 | Tema | Estado |
 |---|---|
@@ -18,6 +18,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **4 temas monitor
 | Geopolítica UE-Marruecos | Producción |
 | Política nacional | Producción |
 | Política y desinformación EEUU | Piloto (en calibración) |
+| Oriente Medio (Israel-Irán-Gaza) | Piloto (en calibración) |
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
@@ -56,6 +57,38 @@ Generador sintético con 6 escenarios (tests/generate_synthetic.py):
 
 **ARI = 1.000** (separación perfecta de los clusters coordinados), **precisión 100%**,
 **0 falsos positivos**.
+
+## Validación externa (EUvsDisinfo)
+
+Cruza la vista activa del radar con el dataset de campañas documentadas de EUvsDisinfo
+(`data/euvsdisinfo_base.csv`, Zenodo `10514307`, 18.249 casos / 10.682 de desinformación /
+1.311 dominios documentados; se auto-descarga a `data/`, gitignored). Uso:
+`tests/validacion_externa.py --json`.
+
+Resultados reales sobre la vista activa (90 d, últimos 5 temas):
+
+- **Precision 0.0%**: los 14 clusters con score ≥ 60 no amplifican ningún dominio
+  documentado (amplifican prensa mainstream: eldiario.es, elpais.com, publico.es). No es un
+  falso positivo: significa que las señales altas actuales se basan en eco mainstream no
+  documentado.
+- **Recall 0.0%**: la única fuente del catálogo con dominio documentado (RT en Español,
+  `actualidad.rt.com`, 152 eventos capturados) no produce ninguna narrativa ni cluster.
+
+**Interpretación (según el docstring del script):** el recall 0 es un resultado correcto,
+no un fallo — los feeds RSS no participan en el grafo de coordinación (por diseño, solo
+redes sociales) y los titulares de RT no se replican en ≥ 3 fuentes del catálogo; un radar
+de coordinación no debe señalar RT solo por ser RT, sino cuando su narrativa se propaga.
+Además, EUvsDisinfo es histórico (2015-2023, foco Ucrania/Rusia), no cubre los temas activos
+del radar (Ceuta/Marruecos/España/EEUU/Oriente Medio), por lo que el benchmark valida la
+**mecánica** del cruce, no la ausencia de campañas. La evidencia real de que el detector
+funciona está en la validación sintética (ARI 1.000) + este cruce de dominios.
+
+## CTA cruzado con el blog (analisis.pruebapublica.com)
+
+Las tarjetas de los temas Frontera Sur, Geopolítica UE-Marruecos, Política nacional y
+Política EEUU enlazan al análisis editorial correspondiente del blog (y viceversa: los posts
+del blog llevan un bloque "Este tema, en vivo: Radar FIMI" con deep-link al tema por hash
+`#<tema>`). Generado en `detection/gen_fimi_html.py`.
 
 ## Instalación y uso
 
@@ -141,8 +174,8 @@ Esquema centralizado en una única tabla para todos los canales:
 `suscripciones (id, canal, destino, temas, frecuencia, ultimo_estado, fecha_alta, confirmado)`.
 Crea la tabla con `python detection/schema_suscripciones.py`.
 
-- **Telegram**: bot dedicado (long-poll, `detection/radar_bot.py`) con `/radar`, `/mis` y
-  `/baja`. El envío de avisos lo hace `detection/notify_subs_telegram.py` (añadido al cron
+- **Telegram**: bot dedicado (long-poll, `detection/radar_bot.py`, handle `@RadarFIMI_bot`)
+  con `/radar`, `/mis` y `/baja`. El envío de avisos lo hace `detection/notify_subs_telegram.py` (añadido al cron
   6h): solo notifica cuando un dial cambia de estado (on_change), comparando contra
   `ultimo_estado` — sin spam.
 - **Email**: backend HTTP de stdlib (`detection/email_api.py`) + Resend (dominio
