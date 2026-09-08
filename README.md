@@ -23,9 +23,11 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
-  nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con diales
-  por tema, tarjetas de cluster, narrativas, historial, resumen por tema, salud de fuentes
-  y bitácora.
+  nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
+  **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
+  **barra de ecosistema persistente** (viajeinteligencia.com · Herramientas · Blog
+  analisis.pruebapublica.com · pruebapublica.com), diales por tema, tarjetas de cluster,
+  narrativas, historial, resumen por tema, salud de fuentes y bitácora.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
