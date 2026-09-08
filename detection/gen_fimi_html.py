@@ -2033,27 +2033,30 @@ a{{color:#c2410c}}
 .fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
 .tab-panel{{display:none}}.tab-panel.active{{display:block}}
 
-/* ---- HERO "centro de situación" ---- */
-.fimi-hero{{background:linear-gradient(135deg,#0b1220 0%,#111c2e 55%,#1a2537 100%);color:#e2e8f0;border-radius:18px;padding:26px 26px 22px;margin:6px 0 20px;box-shadow:0 10px 30px rgba(2,6,23,.28);position:relative;overflow:hidden}}
-.fimi-hero::after{{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(194,65,12,.16),transparent 70%)}}
-.fimi-hero-eyebrow{{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:12px}}
+/* ---- HERO "centro de situación" (claro cálido, coherente con la página) ---- */
+.fimi-hero{{background:linear-gradient(180deg,#fff 0%,#fff7ed 78%,#ffedd5 100%);color:#1e293b;border:1px solid #fed7aa;border-radius:18px;padding:24px 26px 22px;margin:6px 0 20px;box-shadow:0 2px 8px rgba(194,65,12,.08);position:relative;overflow:hidden}}
+.fimi-hero::after{{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(194,65,12,.10),transparent 70%)}}
+.fimi-hero-eyebrow{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.72rem;color:#c2410c;font-weight:700;margin-bottom:10px}}
+.fimi-hero-eyebrow a{{color:#c2410c;text-decoration:none}}
+.fimi-hero-eyebrow a:hover{{text-decoration:underline}}
+.fimi-hero-eyebrow .sep{{color:#fdba74;font-weight:400}}
 .fimi-hero-eyebrow .dot{{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}}
-.fimi-hero h1{{margin:0 0 6px;font-size:1.55rem;line-height:1.25;color:#fff;font-weight:800;letter-spacing:-.01em}}
-.fimi-hero .sub{{margin:0 0 18px;font-size:.9rem;color:#b6c2d4;line-height:1.55;max-width:72ch}}
+.fimi-hero h1{{margin:0 0 6px;font-size:1.55rem;line-height:1.25;color:#0f172a;font-weight:800;letter-spacing:-.01em}}
+.fimi-hero .sub{{margin:0 0 18px;font-size:.9rem;color:#475569;line-height:1.55;max-width:76ch}}
 .fimi-hero .chain{{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 20px}}
-.fimi-hero .step{{background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.22);border-radius:12px;padding:12px 14px;flex:1 1 150px;min-width:150px;cursor:default;transition:border-color .15s,background .15s}}
-.fimi-hero .step:hover{{border-color:#c2410c;background:rgba(194,65,12,.10)}}
-.fimi-hero .step b{{display:block;font-size:.95rem;color:#fff;font-weight:800;margin-bottom:4px}}
-.fimi-hero .step .ic{{color:#fdba74}}
-.fimi-hero .step span{{font-size:.74rem;color:#a9b7c9;line-height:1.4;display:block}}
-.fimi-hero .arrow{{align-self:center;color:#fdba74;font-size:1.1rem;font-weight:700}}
+.fimi-hero .step{{background:#fff;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;flex:1 1 150px;min-width:150px;cursor:default;transition:border-color .15s,box-shadow .15s}}
+.fimi-hero .step:hover{{border-color:#fdba74;box-shadow:0 2px 6px rgba(194,65,12,.10)}}
+.fimi-hero .step b{{display:block;font-size:.95rem;color:#1e293b;font-weight:800;margin-bottom:4px}}
+.fimi-hero .step .ic{{color:#c2410c}}
+.fimi-hero .step span{{font-size:.74rem;color:#64748b;line-height:1.4;display:block}}
+.fimi-hero .arrow{{align-self:center;color:#c2410c;font-size:1.1rem;font-weight:700}}
 .fimi-hero .cta{{display:flex;flex-wrap:wrap;align-items:center;gap:12px}}
 .fimi-hero .cta a{{text-decoration:none;font-weight:700;border-radius:10px;padding:11px 20px;font-size:.9rem;display:inline-flex;align-items:center;gap:7px}}
 .fimi-hero .cta .primary{{background:#c2410c;color:#fff;transition:background .15s}}
 .fimi-hero .cta .primary:hover{{background:#9a3412}}
-.fimi-hero .cta .ghost{{background:transparent;color:#dbe3ec;border:1px solid #475569}}
-.fimi-hero .cta .ghost:hover{{border-color:#c2410c;color:#fdba74}}
-.fimi-hero .live{{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:#cbd5e1;background:rgba(15,23,42,.5);border:1px solid rgba(148,163,184,.25);border-radius:999px;padding:5px 11px;margin-left:auto}}
+.fimi-hero .cta .ghost{{background:#fff;color:#c2410c;border:1px solid #fdba74}}
+.fimi-hero .cta .ghost:hover{{border-color:#c2410c;background:#fff7ed}}
+.fimi-hero .live{{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;color:#7c4a12;background:#ffedd5;border:1px solid #fdba74;border-radius:999px;padding:4px 10px;margin-left:auto;font-weight:600}}
 @media(max-width:640px){{.fimi-hero .live{{margin-left:0}} .fimi-hero .arrow{{transform:rotate(90deg)}} .fimi-hero h1{{font-size:1.3rem}}}}
 </style></head>
 <body>
@@ -2066,7 +2069,11 @@ a{{color:#c2410c}}
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
-    <span><span class="dot" style="background:#fdba74"></span>FIMI Radar · Centro de observación en español</span>
+    <a href="https://www.viajeinteligencia.com">← viajeinteligencia.com</a>
+    <span class="sep">·</span>
+    <a href="https://www.viajeinteligencia.com/ecosistema.html">Ecosistema</a>
+    <span class="sep">·</span>
+    <span><span class="dot" style="background:#c2410c"></span>Radar FIMI · Centro de observación en español</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
   <h1>European Hybrid &amp; FIMI Radar · Centro de situación</h1>
@@ -2082,8 +2089,6 @@ a{{color:#c2410c}}
   </div>
   <div class="cta">
     <a href="#estado" class="primary" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Ver estado por tema →</a>
-    <a href="#" class="ghost" onclick="fimiPanel('tabTransparencia');return false">Metodología y transparencia</a>
-    <a href="https://github.com/mcasrom/hybrid-fimi-radar" class="ghost" target="_blank" rel="noopener noreferrer">GitHub</a>
   </div>
 </section>
 
