@@ -26,7 +26,9 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
   **barra de ecosistema persistente** (viajeinteligencia.com · Herramientas · Blog
-  analisis.pruebapublica.com · pruebapublica.com), diales por tema, tarjetas de cluster,
+  analisis.pruebapublica.com · pruebapublica.com), diales por tema, tarjetas de cluster
+  (con "De qué habla", **dominios que amplifican por cluster** — eco de un medio vs red —,
+  chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida" y export CSV/JSON),
   narrativas, historial, resumen por tema, salud de fuentes y bitácora.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
@@ -196,6 +198,25 @@ Para auditoría OSINT, `detection/export_evidencia.py` permite descargar los tex
 y URLs de un cluster en CSV o JSON (`--cluster <label> --fmt csv|json`), o en el dashboard
 (los links "Exportar evidencia" de cada tarjeta). Recurso público: los datos ya eran
 visibles en las tarjetas; el export solo los facilita.
+
+## Contexto de interpretación en las tarjetas de cluster
+
+Cada cluster se presenta con bloques de contexto que ayudan al analista a no sobreleer la
+señal (todo solo lectura; no altera el scoring):
+
+- **"De qué habla este cluster"**: los 2-3 titulares más repetidos de sus `cluster_events`,
+  con enlace a la fuente y frecuencia (xN).
+- **"Dominios que amplifican (N)"**: cuántas cuentas distintas comparten cada dominio,
+  para distinguir visualmente el **eco de un mismo medio** (p. ej. 2 cuentas compartiendo
+  eldiario.es) de una **red que amplifica fuentes variadas** (eldiario·51, elpais·19, …).
+- **Chips de trayectoria**: "ecos de 1 pieza" (varias cuentas comparten la MISMA URL) vs
+  "coordinación sostenida" (la misma red vierte muchas piezas en ≥24 h) — calculado de la
+  diversidad de URLs y la ventana temporal del cluster.
+- **Guardia de interpretación** en HIGH/CRITICAL: la banda es señal conductual de
+  coordinación, no atribución de actor ni prueba de orquestación.
+- **Anotación "recortado por escala"**: los clusters de <3 cuentas limitados por el piso de
+  masa a banda WATCH muestran el motivo, para que los 39/100 repetidos no parezcan el mismo
+  hallazgo clonado.
 
 ## Atribución (separada del detector)
 
