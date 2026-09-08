@@ -1659,6 +1659,8 @@ def main():
                          f"<b id='fimiEstado'>{_lt_icon} {_lt_estado}</b>"
                          f"<span style='color:#94a3b8'> · datos de captura, centinela cada 6 h.</span></p>")
     else:
+        # sin ingesta todavía: valores por defecto para el hero y la línea
+        _lt_txt, _lt_rel, _lt_color, _lt_icon, _lt_estado = "—", "sin datos", "#dc2626", "🔴", "sin datos"
         _ingesta_line = ""
     # --- Explicación de scoring: pesos y umbrales por tema (opción 2 del
     #     próximo sprint FIMI). Exponemos lo que hoy solo vive en config.yaml
@@ -1756,8 +1758,8 @@ def main():
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
         f"{_ingesta_line}"
         f"</div>"
-        f"<div style='display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:6px'>"
-        f"{dial_cards}</div>"
+         f"<div id='estado' style='display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:6px'>"
+         f"{dial_cards}</div>"
         f"{_share_resumen_buttons}"
         f"{newsletter_form}"
         f"{sugerir_form}"
@@ -1989,7 +1991,7 @@ def main():
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>European Hybrid &amp; FIMI Radar · Multi-tema</title>
+<title>FIMI Radar · Centro de situación — desinformación y manipulación de la información en español</title>
 <meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_events} eventos, {n_clusters} clusters. Actualizado cada 6h.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, coordinación de cuentas, amplificación de narrativas">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
@@ -2030,6 +2032,29 @@ a{{color:#c2410c}}
 .fimi-nav a:hover{{color:#c2410c;background:#fff7ed}}
 .fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
 .tab-panel{{display:none}}.tab-panel.active{{display:block}}
+
+/* ---- HERO "centro de situación" ---- */
+.fimi-hero{{background:linear-gradient(135deg,#0b1220 0%,#111c2e 55%,#1a2537 100%);color:#e2e8f0;border-radius:18px;padding:26px 26px 22px;margin:6px 0 20px;box-shadow:0 10px 30px rgba(2,6,23,.28);position:relative;overflow:hidden}}
+.fimi-hero::after{{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(194,65,12,.16),transparent 70%)}}
+.fimi-hero-eyebrow{{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:12px}}
+.fimi-hero-eyebrow .dot{{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}}
+.fimi-hero h1{{margin:0 0 6px;font-size:1.55rem;line-height:1.25;color:#fff;font-weight:800;letter-spacing:-.01em}}
+.fimi-hero .sub{{margin:0 0 18px;font-size:.9rem;color:#b6c2d4;line-height:1.55;max-width:72ch}}
+.fimi-hero .chain{{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 20px}}
+.fimi-hero .step{{background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.22);border-radius:12px;padding:12px 14px;flex:1 1 150px;min-width:150px;cursor:default;transition:border-color .15s,background .15s}}
+.fimi-hero .step:hover{{border-color:#c2410c;background:rgba(194,65,12,.10)}}
+.fimi-hero .step b{{display:block;font-size:.95rem;color:#fff;font-weight:800;margin-bottom:4px}}
+.fimi-hero .step .ic{{color:#fdba74}}
+.fimi-hero .step span{{font-size:.74rem;color:#a9b7c9;line-height:1.4;display:block}}
+.fimi-hero .arrow{{align-self:center;color:#fdba74;font-size:1.1rem;font-weight:700}}
+.fimi-hero .cta{{display:flex;flex-wrap:wrap;align-items:center;gap:12px}}
+.fimi-hero .cta a{{text-decoration:none;font-weight:700;border-radius:10px;padding:11px 20px;font-size:.9rem;display:inline-flex;align-items:center;gap:7px}}
+.fimi-hero .cta .primary{{background:#c2410c;color:#fff;transition:background .15s}}
+.fimi-hero .cta .primary:hover{{background:#9a3412}}
+.fimi-hero .cta .ghost{{background:transparent;color:#dbe3ec;border:1px solid #475569}}
+.fimi-hero .cta .ghost:hover{{border-color:#c2410c;color:#fdba74}}
+.fimi-hero .live{{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:#cbd5e1;background:rgba(15,23,42,.5);border:1px solid rgba(148,163,184,.25);border-radius:999px;padding:5px 11px;margin-left:auto}}
+@media(max-width:640px){{.fimi-hero .live{{margin-left:0}} .fimi-hero .arrow{{transform:rotate(90deg)}} .fimi-hero h1{{font-size:1.3rem}}}}
 </style></head>
 <body>
 <main>
@@ -2039,12 +2064,28 @@ a{{color:#c2410c}}
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub</a>
 </nav>
 <div id="tabRadar" class="tab-panel active">
-<h1 style="font-size:1.5rem;margin:.2em 0">European Hybrid &amp; FIMI Radar</h1>
-<p style="color:#475569;font-size:.86rem;margin:.3rem 0 .2rem">FIMI · <em>Foreign Information Manipulation and Interference</em> (Manipulación e Interferencia de Información Extranjera): operaciones híbridas que amplifican, coordinan o distorsionan narrativas para influir en la opinión pública y la política desde fuera de la frontera.</p>
-<p style="color:#475569">Detección de <strong>coordinación, amplificación y anomalías</strong> en el
-catálogo de temas monitorizados: <strong>{tema_nombres_html}</strong>.
- <strong>Agnóstico al actor</strong>: primero se observa la anomalía, después se evalúan hipótesis;
-la atribución nunca se presume.</p>
+<section class="fimi-hero">
+  <div class="fimi-hero-eyebrow">
+    <span><span class="dot" style="background:#fdba74"></span>FIMI Radar · Centro de observación en español</span>
+    <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
+  </div>
+  <h1>European Hybrid &amp; FIMI Radar · Centro de situación</h1>
+  <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
+  para detectar <strong>coordinación, amplificación y anomalías</strong> — la maquinaria de la
+  manipulación de información (FIMI). Observamos el comportamiento en red; nunca atribuimos a un actor sin evidencia.</p>
+  <div class="chain">
+    <div class="step"><b><span class="ic">👁</span> OBSERVAR</b><span>captura de {n_sources} fuentes abiertas en {len(temas)} temas, sin prejuicio de actor.</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b><span class="ic">📡</span> DETECTAR</b><span>señal de coordinación, amplificación y anomalías sobre {n_clusters} clusters activos.</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b><span class="ic">⚖️</span> CONTRASTAR</b><span>las hipótesis se contrastan contra la evidencia. Una señal no es una atribución.</span></div>
+  </div>
+  <div class="cta">
+    <a href="#estado" class="primary" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Ver estado por tema →</a>
+    <a href="#" class="ghost" onclick="fimiPanel('tabTransparencia');return false">Metodología y transparencia</a>
+    <a href="https://github.com/mcasrom/hybrid-fimi-radar" class="ghost" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </div>
+</section>
 
  {resumen_html}
 
@@ -2331,6 +2372,8 @@ if ('serviceWorker' in navigator) {{
     if(relEl) relEl.textContent=rel;
     if(estEl) estEl.textContent=icono+' '+estado;
     p.style.color=color;
+    var heroEl=document.getElementById('fimiHeroLive');
+    if(heroEl) heroEl.textContent=icono+' '+estado+' · última ingesta '+rel;
   }}
   setInterval(actualizarFrescura, 30000);
   window.actualizarFrescura = actualizarFrescura;
