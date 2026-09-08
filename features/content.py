@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
 
 _URL_RE = re.compile(r"https?://[^\s]+")
 _TAG_RE = re.compile(r"#(\w+)")
@@ -82,3 +83,45 @@ def near_duplicate_ratio(df, author, config):
     sim = cosine_similarity(mine, rest)
     hits = (sim.max(axis=1) >= threshold).sum()
     return hits / len(non_empty)
+
+
+def near_duplicate_ratio_all(df, config):
+    """Ratios near-dup de TODAS las cuentas en una sola pasada de TF-IDF.
+
+    Equivalente a llamar near_duplicate_ratio() por cuenta, pero el corpus de
+    cada cuenta es siempre "todos los textos no vacíos del dataset" (non_empty
+    de la cuenta + others). Vectorizando una única vez sobre ese corpus el
+    resultado es numéricamente idéntico y se evita re-fitear el vectorizador
+    N veces (1768 cuentas ≈ el 87% del tiempo de run_fimi en frontera_sur).
+    """
+    from collections import defaultdict
+    threshold = config["thresholds"]["near_duplicate_threshold"]
+    texts = df["text"].tolist()
+    authors = df["author"].tolist()
+    keep = [i for i, t in enumerate(texts) if (t or "").strip()]
+    out = {a: 0.0 for a in set(authors)}
+    if len(keep) < 2:
+        return out
+    pos_by_auth = defaultdict(list)
+    corpus = []
+    for i, idx in enumerate(keep):
+        pos_by_auth[authors[idx]].append(i)
+        corpus.append(texts[idx])
+    try:
+        vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, stop_words=None)
+        X = normalize(vec.fit_transform(corpus))
+    except Exception:
+        return out
+    N = X.shape[0]
+    for a, mine in pos_by_auth.items():
+        if len(mine) < 2:
+            continue
+        mset = set(mine)
+        rest = np.array([i for i in range(N) if i not in mset], dtype=int)
+        if rest.size == 0:
+            continue
+        sim = X[mine] @ X[rest].T
+        sim = sim.toarray() if hasattr(sim, "toarray") else np.atleast_2d(sim)
+        hits = (sim.max(axis=1) >= threshold).sum()
+        out[a] = hits / len(mine)
+    return out

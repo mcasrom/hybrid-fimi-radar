@@ -75,7 +75,7 @@ def temporal_features(df, author):
     return feats
 
 
-def content_features(df, author, config):
+def content_features(df, author, config, near_dup=None):
     """Características de contenido de una cuenta."""
     ev = df[df["author"] == author]
     n = len(ev)
@@ -111,18 +111,21 @@ def content_features(df, author, config):
     feats["top_domain_share"] = (max(Counter(doms).values()) / n) if doms else 0.0
 
     # ratio de near-duplicates de la cuenta frente a todo el dataset
-    near = content.near_duplicate_ratio(df, author, config)
-    feats["near_dup_ratio"] = near
+    feats["near_dup_ratio"] = (near_dup if near_dup is not None
+                               else content.near_duplicate_ratio(df, author, config))
 
     return feats
 
 
 def build_features(df, config):
     """Matriz de características por cuenta → DataFrame indexado por author."""
+    # near-dup ratio: UN vectorizado global (una sola pasada) en vez de re-fitear
+    # el corpus por cada cuenta (que era O(N_cuentas x fit) ≈ 825s en frontera_sur).
+    near_dups = content.near_duplicate_ratio_all(df, config)
     features = {}
     for author in df["author"].unique():
         tf = temporal_features(df, author)
-        cf = content_features(df, author, config)
+        cf = content_features(df, author, config, near_dup=near_dups.get(author, 0.0))
         if tf and cf:
             row = {**tf, **cf}
             features[author] = row
