@@ -28,3 +28,5 @@ data/*.db-wal
 # archivos de export/cierre de temas (generados por temas_cli.py)
 data/export/
 data/ingesta_estado.json
+# dataset externo de validación (EUvsDisinfo/Zenodo), descargado por tests/validacion_externa.py
+data/euvsdisinfo_base.csv
