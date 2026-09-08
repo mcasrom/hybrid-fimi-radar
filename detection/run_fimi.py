@@ -52,26 +52,31 @@ def main():
 
     # --- INGEST + NORMALIZE ---
     from normalizer.ingest import load, normalize, load_sqlite
+    _ts = time.time()
     print(f"[1/7] Ingest {args.input} (tema={tema})")
     if str(args.input).endswith(".db"):
         df = load_sqlite(args.input, tema=tema)
     else:
         raw = load(args.input)
         df = normalize(raw)
-    print(f"      {len(df)} eventos, {df['author'].nunique()} cuentas")
+    print(f"      {len(df)} eventos, {df['author'].nunique()} cuentas · {time.time()-_ts:.1f}s")
 
     # --- FEATURES ---
+    _ts = time.time()
     print("[2/7] Features por cuenta")
     feat = build_features(df, cfg)
     for a in feat.index:
         feat.loc[a, "bot_signal"], _ = bot_signal_score(feat.loc[a].to_dict())
+    print(f"      features · {time.time()-_ts:.1f}s")
 
     # --- DETECTION (anomalías) ---
+    _ts = time.time()
     print("[3/7] Anomalías (Isolation Forest)")
     scored, thr = detect_anomalies(feat, cfg)
-    print(f"      umbral anomalía p={cfg['detection']['anomaly_percentile']}")
+    print(f"      umbral anomalía p={cfg['detection']['anomaly_percentile']} · {time.time()-_ts:.1f}s")
 
     # --- COORDINATION + CASCADES ---
+    _ts = time.time()
     print("[4/7] Coordinación (grafo)")
     edges = build_edges(df, cfg)
     edges_df = pd.DataFrame(edges) if edges else pd.DataFrame(columns=["source", "target", "weight", "evidence"])
@@ -79,9 +84,10 @@ def main():
     cascades = detect_cascades(df, cfg)
     amp = amplification_signal(edges_df, df["author"].nunique())
     narratives = detect_narrative_amplification(df, cfg)
-    print(f"      {len(cascades)} cascadas, {len(narratives)} narrativas amplificadas")
+    print(f"      {len(cascades)} cascadas, {len(narratives)} narrativas amplificadas · {time.time()-_ts:.1f}s")
 
     # --- CLUSTERING ---
+    _ts = time.time()
     print("[5/7] Clustering (componentes conexas)")
     merged = cluster_by_components(scored, edges_df, cfg, tema=tema)
     summary = cluster_summary(merged, edges_df, cfg)
@@ -103,6 +109,7 @@ def main():
             ROOT / "data" / "processed" / "cluster_events.csv", index=False, encoding="utf-8")
 
     # --- SCORING + ATTRIBUTION + PERSIST ---
+    _ts = time.time()
     print("[6/7] Scoring + atribución + persistencia SQLite")
     bands = load_bands(cfg)
     conn = get_conn(args.db)
@@ -213,8 +220,10 @@ def main():
                 from collections import Counter
                 summary[label]["topic_dominant"] = Counter(_texts).most_common(1)[0][0][:180]
     conn.commit()
+    print(f"      persistencia SQLite · {time.time()-_ts:.1f}s")
 
     # --- REPORT ---
+    _ts = time.time()
     print("[7/7] Informe")
     report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0, cfg, tema)
     rep_path = ROOT / "reports" / f"fimi_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.md"
@@ -233,6 +242,7 @@ def main():
     for s in sostenidas[:5]:
         print(f"        - {s['titulo'][:50]} · {s['dias']} dias")
     print(f"      informe diario: {daily_path}")
+    print(f"      persistencia findings · {time.time()-_ts:.1f}s")
     conn.close()
 
     print(f"\nHecho en {time.time()-t0:.1f}s · {n_assessed} clusters evaluados")
