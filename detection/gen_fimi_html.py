@@ -223,7 +223,7 @@ def _sostenido_chip(diver):
     return ""
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None):
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
@@ -274,6 +274,26 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None):
 
     # CONTENIDO REAL del cluster: de qué habla (titulares + enlaces). Se
     # muestran los 2-3 textos más repetidos del cluster, con su fuente.
+    # dominios amplificados (punto 5): cuántas cuentas comparten cada dominio,
+    # para distinguir "eco del mismo medio" de una red que amplifica muchos.
+    _dom_html = ""
+    if dominios:
+        import html as _dom_esc
+        _dom_chips = "".join(
+            f'<span style="display:inline-block;background:#fff;border:1px solid #e2e8f0;'
+            f'border-radius:999px;padding:1px 8px;font-size:.72rem;color:#475569;margin:1px 4px 1px 0">'
+            f'{_dom_esc.escape(x["dominio"])} <b style="color:#c2410c">· {x["n_cuentas"]} cuentas</b></span>'
+            for x in dominios[:3])
+        if _dom_chips:
+            _dom_html = (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;'
+                         f'padding:8px 12px;margin:6px 0">'
+                         f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
+                         f'text-transform:uppercase;margin-bottom:2px">Dominios que amplifican '
+                         f'({len(dominios)})</div>'
+                         f'{_dom_chips}'
+                         f'<div style="color:#94a3b8;font-size:.68rem;margin-top:4px">Cuentas del cluster '
+                         f'compartiendo enlaces del mismo dominio — útil para distinguir eco de un medio '
+                         f'de una red que amplifica fuentes variadas.</div></div>')
     content_html = ""
     if contenido:
         import html as _html_esc
@@ -289,17 +309,17 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None):
             list_items += (f'<div style="font-size:.84rem;color:#1e293b;line-height:1.4;'
                            f'padding:4px 0">{txt}{freq_html}{url_html}</div>')
         content_html = (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;'
-                        f'padding:8px 12px;margin:6px 0">'
-                        f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
-                        f'text-transform:uppercase;margin-bottom:2px">De qué habla este cluster</div>'
-                        f'{list_items}'
-                        f'<div style="font-size:.72rem;color:#64748b;margin-top:6px;border-top:1px dashed #e2e8f0;'
-                        f'padding-top:5px">'
-                        f'<a href="/api/export?cluster={c["cluster_label"]}&fmt=csv" '
-                        f'style="color:#c2410c;text-decoration:none">📥 Exportar evidencia (CSV)</a>'
-                        f' · <a href="/api/export?cluster={c["cluster_label"]}&fmt=json" '
-                        f'style="color:#c2410c;text-decoration:none">JSON</a>'
-                        f'</div></div>')
+                         f'padding:8px 12px;margin:6px 0">'
+                         f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
+                         f'text-transform:uppercase;margin-bottom:2px">De qué habla este cluster</div>'
+                         f'{list_items}'
+                         f'<div style="font-size:.72rem;color:#64748b;margin-top:6px;border-top:1px dashed #e2e8f0;'
+                         f'padding-top:5px">'
+                         f'<a href="/api/export?cluster={c["cluster_label"]}&fmt=csv" '
+                         f'style="color:#c2410c;text-decoration:none">📥 Exportar evidencia (CSV)</a>'
+                         f' · <a href="/api/export?cluster={c["cluster_label"]}&fmt=json" '
+                         f'style="color:#c2410c;text-decoration:none">JSON</a>'
+                         f'</div></div>')
 
     # barras de componentes (X/100 junto a la barra)
     bars = ""
@@ -347,10 +367,10 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None):
         except Exception:
             pass
 
-    return h + content_html + svg_score_bar(overall, band) + bars + attr + hyp_html
+    return h + content_html + _dom_html + svg_score_bar(overall, band) + bars + attr + hyp_html
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -375,7 +395,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     for c in expandidos:
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
-        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]))}</div>')
+        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]))}</div>')
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
     if resto:
@@ -450,7 +470,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f' · {nacc_} cuentas{_rui}</span></div>')
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid))}</div>')
+                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid))}</div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -551,6 +571,37 @@ def main():
             }
     except Exception:
         diversidad_map = {}
+    # dominios amplificados por cluster (punto 5, 08/Sep): extraer el dominio
+    # (netloc) de cada URL en cluster_events y agrupar cuántas CUENTAS distintas
+    # comparten cada dominio. Distingue visualmente "eco de un mismo medio"
+    # (2 cuentas compartiendo el enlace de un único dominio) de una red que
+    # amplifica muchos dominios. Solo lectura: contexto de interpretación.
+    domains_map = {}
+    try:
+        import urllib.parse as _up
+        _dom = con.execute(
+            "SELECT cluster_id, url, author FROM cluster_events"
+            " WHERE url IS NOT NULL AND url != ''").fetchall()
+        _dacc = {}
+        for r in _dom:
+            try:
+                host = (_up.urlparse(str(r["url"])).netloc or "").lower()
+            except Exception:
+                host = ""
+            host = host[4:] if host.startswith("www.") else host
+            if not host:
+                continue
+            key = r["cluster_id"]
+            d = _dacc.setdefault(key, {})
+            e = d.setdefault(host, {"dominio": host, "autores": set()})
+            e["autores"].add(str(r["author"] or ""))
+        for _cid, _dominos in _dacc.items():
+            domains_map[_cid] = sorted(
+                [{"dominio": x["dominio"], "n_cuentas": len(x["autores"])}
+                 for x in _dominos.values()],
+                key=lambda x: -x["n_cuentas"])[:4]
+    except Exception:
+        domains_map = {}
     # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
     # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
     # forma clusters en varios temas (solape frontera_sur/geopolitica: la pareja
@@ -1240,7 +1291,8 @@ def main():
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
-                _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map)
+                _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
+                domains_map=domains_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
