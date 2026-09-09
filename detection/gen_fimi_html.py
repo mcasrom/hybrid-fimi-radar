@@ -1589,7 +1589,7 @@ def main():
         _st_score = _st_t.get('score') or 0
         _st_color = _SALUD_COLOR.get(_st_nivel, '#94a3b8')
         dial_cards += (
-            f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;"
+            f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_estilo['color']};"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
             f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;"
             f"letter-spacing:.04em'>{_nombre}</div>"
@@ -1942,7 +1942,7 @@ def main():
         _salud_temas_html += "<b style='color:#16a34a'>alta</b> = tema vivo con señal; "
         _salud_temas_html += "<b style='color:#d97706'>media</b> = funciona con reservas (piloto/volumen justo/joven); "
         _salud_temas_html += "<b style='color:#dc2626'>baja</b> = señal débil sostenida, candidato a revisión de cierre "
-        _salud_temas_html += "(el sistema nunca decide; ver Bitácora).</p></div>"
+        _salud_temas_html += "(el sistema nunca decide; ver Bitácora).</p></div></div>"
     except Exception as _e_st:
         _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
                              f"<p class='caption'>No disponible: {_e_st}</p></div>")
