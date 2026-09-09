@@ -28,7 +28,9 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
   **barra de ecosistema persistente** (viajeinteligencia.com · Herramientas · Blog
   analisis.pruebapublica.com · pruebapublica.com), diales por tema, tarjetas de cluster
   (con "De qué habla", **dominios que amplifican por cluster** — eco de un medio vs red —,
-  chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida" y export CSV/JSON),
+  chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida", export CSV/JSON y
+  **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
+  WATCH) para que la gravedad se perciba a contraluz de la página),
   narrativas, historial, resumen por tema, salud de fuentes y bitácora.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
