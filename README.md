@@ -46,7 +46,9 @@ a la anomalía para no marcar coordinación partidista legítima como red inorg�
 
 Gestión por CLI (`detection/temas_cli.py`): `alta`, `cerrar`, `estado`, `list`. El cierre
 exporta la evidencia a `data/export/`, marca el tema como cerrado (el pipeline lo salta) y
-lo registra en la bitácora.
+lo registra en la bitácora. `alta --verifica` simula la cobertura de las keywords contra el
+corpus antes de crear el tema (evita keywords de registro metodológico que no matchean
+titulares reales).
 
 ## Validación (test sintético FIMI)
 
@@ -147,6 +149,9 @@ hybrid-fimi-radar/
 │   ├── check_cierre.py     # candidatura a cierre (solo sugiere, no decide)
 │   ├── check_promocion.py  # validación de piloto→producción (72 h, ciclo BD)
 │   ├── check_ingesta.py    # alerta si el cron se salta la captura
+│   ├── salud_keywords.py   # ¿captura cada tema su ruido real? (patrón "tema ciego")
+│   ├── backfill_tema_contenido.py  # re-etiqueta por contenido tras cambiar keywords
+│   ├── check_sistema.py    # check médico integral del pipeline (BD/config/frescura)
 │   ├── mantenimiento.py    # retención >90 d + backup gzip + VACUUM
 │   ├── radar_bot.py        # bot de Telegram (long-poll)
 │   ├── email_api.py        # API HTTP de suscripción email + /api/export + /api/admin
@@ -268,3 +273,23 @@ Otros controles: rate-limit `limit_req` en `/api/*` (429), `.env` y `data/radar.
 con permisos 600, validación de `cluster_label` en `/api/export` (solo
 `[a-z0-9_]+(_cluster_[0-9]{3})?`, previene path traversal/SQLi), endpoints de admin con
 `x-admin-secret`.
+
+## Auto-auditoría y salud del sistema
+
+El sistema se auto-chequea frente a fallos silenciosos (config válida + 0 errores pero un
+tema que no ve su ruido real — el patrón que dejó ciego a `oriente_medio` hasta 2026-09-09).
+Tres capas, todas avisando por Telegram al dueño solo ante cambios (sin spam):
+
+- **`salud_keywords.py`** (card *Salud de keywords*): compara el material del corpus que
+  matchea las keywords de cada tema contra lo realmente etiquetado. Alerta si hay un hueco
+  grande (≥50 eventos del ámbito sin etiquetar) o si >50 % de las keywords no matchean nada
+  (keywords de registro metodológico, p. ej. "desinformación guerra Gaza", que los titulares
+  reales no usan). Cron paso 9.
+- **`temas_cli.py alta --verifica`**: al crear un tema, simula la cobertura de las keywords
+  propuestas contra el corpus y avisa antes de dar de alta si matchean poco.
+- **`check_sistema.py`** (card *Salud del sistema*): check médico integral — frescura de
+  captura (`MAX(events.timestamp)` vs 7,5 h), snapshot por tema activo
+  (`MAX(clusters.created_at)` vs 7 h), integridad BD (event_temas huérfanos) y coherencia
+  config (keywords con tema inexistente). Alerta cuando el nivel global empeora
+  (ok → atención → incidencia). Cron paso 10.
+
