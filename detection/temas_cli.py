@@ -130,6 +130,15 @@ def cmd_alta(args):
     if not args.keywords:
         print("[temas] ERROR: necesitas --keywords 'a,b,c' (al menos una).")
         return 1
+
+    # --verifica: simula la cobertura de las keywords propuestas contra el
+    # corpus antes de crear el tema. Evita el patrón "tema ciego" (keywords de
+    # registro metodológico que los titulares reales no usan). No bloquea: un
+    # tema de nicho legítimo puede matchear poco; solo informa para calibrar.
+    # Se ejecuta también con --dry (simular sin crear).
+    if args.verifica:
+        _verificar_cobertura_keywords(args.keywords)
+
     if args.dry:
         print(f"[temas] [dry] crearía '{args.tema}' (piloto) con keywords: {args.keywords}")
         print(f"[temas] [dry] plataformas: {[p.strip() for p in (args.plataformas or 'bluesky,google-news').split(',') if p.strip()]}")
@@ -156,6 +165,30 @@ def cmd_alta(args):
     else:
         print("[temas] --no-regen: regenera luego con detection/gen_fimi_html.py")
     return 0
+
+
+def _verificar_cobertura_keywords(keywords_csv):
+    """Mide cuánto matchearían las keywords dadas en el corpus (14d) y avisa si
+    parecen de registro metodológico o matchean muy poco. Usa salud_keywords."""
+    try:
+        from detection.salud_keywords import medir_cobertura_keywords, DIAS_DEFECTO
+        kws = [k.strip() for k in keywords_csv.split(",") if k.strip()]
+        res = medir_cobertura_keywords(kws, dias=DIAS_DEFECTO)
+    except Exception as e:
+        print(f"[temas] aviso: no se pudo verificar cobertura ({e})")
+        return
+    print(f"[temas] verificación de cobertura ({res['dias']}d): "
+          f"{res['n_eventos_matchean']} eventos del corpus matchearían estas keywords "
+          f"({res['n_keywords_cero']}/{res['n_keywords']} con 0 matches).")
+    for k in res["keywords"]:
+        marca = "⚠ metodológica" if k["metodologica"] else ""
+        if k["matches"] == 0:
+            marca = "⚠ 0 matches — ¿registro metodológico en vez de término temático?" if not k["metodologica"] else "⚠ 0 matches"
+        print(f"     - {k['palabra']}: {k['matches']} events {marca}".rstrip())
+    if res["n_eventos_matchean"] < 20 and res["n_keywords"] >= 2:
+        print("[temas] ⚠ COBERTURA BAJA: revisa las keywords antes de crear el tema. "
+              "Un radar FIMI necesita el ruido temático real (p.ej. 'Gaza', 'Irán') "
+              "para que el pipeline pueda detectar coordinación sobre él.")
 
 
 def cmd_exportar(tema):
@@ -272,6 +305,8 @@ def main():
     pa.add_argument("--plataformas", default="bluesky,google-news")
     pa.add_argument("--no-regen", action="store_true")
     pa.add_argument("--dry", action="store_true")
+    pa.add_argument("--verifica", action="store_true",
+                    help="simular cobertura de las keywords contra el corpus antes de crear")
 
     pc = sub.add_parser("cerrar", help="cerrar un tema (export + config + bitácora)")
     pc.add_argument("tema")

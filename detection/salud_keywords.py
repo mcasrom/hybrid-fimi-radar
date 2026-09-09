@@ -26,6 +26,7 @@ Uso:
 """
 import argparse
 import json
+import os
 import sqlite3
 import sys
 import datetime
@@ -38,6 +39,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 DB = ROOT / "data" / "radar.db"
 CONFIG = ROOT / "config.yaml"
+STATE = ROOT / "data" / "keywords_estado.json"
+CHAT = int(os.environ.get("FIMI_HEALTH_CHAT", "47652516"))
+URL_DASH = "https://fimi.viajeinteligencia.com"
 
 DIAS_DEFECTO = 14
 # Umbral: si hay este nº de eventos del ámbito del tema sin etiquetar, se marca
@@ -189,6 +193,58 @@ def analizar(dias=None):
     return resultado
 
 
+def medir_cobertura_keywords(palabras, dias=None, etiquetado=False):
+    """Simula cuánto capturarían unas keywords dadas en el corpus real (ventana
+    `dias`). Se usa para VALIDAR keywords ANTES de añadirlas (temas_cli alta): si
+    una frase es de registro metodológico ("campaña de desinformación X") apenas
+    matchea titulares reales. Devuelve por keyword el nº de eventos que matchea
+    y un booleano de aviso (0 matches, o todas las keywords < umbral mínimo).
+
+    ``etiquetado=False``: mide solo el matcheo por contenido (lo que el tema
+    vería de ruido). Con ``etiquetado=True`` devuelve además los eventos ya
+    en event_temas del tema (solo tiene sentido con tema existente).
+    """
+    import sys as _s
+    _s.path.insert(0, str(ROOT))
+    from normalizer.clasificar import normalizar, _tokens, _matches, STOP
+
+    dias = dias or DIAS_DEFECTO
+    palabras = [p.strip() for p in (palabras or []) if p and p.strip()]
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    t0 = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - dias * 86400
+    eventos = con.execute(
+        "SELECT id, text, title FROM events WHERE timestamp>?", (t0,)).fetchall()
+    kws_meta = [(p, normalizar(p), _tokens(p)) for p in palabras]
+    totales = Counter()
+    por_evento = {e["id"]: set() for e in eventos}
+    for e in eventos:
+        txt = ((e["title"] or "") + " " + (e["text"] or "")).strip()
+        if not txt:
+            continue
+        nt = normalizar(txt)
+        ntok = [t for t in nt.split() if len(t) > 2 and t not in STOP]
+        for palabra, kw_norm, kw_toks in kws_meta:
+            if _matches(kw_norm, kw_toks, nt, ntok):
+                totales[palabra] += 1
+                por_evento[e["id"]].add(palabra)
+    n_eventos_mat = sum(1 for s in por_evento.values() if s)
+    n_cero = sum(1 for p in palabras if totales.get(p, 0) == 0)
+    n_metod = sum(1 for p in palabras if es_metodologica(p))
+    por_kw = [{"palabra": p, "matches": totales.get(p, 0),
+               "metodologica": es_metodologica(p)} for p in palabras]
+    con.close()
+    return {
+        "dias": dias,
+        "n_eventos_ventana": len(eventos),
+        "n_eventos_matchean": n_eventos_mat,
+        "n_keywords": len(palabras),
+        "n_keywords_cero": n_cero,
+        "n_keywords_metodologicas": n_metod,
+        "keywords": por_kw,
+    }
+
+
 def to_html(resultado):
     """Snippet HTML de la card 'Salud de keywords' (estilo del dashboard)."""
     cards = ""
@@ -225,6 +281,84 @@ def to_html(resultado):
             f"{cards}</div>")
 
 
+def load_env(filepath: Path):
+    try:
+        with open(filepath) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+    except Exception:
+        pass
+
+
+def notify(res, dias=None, dry_run=False):
+    """Avisa por Telegram SOLO cuando un tema ENTRA en alerta (tema ciego /
+    keywords muertas). Estado persistente en data/keywords_estado.json para no
+    repetir el mismo aviso cada ciclo; se rearma cuando el tema se recupera.
+    Patrón idéntico a notify_fuentes.py."""
+    load_env(ROOT / ".env")
+    token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "")
+    api = f"https://api.telegram.org/bot{token}"
+
+    prev = {}
+    if STATE.exists():
+        try:
+            prev = json.loads(STATE.read_text()) or {}
+        except Exception:
+            prev = {}
+
+    primera_vez = not prev
+    nuevos = []
+    recuperados = []
+    for tema, s in res.items():
+        alerta = bool(s.get("alerta"))
+        era = bool(prev.get(tema, {}).get("alerta"))
+        prev[tema] = {"alerta": alerta,
+                      "ruido_potencial": s.get("ruido_potencial", 0),
+                      "sin_etiquetar": s.get("sin_etiquetar", 0),
+                      "keywords_muertas": s.get("keywords_muertas", 0)}
+        if primera_vez:
+            continue
+        if alerta and not era:
+            nuevos.append(tema)
+        elif era and not alerta:
+            recuperados.append(tema)
+
+    STATE.write_text(json.dumps(prev, ensure_ascii=False, indent=2))
+
+    if not nuevos and not recuperados:
+        print(f"[keywords] sin cambios de estado en salud de keywords")
+        return
+
+    if dry_run:
+        print(f"[keywords][dry] nuevos: {nuevos} · recuperados: {recuperados}")
+        return
+
+    if not token or ":" not in token:
+        print(f"[keywords] sin token — aviso NO enviado (nuevos: {nuevos})")
+        return
+
+    lineas = []
+    for tema in nuevos:
+        s = res.get(tema, {})
+        lineas.append(f"⚠️ <b>Posible tema ciego: {tema}</b>\n{s.get('motivo_alerta') or ''}")
+    for tema in recuperados:
+        lineas.append(f"✅ <b>{tema}</b>: salud de keywords recuperada")
+    lineas.append(f"Detalle: {URL_DASH}/#salud-keywords")
+    text = "\n\n".join(lineas)
+    try:
+        import requests
+        r = requests.post(f"{api}/sendMessage", data={
+            "chat_id": str(CHAT), "text": text, "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }, timeout=30)
+        print(f"[keywords] telegram HTTP {r.status_code} — nuevos {len(nuevos)}, recuperados {len(recuperados)}")
+    except Exception as e:
+        print(f"[keywords] error telegram: {e}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--html", action="store_true")
@@ -233,6 +367,9 @@ def main():
     ap.add_argument("--dias", type=int, default=DIAS_DEFECTO)
     ap.add_argument("--save", action="store_true",
                     help="persistir resultado en data/salud_keywords.json (para el cron)")
+    ap.add_argument("--notify", action="store_true",
+                    help="avisar por Telegram cuando un tema entra en alerta (patrón notify_fuentes)")
+    ap.add_argument("--dry", action="store_true")
     args = ap.parse_args()
     res = analizar(args.dias)
     if args.tema:
@@ -249,9 +386,11 @@ def main():
             json.dumps(estado, ensure_ascii=False, indent=1), encoding="utf-8")
         alertas = [t for t, s in res.items() if s.get("alerta")]
         print(f"salud_keywords: {len(res)} temas, alertas: {alertas or 'ninguna'}")
+    if args.notify:
+        notify(res, dias=args.dias, dry_run=args.dry)
     if args.html:
         print(to_html(res))
-    else:
+    elif args.json or not (args.save or args.notify):
         salida = res
         if args.tema:
             salida = res.get(args.tema, {})

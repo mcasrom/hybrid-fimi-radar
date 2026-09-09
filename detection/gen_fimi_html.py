@@ -2081,6 +2081,22 @@ def main():
         salud_kw_html = (f"<div class='card' id='salud-keywords'><h3>Salud de keywords</h3>"
                          f"<p class='caption'>No disponible: {_e_kw}</p></div>")
 
+    # --- Salud del sistema (check médico integral) ---
+    # Auto-chequeo estructural del pipeline: frescura de captura, snapshots por
+    # tema, integridad BD y coherencia config. Complementa a los checkers
+    # individuales; aquí solo se muestra la card (el aviso Telegram es del cron).
+    try:
+        import importlib.util as _ilu_sis
+        _spec_sis = _ilu_sis.spec_from_file_location(
+            "check_sistema", ROOT / "detection" / "check_sistema.py")
+        _sim = _ilu_sis.module_from_spec(_spec_sis)
+        _spec_sis.loader.exec_module(_sim)
+        _sistema_res = _sim.chequea()
+        sistema_html = _sim.to_html(_sistema_res)
+    except Exception as _e_sis:
+        sistema_html = (f"<div class='card' id='sistema'><h3>Salud del sistema</h3>"
+                        f"<p class='caption'>No disponible: {_e_sis}</p></div>")
+
     # --- Salud de los temas (score continuo, mismo criterio que check_cierre) ---
     # 0-100 por tema: volumen de hallazgos/día, narrativas sostenidas, señal del
     # último cluster y madurez/calibración. Solo informativo; el cierre lo decide
@@ -2544,6 +2560,8 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 {salud_kw_html}
 
+{sistema_html}
+
 {_salud_temas_html}
 
 {bitacora_html}
@@ -2553,7 +2571,7 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -2822,7 +2840,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','salud-temas','bitacora','seguridad','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{

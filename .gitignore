@@ -31,3 +31,5 @@ data/ingesta_estado.json
 # dataset externo de validación (EUvsDisinfo/Zenodo), descargado por tests/validacion_externa.py
 data/euvsdisinfo_base.csv
 data/salud_keywords.json
+data/keywords_estado.json
+data/sistema_estado.json

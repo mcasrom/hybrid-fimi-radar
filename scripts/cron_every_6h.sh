@@ -47,6 +47,11 @@ for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail
 
 # 9) Salud de keywords por tema: detecta el patrón "tema ciego" (keywords de
 #    registro metodológico que los titulares reales no usan -> el tema apenas
-#    ve su ruido real). Persiste estado en data/salud_keywords.json; la card
-#    del dashboard se genera en gen_fimi_html. Solo informa, no decide.
-.venv/bin/python detection/salud_keywords.py --save >> logs/salud_keywords.log 2>&1
+#    ve su ruido real). Persiste estado en data/salud_keywords.json; avisa por
+#    Telegram SOLO cuando un tema entra en alerta (data/keywords_estado.json).
+.venv/bin/python detection/salud_keywords.py --save --notify >> logs/salud_keywords.log 2>&1
+
+# 10) Check médico integral: salud estructural del pipeline (frescura captura,
+#     snapshots por tema, integridad BD, coherencia config). Avisa por Telegram
+#     cuando el nivel global empeora (data/sistema_estado.json).
+.venv/bin/python detection/check_sistema.py --notify >> logs/sistema.log 2>&1
