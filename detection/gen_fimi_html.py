@@ -1282,17 +1282,36 @@ def main():
         _tema_cl = [c for c in _tema_cl_raw if c["cluster_label"] not in _duplicados]
         _dup_note = ""
         if _dup_aqui:
+            # nombres legibles de los temas origen + qué cuentas son
             _origenes = {}
+            _detalles = []
             for _c in _dup_aqui:
                 _o = _duplicados[_c["cluster_label"]]
-                _origenes.setdefault(_o.split("_cluster_")[0], []).append(_c["cluster_label"])
+                _otema = _o.split("_cluster_")[0]
+                _origenes.setdefault(_otema, []).append(_c["cluster_label"])
+                _aut = firma_cluster.get(_c["id"], ())
+                _quien = ", ".join(sorted(str(a).split(":")[-1] for a in _aut)) if _aut else ""
+                _sc = _c["overall_score"] or 0
+                _detalles.append(f"{_c['cluster_label'].split('_cluster_')[-1]} · {_sc:.0f}/100"
+                                 + (f" ({_quien})" if _quien else ""))
             _od = " · ".join(f"{k} ({len(v)} duplicado{'s' if len(v)>1 else ''})"
                              for k, v in _origenes.items())
-            _dup_note = (f'<div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;'
-                         f'padding:8px 12px;margin:8px 0;font-size:.78rem;color:#475569">'
-                         f'<b>Sin duplicar:</b> {len(_dup_aqui)} cluster(s) de este tema son el mismo '
-                         f'conjunto de cuentas que ya se muestra en {_od}. Se listan una sola vez en '
-                         f'el radar para no inflar la alerta (solape temático).</div>')
+            # mapa tema->nombre del catálogo para legibilidad
+            _cat_nombre = {}
+            for _t2, _m2 in (temas_cfg.items() if isinstance(temas_cfg, dict) else {}):
+                _cat_nombre[_t2] = _m2.get("nombre", _t2)
+            _od_legible = " · ".join(
+                f"<b>{_cat_nombre.get(k, k)}</b> ({len(v)} duplicado{'s' if len(v)>1 else ''})"
+                for k, v in _origenes.items())
+            _dup_note = (f'<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-left:5px solid #d97706;'
+                         f'border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.8rem;'
+                         f'color:#78350f;line-height:1.55">'
+                         f'<b>🔁 Señal ya contada en otro tema ({len(_dup_aqui)} cluster'
+                         f'{"s" if len(_dup_aqui)>1 else ""})</b><br>'
+                         f'Los clusters de este tema que ves en 0 arriba son <b>el mismo conjunto de '
+                         f'cuentas</b> que el radar ya muestra en {_od_legible} ({" · ".join(_detalles)}). '
+                         f'Para no inflar la alerta con la misma señal dos veces, se listan una sola vez '
+                         f'en el radar (solape temático entre dominios).</div>')
         # Amplificación: señal GLOBAL del tema (un solo valor por run, no por
         # cluster). Se muestra una vez a nivel de pestaña con su escala y frase.
         _amp_tema = None
