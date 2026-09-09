@@ -84,19 +84,33 @@ def kpi_banda_alerta(clus):
             f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
 
 
-def render_dial_svg(etiqueta, valor, color, ancho=180):
+def render_dial_svg(etiqueta, valor, color, ancho=180, banda=None, umbral=None):
     """Velocímetro SVG simple (sin librería). valor 0-100, color de banda.
 
     Semicírculo base gris + aguja que apunta a la posición del valor.
     El color de la aguja y de la etiqueta indica el estado (banda).
     ``ancho`` permite usarlo pequeño en cabeceras de pestaña sin que el
     viewBox se recorte (el alto se escala proporcional al viewBox 200x112).
+
+    Opcionales para anclar el dial a la línea base del tema:
+      ``banda`` = (p25, p75): dibuja la zona "normal" del tema (rango p25-p75
+                  de los picos diarios recientes) como un arco sombreado + dos
+                  marcas verticales en los extremos. La aguja fuera de esa
+                  zona comunica más que el número.
+      ``umbral`` = valor 0-100 donde empieza la banda de alerta del tema
+                   (p.ej. 60 = HIGH); se dibuja una muesca roja.
     """
     import math as _m
     alto = int(ancho * 112 / 200)
     cx, cy, r = 100, 100, 72
     L = _m.pi * r  # longitud del semicírculo
-    # punto del arco superior para un porcentaje (0% izquierda, 100% derecha)
+
+    def _pt(v):
+        # punto sobre el semicírculo superior para un valor 0-100 (0 izq, 100 der)
+        v = min(100, max(0, v))
+        th = _m.radians(180 - 180.0 * (v / 100.0))
+        return (cx + r * _m.cos(th), cy - r * _m.sin(th))
+
     theta = _m.radians(180 - 180.0 * (min(100, max(0, valor)) / 100.0))
     px = cx + r * _m.cos(theta)
     py = cy - r * _m.sin(theta)
@@ -104,16 +118,41 @@ def render_dial_svg(etiqueta, valor, color, ancho=180):
     nx = cx + (r - 14) * _m.cos(theta)
     ny = cy - (r - 14) * _m.sin(theta)
     path_d = f"M {cx - r} {cy} A {r} {r} 0 0 1 {cx + r} {cy}"
-    return (f'<svg viewBox="0 0 200 112" width="{ancho}" height="{alto}" role="img" '
-            f'aria-label="{etiqueta}: {valor:.0f}/100">'
-            f'<path d="{path_d}" fill="none" stroke="#e2e8f0" stroke-width="11" '
-            f'stroke-linecap="round" stroke-dasharray="{L:.1f} {L:.1f}"/>'
-            f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" '
-            f'stroke="{color}" stroke-width="4" stroke-linecap="round"/>'
-            f'<circle cx="{cx}" cy="{cy}" r="6" fill="{color}"/>'
-            f'<text x="{cx - r - 4}" y="{cy + 8}" font-size="9" fill="#94a3b8">0</text>'
-            f'<text x="{cx + r + 1}" y="{cy + 8}" font-size="9" fill="#94a3b8">100</text>'
-            f'</svg>')
+
+    out = [f'<svg viewBox="0 0 200 112" width="{ancho}" height="{alto}" role="img" '
+           f'aria-label="{etiqueta}: {valor:.0f}/100">']
+
+    # zona "normal" del tema (rango p25-p75) sobre el arco base
+    if banda and banda[0] is not None and banda[1] is not None:
+        x1, y1 = _pt(banda[0])
+        x2, y2 = _pt(banda[1])
+        out.append(f'<path d="M {x1:.1f} {y1:.1f} A {r} {r} 0 0 1 {x2:.1f} {y2:.1f}" '
+                   f'fill="none" stroke="#86efac" stroke-width="11" stroke-opacity="0.5" '
+                   f'stroke-linecap="round"/>')
+        # marcas + etiquetas p25/p75 (arriba si el valor es >50, abajo si no)
+        for vv, lab in ((banda[0], "p25"), (banda[1], "p75")):
+            xx, yy = _pt(vv)
+            out.append(f'<line x1="{xx:.1f}" y1="{yy - 15:.1f}" x2="{xx:.1f}" y2="{yy + 13:.1f}" '
+                       f'stroke="#16a34a" stroke-width="1.6" stroke-dasharray="2.5 2.5"/>')
+            ty = yy + 22 if vv < 50 else yy - 13
+            out.append(f'<text x="{xx:.1f}" y="{ty:.1f}" font-size="6.5" fill="#16a34a" '
+                       f'text-anchor="middle" font-weight="700">{lab}</text>')
+
+    # muesca del umbral de alerta (donde empieza HIGH, p.ej. 60)
+    if umbral is not None:
+        ux, uy = _pt(umbral)
+        out.append(f'<line x1="{ux:.1f}" y1="{uy - 24:.1f}" x2="{ux:.1f}" y2="{uy + 6:.1f}" '
+                   f'stroke="#dc2626" stroke-width="2"/>')
+
+    out.append(f'<path d="{path_d}" fill="none" stroke="#e2e8f0" stroke-width="11" '
+               f'stroke-linecap="round" stroke-dasharray="{L:.1f} {L:.1f}"/>')
+    out.append(f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" '
+               f'stroke="{color}" stroke-width="4" stroke-linecap="round"/>')
+    out.append(f'<circle cx="{cx}" cy="{cy}" r="6" fill="{color}"/>')
+    out.append(f'<text x="{cx - r - 4}" y="{cy + 8}" font-size="9" fill="#94a3b8">0</text>')
+    out.append(f'<text x="{cx + r + 1}" y="{cy + 8}" font-size="9" fill="#94a3b8">100</text>')
+    out.append('</svg>')
+    return "".join(out)
 
 
 def render_sparkline(serie, color, ancho=180):
@@ -754,6 +793,55 @@ def main():
             spark_data[_t] = _serie
     except Exception:
         spark_data = {_t: [] for _t in temas}
+    # --- LÍNEA BASE POR TEMA (anclar la señal a su propio histórico) ---
+    # Métrica continua por tema: pico diario = MAX(intensidad) de los findings
+    # tipo cluster de ese día (el cluster más señalado de cada ciclo). Sobre esa
+    # serie se calculan percentiles (banda "normal" p25-p75), la media 14d y el
+    # máximo 30d, para responder "¿es esto mucho PARA ESTE TEMA?". El histórico
+    # es corto en temas jóvenes: los percentiles se calculan con los días
+    # disponibles y se muestra "N días de base" cuando hay menos de 14.
+    _LB_DAYS = 30
+    linea_base = {}
+    try:
+        _lb_desde = int((datetime.now(timezone.utc) - _td(days=_LB_DAYS)).timestamp())
+        for _t in temas:
+            _rows = con.execute(
+                "SELECT date(fecha,'unixepoch') d, MAX(intensidad) mx FROM findings"
+                " WHERE tema_id=? AND tipo='cluster' AND fecha>=? AND intensidad>0"
+                " GROUP BY d", (_t, _lb_desde)).fetchall()
+            _picos = [float(r[1]) for r in _rows]
+            _dias = len(_picos)
+            def _pct(vals, q):
+                if not vals:
+                    return None
+                s = sorted(vals)
+                k = (len(s) - 1) * q
+                f = int(k)
+                c = min(f + 1, len(s) - 1)
+                return s[f] + (s[c] - s[f]) * (k - f)
+            # media de los últimos 14 días (o los disponibles si son menos)
+            _p14 = _picos if _dias <= 14 else _picos[-14:]
+            _media14 = sum(_p14) / len(_p14) if _p14 else None
+            # pico del día hace 48h (para el delta "hoy vs hace 48h" del tema)
+            _d48 = (_hoy_d - _td(days=2)).isoformat()
+            _p48r = con.execute(
+                "SELECT MAX(intensidad) FROM findings"
+                " WHERE tema_id=? AND tipo='cluster' AND intensidad>0"
+                " AND date(fecha,'unixepoch')=?", (_t, _d48)).fetchone()[0]
+            linea_base[_t] = {
+                "dias": _dias,
+                "p25": _pct(_picos, 0.25),
+                "p75": _pct(_picos, 0.75),
+                "media14": _media14,
+                "max30": max(_picos) if _picos else None,
+                "hoy": _picos[-1] if _picos else None,   # pico de hoy (findings)
+                "pico48": float(_p48r) if _p48r else None,
+            }
+    except Exception:
+        for _t in temas:
+            linea_base[_t] = {"dias": 0, "p25": None, "p75": None,
+                              "media14": None, "max30": None, "hoy": None,
+                              "pico48": None}
     # Narrativas alineadas (cluster-of-clusters, 05/Sep): une clusters de la
     # vista activa que hablan de la misma narrativa (TF-IDF + coseno sobre el
     # texto real de cluster_events). Capa transversal, agnóstica al actor.
@@ -1255,8 +1343,19 @@ def main():
                     f'<div style="font-size:1.4rem;font-weight:800;color:{color};line-height:1.05">'
                     f'{valor:.0f}</div>'
                     f'<div style="font-size:.74rem;color:#64748b;line-height:1.3">{sub}</div></div>')
+        # Delta del score top del tema vs su pico de hace 48h (trazable por
+        # findings.intensidad; los cluster_label no son estables entre ciclos).
+        _p48_t = (linea_base.get(_t) or {}).get("pico48")
+        if _max_score and _p48_t:
+            _delta = _max_score - _p48_t
+            _delta_txt = (f"▲ +{_delta:.0f}" if _delta > 0.5
+                          else (f"▼ {_delta:.0f}" if _delta < -0.5 else "▬"))
+            _delta_color = "#dc2626" if _delta > 0.5 else ("#16a34a" if _delta < -0.5 else "#64748b")
+        else:
+            _delta_txt, _delta_color = "—", "#94a3b8"
         _gauges_t = "".join([
-            _mini_dial("Score top", _max_score, _max_color, f"{_max_banda} · máx cluster"),
+            _mini_dial("Score top", _max_score, _max_color,
+                       f"{_max_banda} · <span style='color:{_delta_color};font-weight:700'>{_delta_txt}</span> vs hace 48h"),
             _mini_dial("En alerta", _n_alerta, "#dc2626" if _n_alerta else "#94a3b8",
                        f"{_pct_alerta}% · {_n_alerta} de {_n_tot} clusters ≥60"),
             _mini_dial("Anomalía máx", _anom_max, _anom_color,
@@ -1580,6 +1679,7 @@ def main():
         return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {_band_top}." + _top_txt
 
     dial_cards = ""
+    _ALERTA_UMBRAL = 60  # donde empieza HIGH (≥60 = "en alerta", banda alta)
     for _t in temas:
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
         _nombre = _m.get("nombre", _t)
@@ -1588,31 +1688,93 @@ def main():
         _st_nivel = _st_t.get('nivel') or '—'
         _st_score = _st_t.get('score') or 0
         _st_color = _SALUD_COLOR.get(_st_nivel, '#94a3b8')
+
+        # ---- Anclaje a la línea base del tema (opción elegida por el dueño) ----
+        # La aguja apunta a una métrica CONTINUA real: el score top del tema hoy
+        # (clusters activos exclusivos). La zona verde sombreada = rango p25-p75
+        # de los picos diarios (findings.intensidad); la muesca roja = umbral de
+        # alerta (60). El número grande muestra el score de hoy y su banda.
+        _lb_t = linea_base.get(_t) or {}
+        _excl_t = [c for c in clusters if c["tema_id"] == _t
+                   and c["cluster_label"] not in _duplicados]
+        _hoy_top = max((c["overall_score"] or 0) for c in _excl_t) if _excl_t else 0
+        _lb_dias = _lb_t.get("dias", 0)
+        _p25, _p75 = _lb_t.get("p25"), _lb_t.get("p75")
+        _media14, _max30 = _lb_t.get("media14"), _lb_t.get("max30")
+        # banda p25-p75 solo con base mínima (≥3 días) para no dibujar ruido
+        _banda = None
+        if _lb_dias >= 3 and _p25 is not None and _p75 is not None:
+            _banda = (round(_p25), round(_p75))
+        _hoy_val = _hoy_top if _hoy_top > 0 else 0
+        if _hoy_top > 0:
+            _dial_color = BAND_COLORS[band_of(_hoy_top)]
+            _num_txt = f"{_hoy_top:.0f}"
+            _num_band = band_of(_hoy_top)
+        else:
+            _dial_color = _estilo['color']
+            _num_txt = "—"
+            _num_band = "sin cluster"
+        # línea de contexto: Hoy X · media 14d · máx 30d (destaca si bate máx)
+        _ctx_bits = []
+        if _hoy_top > 0:
+            _ctx_bits.append(f"Hoy <b>{_hoy_top:.0f}</b>")
+        if _media14 is not None:
+            _ctx_bits.append(f"media 14d: <b>{_media14:.0f}</b>")
+        if _max30 is not None:
+            _ctx_bits.append(f"máx 30d: <b>{_max30:.0f}</b>")
+        if _lb_dias and _lb_dias < 14:
+            _ctx_bits.append(f"base {_lb_dias}d")
+        _ctx_html = " · ".join(_ctx_bits)
+        _ctx_extra = ""
+        if _lb_dias < 3:
+            _ctx_extra = ("<span style='color:#94a3b8'> · línea base en "
+                          f"acumulación ({_lb_dias or 0} días)</span>")
+        elif _hoy_top > 0 and _max30 and _hoy_top >= _max30 - 0.5:
+            _ctx_extra = ("<span style='color:#dc2626;font-weight:700'> 🏁 nuevo "
+                          "máximo del tema</span>")
+        elif _banda and _hoy_top > _p75:
+            _ctx_extra = ("<span style='color:#d97706;font-weight:700'> ⚠ fuera "
+                          "de la banda normal (p75)</span>")
+        # estado direccional pasa a chip (la aguja ya no lo representa)
+        _chip_estado = (f"<span style='display:inline-block;font-size:.68rem;"
+                        f"font-weight:700;color:{_estilo['color']};background:#f8fafc;"
+                        f"border:1px solid #e2e8f0;border-radius:999px;padding:2px 10px;"
+                        f"margin:6px 0 2px'>{_estilo['txt']}</span>")
         dial_cards += (
             f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_estilo['color']};"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
             f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;"
             f"letter-spacing:.04em'>{_nombre}</div>"
-            f"{render_dial_svg(_nombre, _estilo['valor'], _estilo['color'])}"
-            f"<div style='font-size:1.5rem;font-weight:800;color:{_estilo['color']};line-height:1.1'>"
-            f"{_estilo['txt']}</div>"
-             f"<div style='font-size:.8rem;color:#64748b;margin:4px 0 10px;min-height:2.4em;line-height:1.35'>"
-             f"{_frase}</div>"
-             f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
-             f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
-             f"{_resumen_ejecutivo(_t)}</div>"
-             f"<div style='margin:0 0 10px;font-size:.74rem;color:#475569;display:flex;justify-content:center;"
-             f"align-items:center;gap:6px'>"
-             f"<span style='color:#94a3b8'>Salud del tema</span>"
-             f"<b style='color:{_st_color}'>{_st_score:.0f}/100 · {_st_nivel}</b>"
-             f"</div>"
-             f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
-             f"border-radius:8px;text-align:left'>"
-             f"<div style='font-size:.68rem;color:#94a3b8;letter-spacing:.03em;margin-bottom:2px'>"
-             f"Hallazgos por día · últimos {SPARK_DAYS} días</div>"
-             f"{render_sparkline(spark_data.get(_t, []), _estilo['color'])}"
-             f"</div>"
-             f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
+            f"{render_dial_svg(_nombre, _hoy_val, _dial_color, banda=_banda, umbral=_ALERTA_UMBRAL)}"
+            f"<div style='font-size:1.5rem;font-weight:800;color:{_dial_color};line-height:1.1'>"
+            f"{_num_txt}<span style='font-size:.7rem;color:#64748b;font-weight:700'>/100</span></div>"
+            f"<div style='font-size:.7rem;color:{_dial_color};font-weight:700;"
+            f"text-transform:uppercase;letter-spacing:.05em'>{_num_band}</div>"
+            f"{_chip_estado}"
+            f"<div style='font-size:.78rem;color:#64748b;margin:6px 0 8px;min-height:2.2em;line-height:1.35'>"
+            f"{_frase}</div>"
+            f"<div style='font-size:.76rem;color:#475569;background:#f0fdf4;border:1px solid #bbf7d0;"
+            f"border-radius:8px;padding:6px 10px;margin:0 0 8px;text-align:left;line-height:1.5'>"
+            f"<span style='font-weight:700'>📈 {_ctx_html}</span>{_ctx_extra}</div>"
+            f"<div style='font-size:.72rem;color:#94a3b8;text-align:left;margin:0 0 8px;line-height:1.4'>"
+            f"Zona verde = rango normal del tema (p25-p75 de los picos diarios) · "
+            f"muesca roja = umbral de alerta (≥{_ALERTA_UMBRAL}). La aguja señala el score top de hoy "
+            f"sobre su propia línea base.</div>"
+            f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
+            f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
+            f"{_resumen_ejecutivo(_t)}</div>"
+            f"<div style='margin:0 0 10px;font-size:.74rem;color:#475569;display:flex;justify-content:center;"
+            f"align-items:center;gap:6px'>"
+            f"<span style='color:#94a3b8'>Salud del tema</span>"
+            f"<b style='color:{_st_color}'>{_st_score:.0f}/100 · {_st_nivel}</b>"
+            f"</div>"
+            f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
+            f"border-radius:8px;text-align:left'>"
+            f"<div style='font-size:.68rem;color:#94a3b8;letter-spacing:.03em;margin-bottom:2px'>"
+            f"Hallazgos por día · últimos {SPARK_DAYS} días</div>"
+            f"{render_sparkline(spark_data.get(_t, []), _estilo['color'])}"
+            f"</div>"
+            f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
             f"style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:999px;"
             f"padding:8px 18px;font-weight:700;font-size:.85rem;font-family:inherit'>"
             f"Ver detalle de este tema</button>"
