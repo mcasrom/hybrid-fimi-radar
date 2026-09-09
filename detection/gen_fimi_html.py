@@ -395,7 +395,9 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     for c in expandidos:
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
-        out += (f'<div class="card">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]))}</div>')
+        _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]))}</div>')
+
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
     if resto:
@@ -469,8 +471,9 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'<span style="color:{barcol_};font-weight:700">{band_}</span>'
                 f' · {nacc_} cuentas{_rui}</span></div>')
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
+            _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid))}</div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid))}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -2101,7 +2104,7 @@ def main():
 :root{{color-scheme:light}}
 body{{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f8fafc;color:#0f172a}}
 main{{max-width:960px;margin:0 auto;padding:20px 16px 56px}}
-.card{{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}}
+.card{{background:#fff;border:1.5px solid #cbd5e1;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(15,23,42,.06)}}
 .card h3{{margin-top:0;font-size:1.02rem}}
 .caption{{font-size:.84rem;color:#64748b;margin:.3rem 0}}
 .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}}
