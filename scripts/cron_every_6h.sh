@@ -44,3 +44,9 @@ for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail
 # 8) Alerta de ingesta: si la captura lleva >7.5h sin actualizar (se saltó un
 #    ciclo del cron cada 6h), avisa al dueño por Telegram una vez por episodio.
 .venv/bin/python detection/check_ingesta.py >> logs/ingesta.log 2>&1
+
+# 9) Salud de keywords por tema: detecta el patrón "tema ciego" (keywords de
+#    registro metodológico que los titulares reales no usan -> el tema apenas
+#    ve su ruido real). Persiste estado en data/salud_keywords.json; la card
+#    del dashboard se genera en gen_fimi_html. Solo informa, no decide.
+.venv/bin/python detection/salud_keywords.py --save >> logs/salud_keywords.log 2>&1

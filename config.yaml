@@ -464,24 +464,48 @@ keywords:
 - palabra: 2026 midterms interference
   plataformas: *id001
   tema: eeuu_politica
-- palabra: desinformación conflicto Oriente Medio
+- palabra: Gaza
   plataformas: &id002
   - bluesky
   - google-news
   tema: oriente_medio
-- palabra: manipulación informativa Gaza
+- palabra: Gaza Israel
   plataformas: *id002
   tema: oriente_medio
-- palabra: propaganda de guerra Israel Irán
+- palabra: Iran
   plataformas: *id002
   tema: oriente_medio
-- palabra: campaña de desinformación Israel
+- palabra: Houthi
   plataformas: *id002
   tema: oriente_medio
-- palabra: desinformación guerra Gaza
+- palabra: Hutíes
   plataformas: *id002
   tema: oriente_medio
-- palabra: interferencia informativa Irán
+- palabra: Hormuz
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Hezbollah
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Hezbolá
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Hamas
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Hamás
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Cisjordania
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: West Bank
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Líbano Israel
+  plataformas: *id002
+  tema: oriente_medio
+- palabra: Lebanon Israel
   plataformas: *id002
   tema: oriente_medio
 telegram_canales:

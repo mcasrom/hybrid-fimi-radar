@@ -1695,9 +1695,14 @@ def main():
         # de los picos diarios (findings.intensidad); la muesca roja = umbral de
         # alerta (60). El número grande muestra el score de hoy y su banda.
         _lb_t = linea_base.get(_t) or {}
-        _excl_t = [c for c in clusters if c["tema_id"] == _t
-                   and c["cluster_label"] not in _duplicados]
-        _hoy_top = max((c["overall_score"] or 0) for c in _excl_t) if _excl_t else 0
+        # Signal del tema = max de TODOS sus clusters (el dedupe A2 evita
+        # duplicar tarjetas entre temas en el LISTADO, pero el dial de un tema
+        # debe reflejar su propia señal: si ese tema tiene un cluster 39/100 hoy,
+        # su dial muestra 39, aunque el mismo conjunto de cuentas ya figure en
+        # frontera_sur con nota "duplicado". Si no, un tema joven parecería en 0
+        # pese a tener señal, como pasó con oriente_medio tras su calibración.
+        _cli_t = [c for c in clusters if c["tema_id"] == _t]
+        _hoy_top = max((c["overall_score"] or 0) for c in _cli_t) if _cli_t else 0
         _lb_dias = _lb_t.get("dias", 0)
         _p25, _p75 = _lb_t.get("p25"), _lb_t.get("p75")
         _media14, _max30 = _lb_t.get("media14"), _lb_t.get("max30")
@@ -2059,6 +2064,22 @@ def main():
     except Exception as _e:
         salud_html = (f"<div class='card'><h3>Salud de las fuentes</h3>"
                       f"<p class='caption'>No disponible: {_e}</p></div>")
+
+    # --- Salud de keywords por tema (¿captura cada tema su ruido real?) ---
+    # Detector del patrón "tema ciego": keywords de registro metodológico (FIMI)
+    # que los titulares reales no usan -> el tema apenas ve eventos de su ámbito
+    # pese a que el corpus sí los tiene (caso oriente_medio 09/Sep). Solo informa.
+    try:
+        import importlib.util as _ilu_kw
+        _spec_kw = _ilu_kw.spec_from_file_location(
+            "salud_keywords", ROOT / "detection" / "salud_keywords.py")
+        _kwm = _ilu_kw.module_from_spec(_spec_kw)
+        _spec_kw.loader.exec_module(_kwm)
+        _salud_kw = _kwm.analizar(14)
+        salud_kw_html = _kwm.to_html(_salud_kw)
+    except Exception as _e_kw:
+        salud_kw_html = (f"<div class='card' id='salud-keywords'><h3>Salud de keywords</h3>"
+                         f"<p class='caption'>No disponible: {_e_kw}</p></div>")
 
     # --- Salud de los temas (score continuo, mismo criterio que check_cierre) ---
     # 0-100 por tema: volumen de hallazgos/día, narrativas sostenidas, señal del
@@ -2521,6 +2542,8 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 {salud_html}
 
+{salud_kw_html}
+
 {_salud_temas_html}
 
 {bitacora_html}
@@ -2530,7 +2553,7 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -2799,7 +2822,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-temas','bitacora','seguridad','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','salud-temas','bitacora','seguridad','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
