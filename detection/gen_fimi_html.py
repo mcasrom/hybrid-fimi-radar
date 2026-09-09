@@ -1445,7 +1445,7 @@ def main():
     for i, (num, title, what, means, bg, fg) in enumerate(steps):
         width = round(100 - (100 / n_st) * i * 0.8, 1)  # 100,84,68,52,36
         funnel_cards += f"""
-      <div style="max-width:{width}%;margin:10px auto 0;background:{bg};border-left:5px solid {fg};
+      <div class="funnel-card" style="max-width:{width}%;margin:10px auto 0;background:{bg};border-left:5px solid {fg};
                   border-radius:10px;padding:12px 16px;box-shadow:0 1px 3px rgba(15,23,42,.08)">
         <div style="display:flex;gap:10px;align-items:flex-start">
           <span style="background:{fg};color:#fff;border-radius:999px;width:26px;height:26px;
@@ -1468,7 +1468,7 @@ def main():
   <div id="funnelOverlay" role="dialog" aria-modal="true" aria-labelledby="funnelTitle"
      style="position:fixed;inset:0;z-index:999;display:none;align-items:flex-start;justify-content:center;
             overflow-y:auto;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);padding:24px 14px">
-    <div style="background:#fff;max-width:640px;width:100%;border-radius:16px;padding:20px 20px 18px;
+    <div style="background:#fff;max-width:640px;width:100%;border-radius:16px;padding:20px 20px 30px;
                 box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
       <button type="button" onclick="funnelClose(false)"
         aria-label="Cerrar"
@@ -2072,15 +2072,36 @@ def main():
                      f"términos metodológicos (volumen, señal, redundancia, calibración) — "
                      f"nunca como atribución a actores, en línea con el principio agnóstico "
                      f"al actor del proyecto.</p></div>")
+
+    # Fecha de la última ingesta en ISO (para el JSON-LD Dataset). El html es un
+    # f-string: hay que definirla como variable antes del bloque.
+    _fecha_snapshot_iso = datetime.fromtimestamp(_last_ts, tz=timezone.utc).strftime("%Y-%m-%d") if _last_ts else ""
+    _jsonld_html = (
+        '<script type="application/ld+json">'
+        '{"@context": "https://schema.org", "@graph": ['
+        '{"@type": "WebSite", "@id": "https://fimi.viajeinteligencia.com/#website", '
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "FIMI Radar", "inLanguage": "es", '
+        '"description": "Centro de situación de desinformación: radar OSINT agnóstico al actor que observa '
+        'coordinación, amplificación y anomalías en temas en español."},'
+        '{"@type": "Dataset", "@id": "https://fimi.viajeinteligencia.com/#dataset", '
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "FIMI Radar — eventos y clusters de coordinación", '
+        f'"description": "{n_events} eventos y {n_clusters} clusters de coordinación del ciclo actual (6h) del radar FIMI.", '
+        '"isAccessibleForFree": true, "inLanguage": "es", '
+        f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
+        '"creator": {"@type": "Organization", "name": "ViajeInteligencia / FIMI Radar"}}'
+        "]}</script>"
+    )
+
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIMI Radar · Centro de situación — desinformación y manipulación de la información en español</title>
-<meta name="description" content="Radar OSINT agnóstico al actor: detección de coordinación, amplificación y FIMI en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_events} eventos, {n_clusters} clusters. Actualizado cada 6h.">
+<title>FIMI Radar · Centro de situación de desinformación</title>
+ <meta name="description" content="Radar OSINT agnóstico al actor: coordinación, amplificación y FIMI en español. {n_events} eventos y {n_clusters} clusters señalados hoy. Sin atribución sin evidencia.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, coordinación de cuentas, amplificación de narrativas">
-<link rel="canonical" href="https://fimi.viajeinteligencia.com/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="FIMI Radar · {n_events} eventos, {n_clusters} clusters de coordinación">
+ <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
+ {_jsonld_html}
+ <meta property="og:type" content="website">
+ <meta property="og:title" content="FIMI Radar · Centro de situación de desinformación ({n_events} eventos, {n_clusters} clusters)">
 <meta property="og:description" content="Radar OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
@@ -2149,6 +2170,10 @@ a{{color:#c2410c}}
 .fimi-hero .cta .ghost:hover{{border-color:#c2410c;background:#fff7ed}}
 .fimi-hero .live{{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;color:#7c4a12;background:#ffedd5;border:1px solid #fdba74;border-radius:999px;padding:4px 10px;margin-left:auto;font-weight:600}}
 @media(max-width:640px){{.fimi-hero .live{{margin-left:0}} .fimi-hero .arrow{{transform:rotate(90deg)}} .fimi-hero h1{{font-size:1.3rem}}}}
+/* Funnel modal: en móvil la escalera de anchos (max-width inline) queda muy
+   estrecha y corta el texto (tarjetas 04/05). Se fuerza ancho completo. */
+@media(max-width:560px){{.funnel-card{{max-width:100% !important;width:100% !important}}}}
+@media(min-width:561px){{.funnel-card{{min-width:290px}}}}
 </style></head>
 <body>
 <main>
@@ -2173,7 +2198,7 @@ a{{color:#c2410c}}
     <span><span class="dot" style="background:#c2410c"></span>Radar FIMI · Centro de observación en español</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
-  <h1>European Hybrid &amp; FIMI Radar · Centro de situación</h1>
+  <h1>Radar FIMI · Centro de situación de desinformación</h1>
   <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
   para detectar <strong>coordinación, amplificación y anomalías</strong> — la maquinaria de la
   manipulación de información (FIMI). Observamos el comportamiento en red; nunca atribuimos a un actor sin evidencia.</p>
@@ -2343,7 +2368,7 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> Â· <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
