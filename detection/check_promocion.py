@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""check_promocion.py — Ventana de validación de politica_nacional (piloto).
+"""check_promocion.py — Ventana de validación de un tema en estado 'piloto'.
 
-Se ejecuta en cada ciclo del cron (6h) DESPUÉS de run_fimi + dashboard.
+Se ejecuta en cada ciclo del cron (6h) DESPUÉS de run_fimi + dashboard, UNA
+vez por cada tema en estado piloto del catálogo (ver cron_every_6h.sh).
 
-Objetivo: decidir con datos si 'politica_nacional' está listo para pasar de
+Objetivo: decidir con datos si el tema está listo para pasar de
 'estado: piloto' a 'estado: produccion' en config.yaml.
 
 Criterios automáticos (idempotente, sin spam):
-  1. 0 errores (Traceback) nuevos en la sección de politica_nacional de
+  1. 0 errores (Traceback) nuevos en la sección del tema en
      logs/fimi.log durante la ventana. (Los errores de otros temas no cuentan.)
   2. Ventana de observación >= VENTANA_H (72h) y >= MIN_CICLOS ciclos de
      snapshot completos (clusters del tema con created_at dentro de la ventana).
@@ -15,6 +16,13 @@ Criterios automáticos (idempotente, sin spam):
 Al cumplirse, avisa por Telegram al dueño con el resumen y el paso a ejecutar
 (cambiar 1 línea de config.yaml). Un error nuevo reinicia la ventana y avisa.
 El aviso final se manda una sola vez.
+
+Uso:
+  .venv/bin/python detection/check_promocion.py [--tema eeuu_politica] [--dry]
+
+--tema: slug del tema piloto a validar (default: politica_nacional, por
+compatibilidad con el despliegue original). El estado se guarda por tema en
+data/promocion_<tema>.json, así cada piloto tiene su propia ventana.
 
 Robustez:
   - Ciclos se cuentan vía BD (DISTINCT created_at de clusters del tema), NO del
@@ -31,19 +39,23 @@ import json
 import os
 import sqlite3
 import time
+import argparse
 from pathlib import Path
 
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 
-TEMA = "politica_nacional"
+TEMA = "politica_nacional"  # se sobrescribe con --tema en main()
 VENTANA_H = float(os.environ.get("FIMI_PROMOCION_H", 72))
 MIN_CICLOS = int(os.environ.get("FIMI_PROMOCION_MIN_CICLOS", 8))
 CHAT = int(os.environ.get("FIMI_PROMOCION_CHAT", "47652516"))
 LOGFILE = ROOT / "logs" / "fimi.log"
-STATE = ROOT / "data" / "promocion_politica_nacional.json"
 DB = ROOT / "data" / "radar.db"
+
+
+def _state_path(tema):
+    return ROOT / "data" / f"promocion_{tema}.json"
 
 
 def load_env(filepath: Path):
@@ -166,6 +178,16 @@ def send(token, text):
 
 
 def main():
+    global TEMA
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tema", default="politica_nacional",
+                    help="slug del tema piloto a validar (default: politica_nacional)")
+    ap.add_argument("--dry", action="store_true",
+                    help="no enviar Telegram; solo informar")
+    args = ap.parse_args()
+    TEMA = args.tema
+    STATE = _state_path(TEMA)
+
     load_env(ROOT / ".env")
     token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "")
     now = time.time()
@@ -189,6 +211,12 @@ def main():
             {"inicio": inicio, "err_base": err_base, "ready": ready,
              "notificado_ready": notificado}, indent=2))
 
+    def send_wrap(texto):
+        if args.dry:
+            print(f"[promocion][dry] mensaje para {TEMA}:\n{texto}")
+            return True
+        return send(token, texto)
+
     # 1) Log rotado -> re-sincronizar base (evita falso reinicio)
     if inicio is not None and err_total < err_base:
         err_base = err_total
@@ -202,7 +230,7 @@ def main():
                f"detectados {nuevos} error(es) de pipeline desde "
                f"{time.strftime('%d/%m %H:%M', time.localtime(inicio))}.\n"
                f"Se reinicia el contador de 72h desde ahora.")
-        send(token, msg)
+        send_wrap(msg)
         inicio = now
         err_base = err_total
         ready, notificado = False, False
@@ -220,7 +248,7 @@ def main():
 
     # 4) Ya validado y notificado -> solo log
     if ready and notificado:
-        print("[promocion] ya validado; sin acción")
+        print(f"[promocion] {TEMA} ya validado; sin acción")
         return
 
     # 5) Ventana en curso
@@ -238,12 +266,12 @@ def main():
                f"  temas.{TEMA}.estado: piloto -> produccion\n"
                f"(opcional: borra el campo disclaimer).\n"
                f"El siguiente cron desactiva el banner de calibración.")
-        notificado = send(token, msg)
+        notificado = send_wrap(msg)
         guardar()
-        print("[promocion] LISTO para promocionar")
+        print(f"[promocion] {TEMA} LISTO para promocionar")
         return
 
-    print(f"[promocion] ventana en curso {elapsed_h:.0f}/{VENTANA_H:.0f}h · "
+    print(f"[promocion] {TEMA}: ventana en curso {elapsed_h:.0f}/{VENTANA_H:.0f}h · "
           f"{ciclos}/{MIN_CICLOS} ciclos ok · errores {err_total - err_base}")
 
 
