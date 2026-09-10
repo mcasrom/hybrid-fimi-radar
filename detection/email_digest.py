@@ -100,22 +100,26 @@ def main(dry_run: bool = False):
             top_txt = ""
             banda_txt = ""
             try:
-                cur = conn.execute("SELECT cluster_label, overall_score, n_cuentas FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
+                cur = conn.execute("SELECT cluster_label, overall_score FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
                 crow = cur.fetchone()
                 if crow:
                     lab = crow["cluster_label"] or t
                     sc = int(crow["overall_score"] or 0)
-                    nc = crow["n_cuentas"] or 0
+                    # n_cuentas = distinct authors en cluster_events
+                    try:
+                        nc = conn.execute("SELECT COUNT(DISTINCT author) FROM cluster_events WHERE cluster_id=?", (lab,)).fetchone()[0] or 0
+                    except: nc = 0
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
                     tit = ""
                     try:
-                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (crow["cluster_label"],)).fetchone()
+                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (lab,)).fetchone()
                         if er and er["title"]:
                             tit = (er["title"] or "")[:90]
                     except: pass
                     top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas" + (f" · \"{tit}\"" if tit else "") + "</span>"
                     banda_txt = f" · {banda}"
-            except Exception:
+            except Exception as e:
+                print(f"[digest] top err {t}: {e}")
                 top_txt = ""
             # banda p25-p75 y salud
             extra = ""
