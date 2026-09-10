@@ -90,6 +90,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Periódico local Ceuta. Cobertura frontera sur.
+  idioma: es
 - nombre: Ceuta TV
   url: https://ceutatv.com/feed/
   tipo: official
@@ -97,6 +98,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: TV local Ceuta. Cobertura frontera sur.
+  idioma: es
 - nombre: Melilla Hoy
   url: https://www.melillahoy.es/rss
   tipo: official
@@ -104,6 +106,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Periódico local Melilla. Cobertura frontera sur.
+  idioma: es
 - nombre: El Pais Espana
   url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
   tipo: media
@@ -112,6 +115,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/el-pais/
   note: 'Referencia prensa española. MBFC: Left-Center, High factual.'
+  idioma: es
 - nombre: BBC Mundo
   url: https://feeds.bbci.co.uk/mundo/rss.xml
   tipo: media
@@ -121,6 +125,7 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/bbc-news/
   note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés
     de BBC Europa por error).'
+  idioma: es
 - nombre: Al Jazeera
   url: https://www.aljazeera.com/xml/rss/all.xml
   tipo: media
@@ -129,6 +134,7 @@ feeds:
   transparency: low
   factcheck_url: https://mediabiasfactcheck.com/al-jazeera/
   note: 'Financiada por Qatar. Sesgo pro-Palestina en opiniones. MBFC: Mixed factual.'
+  idioma: en
 - nombre: El Mundo
   url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
   tipo: media
@@ -137,6 +143,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/el-mundo/
   note: 'Línea conservadora. MBFC: Right-Center, Mostly Factual.'
+  idioma: es
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
@@ -145,6 +152,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Diáspora marroquí en Francia. Crítico con gobierno MA.
+  idioma: fr
 - nombre: Algerie360 (FR)
   url: https://www.algerie360.com/feed/
   tipo: media
@@ -153,6 +161,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Medio argelino francófono. Línea oficial.
+  idioma: fr
 - nombre: Hespress Maroc (FR)
   url: https://fr.hespress.com/feed/
   tipo: media
@@ -161,6 +170,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Independiente marroquí. Presión gubernamental.
+  idioma: fr
 - nombre: TSA Algerie (FR)
   url: https://www.tsa-algerie.com/feed/
   tipo: media
@@ -169,6 +179,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Independiente argelino. Línea opositora.
+  idioma: fr
 - nombre: AMI Mauritanie (FR)
   url: https://fr.ami.mr/feed
   tipo: oficial
@@ -178,6 +189,7 @@ feeds:
   transparency: medium
   note: Agencia oficial Mauritania.
 # === Fuentes añadidas 2026-09-02: análisis + francofonía + OSINT ===
+  idioma: fr
 - nombre: Le Monde Diplomatique
   url: https://www.monde-diplomatique.fr/rss
   tipo: analisis
@@ -289,6 +301,24 @@ feeds:
     máx.'
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
+- nombre: Reuters World
+  url: https://www.reutersagency.com/feed/?best-topics=world
+  tipo: media
+  idioma: en
+  bias: least-biased
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/reuters/
+  note: 'Agencia global. MBFC: Least Biased, High factual. Equilibra centro-izquierda.'
+- nombre: Deutsche Welle (EN)
+  url: https://rss.dw.com/rdf/rss-en-all
+  tipo: media
+  idioma: en
+  bias: least-biased
+  reliability: high
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/deutsche-welle/
+  note: 'Servicio internacional alemán. MBFC: Least Biased.'
 temas:
   frontera_sur:
     estado: produccion
