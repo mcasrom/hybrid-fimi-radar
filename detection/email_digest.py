@@ -47,16 +47,19 @@ def main(dry_run: bool = False):
         if proyecto == "blog":
             try:
                 import xml.etree.ElementTree as ET
-                rss = pathlib.Path("/home/deploy/analisis-pruebapublica/dist/client/rss.xml")
+                rss = Path("/home/deploy/analisis-pruebapublica/dist/client/rss.xml")
                 items = []
                 if rss.exists():
                     root = ET.parse(str(rss)).getroot()
                     for it in root.findall(".//item")[:5]:
-                        t = (it.findtext("title") or "")[:80]
-                        l = it.findtext("link") or "https://analisis.pruebapublica.com/"
-                        items.append('<li><a href="' + l + '">' + t + '</a></li>')
-                body_blog = "<ul>" + "".join(items) + "</ul>" if items else "<p>Visita el blog para los ultimos analisis.</p>"
-            except Exception:
+                        t = (it.findtext("title") or "").strip()[:90]
+                        l = (it.findtext("link") or "https://analisis.pruebapublica.com/").strip()
+                        d = (it.findtext("description") or "").strip()[:140]
+                        # tarjeta compacta con título + descripción
+                        items.append('<li style="margin:8px 0"><a href="' + l + '" style="color:#c2410c;text-decoration:none;font-weight:700">' + t + '</a><br><span style="color:#475569;font-size:.82rem">' + d + '</span></li>')
+                body_blog = '<ul style="padding-left:18px">' + "".join(items) + '</ul>' if items else "<p>Visita el blog para los ultimos analisis.</p>"
+            except Exception as e:
+                print(f"[digest][blog] parse error: {e}")
                 body_blog = "<p>Visita el blog para los ultimos analisis.</p>"
             sid = row["id"]
             baja = BASE_URL + "/api/baja?id=" + sid
