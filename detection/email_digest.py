@@ -113,11 +113,16 @@ def main(dry_run: bool = False):
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
                     tit = ""
                     try:
-                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (cid,)).fetchone()
+                        er = conn.execute("SELECT title, url FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (cid,)).fetchone()
                         if er and er["title"]:
-                            tit = (er["title"] or "")[:90]
+                            tit = (er["title"] or "").strip()[:90]
+                            url = (er["url"] or "").strip()
+                            url = (er["url"] or "").strip()
+                            if tit.startswith("http"):
+                                tit = tit.split(" ",1)[-1][:90] if " " in tit else tit[:90]
                     except: pass
-                    top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas" + (f" · \"{tit}\"" if tit else "") + "</span>"
+                    url_link = f' · <a href="{url}" style="color:#c2410c">"{tit}"</a>' if tit and url else (f' · "{tit}"' if tit else "")
+                    top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas{url_link}</span>"
                     banda_txt = f" · {banda}"
             except Exception as e:
                 print(f"[digest] top err {t}: {e}")
