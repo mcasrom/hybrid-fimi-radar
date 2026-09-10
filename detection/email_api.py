@@ -263,6 +263,26 @@ class H(BaseHTTPRequestHandler):
                 "SELECT id, texto, canal, created_at AS fecha_alta FROM sugerencias ORDER BY id DESC LIMIT 50")]
             conn.close()
             return self._send(200, {"ok": True, "votos": votos, "sugerencias": sugs})
+        if path == "/api/admin/suscriptores":
+            if self.headers.get("x-admin-secret", "") != admin_secret():
+                return self._send(403, {"error": "prohibido"})
+            proyecto = (q.get("proyecto") or [""])[0].strip().lower()[:20]
+            conn = _init_schema()
+            if proyecto in ("fimi", "blog", "pruebapublica", "viajeinteligencia", "loteria"):
+                rows = conn.execute(
+                    "SELECT id, destino, proyecto, temas, frecuencia, confirmado, fecha_alta "
+                    "FROM suscripciones WHERE canal='email' AND proyecto=? ORDER BY fecha_alta DESC", (proyecto,)).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT id, destino, proyecto, temas, frecuencia, confirmado, fecha_alta "
+                    "FROM suscripciones WHERE canal='email' ORDER BY fecha_alta DESC").fetchall()
+            data = [dict(r) for r in rows]
+            # conteo por proyecto para el selector
+            conteo = {}
+            for r in conn.execute("SELECT proyecto, COUNT(*) n FROM suscripciones WHERE canal='email' GROUP BY proyecto"):
+                conteo[r["proyecto"] or "fimi"] = r["n"]
+            conn.close()
+            return self._send(200, {"ok": True, "suscriptores": data, "conteo": conteo, "proyecto": proyecto or "todos"})
         if path == "/api/export":
             # Evidencia por cluster (OSINT): devuelve cluster_events de un
             # cluster de la vista activa en CSV/JSON. Datos ya públicos en las
