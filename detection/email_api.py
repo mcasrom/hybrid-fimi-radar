@@ -116,10 +116,23 @@ def rate_feedback_ok(ip: str) -> bool:
 def admin_secret() -> str:
     # Fuente de verdad: .env en disco (evita desfase con environ de pm2 tras restart sin --update-env)
     cfg = load_env(ENV_RADAR) or {}
-    file_secret = (cfg.get("FIMI_ADMIN_SECRET", "") or "").strip()
-    env_secret = (os.environ.get("FIMI_ADMIN_SECRET", "") or "").strip()
-    # prioriza fichero (más reciente tras edición), fallback a environ
+    file_secret = (cfg.get("FIMI_ADMIN_SECRET", "") or "").strip().strip('"').strip("'")
+    # si el .env trae la línea completa por error, extrae tras =
+    if "=" in file_secret and len(file_secret) > 30:
+        file_secret = file_secret.split("=", 1)[1].strip().strip('"').strip("'")
+    env_secret = (os.environ.get("FIMI_ADMIN_SECRET", "") or "").strip().strip('"').strip("'")
+    if "=" in env_secret and len(env_secret) > 30:
+        env_secret = env_secret.split("=", 1)[1].strip().strip('"').strip("'")
     return file_secret or env_secret
+
+def _clean_admin_header(v: str) -> str:
+    # tolera que el usuario pegue "FIMI_ADMIN_SECRET=valor" o con comillas/espacios
+    v = (v or "").strip().replace("\u200b","").replace("\u200d","").replace("\ufeff","").strip()
+    v = v.strip('"').strip("'").strip()
+    if "=" in v:
+        # si pegó la línea completa del .env, quédate con el valor
+        v = v.split("=", 1)[1].strip().strip('"').strip("'").strip()
+    return v
 
 
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
@@ -257,7 +270,7 @@ class H(BaseHTTPRequestHandler):
             return self._redirect(BASE_URL + "?baja=1")
         if path == "/api/admin/feedback":
             # Solo el dueno: header x-admin-secret == FIMI_ADMIN_SECRET (env/.env).
-            if self.headers.get("x-admin-secret", "").strip() != admin_secret():
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             conn = _init_feedback()
             votos = {}
@@ -268,7 +281,7 @@ class H(BaseHTTPRequestHandler):
             conn.close()
             return self._send(200, {"ok": True, "votos": votos, "sugerencias": sugs})
         if path == "/api/admin/suscriptores":
-            if self.headers.get("x-admin-secret", "").strip() != admin_secret():
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             proyecto = (q.get("proyecto") or [""])[0].strip().lower()[:20]
             conn = _init_schema()
