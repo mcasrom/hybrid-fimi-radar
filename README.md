@@ -190,7 +190,7 @@ Crea la tabla con `python detection/schema_suscripciones.py`.
   6h): solo notifica cuando un dial cambia de estado (on_change), comparando contra
   `ultimo_estado` — sin spam.
 - **Email**: backend HTTP de stdlib (`detection/email_api.py`) + Resend (dominio
-  viajeinteligencia.com verificado en `newsletter@viajeinteligencia.com`), doble opt-in, narrativa por proyecto (FIMI digest A `15b9ad5` con score/high/top cluster; blog separado en `analisis.db` via `scripts/send_blog_newsletter.py` 5 ultimos),
+  viajeinteligencia.com verificado en `newsletter@viajeinteligencia.com`), doble opt-in, narrativa por proyecto (FIMI digest B `58b1e0a` con score/high/banda/salud/narrativas/top link real; blog separado en `analisis.db` via `scripts/send_blog_newsletter.py` 5 ultimos),
   frecuencia semanal y enlace de baja; digest en `detection/email_digest.py`.
 - **Estado del dial**: fuente de verdad compartida en `detection/radar_trend.py` (mismo
   criterio HOY vs hace 48h que los diales de la vista resumen).
