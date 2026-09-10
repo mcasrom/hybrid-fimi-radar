@@ -169,7 +169,7 @@ def main():
 
         # guardar cluster
         cur = conn.execute(
-            "INSERT INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
+            "INSERT OR REPLACE INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
             " amplification_score, anomaly_score, infrastructure_score, network_density,"
             " overall_score, confidence) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (int(time.time()), label, "mixed", tema, s.get("coordination_score", 0),
