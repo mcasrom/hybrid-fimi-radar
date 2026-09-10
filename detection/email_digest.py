@@ -85,14 +85,20 @@ def main(dry_run: bool = False):
         if not mis_temas:
             continue
         lines = ['<ul style="padding-left:18px">']
+        # salud por tema para B (una sola consulta)
+        try:
+            salud_map = {r["tema"]: r for r in salud_por_tema()}
+        except Exception:
+            salud_map = {}
         for t in mis_temas:
             st = estados.get(t, {})
             txt = texto_dial(t, st.get("estado", "estable"))
             hoy = st.get("hoy", 0)
             high_hoy = st.get("high_hoy", 0)
             high_48 = st.get("high_48", 0)
-            # top cluster del tema para dar contexto
+            # top cluster
             top_txt = ""
+            banda_txt = ""
             try:
                 cur = conn.execute("SELECT cluster_label, overall_score, n_cuentas FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
                 crow = cur.fetchone()
@@ -101,7 +107,6 @@ def main(dry_run: bool = False):
                     sc = int(crow["overall_score"] or 0)
                     nc = crow["n_cuentas"] or 0
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
-                    # intentar sacar título del cluster
                     tit = ""
                     try:
                         er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (crow["cluster_label"],)).fetchone()
@@ -109,10 +114,34 @@ def main(dry_run: bool = False):
                             tit = (er["title"] or "")[:90]
                     except: pass
                     top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas" + (f" · \"{tit}\"" if tit else "") + "</span>"
+                    banda_txt = f" · {banda}"
             except Exception:
                 top_txt = ""
+            # banda p25-p75 y salud
+            extra = ""
+            try:
+                # p25/p75 de findings intensidad últimos 30d
+                rows = conn.execute("SELECT intensidad FROM findings WHERE tema_id=? AND tipo='cluster' AND fecha > strftime('%s','now','-30 days') ORDER BY intensidad", (t,)).fetchall()
+                vals = [r[0] for r in rows if r[0] is not None]
+                if len(vals) >= 3:
+                    vals.sort()
+                    p25 = vals[int(len(vals)*0.25)]
+                    p75 = vals[int(len(vals)*0.75)]
+                    extra += f" · banda normal {int(p25)}-{int(p75)}"
+            except: pass
+            try:
+                sm = salud_map.get(t)
+                if sm:
+                    extra += f" · salud {int(sm.get('score',0))}/100 {sm.get('nivel','')}"
+            except: pass
+            # narrativas sostenidas
+            try:
+                narr = conn.execute("SELECT COUNT(*) FROM findings WHERE tema_id=? AND tipo='narrativa' AND intensidad>=60", (t,)).fetchone()[0]
+                if narr:
+                    extra += f" · {narr} narrativas HIGH"
+            except: pass
             link = f"{BASE_URL}/#{t}"
-            lines.append(f"<li style=\"margin:10px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt} · <b>{hoy}/100</b> · {high_hoy} HIGH hoy vs {high_48} hace 48h{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
+            lines.append(f"<li style=\"margin:12px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt}{banda_txt} · <b>{hoy}/100</b> · {high_hoy} HIGH hoy vs {high_48} hace 48h<span style=\"color:#64748b;font-size:.82rem\">{extra}</span>{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
         lines.append("</ul>")
         sid = row["id"]
         baja = f"{BASE_URL}/api/baja?id={sid}"
