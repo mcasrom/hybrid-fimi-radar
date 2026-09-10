@@ -84,22 +84,46 @@ def main(dry_run: bool = False):
             mis_temas = []
         if not mis_temas:
             continue
-        lines = ["<ul>"]
+        lines = ['<ul style="padding-left:18px">']
         for t in mis_temas:
             st = estados.get(t, {})
             txt = texto_dial(t, st.get("estado", "estable"))
-            lines.append(f"<li><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt}</li>")
+            hoy = st.get("hoy", 0)
+            high_hoy = st.get("high_hoy", 0)
+            high_48 = st.get("high_48", 0)
+            # top cluster del tema para dar contexto
+            top_txt = ""
+            try:
+                cur = conn.execute("SELECT cluster_label, overall_score, n_cuentas FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
+                crow = cur.fetchone()
+                if crow:
+                    lab = crow["cluster_label"] or t
+                    sc = int(crow["overall_score"] or 0)
+                    nc = crow["n_cuentas"] or 0
+                    banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
+                    # intentar sacar título del cluster
+                    tit = ""
+                    try:
+                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (crow["cluster_label"],)).fetchone()
+                        if er and er["title"]:
+                            tit = (er["title"] or "")[:90]
+                    except: pass
+                    top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas" + (f" · \"{tit}\"" if tit else "") + "</span>"
+            except Exception:
+                top_txt = ""
+            link = f"{BASE_URL}/#{t}"
+            lines.append(f"<li style=\"margin:10px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt} · <b>{hoy}/100</b> · {high_hoy} HIGH hoy vs {high_48} hace 48h{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
         lines.append("</ul>")
         sid = row["id"]
         baja = f"{BASE_URL}/api/baja?id={sid}"
         html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
                 '<h2>📡 Radar FIMI · Resumen semanal</h2>'
-                '<p>Estado actual de tus temas:</p>'
+                '<p>Estado actual de tus temas (score, HIGH y top cluster):</p>'
                 + "".join(lines) +
                 f'<p><a href="{BASE_URL}" style="background:#c2410c;color:#fff;padding:9px 16px;'
-                f'border-radius:6px;text-decoration:none;font-weight:700">Ver el radar</a></p>'
-                f'<p><a href="{baja}">Darme de baja</a></p>'
-                '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com</p></div>')
+                f'border-radius:6px;text-decoration:none;font-weight:700">Abrir el radar</a></p>'
+                f'<p style="font-size:.82rem;color:#64748b">Recibes esto porque te suscribiste en fimi.viajeinteligencia.com · 1 email/semana · <a href="{baja}">Darme de baja</a></p>'
+                '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com · semilla única</p></div>')
         if not dry_run:
             ok = send_email(row["destino"], "Radar FIMI · Resumen semanal", html)
             print(f"[digest] {'ok' if ok else 'FAIL'} -> {row['destino']}")
