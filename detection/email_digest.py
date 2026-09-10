@@ -105,9 +105,10 @@ def main(dry_run: bool = False):
                 if crow:
                     lab = crow["cluster_label"] or t
                     sc = int(crow["overall_score"] or 0)
-                    # n_cuentas = distinct authors en cluster_events
+                    # n_cuentas = distinct authors en cluster_events (cluster_events.cluster_id = clusters.id)
                     try:
-                        nc = conn.execute("SELECT COUNT(DISTINCT author) FROM cluster_events WHERE cluster_id=?", (lab,)).fetchone()[0] or 0
+                        cid = crow["id"]
+                        nc = conn.execute("SELECT COUNT(DISTINCT author) FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()[0] or 0
                     except: nc = 0
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
                     tit = ""
