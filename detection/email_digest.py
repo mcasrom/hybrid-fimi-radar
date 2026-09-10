@@ -100,7 +100,7 @@ def main(dry_run: bool = False):
             top_txt = ""
             banda_txt = ""
             try:
-                cur = conn.execute("SELECT cluster_label, overall_score FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
+                cur = conn.execute("SELECT id, cluster_label, overall_score FROM clusters WHERE tema_id=? ORDER BY overall_score DESC LIMIT 1", (t,))
                 crow = cur.fetchone()
                 if crow:
                     lab = crow["cluster_label"] or t
@@ -113,7 +113,7 @@ def main(dry_run: bool = False):
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
                     tit = ""
                     try:
-                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (lab,)).fetchone()
+                        er = conn.execute("SELECT title FROM cluster_events WHERE cluster_id=? ORDER BY ts DESC LIMIT 1", (cid,)).fetchone()
                         if er and er["title"]:
                             tit = (er["title"] or "")[:90]
                     except: pass
