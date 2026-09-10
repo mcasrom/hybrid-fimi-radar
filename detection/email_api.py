@@ -114,8 +114,12 @@ def rate_feedback_ok(ip: str) -> bool:
 
 
 def admin_secret() -> str:
+    # Fuente de verdad: .env en disco (evita desfase con environ de pm2 tras restart sin --update-env)
     cfg = load_env(ENV_RADAR) or {}
-    return os.environ.get("FIMI_ADMIN_SECRET", "") or cfg.get("FIMI_ADMIN_SECRET", "")
+    file_secret = (cfg.get("FIMI_ADMIN_SECRET", "") or "").strip()
+    env_secret = (os.environ.get("FIMI_ADMIN_SECRET", "") or "").strip()
+    # prioriza fichero (más reciente tras edición), fallback a environ
+    return file_secret or env_secret
 
 
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
@@ -253,7 +257,7 @@ class H(BaseHTTPRequestHandler):
             return self._redirect(BASE_URL + "?baja=1")
         if path == "/api/admin/feedback":
             # Solo el dueno: header x-admin-secret == FIMI_ADMIN_SECRET (env/.env).
-            if self.headers.get("x-admin-secret", "") != admin_secret():
+            if self.headers.get("x-admin-secret", "").strip() != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             conn = _init_feedback()
             votos = {}
@@ -264,7 +268,7 @@ class H(BaseHTTPRequestHandler):
             conn.close()
             return self._send(200, {"ok": True, "votos": votos, "sugerencias": sugs})
         if path == "/api/admin/suscriptores":
-            if self.headers.get("x-admin-secret", "") != admin_secret():
+            if self.headers.get("x-admin-secret", "").strip() != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             proyecto = (q.get("proyecto") or [""])[0].strip().lower()[:20]
             conn = _init_schema()
@@ -377,16 +381,30 @@ class H(BaseHTTPRequestHandler):
         return self._send(200, {"ok": True, "confirmado": False})
 
     def _reenviar_confirmacion(self, email, sid, temas):
+        # Narrativa por proyecto: si temas==["blog"] es suscripción al blog, no al radar
+        es_blog = len(temas)==1 and temas[0]=="blog"
         link = f"{BASE_URL}/api/confirmar?id={sid}"
-        html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
-                f'<h2>Radar FIMI · Confirma tu suscripción</h2>'
-                f'<p>Te suscribiste al resumen semanal de: <b>{", ".join(temas)}</b>.</p>'
-                f'<p>Para activar el envío, confirma tu email:</p>'
-                f'<p><a href="{link}" style="background:#c2410c;color:#fff;padding:10px 18px;'
-                f'border-radius:6px;text-decoration:none;font-weight:700">Confirmar suscripción</a></p>'
-                f'<p>Si no fuiste tú, ignora este correo.</p>'
-                f'<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com</p></div>')
-        send_email(email, "Radar FIMI · Confirma tu suscripción", html)
+        if es_blog:
+            html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
+                    '<h2>Análisis · Confirma tu suscripción</h2>'
+                    '<p>Gracias por suscribirte al <b>blog Análisis</b> (analisis.pruebapublica.com).</p>'
+                    '<p>Recibirás un <b>resumen semanal</b> con los últimos artículos — sin spam, sin cesión a terceros. Puedes darte de baja en cualquier correo (enlace “Darme de baja”).</p>'
+                    f'<p><a href="{link}" style="background:#c2410c;color:#fff;padding:10px 18px;'
+                    'border-radius:6px;text-decoration:none;font-weight:700">Confirmar suscripción</a></p>'
+                    '<p style="font-size:.82rem;color:#64748b">Si no fuiste tú, ignora este correo.</p>'
+                    '<p style="font-size:.8rem;color:#888">Análisis · analisis.pruebapublica.com · vía FIMI semilla única</p></div>')
+            subj = "Análisis · Confirma tu suscripción"
+        else:
+            html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
+                    '<h2>Radar FIMI · Confirma tu suscripción</h2>'
+                    f'<p>Te suscribiste al resumen semanal de: <b>{", ".join(temas)}</b>.</p>'
+                    '<p>Para activar el envío, confirma tu email:</p>'
+                    f'<p><a href="{link}" style="background:#c2410c;color:#fff;padding:10px 18px;'
+                    'border-radius:6px;text-decoration:none;font-weight:700">Confirmar suscripción</a></p>'
+                    '<p>Si no fuiste tú, ignora este correo.</p>'
+                    '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com · 1 email/semana, baja en 1 clic</p></div>')
+            subj = "Radar FIMI · Confirma tu suscripción"
+        send_email(email, subj, html)
 
     def _avisar_dueno(self, texto, canal="web"):
         """Reenvía una sugerencia de tema al dueño (Telegram + email info-fimi)."""
