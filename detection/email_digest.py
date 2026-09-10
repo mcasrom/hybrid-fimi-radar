@@ -39,6 +39,42 @@ def main(dry_run: bool = False):
         " AND frecuencia='semanal'").fetchall()
     enviados = 0
     for row in subs:
+        # proyecto del semillero unico (fimi/blog/etc). Fallback fimi para filas legacy sin columna.
+        try:
+            proyecto = (row["proyecto"] or "fimi").strip().lower()
+        except Exception:
+            proyecto = "fimi"
+        if proyecto == "blog":
+            try:
+                import xml.etree.ElementTree as ET
+                rss = pathlib.Path("/home/deploy/analisis-pruebapublica/dist/client/rss.xml")
+                items = []
+                if rss.exists():
+                    root = ET.parse(str(rss)).getroot()
+                    for it in root.findall(".//item")[:5]:
+                        t = (it.findtext("title") or "")[:80]
+                        l = it.findtext("link") or "https://analisis.pruebapublica.com/"
+                        items.append('<li><a href="' + l + '">' + t + '</a></li>')
+                body_blog = "<ul>" + "".join(items) + "</ul>" if items else "<p>Visita el blog para los ultimos analisis.</p>"
+            except Exception:
+                body_blog = "<p>Visita el blog para los ultimos analisis.</p>"
+            sid = row["id"]
+            baja = BASE_URL + "/api/baja?id=" + sid
+            html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
+                    '<h2>Noticias Analisis &middot; Resumen semanal</h2>'
+                    '<p>Ultimos articulos del blog:</p>'
+                    + body_blog +
+                    '<p><a href="https://analisis.pruebapublica.com" style="background:#c2410c;color:#fff;padding:9px 16px;'
+                    'border-radius:6px;text-decoration:none;font-weight:700">Leer el blog</a></p>'
+                    '<p><a href="' + baja + '">Darme de baja</a></p>'
+                    '<p style="font-size:.8rem;color:#888">Analisis &middot; analisis.pruebapublica.com</p></div>')
+            if not dry_run:
+                ok = send_email(row["destino"], "Analisis - Resumen semanal", html)
+                print("[digest][blog] ok" if ok else "[digest][blog] FAIL" + " -> " + row["destino"])
+            else:
+                print("[digest][blog][dry] -> " + row["destino"])
+            enviados += 1
+            continue
         try:
             mis_temas = json.loads(row["temas"]) or []
         except Exception:

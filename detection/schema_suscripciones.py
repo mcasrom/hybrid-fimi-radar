@@ -3,6 +3,9 @@
 
 Un único esquema para los 3 canales (telegram / email / futuro). Idempotente:
 se puede ejecutar tantas veces como se quiera (CREATE TABLE IF NOT EXISTS).
+
+Semilla única: la misma tabla sirve para todos los proyectos del ecosistema
+(blog, fimi, etc.) con columna `proyecto` (default 'fimi' para compatibilidad).
 """
 import sqlite3
 from pathlib import Path
@@ -31,6 +34,15 @@ def init(conn: sqlite3.Connection = None) -> sqlite3.Connection:
         conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA_SUSCRIPCIONES)
+    # Migración suave: añadir columna proyecto si falta (BDs viejas)
+    try:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(suscripciones)").fetchall()]
+        if "proyecto" not in cols:
+            conn.execute("ALTER TABLE suscripciones ADD COLUMN proyecto TEXT NOT NULL DEFAULT 'fimi'")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_susc_proyecto ON suscripciones(proyecto)")
+            conn.commit()
+    except Exception:
+        pass
     conn.commit()
     return conn
 

@@ -181,6 +181,9 @@ class H(BaseHTTPRequestHandler):
         else:
             body = json.dumps(obj).encode()
         self.send_response(code)
+        # CORS para semilla newsletter (blog -> fimi)
+        if self.path.startswith("/api/subscribe"):
+            self._cors()
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -194,6 +197,23 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _cors(self):
+        origin = self.headers.get("Origin", "")
+        allowed = {"https://analisis.pruebapublica.com", "https://www.pruebapublica.com", "https://pruebapublica.com", "https://fimi.viajeinteligencia.com", "https://www.viajeinteligencia.com", "https://viajeinteligencia.com"}
+        if origin in allowed:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Credentials", "true")
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, x-admin-secret")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def log_message(self, *a):
         pass
@@ -307,8 +327,13 @@ class H(BaseHTTPRequestHandler):
         if not rate_ok(self._ip()):
             return self._send(429, {"error": "demasiadas peticiones"})
         temas = data.get("temas") or []
+        proyecto = (data.get("proyecto") or "fimi").strip().lower()[:20]
+        if proyecto not in ("fimi", "blog", "pruebapublica", "viajeinteligencia", "loteria"):
+            proyecto = "fimi"
         if not EMAIL_RE.match(email):
             return self._send(400, {"error": "email invalido"})
+        if proyecto == "blog" and not temas:
+            temas = ["blog"]
         if not isinstance(temas, list) or not temas:
             return self._send(400, {"error": "selecciona al menos un tema"})
         temas = [str(t) for t in temas[:6]]
@@ -316,16 +341,16 @@ class H(BaseHTTPRequestHandler):
         conn = _init_schema()
         row = conn.execute("SELECT * FROM suscripciones WHERE id=?", (sid,)).fetchone()
         if row:
-            conn.execute("UPDATE suscripciones SET temas=?, confirmado=0 WHERE id=?",
-                         (json.dumps(temas), sid))
+            conn.execute("UPDATE suscripciones SET temas=?, proyecto=?, confirmado=0 WHERE id=?",
+                         (json.dumps(temas), proyecto, sid))
             conn.commit()
             conn.close()
             self._reenviar_confirmacion(email, sid, temas)
             return self._send(200, {"ok": True, "confirmado": False})
         conn.execute(
-            "INSERT INTO suscripciones (id, canal, destino, temas, frecuencia, confirmado)"
-            " VALUES (?,?,?,?,?,0)",
-            (sid, "email", email, json.dumps(temas), "semanal"))
+            "INSERT INTO suscripciones (id, canal, destino, temas, frecuencia, confirmado, proyecto)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (sid, "email", email, json.dumps(temas), "semanal", 0, proyecto))
         conn.commit()
         conn.close()
         self._reenviar_confirmacion(email, sid, temas)
