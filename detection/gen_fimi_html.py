@@ -2414,7 +2414,6 @@ a{{color:#c2410c}}
 .fimi-brandbar{{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:#fff;border-bottom:1px solid #e2e8f0;padding:9px 14px;font-size:.82rem}}
 .fimi-brandbar .brand{{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;color:#0f172a;text-decoration:none}}
 .fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.9rem}}
-.fimi-brandbar .tagline{{color:#94a3b8;font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
 .fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px}}
 .fimi-brandbar .chip .dot{{width:6px;height:6px;border-radius:50%}}
@@ -2422,14 +2421,7 @@ a{{color:#c2410c}}
 .fimi-brandbar .chip.prod .dot{{background:#16a34a}}
 .fimi-brandbar a.gh-link{{color:#c2410c;font-weight:700;text-decoration:none;font-size:.78rem;display:inline-flex;align-items:center;gap:5px}}
 .fimi-brandbar a.gh-link:hover{{text-decoration:underline}}
-@media(max-width:560px){{.fimi-brandbar .chips{{margin-left:0;width:100%}} .fimi-brandbar .tagline{{display:none}}}}
-
-/* ---- BARRA ECOSISTEMA (persistente bajo el nav) ---- */
-.fimi-ecobar{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:.8rem;color:#64748b;background:#fffaf5;border-bottom:1px solid #fde68a;padding:7px 2px}}
-.fimi-ecobar a{{color:#c2410c;text-decoration:none;font-weight:600}}
-.fimi-ecobar a:hover{{text-decoration:underline}}
-.fimi-ecobar .label{{font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:700}}
-.fimi-ecobar .sep{{color:#fdba74;font-weight:400}}
+@media(max-width:560px){{.fimi-brandbar .chips{{margin-left:0;width:100%}}}}
 
 /* ---- HERO "centro de situación" (claro cálido, coherente con la página) ---- */
 .fimi-hero{{background:linear-gradient(180deg,#fff 0%,#fff7ed 78%,#ffedd5 100%);color:#1e293b;border:1px solid #fed7aa;border-radius:18px;padding:24px 26px 22px;margin:6px 0 20px;box-shadow:0 2px 8px rgba(194,65,12,.08);position:relative;overflow:hidden}}
@@ -2479,7 +2471,6 @@ a{{color:#c2410c}}
   <a class="brand" href="/" title="Radar FIMI · Centro de observación de desinformación en español">
     <span class="logo">📡</span> Radar FIMI
   </a>
-  <span class="tagline">Proyecto independiente · Open Source · En producción</span>
   <div class="chips">
     <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
     <span class="chip"><span class="dot" style="background:#0284c7"></span>Open Source</span>
@@ -2492,16 +2483,6 @@ a{{color:#c2410c}}
 <a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
 <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub</a>
 </nav>
-<div class="fimi-ecobar">
-  <span class="label">Ecosistema</span>
-  <a href="https://www.viajeinteligencia.com" title="Landing principal">viajeinteligencia.com</a>
-  <span class="sep">·</span>
-  <a href="https://www.viajeinteligencia.com/ecosistema.html" title="Vitrina de todas las herramientas">Herramientas</a>
-  <span class="sep">·</span>
-  <a href="https://analisis.pruebapublica.com" title="Blog de análisis">Blog analisis.pruebapublica.com</a>
-  <span class="sep">·</span>
-  <a href="https://pruebapublica.com" title="Landing pruebapublica">pruebapublica.com</a>
-</div>
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
