@@ -335,6 +335,70 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/deutsche-welle/
   note: 'Servicio internacional alemán. MBFC: Least Biased.'
+- nombre: Malijet (ML)
+  url: https://malijet.com/rss/
+  tipo: media
+  pais: ML
+  idioma: fr
+  bias: center
+  reliability: mostly-factual
+  transparency: low
+  note: Actualidad de Mali (francófono). Principal portal de noticias del país.
+- nombre: Koloni (ML)
+  url: https://koloni.ml/feed/
+  tipo: media
+  pais: ML
+  idioma: fr
+  bias: center
+  reliability: mostly-factual
+  transparency: low
+  note: 'Periodismo maliense: operaciones militares y seguridad en el Sahel central.'
+- nombre: Niger Report
+  url: https://nigerreport.net/feed/
+  tipo: media
+  pais: NE
+  idioma: fr
+  bias: center-left
+  reliability: mostly-factual
+  transparency: medium
+  note: Periodismo investigativo nigerino sobre juntas, seguridad y Sahel.
+- nombre: Burkina24.com
+  url: https://burkina24.com/feed/
+  tipo: media
+  pais: BF
+  idioma: fr
+  bias: center
+  reliability: mostly-factual
+  transparency: low
+  note: Actualidad de Burkina Faso (francófono).
+- nombre: AIB - Agence Info Burkina
+  url: https://www.aib.media/feed/
+  tipo: oficial
+  pais: BF
+  idioma: fr
+  bias: state
+  reliability: mostly-factual
+  transparency: low
+  note: Agencia estatal de Burkina Faso. Cotejar con prensa independiente.
+- nombre: Sahel Horizon
+  url: https://sahelhorizon.com/feed/
+  tipo: media
+  idioma: fr
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: 'Narrativa pro-AES de línea soberanista. Contenidos vinculados al ecosistema
+    African Initiative (Rusia). Vigilar como fuente de narrativas FIMI, no fiable.'
+- nombre: La Nouvelle Tribune
+  url: https://lanouvelletribune.info/feed/
+  tipo: media
+  idioma: fr
+  bias: center-left
+  reliability: mostly-factual
+  transparency: medium
+  note: Medio de África Occidental (Benín); cobertura regional del Sahel.
+
+
 temas:
   frontera_sur:
     estado: produccion
@@ -577,9 +641,32 @@ keywords:
 - palabra: Níger
   plataformas: *id003
   tema: sahel
+- palabra: AES Alianza de Estados del Sahel
+  tema: sahel
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: Alliance des États du Sahel
+  tema: sahel
+  plataformas:
+  - google-news
+- palabra: djihadiste Sahel
+  tema: sahel
+  plataformas:
+  - google-news
+- palabra: yihadismo Sahel
+  tema: sahel
+  plataformas:
+  - bluesky
+  - google-news
+
 telegram_canales:
 - elfarodeceuta
 - maldita_es
+- burkinamaliniger
+- sahelbrut
+- sahelinfo
+
 subreddits:
 - spain
 - es
