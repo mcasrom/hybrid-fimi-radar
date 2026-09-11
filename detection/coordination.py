@@ -34,6 +34,18 @@ def build_edges(df, config):
     w = config["weights"]
     tight_seconds = config["thresholds"]["tight_timing_seconds"]
     near_thresh = config["thresholds"]["near_duplicate_threshold"]
+    # Palancas de memoria para escalar fuentes (sección opcional `coordination`):
+    #   window_days       ventana del grafo en días (def. 90, alineada con retención)
+    #   tfidf_max_features tope de vocabulario del TF-IDF (def. 200000)
+    _coh = config.get("coordination", {}) or {}
+    try:
+        _window_d = int(_coh.get("window_days", 90) or 90)
+    except Exception:
+        _window_d = 90
+    try:
+        _maxf = int(_coh.get("tfidf_max_features", 200000) or 200000)
+    except Exception:
+        _maxf = 200000
 
     from features.content import extract_domain, extract_hashtags
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -49,6 +61,19 @@ def build_edges(df, config):
     for _, row in df.iterrows():
         if is_social(row["author"]):
             acc_events[row["author"]].append(row)
+
+    # Ventana del grafo: la coordinación es reciente. Por defecto 90d (no cambia
+    # nada hoy); bajarla reduce memoria/cómputo al añadir muchas fuentes.
+    if acc_events and _window_d > 0:
+        try:
+            _maxts = max(r["ts"] for rows in acc_events.values() for r in rows)
+            _cut = _maxts - _window_d * 86400
+            for _a in list(acc_events.keys()):
+                acc_events[_a] = [r for r in acc_events[_a] if r["ts"] >= _cut]
+                if not acc_events[_a]:
+                    del acc_events[_a]
+        except Exception:
+            pass
 
     strong_links = defaultdict(float)      # (a,b) -> suma peso fuerte
     weak_links = defaultdict(set)          # (a,b) -> set de señales débiles
@@ -78,7 +103,7 @@ def build_edges(df, config):
         all_t = [t for ts in acc_text.values() for t in ts]
         try:
             import scipy.sparse as sp
-            vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
+            vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, max_features=_maxf)
             X = vec.fit_transform(all_t)
             off = 0
             acc_vec = {}

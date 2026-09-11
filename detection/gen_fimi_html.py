@@ -1773,13 +1773,21 @@ def main():
         if _lb_dias and _lb_dias < 14:
             _ctx_bits.append(f"base {_lb_dias}d")
         _ctx_html = " · ".join(_ctx_bits)
+        # Robustez de la línea base: "nuevo máximo" solo con historia suficiente
+        # (≥14 días). Con menos, se etiqueta como máximo de la ventana observada,
+        # no como récord del tema (evita sobre-interpretar bases de 3-9 días).
+        _MIN_DIAS_MAX = 14
         _ctx_extra = ""
         if _lb_dias < 3:
             _ctx_extra = ("<span style='color:#94a3b8'> · línea base en "
                           f"acumulación ({_lb_dias or 0} días)</span>")
         elif _hoy_top > 0 and _max30 and _hoy_top >= _max30 - 0.5:
-            _ctx_extra = ("<span style='color:#dc2626;font-weight:700'> 🏁 nuevo "
-                          "máximo del tema</span>")
+            if _lb_dias >= _MIN_DIAS_MAX:
+                _ctx_extra = ("<span style='color:#dc2626;font-weight:700'> 🏁 nuevo "
+                              "máximo del tema</span>")
+            else:
+                _ctx_extra = ("<span style='color:#94a3b8'> · máximo de la ventana "
+                              f"observada ({_lb_dias}d); base corta para declararlo récord</span>")
         elif _banda and _hoy_top > _p75:
             _ctx_extra = ("<span style='color:#d97706;font-weight:700'> ⚠ fuera "
                           "de la banda normal (p75)</span>")
@@ -2629,6 +2637,37 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 </p>
 </div>
 
+<div class="card" id="gobernanza">
+<h3>Gobernanza de datos y salvaguardas</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Qué se almacena.</b> Solo información <b>pública</b>: identificadores de cuenta de redes sociales
+(Bluesky, Telegram, Reddit, Mastodon), el texto de sus publicaciones, las URLs compartidas y sus marcas
+de tiempo. No se accede a contenido privado, mensajes directos ni datos personales sensibles, y no se
+elabora ningún perfil de personas.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Qué NO entra en el análisis.</b> Los feeds RSS de medios no participan en el grafo de coordinación
+(son fuentes legítimas que cubren los temas por periodismo, no cuentas coordinadas). No se monitorizan
+cuentas privadas ni se rastrean individuos: el objeto del análisis es el <b>comportamiento de
+coordinación</b>, no la identidad de quien lo emite.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Criterios de inclusión/exclusión.</b> Se incluyen cuentas públicas que publican sobre los temas del
+catálogo. Se excluyen bots declarados, escáneres y fuentes sin texto analizable. Añadir o retirar temas
+y cuentas es una decisión humana y queda registrada en la bitácora.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Retención.</b> Eventos y hallazgos se conservan <b>90 días</b>; los clusters se reemplazan en cada
+ciclo (snapshot); la bitácora de cambios de estado es permanente. Los datos de suscripción (email/Telegram)
+se guardan solo con consentimiento (doble opt-in) y se pueden dar de baja en cualquier momento.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Salvaguardas.</b> El radar <b>no atribuye</b> a actores concretos sin evidencia y trata «UNKNOWN»
+como resultado válido. Para rectificaciones o consultas:
+<a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">info-fimi@viajeinteligencia.com</a>.
+</p>
+</div>
+
 {salud_html}
 
 {salud_kw_html}
@@ -2644,7 +2683,7 @@ validación de <code>cluster_label</code> en el export (anti path-traversal/SQLi
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -2911,7 +2950,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{

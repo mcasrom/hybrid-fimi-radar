@@ -82,6 +82,12 @@ features:
   - 1
   - 2
   top_hashtags: 50
+coordination:
+  # Palancas de memoria del grafo de coordinación (escalar fuentes sin OOM).
+  # window_days: ventana del grafo en días (90 = alineada con la retención;
+  #   bajarla reduce memoria/cómputo). tfidf_max_features: tope de vocabulario.
+  window_days: 90
+  tfidf_max_features: 200000
 feeds:
 - nombre: El Faro de Ceuta
   url: https://elfarodeceuta.com/feed/
@@ -371,6 +377,9 @@ temas:
         infrastructure: 0.10
         network_density: 0.10
         anomaly: 0.40
+  sahel:
+    estado: piloto
+    nombre: Sahel (África Occidental)
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -538,6 +547,23 @@ keywords:
 - palabra: Lebanon Israel
   plataformas: *id002
   tema: oriente_medio
+- palabra: Sahel
+  plataformas: &id003
+  - bluesky
+  - google-news
+  tema: sahel
+- palabra: Mali
+  plataformas: *id003
+  tema: sahel
+- palabra: Burkina Faso
+  plataformas: *id003
+  tema: sahel
+- palabra: JNIM
+  plataformas: *id003
+  tema: sahel
+- palabra: yihadismo
+  plataformas: *id003
+  tema: sahel
 telegram_canales:
 - elfarodeceuta
 - maldita_es
