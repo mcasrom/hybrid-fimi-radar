@@ -32,6 +32,18 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
   **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
   WATCH) para que la gravedad se perciba a contraluz de la página),
   narrativas, historial, resumen por tema, salud de fuentes y bitácora.
+- **Piloto vs producción visible**: cada tema lleva su estado a la vista — en las
+  tarjetas dial y en las pestañas, un badge **`● Producción`** (verde) o
+  **`● PILOTO · en calibración`** (naranja, con pulso suave). Los temas en piloto
+  muestran además la frase *"piloto en calibración — lectura con cautela"* en una caja
+  naranja destacada y un aviso de riesgo de sesgo en su panel. La animación respeta
+  `prefers-reduced-motion`.
+- **Rendimiento y robustez**: `frontera_sur` es el tema por defecto de los RSS, así que
+  procesa el corpus completo (~20.000 eventos, ~3.700 cuentas). Los centroides TF-IDF de
+  la coordinación se calculan **en sparse** (`scipy.sparse`) para no agotar la RAM: un
+  `np.vstack` denso (cuentas × vocabulario de bigramas) provocaba **OOM** en el server de
+  3,7 GB. Run de frontera_sur: ~375 s, pico ~2,7 GB. Si el corpus crece, valorar
+  `max_features`/`min_df` en el `TfidfVectorizer` de `detection/coordination.py`.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
@@ -291,5 +303,7 @@ Tres capas, todas avisando por Telegram al dueño solo ante cambios (sin spam):
   captura (`MAX(events.timestamp)` vs 7,5 h), snapshot por tema activo
   (`MAX(clusters.created_at)` vs 7 h), integridad BD (event_temas huérfanos) y coherencia
   config (keywords con tema inexistente). Alerta cuando el nivel global empeora
-  (ok → atención → incidencia). Cron paso 10.
+  (ok → atención → incidencia). Cron paso 10. Fue este check el que detectó el
+  congelamiento de `frontera_sur` por OOM (2026-09-11): la captura estaba fresca pero el
+  tema llevaba 30 h sin regenerar su snapshot.
 
