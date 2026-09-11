@@ -2410,6 +2410,20 @@ a{{color:#c2410c}}
 .fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
 .tab-panel{{display:none}}.tab-panel.active{{display:block}}
 
+/* ---- BARRA MARCA/BADGES (opción A: 1ª línea, identidad + estado) ---- */
+.fimi-brandbar{{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:#fff;border-bottom:1px solid #e2e8f0;padding:9px 14px;font-size:.82rem}}
+.fimi-brandbar .brand{{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;color:#0f172a;text-decoration:none}}
+.fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.9rem}}
+.fimi-brandbar .tagline{{color:#94a3b8;font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}}
+.fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
+.fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px}}
+.fimi-brandbar .chip .dot{{width:6px;height:6px;border-radius:50%}}
+.fimi-brandbar .chip.prod{{color:#166534;background:#f0fdf4;border-color:#bbf7d0}}
+.fimi-brandbar .chip.prod .dot{{background:#16a34a}}
+.fimi-brandbar a.gh-link{{color:#c2410c;font-weight:700;text-decoration:none;font-size:.78rem;display:inline-flex;align-items:center;gap:5px}}
+.fimi-brandbar a.gh-link:hover{{text-decoration:underline}}
+@media(max-width:560px){{.fimi-brandbar .chips{{margin-left:0;width:100%}} .fimi-brandbar .tagline{{display:none}}}}
+
 /* ---- BARRA ECOSISTEMA (persistente bajo el nav) ---- */
 .fimi-ecobar{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:.8rem;color:#64748b;background:#fffaf5;border-bottom:1px solid #fde68a;padding:7px 2px}}
 .fimi-ecobar a{{color:#c2410c;text-decoration:none;font-weight:600}}
@@ -2461,6 +2475,18 @@ a{{color:#c2410c}}
 </style></head>
 <body>
 <main>
+<div class="fimi-brandbar">
+  <a class="brand" href="/" title="Radar FIMI · Centro de observación de desinformación en español">
+    <span class="logo">📡</span> Radar FIMI
+  </a>
+  <span class="tagline">Proyecto independiente · Open Source · En producción</span>
+  <div class="chips">
+    <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
+    <span class="chip"><span class="dot" style="background:#0284c7"></span>Open Source</span>
+    <span class="chip prod"><span class="dot"></span>En producción</span>
+  </div>
+  <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+</div>
 <nav class="fimi-nav" id="fimiNav">
 <a href="#" class="active" data-panel="tabRadar" onclick="fimiPanel('tabRadar');return false">Radar</a>
 <a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
