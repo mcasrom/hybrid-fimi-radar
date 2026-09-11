@@ -157,13 +157,37 @@ def scale_floor(overall, accounts, events, infra, config=None, tema=None):
     return overall
 
 
-def solve_scale(overall, accounts, events, infra, config=None, tema=None):
-    """Aplica la escala completa del cluster (orden correcto):
-    1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima.
+def origen_unico_cap(overall, n_urls, n_events, config=None, tema=None):
+    """Tope por "origen único" (análisis externo 11/Sep): un cluster cuyos
+    eventos provienen de UNA SOLA URL es un "eco de 1 pieza" (varias cuentas
+    repitiendo el mismo artículo/fuente), no una campaña con producción propia,
+    y no debe entrar en bandas altas a menos que la masa lo respalde: se topa a
+    cap_band (por defecto ANOMALOUS) para evitar el "eco de agencia" leído como
+    coordinación sostenida.
 
-    Devuelve (overall_final, floored):
+    Config: scoring.origen_unico = {max_urls, min_events, cap_band}, con
+    override por tema en temas.<tema>.scoring.origen_unico (igual que pesos).
+
+    Devuelve (overall, es_eco): es_eco=True etiqueta el cluster como eco de una
+    sola pieza aunque el tope no haya cambiado el score (ya estaba dentro)."""
+    p = _tema_scale(config, tema, "origen_unico",
+                    {"max_urls": 1, "min_events": 2, "cap_band": "ANOMALOUS"})
+    es_eco = (n_urls <= p["max_urls"]) and (n_events >= p["min_events"])
+    if es_eco:
+        bands = load_bands(config)
+        overall = min(float(overall), float(bands[p["cap_band"]][1]))
+    return overall, es_eco
+
+
+def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls=0):
+    """Aplica la escala completa del cluster (orden correcto):
+    1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima;
+    4) tope por "origen único" (1 sola URL => eco de 1 pieza).
+
+    Devuelve (overall_final, floored, es_eco):
       floored=True => cae en "posible ruido de bajo volumen" (para marcarlo
-      en el assessment, la tarjeta y el informe)."""
+      en el assessment, la tarjeta y el informe).
+      es_eco=True => etiquetado "eco de 1 pieza" (tope aplicado o ya dentro)."""
     overall = scale_bonus(overall, accounts, config, tema)
     floored = False
     p = _tema_scale(config, tema, "scale_floor",
@@ -177,4 +201,5 @@ def solve_scale(overall, accounts, events, infra, config=None, tema=None):
         else:
             overall = min(float(overall), float(bands["HIGH"][1]))
     overall = scale_cap(overall, accounts, config, tema)
-    return overall, floored
+    overall, es_eco = origen_unico_cap(overall, n_urls, events, config, tema)
+    return overall, floored, es_eco

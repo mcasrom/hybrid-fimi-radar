@@ -2028,6 +2028,7 @@ def main():
     _sma = _scr.get("scale_min_accounts", {}) or {}
     _s_f = _scr.get("scale_floor", {}) or {}
     _s_b = _scr.get("scale_bonus", {}) or {}
+    _s_o = _scr.get("origen_unico", {}) or {}
     _escala_global = (
         f"· Masa mínima para banda alta: "
         f"{_sma.get('HIGH','2')} cuentas en HIGH, "
@@ -2036,7 +2037,10 @@ def main():
         f"(&quot;posible ruido de bajo volumen&quot;), salvo ≥<b>{_s_f.get('except_events',10)}</b> eventos "
         f"sostenidos o infraestructura ≥<b>{_s_f.get('except_infra',80)}</b>: entonces hasta HIGH, nunca CRITICAL.<br>"
         f"· Bonus de masa: +{_s_b.get('per_account',0.08)}×cuentas (tope "
-        f"{_s_b.get('cap',3.5)} pts) a igualdad de componentes."
+        f"{_s_b.get('cap',3.5)} pts) a igualdad de componentes.<br>"
+        f"· Origen único: cluster de ≤<b>{_s_o.get('max_urls',1)}</b> URL(s) y ≥<b>{_s_o.get('min_events',2)}</b> "
+        f"eventos = &quot;eco de 1 pieza&quot; (mismo artículo repetido), tope "
+        f"<b>{_s_o.get('cap_band','ANOMALOUS')}</b> para que el eco de una sola fuente no entre en banda alta."
     )
     # overrides por tema (scoring propio)
     _t_over = []

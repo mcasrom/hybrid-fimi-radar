@@ -44,6 +44,16 @@ scoring:
     min_accounts: 3
     except_events: 10
     except_infra: 80
+  # Tope por "origen único" (11/Sep): un cluster con <= max_urls URLs distintas
+  # (y >= min_events eventos) es un "eco de 1 pieza" (varias cuentas repitiendo
+  # el mismo artículo), no coordinación con producción propia. Se topa a la
+  # banda cap_band (ANOMALOUS=59) para que el eco de agencia no se lea como
+  # banda alta. Etiqueta "Eco de 1 pieza" en assessment/tarjetas. Configurable
+  # por tema en temas.<tema>.scoring.origen_unico.
+  origen_unico:
+    max_urls: 1
+    min_events: 2
+    cap_band: ANOMALOUS
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7
