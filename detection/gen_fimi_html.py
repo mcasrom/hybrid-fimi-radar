@@ -1709,6 +1709,19 @@ def main():
 
     dial_cards = ""
     _ALERTA_UMBRAL = 60  # donde empieza HIGH (≥60 = "en alerta", banda alta)
+    # Señales de gobernanza (promoción/cierre) para el badge de gestión. Opción C:
+    # la tarjeta comunica el estado; la acción se ejecuta en el panel admin
+    # autenticado (el sistema nunca decide solo).
+    def _gov_json(_p):
+        try:
+            return json.loads(Path(_p).read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    _gov_map = {}
+    for _t in temas:
+        _prom = _gov_json(ROOT / "data" / f"promocion_{_t}.json")
+        _cierre = _gov_json(ROOT / "data" / f"cierre_{_t}.json")
+        _gov_map[_t] = {"ready": bool(_prom.get("ready")), "cierre": bool(_cierre.get("candidato"))}
     for _t in temas:
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
         _nombre = _m.get("nombre", _t)
@@ -1780,12 +1793,24 @@ def main():
         _badge_tema = ("<span class='pilot-badge'>● PILOTO · en calibración</span>"
                        if _es_piloto else "<span class='prod-badge'>● Producción</span>")
         _frase_html = (f"<div class='pilot-frase'>{_frase}</div>" if _es_piloto else _frase)
+        _gov = _gov_map.get(_t, {})
+        if _es_piloto and _gov.get("ready"):
+            _gestion = ("<a href='/admin.html' style='display:inline-block;font-size:.7rem;font-weight:700;"
+                        "color:#166534;background:#dcfce7;border:1px solid #86efac;border-radius:999px;"
+                        "padding:3px 10px;margin:2px 0 0;text-decoration:none'>✅ Lista para producción · gestionar</a>")
+        elif _gov.get("cierre"):
+            _gestion = ("<a href='/admin.html' style='display:inline-block;font-size:.7rem;font-weight:700;"
+                        "color:#7c2d12;background:#ffedd5;border:1px solid #fdba74;border-radius:999px;"
+                        "padding:3px 10px;margin:2px 0 0;text-decoration:none'>🗂 Candidata a cierre · gestionar</a>")
+        else:
+            _gestion = ""
         dial_cards += (
             f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_card_border};"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
             f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;"
             f"letter-spacing:.04em'>{_nombre}</div>"
             f"<div style='margin:4px 0 0'>{_badge_tema}</div>"
+            f"{_gestion}"
             f"{render_dial_svg(_nombre, _hoy_val, _dial_color, banda=_banda, umbral=_ALERTA_UMBRAL)}"
             f"<div style='font-size:1.5rem;font-weight:800;color:{_dial_color};line-height:1.1'>"
             f"{_num_txt}<span style='font-size:.7rem;color:#64748b;font-weight:700'>/100</span></div>"

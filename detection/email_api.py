@@ -27,6 +27,8 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -43,7 +45,8 @@ BASE_URL = "https://fimi.viajeinteligencia.com"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 LIMIT_PER_IP = 10          # subscribe: 10/h
 LIMIT_FEEDBACK_IP = 20     # feedback/sugerir combinados: 20/h
-TEMAS_VALIDOS = {"frontera_sur", "geopolitica_ue_marruecos", "politica_nacional"}
+TEMAS_VALIDOS = {"frontera_sur", "geopolitica_ue_marruecos", "politica_nacional",
+                 "eeuu_politica", "oriente_medio"}
 VOTOS_VALIDOS = {"si", "no", "ns"}
 _hits = {}
 _hits_fb = {}
@@ -133,6 +136,69 @@ def _clean_admin_header(v: str) -> str:
         # si pegó la línea completa del .env, quédate con el valor
         v = v.split("=", 1)[1].strip().strip('"').strip("'").strip()
     return v
+
+
+def _leer_json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def temas_estado():
+    """Estado de cada tema + señales de promoción/cierre (solo lectura).
+
+    El sistema NO decide: solo expone si un tema ya cumplió la ventana de
+    promoción (data/promocion_<tema>.json → ready) o si check_cierre lo marcó
+    como candidato (data/cierre_<tema>.json → candidato). La acción la toma el
+    dueño desde el panel admin.
+    """
+    import yaml
+    try:
+        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
+    except Exception:
+        cfg = {}
+    temas_cfg = cfg.get("temas", {}) or {}
+    out = []
+    for t, meta in temas_cfg.items():
+        meta = meta or {}
+        prom = _leer_json(ROOT / "data" / f"promocion_{t}.json")
+        cierre = _leer_json(ROOT / "data" / f"cierre_{t}.json")
+        out.append({
+            "tema": t,
+            "nombre": meta.get("nombre", t),
+            "estado": meta.get("estado", "produccion"),
+            "ready": bool(prom.get("ready")),
+            "promocion_inicio": prom.get("inicio"),
+            "candidato_cierre": bool(cierre.get("candidato")),
+            "cierre_motivos": cierre.get("motivos") or [],
+        })
+    return out
+
+
+def _temas_cli(args, timeout=90):
+    """Ejecuta temas_cli.py (edita config + bitácora) SIN regenerar el dashboard."""
+    cmd = [sys.executable, str(ROOT / "detection" / "temas_cli.py")] + list(args) + ["--no-regen"]
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=str(ROOT))
+    return p.returncode, ((p.stdout or "") + (p.stderr or "")).strip()
+
+
+def _regen_bg():
+    """Lanza gen_fimi_html.py en segundo plano si no hay ya uno corriendo."""
+    try:
+        r = subprocess.run(["pgrep", "-f", "detection/gen_fimi_html.py"], capture_output=True)
+        if r.returncode == 0:
+            return False
+    except Exception:
+        pass
+    try:
+        subprocess.Popen(
+            [sys.executable, str(ROOT / "detection" / "gen_fimi_html.py")],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True, cwd=str(ROOT))
+        return True
+    except Exception:
+        return False
 
 
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
@@ -300,6 +366,11 @@ class H(BaseHTTPRequestHandler):
                 conteo[r["proyecto"] or "fimi"] = r["n"]
             conn.close()
             return self._send(200, {"ok": True, "suscriptores": data, "conteo": conteo, "proyecto": proyecto or "todos"})
+        if path == "/api/admin/temas":
+            # Estado de temas + señales de promoción/cierre. Solo el dueño.
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
+                return self._send(403, {"error": "prohibido"})
+            return self._send(200, {"ok": True, "temas": temas_estado()})
         if path == "/api/export":
             # Evidencia por cluster (OSINT): devuelve cluster_events de un
             # cluster de la vista activa en CSV/JSON. Datos ya públicos en las
@@ -321,7 +392,8 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urllib.parse.urlsplit(self.path)
-        if parsed.path not in ("/api/subscribe", "/api/feedback", "/api/sugerir"):
+        admin_paths = ("/api/admin/tema-estado", "/api/admin/tema-cerrar")
+        if parsed.path not in ("/api/subscribe", "/api/feedback", "/api/sugerir") + admin_paths:
             return self._send(404, {"error": "not found"})
         length = int(self.headers.get("Content-Length") or 0)
         if not length:
@@ -330,6 +402,26 @@ class H(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
         except Exception:
             return self._send(400, {"error": "json invalido"})
+        if parsed.path in admin_paths:
+            # Acciones de estado de temas: SOLO el dueño (x-admin-secret). El
+            # sistema no decide; aquí solo se ejecuta lo que el dueño pulsa.
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
+                return self._send(403, {"error": "prohibido"})
+            tema = str(data.get("tema") or "").strip()
+            nota = str(data.get("nota") or "").strip()[:300]
+            if tema not in {t["tema"] for t in temas_estado()}:
+                return self._send(400, {"error": "tema invalido"})
+            if parsed.path == "/api/admin/tema-cerrar":
+                rc, out = _temas_cli(["cerrar", tema, "--nota", nota or "cierre desde panel admin"])
+            else:
+                estado = str(data.get("estado") or "").strip()
+                if estado not in ("produccion", "piloto"):
+                    return self._send(400, {"error": "estado invalido (produccion|piloto)"})
+                rc, out = _temas_cli(["estado", tema, estado,
+                                      "--nota", nota or f"cambio a {estado} desde panel admin"])
+            lanzado = _regen_bg()
+            return self._send(200 if rc == 0 else 500,
+                              {"ok": rc == 0, "salida": out, "regen": lanzado})
         if parsed.path == "/api/feedback":
             if not rate_feedback_ok(self._ip()):
                 return self._send(429, {"error": "demasiadas peticiones"})
