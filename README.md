@@ -211,6 +211,33 @@ El token del bot se lee de `FIMI_TELEGRAM_BOT_TOKEN` (env/`.env`), nunca hardcod
 está en `.gitignore`. Los endpoints `/api/*` están protegidos con rate-limit y los de admin
 requieren `x-admin-secret`.
 
+## Panel de administración y gestión de temas
+
+El panel del dueño vive en **`/admin.html`** (estático en `/var/www/fimi/`, `noindex`;
+no está en el repo) y se autentica con `x-admin-secret` (`FIMI_ADMIN_SECRET`). Muestra
+votos por tema, sugerencias, suscriptores por proyecto y **Gestión de temas**.
+
+La gestión de temas refleja el principio *"el sistema no decide"*: los controles solo se
+activan cuando el propio radar ya marcó la señal, y la acción la ejecuta el dueño.
+
+| Acción | Cuándo aparece | Endpoint (auth `x-admin-secret`) | Efecto |
+|---|---|---|---|
+| ⬆️ **Promover** a producción | tema `piloto` con `ready` (ventana 72h / 8 ciclos) | `POST /api/admin/tema-estado` | `piloto → produccion` |
+| 🗄️ **Cerrar** | sugerencia de `check_cierre` (o manual) | `POST /api/admin/tema-cerrar` | exporta evidencia, `cerrado`, bitácora |
+| ↻ **Reabrir** | tema `cerrado` / `candidato_a_cierre` | `POST /api/admin/tema-estado` | `→ piloto` |
+| ↩︎ **A piloto** | tema en producción | `POST /api/admin/tema-estado` | `produccion → piloto` |
+
+- `GET /api/admin/temas` devuelve el estado de cada tema + señales (`ready`,
+  `candidato_cierre`). El dashboard (vista resumen) muestra en la tarjeta del tema un
+  badge **"✅ Lista para producción · gestionar"** o **"🗂 Candidata a cierre · gestionar"**
+  que enlaza al panel: la tarjeta comunica, la acción se ejecuta autenticada.
+- Las acciones reutilizan `detection/temas_cli.py` (`--no-regen`) y lanzan la regeneración
+  del dashboard **en segundo plano** (`subprocess.Popen`, con guardia para no solapar
+  regeneraciones). Todo queda en la **bitácora**.
+- El HTML público nunca contiene el secreto: se pide al entrar y se guarda solo en la
+  sesión. Se corrigió además un bug de visibilidad en `admin.html` (`entrar()` invertía el
+  panel) que impedía ver el panel tras introducir el secreto correcto.
+
 ## Export de evidencia por cluster
 
 Para auditoría OSINT, `detection/export_evidencia.py` permite descargar los textos, fuentes
