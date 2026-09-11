@@ -427,7 +427,7 @@ class H(BaseHTTPRequestHandler):
                 return self._send(429, {"error": "demasiadas peticiones"})
             tema = str(data.get("tema") or "").strip()
             voto = str(data.get("voto") or "").strip().lower()
-            if tema not in TEMAS_VALIDOS:
+            if tema not in {t["tema"] for t in temas_estado()}:
                 return self._send(400, {"error": "tema invalido"})
             if voto not in VOTOS_VALIDOS:
                 return self._send(400, {"error": "voto invalido (si|no|ns)"})

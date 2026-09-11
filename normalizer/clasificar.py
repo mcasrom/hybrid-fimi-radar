@@ -34,15 +34,16 @@ def _tokens(kw):
 
 def _matches(kw_norm, kw_toks, texto_norm, texto_toks):
     """Una keyword matchea un texto si:
-    - 1 término: aparece como subcadena (p.ej. "Ceuta", "migración").
-    - 2 términos: ambos presentes.
+    - 1 término: aparece como PALABRA COMPLETA (con límites \\b). Evita falsos
+      positivos por subcadena (p. ej. "mali" dentro de "normalizing"/"normalidad").
+    - 2 términos: ambos presentes (como tokens).
     - 3+ términos: al menos el 60% (redondeado arriba) presentes.
     """
     n = len(kw_toks)
     if n == 0:
         return False
     if n == 1:
-        return kw_norm in texto_norm
+        return re.search(r"\b" + re.escape(kw_norm) + r"\b", texto_norm) is not None
     present = sum(1 for t in kw_toks if t in texto_toks)
     need = n if n == 2 else int(math.ceil(0.6 * n))
     return present >= need

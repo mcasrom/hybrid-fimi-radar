@@ -564,6 +564,9 @@ keywords:
 - palabra: yihadismo
   plataformas: *id003
   tema: sahel
+- palabra: Níger
+  plataformas: *id003
+  tema: sahel
 telegram_canales:
 - elfarodeceuta
 - maldita_es
