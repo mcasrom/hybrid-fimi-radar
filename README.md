@@ -10,7 +10,7 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitorizados**:
 
 | Tema | Estado |
 |---|---|
@@ -19,6 +19,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
 | Política nacional | Producción |
 | Política y desinformación EEUU | Piloto (en calibración) |
 | Oriente Medio (Israel-Irán-Gaza) | Piloto (en calibración) |
+| Sahel (África Occidental) | Piloto (en calibración) |
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
@@ -42,8 +43,10 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **5 temas monitor
   procesa el corpus completo (~20.000 eventos, ~3.700 cuentas). Los centroides TF-IDF de
   la coordinación se calculan **en sparse** (`scipy.sparse`) para no agotar la RAM: un
   `np.vstack` denso (cuentas × vocabulario de bigramas) provocaba **OOM** en el server de
-  3,7 GB. Run de frontera_sur: ~375 s, pico ~2,7 GB. Si el corpus crece, valorar
-  `max_features`/`min_df` en el `TfidfVectorizer` de `detection/coordination.py`.
+  3,7 GB. Run de frontera_sur: ~375 s, pico ~2,7 GB. **Palancas de memoria** ya
+  configurables en `config.yaml → coordination`: `window_days` (ventana del grafo, def. 90)
+  y `tfidf_max_features` (tope de vocabulario, def. 200.000). Bajarlas permite añadir
+  muchas más fuentes sin volver a OOM.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
@@ -285,6 +288,25 @@ H4 amplificación mediática · H5 campaña política · H6 desconocido.
   las evidencias de coordinación y las hipótesis posibles con su nivel de confianza.
 - "No existe evidencia suficiente para atribuir a un actor extranjero" es una conclusión válida.
 - Sin LLM como componente principal del detector (solo estadística clásica, explicable).
+- **Líneas base robustas**: no se declara "nuevo máximo del tema" con menos de 14 días de
+  historia; con bases más cortas se etiqueta como *máximo de la ventana observada*.
+
+
+## Gobernanza de datos y salvaguardas
+
+- **Qué se almacena**: solo información pública —identificadores de cuenta de redes sociales
+  (Bluesky, Telegram, Reddit, Mastodon), el texto de sus publicaciones, URLs y marcas de
+  tiempo—. No hay contenido privado ni perfilado de personas.
+- **Qué no entra**: los feeds RSS de medios no participan en el grafo de coordinación; no se
+  monitorizan cuentas privadas ni se rastrean individuos (el objeto es el **comportamiento**
+  de coordinación, no la identidad).
+- **Criterios**: se incluyen cuentas públicas que publican sobre los temas; se excluyen bots
+  declarados, escáneres y fuentes sin texto analizable. El alta/baja de temas y cuentas es una
+  decisión humana y queda en la bitácora.
+- **Retención**: `events`/`findings` 90 días; clusters se reemplazan en cada ciclo; bitácora
+  permanente; suscripciones con doble opt-in y baja en cualquier momento.
+- **Salvaguardas**: no atribuye sin evidencia, «UNKNOWN» es válido y hay contacto para
+  rectificaciones. Visible en el dashboard (Transparencia → *Gobernanza de datos y salvaguardas*).
 
 
 ## Seguridad del despliegue
