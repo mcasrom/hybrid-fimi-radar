@@ -1436,8 +1436,18 @@ def main():
                          "piloto": "Piloto",
                          "candidato_a_cierre": "Candidato a cierre",
                          "cerrado": "Cerrado"}.get(_estado, _estado)
-        _badge_est = (f"<span class='fimi-tab-badge' style='opacity:.9;font-weight:600;"
-                      f"font-size:.7rem;color:#000'> · {_estado_label}</span>")
+        if _estado == "piloto":
+            _badge_est = (f"<span class='fimi-tab-badge' style='font-weight:800;font-size:.66rem;"
+                          f"color:#7c2d12;background:#ffedd5;border:1px solid #fdba74;border-radius:999px;"
+                          f"padding:1px 8px;margin-left:6px'>{_estado_label}</span>")
+        elif _estado == "produccion":
+            _badge_est = (f"<span class='fimi-tab-badge' style='font-weight:700;font-size:.66rem;"
+                          f"color:#166534;background:#dcfce7;border:1px solid #86efac;border-radius:999px;"
+                          f"padding:1px 8px;margin-left:6px'>{_estado_label}</span>")
+        else:
+            _badge_est = (f"<span class='fimi-tab-badge' style='font-weight:600;font-size:.66rem;"
+                          f"color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;"
+                          f"padding:1px 8px;margin-left:6px'>{_estado_label}</span>")
         tema_tabs += (f"<button type='button' data-tema='{_t}' data-estado='{_estado}'"
                       f" data-accent='{_accent}' onclick='fimiTab(\"{_t}\")'"
                       f" style='cursor:pointer;border:1px solid #e2e8f0;border-radius:999px;"
@@ -1702,6 +1712,7 @@ def main():
     for _t in temas:
         _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
         _nombre = _m.get("nombre", _t)
+        _es_piloto = _m.get("estado", "produccion") == "piloto"
         _estado_dial, _estilo, _frase = _estado_tema(_t)
         _st_t = _salud_temas.get(_t) or {}
         _st_nivel = _st_t.get('nivel') or '—'
@@ -1764,11 +1775,17 @@ def main():
                         f"font-weight:700;color:{_estilo['color']};background:#f8fafc;"
                         f"border:1px solid #e2e8f0;border-radius:999px;padding:2px 10px;"
                         f"margin:6px 0 2px'>{_estilo['txt']}</span>")
+        # Distinción clara piloto vs producción: borde, badge y frase destacada.
+        _card_border = "#d97706" if _es_piloto else _estilo['color']
+        _badge_tema = ("<span class='pilot-badge'>● PILOTO · en calibración</span>"
+                       if _es_piloto else "<span class='prod-badge'>● Producción</span>")
+        _frase_html = (f"<div class='pilot-frase'>{_frase}</div>" if _es_piloto else _frase)
         dial_cards += (
-            f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_estilo['color']};"
+            f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_card_border};"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
             f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;"
             f"letter-spacing:.04em'>{_nombre}</div>"
+            f"<div style='margin:4px 0 0'>{_badge_tema}</div>"
             f"{render_dial_svg(_nombre, _hoy_val, _dial_color, banda=_banda, umbral=_ALERTA_UMBRAL)}"
             f"<div style='font-size:1.5rem;font-weight:800;color:{_dial_color};line-height:1.1'>"
             f"{_num_txt}<span style='font-size:.7rem;color:#64748b;font-weight:700'>/100</span></div>"
@@ -1776,7 +1793,7 @@ def main():
             f"text-transform:uppercase;letter-spacing:.05em'>{_num_band}</div>"
             f"{_chip_estado}"
             f"<div style='font-size:.78rem;color:#64748b;margin:6px 0 8px;min-height:2.2em;line-height:1.35'>"
-            f"{_frase}</div>"
+            f"{_frase_html}</div>"
             f"<div style='font-size:.76rem;color:#475569;background:#f0fdf4;border:1px solid #bbf7d0;"
             f"border-radius:8px;padding:6px 10px;margin:0 0 8px;text-align:left;line-height:1.5'>"
             f"<span style='font-weight:700'>📈 {_ctx_html}</span>{_ctx_extra}</div>"
@@ -2392,6 +2409,18 @@ a{{color:#c2410c}}
    estrecha y corta el texto (tarjetas 04/05). Se fuerza ancho completo. */
 @media(max-width:560px){{.funnel-card{{max-width:100% !important;width:100% !important}}}}
 @media(min-width:561px){{.funnel-card{{min-width:290px}}}}
+
+/* ---- PILOTO vs PRODUCCIÓN (distinción clara en tarjetas y pestañas) ---- */
+.prod-badge{{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.04em;
+  color:#166534;background:#dcfce7;border:1px solid #86efac;border-radius:999px;
+  padding:2px 9px;margin-bottom:6px}}
+.pilot-badge{{display:inline-block;font-size:.66rem;font-weight:800;letter-spacing:.04em;
+  color:#7c2d12;background:#ffedd5;border:1px solid #fdba74;border-radius:999px;
+  padding:2px 9px;margin-bottom:6px;animation:pilotPulse 2s ease-in-out infinite}}
+.pilot-frase{{background:#fff7ed;border:1.5px solid #fdba74;border-radius:8px;
+  padding:6px 10px;color:#9a3412;font-weight:700;animation:pilotPulse 2s ease-in-out infinite}}
+@keyframes pilotPulse{{0%,100%{{box-shadow:0 0 0 0 rgba(217,119,6,.40)}}50%{{box-shadow:0 0 0 6px rgba(217,119,6,0)}}}}
+@media(prefers-reduced-motion:reduce){{.pilot-badge,.pilot-frase{{animation:none}}}}
 </style></head>
 <body>
 <main>
@@ -2638,11 +2667,9 @@ if ('serviceWorker' in navigator) {{
       if(b.getAttribute('data-tema')===t){{
         b.style.background=ac;b.style.color='#000';b.style.borderColor=ac;
         b.style.boxShadow='0 1px 3px rgba(15,23,42,.15)';
-        if(bg){{ bg.style.color='#000'; }}
       }}else{{
         b.style.background='#fff';b.style.color='#000';
         b.style.borderColor=ac+'55';b.style.boxShadow='none';
-        if(bg){{ bg.style.color='#000'; }}
       }}
     }}
     var panes=document.querySelectorAll('.fimi-pane');

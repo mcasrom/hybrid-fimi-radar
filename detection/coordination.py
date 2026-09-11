@@ -77,18 +77,21 @@ def build_edges(df, config):
     if acc_text:
         all_t = [t for ts in acc_text.values() for t in ts]
         try:
+            import scipy.sparse as sp
             vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
             X = vec.fit_transform(all_t)
             off = 0
             acc_vec = {}
             for a, ts in acc_text.items():
                 Xa = X[off:off + len(ts)]
-                acc_vec[a] = np.asarray(Xa.mean(axis=0)).ravel()
+                # Centroide de la cuenta EN FORMATO DISPERSO. Con miles de cuentas
+                # y un vocabulario de bigramas grande, densificar (cuentas x vocab)
+                # agota la RAM del server (OOM); manteniéndolo sparse el pico es bajo.
+                acc_vec[a] = sp.csr_matrix(Xa.mean(axis=0))
                 off += len(ts)
             alist = list(acc_vec.keys())
             if len(alist) >= 2:
-                import scipy.sparse as sp
-                M = sp.csr_matrix(np.vstack([acc_vec[a] for a in alist]))
+                M = sp.vstack([acc_vec[a] for a in alist]).tocsr()
                 sim = cosine_similarity(M)
                 for i, a in enumerate(alist):
                     for j in range(i + 1, len(alist)):
