@@ -2404,23 +2404,22 @@ main{{max-width:960px;margin:0 auto;padding:20px 16px 56px}}
 .fimi-pane[hidden], .fimi-pane.hidden{{display:none}}
 a{{color:#c2410c}}
 
-.fimi-nav{{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e2e8f0;padding:0;display:flex;gap:0;box-shadow:0 1px 3px rgba(15,23,42,.06)}}
-.fimi-nav a{{flex:1;text-align:center;padding:11px 8px;font-size:.88rem;font-weight:600;color:#475569;text-decoration:none;border-bottom:3px solid transparent;transition:all .15s}}
-.fimi-nav a:hover{{color:#c2410c;background:#fff7ed}}
-.fimi-nav a.active{{color:#c2410c;border-bottom-color:#c2410c;background:#fff7ed}}
 .tab-panel{{display:none}}.tab-panel.active{{display:block}}
 
-/* ---- BARRA MARCA/BADGES (opción A: 1ª línea, identidad + estado) ---- */
-.fimi-brandbar{{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:#fff;border-bottom:1px solid #e2e8f0;padding:9px 14px;font-size:.82rem}}
-.fimi-brandbar .brand{{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;color:#0f172a;text-decoration:none}}
-.fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.9rem}}
+/* ---- BARRA MARCA/BADGES (opción A: 1ª línea, identidad + estado + Transparencia) ---- */
+.fimi-brandbar{{position:sticky;top:0;z-index:100;display:flex;flex-wrap:wrap;align-items:center;gap:9px 14px;background:#fff;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:11px 16px;font-size:.86rem}}
+.fimi-brandbar .brand{{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1.02rem;color:#0f172a;text-decoration:none}}
+.fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.95rem;box-shadow:0 1px 2px rgba(0,0,0,.15)}}
+.fimi-brandbar .transp{{color:#475569;font-weight:700;font-size:.87rem;text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid #e2e8f0;background:#f8fafc;transition:all .15s}}
+.fimi-brandbar .transp:hover{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
+.fimi-brandbar .transp.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
-.fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px}}
-.fimi-brandbar .chip .dot{{width:6px;height:6px;border-radius:50%}}
+.fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 11px}}
+.fimi-brandbar .chip .dot{{width:7px;height:7px;border-radius:50%}}
 .fimi-brandbar .chip.prod{{color:#166534;background:#f0fdf4;border-color:#bbf7d0}}
 .fimi-brandbar .chip.prod .dot{{background:#16a34a}}
-.fimi-brandbar a.gh-link{{color:#c2410c;font-weight:700;text-decoration:none;font-size:.78rem;display:inline-flex;align-items:center;gap:5px}}
-.fimi-brandbar a.gh-link:hover{{text-decoration:underline}}
+.fimi-brandbar a.gh-link{{color:#c2410c;font-weight:700;text-decoration:none;font-size:.82rem;display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9px;border:1px solid #fdba74;background:#fff7ed;transition:all .15s}}
+.fimi-brandbar a.gh-link:hover{{color:#9a3412;background:#ffedd5;border-color:#fb923c}}
 @media(max-width:560px){{.fimi-brandbar .chips{{margin-left:0;width:100%}}}}
 
 /* ---- HERO "centro de situación" (claro cálido, coherente con la página) ---- */
@@ -2471,6 +2470,7 @@ a{{color:#c2410c}}
   <a class="brand" href="/" title="Radar FIMI · Centro de observación de desinformación en español">
     <span class="logo">📡</span> Radar FIMI
   </a>
+  <a class="transp" href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
   <div class="chips">
     <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
     <span class="chip"><span class="dot" style="background:#0284c7"></span>Open Source</span>
@@ -2478,11 +2478,6 @@ a{{color:#c2410c}}
   </div>
   <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
 </div>
-<nav class="fimi-nav" id="fimiNav">
-<a href="#" class="active" data-panel="tabRadar" onclick="fimiPanel('tabRadar');return false">Radar</a>
-<a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
-<a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub</a>
-</nav>
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
@@ -2948,7 +2943,7 @@ if ('serviceWorker' in navigator) {{
   // Tab switching: Radar | Transparencia
   window.fimiPanel = function(id){{
     var panels=document.querySelectorAll('.tab-panel');
-    var links=document.querySelectorAll('.fimi-nav a[data-panel]');
+    var links=document.querySelectorAll('.fimi-brandbar a[data-panel]');
     for(var i=0;i<panels.length;i++){{
       if(panels[i].id===id){{ panels[i].classList.add('active'); }}
       else {{ panels[i].classList.remove('active'); }}
