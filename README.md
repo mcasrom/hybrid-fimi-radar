@@ -94,7 +94,8 @@ solo tras superar una ventana de validación; el cierre es siempre una **sugeren
   (`X/72 h · N/8 ciclos · errores`), la señal y los botones Promover / Cerrar / Reabrir.
 
 Detalle completo (criterios, umbrales y variables configurables):
-[`docs/GOBERNANZA.md`](docs/GOBERNANZA.md).
+[`docs/GOBERNANZA.md`](docs/GOBERNANZA.md). En la web:
+[**Manual de operación**](https://fimi.viajeinteligencia.com/operativa.html) (usuario + admin).
 
 ## Validación (test sintético FIMI)
 
