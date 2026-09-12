@@ -2315,6 +2315,7 @@ def main():
         return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {_band_top}." + _top_txt
 
     dial_cards = ""
+    _board_rows = ""
     _ALERTA_UMBRAL = 60  # donde empieza HIGH (≥60 = "en alerta", banda alta)
     # Señales de gobernanza (promoción/cierre) para el badge de gestión. Opción C:
     # la tarjeta comunica el estado; la acción se ejecuta en el panel admin
@@ -2419,6 +2420,21 @@ def main():
                         "padding:3px 10px;margin:2px 0 0;text-decoration:none'>🗂 Candidata a cierre · gestionar</a>")
         else:
             _gestion = ""
+        # Panel de situación (aditivo): fila compacta por tema para el "de un
+        # vistazo". NO sustituye el dial; es un board de densidad comparable.
+        _trend_glyph = {"subiendo": "▲", "bajando": "▼", "estable": "▬", "recopilando": "…"}
+        _trend_col = {"subiendo": "#d97706", "bajando": "#16a34a",
+                      "estable": "#64748b", "recopilando": "#94a3b8"}
+        _board_rows += (
+            f"<div class='sit-row'>"
+            f"<span class='sit-dot' style='background:{_dial_color}'></span>"
+            f"<span class='sit-name'>{_nombre}"
+            f"{' <span class=&quot;sit-pil&quot;>piloto</span>' if _es_piloto else ''}</span>"
+            f"<span class='sit-bar'><span style='display:block;width:{min(100, _hoy_val):.0f}%;height:100%;background:{_dial_color}'></span></span>"
+            f"<span class='sit-score' style='color:{_dial_color}'>{_num_txt}/100 {_num_band}</span>"
+            f"<span class='sit-trend' style='color:{_trend_col.get(_estado_dial, '#64748b')}'>{_trend_glyph.get(_estado_dial, '')}</span>"
+            f"<span class='sit-cl'>{len(_cli_t)} cl</span>"
+            f"</div>")
         dial_cards += (
             f"<div style='flex:1 1 260px;max-width:340px;background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_card_border};"
             f"border-radius:16px;padding:18px 16px 14px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)'>"
@@ -2721,9 +2737,51 @@ def main():
         f"Pulsa <b>ver detalle</b> en un tema para leer la evidencia y sus límites.</div>"
         f"</div>"
     )
+    # Panel de situación (aditivo, S-preview): tiles KPI + distribución por banda
+    # + tira por tema. Reutiliza lo ya calculado; no altera nada existente.
+    _counts_band = {}
+    for _c in clusters:
+        _bb = band_of(_c["overall_score"] or 0)
+        _counts_band[_bb] = _counts_band.get(_bb, 0) + 1
+    _tot_band = sum(_counts_band.values()) or 1
+    _seg = ""
+    _leg = ""
+    for _b in ("NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"):
+        _nb = _counts_band.get(_b, 0)
+        if _nb:
+            _seg += (f"<span style='display:block;width:{100 * _nb / _tot_band:.1f}%;height:100%;"
+                     f"background:{BAND_COLORS[_b]}'></span>")
+            _leg += (f"<span style='display:inline-flex;align-items:center;gap:5px'>"
+                     f"<span style='width:9px;height:9px;border-radius:50%;background:{BAND_COLORS[_b]}'></span>"
+                     f"{_nb} {_b}</span>")
+    _band_dist = (
+        f"<div style='margin-top:12px'>"
+        f"<div style='font-size:.72rem;color:#64748b;font-weight:600;margin-bottom:4px'>"
+        f"Distribución de clusters por banda</div>"
+        f"<div style='display:flex;height:14px;border-radius:7px;overflow:hidden;background:#f1f5f9'>{_seg}</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:.72rem;color:#475569'>{_leg}</div></div>")
+    _panel_html = (
+        f"<div id='situacion' style='background:linear-gradient(180deg,#ffffff,#fffaf5);border:1.5px solid #fed7aa;"
+        f"border-radius:16px;padding:16px 18px;margin:0 0 18px'>"
+        f"<div style='font-size:.74rem;font-weight:800;color:#9a3412;text-transform:uppercase;"
+        f"letter-spacing:.05em;margin-bottom:10px'>Panel de situación · de un vistazo</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:10px'>"
+        f"{kpi('Eventos', n_events, 'ventana 90 días', '#f8fafc')}"
+        f"{kpi('Fuentes', n_sources, 'captura activa', '#f8fafc')}"
+        f"{kpi('Clusters', _n_clusters, 'activos ahora', '#f8fafc')}"
+        f"{kpi('En alerta', _n_alerta, 'score ≥60', '#fff7ed')}"
+        f"{kpi('Temas', len(temas), 'monitorizados', '#f8fafc')}"
+        f"</div>"
+        f"{_band_dist}"
+        f"<div style='margin-top:12px'>{_board_rows}</div>"
+        f"<div style='font-size:.72rem;color:#94a3b8;margin-top:10px'>Resumen aditivo — el detalle "
+        f"sigue en los diales y tarjetas de abajo. Señal, no atribución.</div>"
+        f"</div>"
+    )
     resumen_html = (
         f"<div id='vistaResumen'>"
         f"{_banner_html}"
+        f"{_panel_html}"
         f"<div style='border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin:0 0 26px'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 2px'><b>¿Qué está pasando ahora?</b> "
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"
@@ -3048,6 +3106,22 @@ main{{max-width:1200px;margin:0 auto;padding:20px 16px 56px}}
 .card h3{{margin-top:0;font-size:1.02rem}}
 .caption{{font-size:.84rem;color:#64748b;margin:.3rem 0;max-width:82ch}}
 .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}}
+.sit-row{{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px dashed #e2e8f0}}
+.sit-dot{{width:10px;height:10px;border-radius:50%;flex:0 0 auto}}
+.sit-name{{min-width:150px;font-weight:700;font-size:.82rem;color:#0f172a}}
+.sit-pil{{font-size:.62rem;color:#b45309}}
+.sit-bar{{flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;min-width:60px}}
+.sit-score{{min-width:104px;text-align:right;font-size:.78rem;font-weight:700}}
+.sit-trend{{min-width:22px;text-align:right;font-size:.82rem;font-weight:800}}
+.sit-cl{{min-width:52px;text-align:right;font-size:.76rem;color:#94a3b8}}
+@media(max-width:560px){{
+  .sit-row{{flex-wrap:wrap;row-gap:4px}}
+  .sit-name{{flex:1 1 auto;min-width:0}}
+  .sit-bar{{flex:1 1 100%;order:9}}
+  .sit-score{{min-width:0;margin-left:auto}}
+  .sit-trend{{min-width:0}}
+  .sit-cl{{min-width:0}}
+}}
 .fimi-pane[hidden], .fimi-pane.hidden{{display:none}}
 a{{color:#c2410c}}
 
