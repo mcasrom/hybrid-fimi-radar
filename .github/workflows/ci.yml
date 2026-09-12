@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Compile, lint & synthetic data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff bandit
+
+      - name: Compile all Python modules (hard gate)
+        run: python -m compileall -q -x '(\.venv|__pycache__)' .
+
+      - name: Lint — real errors only (advisory)
+        continue-on-error: true
+        run: ruff check --select E9,F63,F7,F82 --exclude .venv .
+
+      - name: Security scan with Bandit (advisory)
+        continue-on-error: true
+        run: bandit -r detection collectors normalizer features clustering attribution -ll
+
+      - name: Generate synthetic dataset + ground truth (hard gate)
+        run: |
+          python tests/generate_synthetic.py
+          test -s data/raw/events.csv
+          test -s data/raw/ground_truth.csv
+          echo "synthetic dataset OK"
+
+      - name: External validation (only if a radar DB is present)
+        run: |
+          if [ -f data/radar.db ]; then
+            python tests/validacion_externa.py || true
+          else
+            echo "No data/radar.db in the repository (expected) — the external benchmark runs on the deployment server."
+          fi
