@@ -178,6 +178,10 @@ def temas_estado():
             "estado": meta.get("estado", "produccion"),
             "ready": bool(prom.get("ready")),
             "promocion_inicio": prom.get("inicio"),
+            "promocion_ciclos": prom.get("ciclos"),
+            "promocion_min_ciclos": prom.get("min_ciclos"),
+            "promocion_ventana_h": prom.get("ventana_h"),
+            "promocion_errores": prom.get("errores"),
             "candidato_cierre": bool(cierre.get("candidato")),
             "cierre_motivos": cierre.get("motivos") or [],
         })

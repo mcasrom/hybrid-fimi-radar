@@ -3414,6 +3414,35 @@ como resultado válido. Para rectificaciones o consultas:
 </p>
 </div>
 
+<div class="card" id="ciclo-vida">
+<h3>Ciclo de vida de un tema y gobernanza</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>El sistema nunca decide.</b> Observa, sugiere y avisa; toda transición de estado la toma una
+persona y queda registrada en la <a href="#bitacora" style="color:#c2410c">Bitácora</a>.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Alta → piloto.</b> Un tema nuevo nace en <b>piloto</b> (en calibración), con un aviso visible de
+"lectura con cautela". Se observa sin prometer señal.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Promoción (piloto → producción).</b> Solo cuando supera una <b>ventana de validación</b>:
+≥<b>72 h</b> de observación y ≥<b>8 ciclos</b> de snapshot sin errores de pipeline. Al cumplirse, el
+radar avisa por Telegram y el tema muestra <b>«✅ lista para producción»</b>; la promoción se ejecuta
+desde el panel de administración (o por CLI). Un error nuevo <b>reinicia</b> la ventana.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+<b>Cierre (sugerencia, no decisión).</b> El radar marca un tema como <b>candidato a cierre</b> si,
+en una ventana de 21 días, acumula <b>&lt;2 hallazgos/día</b> (tras ≥14 días de operación) o si un
+piloto lleva <b>&gt;90 días</b> sin promocionar — salvo que haya señal clara (último cluster ≥60).
+Cerrar <b>exporta la evidencia</b>, detiene el pipeline del tema y lo registra en la Bitácora; se
+puede <b>reabrir</b> en cualquier momento.
+</p>
+<p class="caption" style="font-size:.8rem;color:#94a3b8">
+Detalle completo (umbrales y variables configurables):
+<a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/docs/GOBERNANZA.md" style="color:#c2410c">docs/GOBERNANZA.md</a>.
+</p>
+</div>
+
 {salud_html}
 
 {salud_kw_html}
@@ -3429,7 +3458,7 @@ como resultado válido. Para rectificaciones o consultas:
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -3696,7 +3725,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{

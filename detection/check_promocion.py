@@ -206,10 +206,13 @@ def main():
 
     err_total = count_tracebacks_tema()
 
-    def guardar():
+    def guardar(ciclos=None):
         STATE.write_text(json.dumps(
             {"inicio": inicio, "err_base": err_base, "ready": ready,
-             "notificado_ready": notificado}, indent=2))
+             "notificado_ready": notificado,
+             "ventana_h": VENTANA_H, "min_ciclos": MIN_CICLOS,
+             "ciclos": ciclos if ciclos is not None else state.get("ciclos", 0),
+             "errores": max(0, err_total - err_base)}, indent=2))
 
     def send_wrap(texto):
         if args.dry:
@@ -254,6 +257,7 @@ def main():
     # 5) Ventana en curso
     elapsed_h = (now - inicio) / 3600.0
     ciclos = ciclos_snapshot(inicio)
+    guardar(ciclos)  # persistir progreso (lo muestra el panel admin)
 
     if elapsed_h >= VENTANA_H and ciclos >= MIN_CICLOS:
         ready = True
@@ -267,7 +271,7 @@ def main():
                f"(opcional: borra el campo disclaimer).\n"
                f"El siguiente cron desactiva el banner de calibración.")
         notificado = send_wrap(msg)
-        guardar()
+        guardar(ciclos)
         print(f"[promocion] {TEMA} LISTO para promocionar")
         return
 

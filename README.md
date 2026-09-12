@@ -74,6 +74,28 @@ lo registra en la bitácora. `alta --verifica` simula la cobertura de las keywor
 corpus antes de crear el tema (evita keywords de registro metodológico que no matchean
 titulares reales).
 
+## Ciclo de vida y gobernanza
+
+El radar **no decide**: observa, sugiere y avisa; toda transición de estado la toma una
+persona y queda en la bitácora. Los temas nacen en **piloto** y pasan a **producción**
+solo tras superar una ventana de validación; el cierre es siempre una **sugerencia**.
+
+- **Promoción (piloto → producción)**: `detection/check_promocion.py` exige ≥ **72 h** de
+  observación y ≥ **8 ciclos** de snapshot sin errores (un error nuevo **reinicia** la
+  ventana). Al cumplirse, avisa por **Telegram** y activa el botón **«⬆️ Promover»** del
+  panel (o `temas_cli.py --estado <tema> produccion`). El dashboard muestra
+  «✅ lista para producción».
+- **Cierre (sugerencia)**: `detection/check_cierre.py` marca **candidato a cierre** si el
+  tema acumula **<2 hallazgos/día** en 21 días (tras ≥14 de operación) o si un piloto lleva
+  **>90 días** sin promocionar — salvo que haya señal clara (último cluster ≥60). Avisa por
+  Telegram + bitácora; el cierre real (`temas_cli.py --cerrar`) exporta la evidencia,
+  detiene el pipeline del tema y se puede **reabrir**.
+- **Panel de administración**: muestra el **progreso de la ventana** por tema
+  (`X/72 h · N/8 ciclos · errores`), la señal y los botones Promover / Cerrar / Reabrir.
+
+Detalle completo (criterios, umbrales y variables configurables):
+[`docs/GOBERNANZA.md`](docs/GOBERNANZA.md).
+
 ## Validación (test sintético FIMI)
 
 Generador sintético con 6 escenarios (tests/generate_synthetic.py):
