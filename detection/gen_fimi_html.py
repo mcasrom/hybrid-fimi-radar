@@ -529,6 +529,376 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     return out
 
 
+RESEARCH_OUT = Path("/var/www/fimi/research.html")
+
+
+def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
+    """Página /research: FIMI Radar Research (pregunta, datos, método,
+    evidencia, incertidumbre, limitaciones, reproducción, dataset).
+
+    Todo el contenido está anclado a artefactos reales del repo (docs/*.md,
+    tests/, /api/export) y a la BD (cifras vivas del último ciclo). Es una
+    página independiente generada en el mismo run que el dashboard para que
+    los números no se anticuen entre ciclos."""
+    import yaml
+    _scr = (cfg or {}).get("scoring", {}) or {}
+    _w_global = _scr.get("weights", {}) or {}
+    _w_names = {
+        "synchronization": "Sincronización",
+        "content_similarity": "Contenido similar",
+        "amplification": "Amplificación",
+        "infrastructure": "Infraestructura",
+        "network_density": "Densidad de red",
+        "anomaly": "Anomalía",
+    }
+    _w_default = {
+        "synchronization": 0.25, "content_similarity": 0.20,
+        "amplification": 0.20, "infrastructure": 0.15,
+        "network_density": 0.10, "anomaly": 0.10,
+    }
+    n_events = n_sources = n_clusters = n_ecos = n_sost = n_rss_ev = n_redes_ev = 0
+    n_src_feeds = n_src_plt = n_src_tg = n_src_reddit = 0
+    n_band = {}
+    _gen = "—"
+    _top_label = ""
+    try:
+        rc = sqlite3.connect(DB)
+        rc.row_factory = sqlite3.Row
+        n_events = rc.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        n_sources = rc.execute("SELECT COUNT(DISTINCT source) FROM events").fetchone()[0]
+        n_src_feeds = rc.execute(
+            "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'rss:%'").fetchone()[0]
+        n_src_tg = rc.execute(
+            "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'telegram:%'").fetchone()[0]
+        n_src_reddit = rc.execute(
+            "SELECT COUNT(DISTINCT source) FROM events WHERE source LIKE 'reddit:%'").fetchone()[0]
+        n_src_plt = n_sources - n_src_feeds - n_src_tg - n_src_reddit
+        n_rss_ev = rc.execute("SELECT COUNT(*) FROM events WHERE source LIKE 'rss:%'").fetchone()[0]
+        n_redes_ev = n_events - n_rss_ev
+        try:
+            _ts = rc.execute("SELECT MAX(timestamp) FROM events").fetchone()[0]
+            _gen = datetime.fromtimestamp(_ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if _ts else "—"
+        except Exception:
+            _gen = "—"
+        _rows = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters").fetchall()
+        n_clusters = len(_rows)
+        for _c in _rows:
+            s = _c["overall_score"] or 0
+            b = "CRITICAL" if s >= 80 else "HIGH" if s >= 60 else "ANOMALOUS" if s >= 40 \
+                else "WATCH" if s >= 20 else "NORMAL"
+            n_band[b] = n_band.get(b, 0) + 1
+        top = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters"
+                         " ORDER BY overall_score DESC LIMIT 1").fetchone()
+        if top and top["cluster_label"]:
+            _top_label = top["cluster_label"]
+        n_ecos = n_sost = 0
+        try:
+            for r in rc.execute(
+                    "SELECT ce.cluster_id AS id, COUNT(*) n_ev, COUNT(DISTINCT ce.url) n_urls,"
+                    " MIN(ce.ts) mn, MAX(ce.ts) mx FROM cluster_events ce GROUP BY ce.cluster_id"):
+                if (r["n_urls"] or 0) <= 1 and (r["n_ev"] or 0) >= 2:
+                    n_ecos += 1
+                if (r["n_ev"] or 0) >= 10 and (((r["mx"] or 0) - (r["mn"] or 0)) >= 86400) and (r["n_urls"] or 0) >= 3:
+                    n_sost += 1
+        except Exception:
+            pass
+        rc.close()
+    except Exception as e:
+        print(f"research: {e}")
+    # --- método: pesos / bandas / escala (mismo criterio que la card Metodología) ---
+    _w_rows = "".join(
+        f"<tr><td>{_w_names.get(k, k)}</td>"
+        f"<td style='text-align:right'>{int(round((_w_global.get(k, _w_default.get(k, 0)))) * 100)}%</td></tr>"
+        for k in ["synchronization", "content_similarity", "amplification",
+                  "infrastructure", "network_density", "anomaly"])
+    _w_tabla = ("<table style='border-collapse:collapse;font-size:.78rem;width:100%;max-width:420px'>"
+                "<tr style='border-bottom:1px solid #e2e8f0;background:#f8fafc'>"
+                "<th style='text-align:left;padding:4px 8px'>Componente</th>"
+                "<th style='text-align:right;padding:4px 8px'>Peso global</th></tr>"
+                + _w_rows + "</table>")
+    _bandas = _scr.get("bands", {}) or {
+        "NORMAL": [0, 19], "WATCH": [20, 39], "ANOMALOUS": [40, 59],
+        "HIGH": [60, 79], "CRITICAL": [80, 100]}
+    _b_html = "".join(
+        f"<span style='display:inline-block;margin:2px;padding:2px 8px;"
+        f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>"
+        for b, (lo, hi) in _bandas.items())
+    _sma = _scr.get("scale_min_accounts", {}) or {}
+    _s_f = _scr.get("scale_floor", {}) or {}
+    _s_b = _scr.get("scale_bonus", {}) or {}
+    _s_o = _scr.get("origen_unico", {}) or {}
+    _escala = (
+        f"Cuentas mínimas para banda alta: {_sma.get('HIGH', '2')} (HIGH) y "
+        f"{_sma.get('CRITICAL', '10')} (CRITICAL). Piso de masa: &lt;{_s_f.get('min_accounts', 3)} "
+        f"cuentas = banda máx WATCH (&quot;posible ruido de bajo volumen&quot;), salvo "
+        f"≥{_s_f.get('except_events', 10)} eventos sostenidos o infra ≥{_s_f.get('except_infra', 80)} "
+        f"(entonces hasta HIGH, nunca CRITICAL). Bonus de masa +{_s_b.get('per_account', 0.08)}×cuentas "
+        f"(tope {_s_b.get('cap', 3.5)} pts). Tope &quot;origen único&quot;: ≤{_s_o.get('max_urls', 1)} "
+        f"URL y ≥{_s_o.get('min_events', 2)} eventos = eco de 1 pieza, máx "
+        f"{_s_o.get('cap_band', 'ANOMALOUS')}."
+    )
+    _t_over = []
+    for _t in temas:
+        _ts = (temas_cfg.get(_t, {}) or {}).get("scoring", {}) or {}
+        if not _ts:
+            continue
+        _tw = _ts.get("weights", {}) or {}
+        _partes = []
+        if _tw:
+            _partes.append("pesos " + ", ".join(
+                f"{_w_names.get(k, k)} {int(round(v * 100))}%" for k, v in _tw.items()))
+        if _ts.get("scale_min_accounts"):
+            _partes.append("mín. cuentas " + ", ".join(
+                f"{k} {v}" for k, v in _ts["scale_min_accounts"].items()))
+        if _ts.get("scale_floor"):
+            _sf = _ts["scale_floor"]
+            _partes.append(f"piso &lt;{_sf.get('min_accounts', 3)} cuentas, except. ev {_sf.get('except_events', 10)}")
+        if _partes:
+            _t_over.append(f"<li><b>{_t}</b>: {' · '.join(_partes)}</li>")
+    _over_html = ("<ul style='margin:6px 0 0 18px;padding:0'>" + "".join(_t_over) + "</ul>" if _t_over
+                  else "<p style='color:#94a3b8'>Ningún tema define calibración propia (todos usan los globales).</p>")
+
+    _fuentes_txt = (f"<b>{n_sources}</b> fuentes de captura con eventos recientes"
+                    f" ({n_src_feeds} feeds RSS · {n_src_plt} plataformas · {n_src_tg} Telegram · "
+                    f"{n_src_reddit} subreddits). De los <b>{n_events}</b> eventos en ventana, "
+                    f"{n_rss_ev} vienen de feeds (lectura ancilar de prensa) y {n_redes_ev} de redes/plataformas "
+                    f"(cuentas sociales = el grafo de coordinación).")
+    _evidencia_txt = (f"En el ciclo actual el radar mantiene <b>{n_clusters}</b> cluster(s) de coordinación: "
+                      f"{n_band.get('CRITICAL', 0)} CRITICAL · {n_band.get('HIGH', 0)} HIGH · "
+                      f"{n_band.get('ANOMALOUS', 0)} ANOMALOUS · {n_band.get('WATCH', 0)} WATCH · "
+                      f"{n_band.get('NORMAL', 0)} NORMAL. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
+                      f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;coordinación "
+                      f"sostenida&quot; (la misma red vertiendo varias piezas a lo largo de &gt;1 día).")
+    _tabs_temas = " · ".join(f"<a href='/#{t}'>#{t}</a>" for t in temas) or "/"
+    _dataset_link = (f"/api/export?cluster={_top_label}&fmt=csv" if _top_label
+                     else "/api/export?fmt=csv")
+    _top_link = f"/#{(top and top['tema_id']) or 'frontera_sur'}" if (top and top["cluster_label"]) else "/"
+
+    page = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIMI Radar · Research — pregunta, datos, método, evidencia e incertidumbre</title>
+<meta name="description" content="Nota de investigación del radar FIMI: qué detecta, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#c2410c">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="FIMI Radar · Research">
+<meta property="og:description" content="De la pregunta a la incertidumbre: cómo detecta el radar FIMI coordinación y amplificación, qué puede equivocarse y cómo repetirlo.">
+<meta property="og:image" content="/og-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{{color-scheme:light}}
+body{{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f8fafc;color:#0f172a}}
+main{{max-width:900px;margin:0 auto;padding:20px 16px 56px}}
+a{{color:#c2410c}}
+.card{{background:#fff;border:1.5px solid #cbd5e1;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(15,23,42,.06)}}
+.card h2{{margin-top:0;font-size:1.05rem}}
+.card h2 .num{{color:#c2410c}}
+.caption{{font-size:.84rem;color:#64748b;margin:.3rem 0}}
+li{{margin:3px 0}}
+code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4px;font-size:.85em}}
+.fimi-brandbar{{position:sticky;top:0;z-index:100;display:flex;flex-wrap:wrap;align-items:center;gap:9px 14px;background:#fff;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:11px 16px;font-size:.86rem}}
+.fimi-brandbar .brand{{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1.08rem;color:#0f172a;text-decoration:none}}
+.fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.95rem;box-shadow:0 1px 2px rgba(0,0,0,.15)}}
+.fimi-brandbar .nav{{display:inline-flex;flex-wrap:wrap;gap:6px}}
+.fimi-brandbar a.nlink{{color:#475569;font-weight:700;font-size:.9rem;text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid transparent}}
+.fimi-brandbar a.nlink:hover{{color:#c2410c;background:#fff7ed}}
+.fimi-brandbar a.nlink.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
+.fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
+.fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 11px}}
+.fimi-brandbar .chip .dot{{width:7px;height:7px;border-radius:50%;background:#16a34a}}
+@media(max-width:560px){{.fimi-brandbar .chips{{margin-left:0;width:100%}}}}
+.hero{{margin:26px 0 8px}}
+.hero h1{{margin:0 0 6px;font-size:1.6rem}}
+.hero .sub{{color:#475569;font-size:.95rem;max-width:100%}}
+.footer{{border-top:1px solid #e2e8f0;margin-top:34px;padding:18px 0 0;font-size:.82rem;color:#64748b}}
+.footer a{{color:#c2410c;text-decoration:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="fimi-brandbar">
+    <a class="brand" href="/"><span class="logo">📡</span> Radar FIMI</a>
+    <div class="nav">
+      <a class="nlink" href="/">Radar</a>
+      <a class="nlink" href="/#transparencia">Transparencia</a>
+      <a class="nlink active" href="/research.html">Research</a>
+    </div>
+    <div class="chips"><span class="chip"><span class="dot"></span> En producción</span></div>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h1>FIMI Radar · Research</h1>
+    <p class="sub">Notas de investigación del radar de manipulación informativa:
+      lo que queremos detectar, los datos que observamos, cómo lo medimos, qué hemos
+      encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
+      puede descargar. Herramienta OSINT <b>agnóstica al actor</b>: nunca atribuimos
+      sin evidencia. Cifras del último ciclo — generado <b>{_gen}</b>.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">01 —</span> Pregunta: ¿qué queremos detectar?</h2>
+    <p>Comportamiento <b>coordinado e inorgánico</b> en cuentas abiertas en español que sugiere
+      una campaña de manipulación o interferencia informativa (FIMI): amplificación artificial,
+      sincronía de publicación, repetición de las mismas piezas y patrones de red anómalos.</p>
+    <ul>
+      <li>¿Cuándo una discusión es orgánica y cuándo parece orquestada?</li>
+      <li>¿Qué cuentas amplifican qué piezas, con qué timing y qué estructura de red?</li>
+      <li>¿La señal es un <b>eco de una sola pieza</b> o una <b>coordinación sostenida</b>?</li>
+    </ul>
+    <p class="caption">Regla de oro: OBSERVACIÓN → ANOMALÍA → COORDINACIÓN → CLUSTER → CAMPAÑA
+      → HIPÓTESIS DE ACTOR → ATRIBUCIÓN CON NIVEL DE CONFIANZA. Nunca al revés. Ver
+      <a href="/#que-es-fimi">qué es FIMI</a> y
+      <a href="https://github.com/mcasrom/hybrid-fimi-radar">el README del proyecto</a>.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">02 —</span> Datos: ¿qué observamos?</h2>
+    <p>{_fuentes_txt}</p>
+    <ul>
+      <li><b>Temas monitorizados:</b> {_tabs_temas} (catálogo curado en
+        <code>config.yaml</code>: feeds + keywords, no todo el ruido de internet).</li>
+      <li><b>Ventana de captura:</b> 90 días (alineada con la retención); cada ciclo (6&nbsp;h)
+        añade nuevos eventos y regenera el análisis.</li>
+      <li><b>Idiomas:</b> mayoritariamente español, francés e inglés, con 1 fuente en árabe
+        (decisión editorial del alcance; ver <a href="/#fuentes">fuentes y búsquedas activas</a>).</li>
+      <li>Catálogo completo con sesgo/fiabilidad/transparencia por fuente en
+        <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/docs/FUENTES.md">docs/FUENTES.md</a>.</li>
+    </ul>
+    <p class="caption">La captura regenera los eventos cada ciclo; la retención es de 90&nbsp;días
+      para <code>events</code> y hallazgos (política documentada en el repo).</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">03 —</span> Método: ¿cómo lo medimos?</h2>
+    <ol>
+      <li><b>Captura</b> de fuentes abiertas (feeds RSS + Bluesky + Google News + Telegram + Reddit).</li>
+      <li><b>Limpieza y dedupe</b> (los RSS no entran al grafo de coordinación: son lectura ancilar; el
+        grafo se construye solo con cuentas sociales).</li>
+      <li><b>Etiquetado multi-tema</b> por contenido (un evento puede pertenecer a varios temas).</li>
+      <li><b>Análisis de coordinación:</b> centroides TF-IDF (sparse) por cuenta → grafo → clustering
+        → puntuación por componentes.</li>
+      <li><b>Decisión editorial, no automática:</b> el sistema sugiere; el dueño decide
+        (alta/cierre/promoción vía <code>temas_cli.py</code> y bitácora).</li>
+    </ol>
+    <p>Pesos de la puntuación (globales; cada tema puede calibrar su override en
+      <code>config.yaml</code>):</p>
+    {_w_tabla}
+    <p style="margin-top:8px">Bandas: {_b_html}</p>
+    <p class="caption">{_escala}</p>
+    <p>Calibración por tema:{_over_html}</p>
+    <p class="caption">Detalle y fórmula completa (con el antes/después de cada ajuste de escala):
+      <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/docs/SCORING.md">docs/SCORING.md</a>.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">04 —</span> Evidencia: ¿qué encontramos?</h2>
+    <p>{_evidencia_txt}</p>
+    <ul>
+      <li><b>Clusters activos por tema:</b> {_tabs_temas}, ordenados por score en el
+        <a href="{_top_link}">dashboard</a>.</li>
+      <li><b>Ejemplos documentados de tipos de hallazgo:</b> el detector separa el
+        <b>eco de una pieza</b> (misma URL repetida por varias cuentas) de la
+        <b>coordinación sostenida</b> (una red que vierte piezas durante días); ambos casos se
+        han producido sobre temas reales (p. ej. narrativas de frontera sur y pares de cuentas
+        con volumen sostenido de una sola pieza, que la escala de masa deja en su banda correcta).</li>
+      <li><b>Validación sintética:</b> <code>tests/generate_synthetic.py</code> mide que el pipeline
+        recupera las campañas inyectadas sin falsos positivos (ARI 1.000 sobre el conjunto de prueba).</li>
+      <li><b>Validación externa:</b> cruce contra el corpus EUvsDisinfo en
+        <code>tests/validacion_externa.py</code>; la interpretación (incluido por qué el cruce da
+        0% por diseño) está documentada en el propio test y abajo en Incertidumbre.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">05 —</span> Incertidumbre: ¿qué no sabemos?</h2>
+    <ul>
+      <li><b>Atribución:</b> la salida <code>UNKNOWN</code> es un resultado válido. No inferimos
+        actores; RDAP aporta señales de registro/transferencia/privacidad de dominios, nunca
+        identidades. Ver
+        <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/docs/ATRIBUCION-LIMITACIONES.md">docs/ATRIBUCION-LIMITACIONES.md</a>.</li>
+      <li><b>Validación externa limitada:</b> el benchmark contra EUvsDisinfo (catálogo 2015-23,
+        Ucrania/Rusia) arroja precisión y recall 0% sobre la vista activa; parte es explicable por
+        diseño (los RSS no entran al grafo y el catálogo no cubre los temas vivos del radar:
+        Ceuta/Marruecos/España/EEUU/Oriente Medio). Es un hueco de validación, no una prueba de
+        ausencia de campañas.</li>
+      <li><b>Identificadores inestables:</b> los <code>cluster_label</code> se regeneran en cada
+        ciclo → el delta de un cluster individual no es trazable entre ciclos; solo hay línea base
+        a nivel de tema (percentiles p25-p75, media 14&nbsp;días).</li>
+      <li><b>Sesgo de cobertura:</b> solo vemos lo que las fuentes del catálogo ven. Una campaña que
+        no toque esas fuentes no produce señal (ausencia de dato ≠ ausencia de campaña).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">06 —</span> Limitaciones: ¿qué puede equivocarse?</h2>
+    <ul>
+      <li><b>Ceguera de plataformas:</b> sin TikTok, X, Instagram ni WhatsApp; solo Bluesky, Google
+        News, Telegram (canales públicos) y Reddit.</li>
+      <li><b>RSS fuera del grafo:</b> veinte medios republicando una pieza <b>no</b> forman un
+        cluster (por diseño); el radar mide coordinación de cuentas, no eco de prensa.</li>
+      <li><b>Solo texto:</b> sin análisis de imagen, vídeo ni deepfakes (no viable en un server de
+        3,7&nbsp;GB sin GPU).</li>
+      <li><b>Escala convive con señal:</b> clusters de &lt;3 cuentas se recortan a WATCH salvo
+        excepción por volumen/infraestructura — puede dejar fuera redes pequeñas pero reales.</li>
+      <li><b>Retención 90&nbsp;días:</b> lo anterior a 90 días no forma parte del análisis.</li>
+      <li><b>Indicación de lectura:</b> los diales y bandas son señales de un sistema en calibración
+        continua; los temas en piloto se marcan como tal en el dashboard.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">07 —</span> Reproducción: ¿cómo repetirlo?</h2>
+    <ol>
+      <li>Clonar <code>github.com/mcasrom/hybrid-fimi-radar</code> y crear el venv de Python con
+        dependencias.</li>
+      <li>Configurar el entorno (<code>FIMI_ADMIN_SECRET</code> y tokens en <code>.env</code>;
+        el catálogo de fuentes/keywords/temas vive en <code>config.yaml</code>).</li>
+      <li>Lanzar <code>scripts/cron_every_6h.sh</code> (captura → análisis → dashboard) o por tema:
+        <code>detection/run_fimi.py --tema &lt;slug&gt;</code>.</li>
+      <li>Regenerar páginas con <code>detection/gen_fimi_html.py</code> (dashboard + esta página).</li>
+      <li>Gestión de temas vía <code>detection/temas_cli.py</code> (alta/cierre/estado) con bitácora
+        metodológica.</li>
+    </ol>
+    <p class="caption">Reproducibilidad acotada por los datos: la retención de 90&nbsp;días limita
+      cuánto atrás puede repetirse un análisis completo; el pipeline en sí es repetible idéntico
+      sobre los mismos datos.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">08 —</span> Dataset: ¿qué podemos descargar?</h2>
+    <ul>
+      <li><b>Evidencia por cluster</b> (los eventos, fuentes, autores y URLs que forman cada cluster):
+        botón «Exportar evidencia» en cada tarjeta del dashboard, o por API:
+        <code><a href="{_dataset_link}">/api/export?cluster=&lt;label&gt;&amp;fmt=csv|json</a></code>
+        (ejemplo vivo: <a href="{_dataset_link}">CSV del cluster top actual</a>,
+        {_top_label or 'sin cluster top en este ciclo'}).</li>
+      <li><b>Export a auditores:</b> <code>detection/export_evidencia.py --list/--cluster/--out</code>
+        (registro en <code>data/export/</code>).</li>
+      <li><b>Export de cierre de tema:</b> <code>temas_cli.py cerrar</code> empaqueta hallazgos,
+        clusters, bitácora y estadísticas en JSON permanente.</li>
+    </ul>
+    <p class="caption">No publicamos un volcado masivo de la BD por decisión metodológica
+      (contiene metadatos de posts públicos y la ventana es móvil); el dataset accionable es el de
+      evidencia por cluster, descargable en cada ciclo.</p>
+  </div>
+
+  <div class="footer">
+    Radar FIMI · <a href="/research.html">Research</a> · <a href="/#transparencia">Transparencia</a> ·
+    <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
+    <a href="https://viajeinteligencia.com">viajeinteligencia.com</a>
+  </div>
+</main>
+</body></html>"""
+    RESEARCH_OUT.parent.mkdir(parents=True, exist_ok=True)
+    RESEARCH_OUT.write_text(page, encoding="utf-8")
+    print(f"OK: {RESEARCH_OUT} — {n_events} eventos, {n_clusters} clusters, ecos {n_ecos}, sostenidas {n_sost}")
+
+
 def main():
     # cargar config para inventario de fuentes y keywords
     try:
@@ -2978,6 +3348,12 @@ if ('serviceWorker' in navigator) {{
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
     print(f"OK: {OUT} — {n_events} eventos, {n_sources} fuentes, {len(clusters)} clusters")
+    # Página /research (independiente, misma run para que los números no se anticuen).
+    # Envuelta: si falla, el dashboard (página principal) sigue intacto.
+    try:
+        render_research_html(cfg, feeds, keywords, temas_cfg, temas)
+    except Exception as e:
+        print(f"research html fallo (no bloquea el dashboard): {e}")
 
 
 if __name__ == "__main__":
