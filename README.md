@@ -281,6 +281,11 @@ Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: tr
 estables**; cada respuesta es una **foto del último ciclo** (`meta.snapshot=true`).
 No expone endpoints de administración ni datos personales.
 
+**Errores**: todas las respuestas de error son **JSON** con `{"error": "...", "code": N}`
+— `400` parámetros inválidos, `404` no encontrado, `405` método no permitido (con cabecera
+`Allow`), y `414`/`500`/`505` de protocolo/servidor. Nunca se devuelve HTML ni una traza.
+`HEAD` está soportado (mismas cabeceras que `GET`, sin cuerpo).
+
 ## Contexto de interpretación en las tarjetas de cluster
 
 Cada cluster se presenta con bloques de contexto que ayudan al analista a no sobreleer la
