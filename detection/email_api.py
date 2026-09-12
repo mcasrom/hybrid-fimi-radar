@@ -571,22 +571,30 @@ def _openapi_spec():
 
 
 class H(BaseHTTPRequestHandler):
-    def _send(self, code, obj, ctype="application/json"):
+    def _send(self, code, obj, ctype="application/json", extra_headers=None):
+        # Esquema de error consistente: todo dict con "error" lleva también "code".
+        if isinstance(obj, dict) and "error" in obj and "code" not in obj:
+            obj = {**obj, "code": code}
         if isinstance(obj, str):
             body = obj.encode()
         else:
             body = json.dumps(obj).encode()
         self.send_response(code)
+        _p = getattr(self, "path", "") or ""
         # CORS para semilla newsletter (blog -> fimi)
-        if self.path.startswith("/api/subscribe"):
+        if _p.startswith("/api/subscribe"):
             self._cors()
         # API pública v1: lectura abierta (datos públicos) -> CORS *
-        if self.path.startswith("/api/v1"):
+        if _p.startswith("/api/v1"):
             self.send_header("Access-Control-Allow-Origin", "*")
+        for _k, _v in (extra_headers or {}).items():
+            self.send_header(_k, _v)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        # HEAD: cabeceras sin cuerpo (RFC 9110)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
     def _send_download(self, code, body: bytes, ctype, filename):
         """Envía un fichero como descarga (Content-Disposition attachment)."""
@@ -595,7 +603,8 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
     def _cors(self):
         origin = self.headers.get("Origin", "")
@@ -617,6 +626,43 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def send_error(self, code, message=None, explain=None):
+        """Errores del propio BaseHTTPRequestHandler (400/414/501/505): JSON en
+        vez del HTML por defecto. Nunca se filtra la traza al cliente."""
+        try:
+            self._send(code, {"error": str(message or explain or "error")})
+        except Exception:
+            try:
+                super().send_error(code, message, explain)
+            except Exception:
+                pass
+
+    def _safe(self, fn):
+        """Guardia global: cualquier excepción no capturada -> 500 JSON."""
+        try:
+            fn()
+        except Exception:
+            try:
+                self._send(500, {"error": "error interno del servidor"})
+            except Exception:
+                pass
+
+    def _method_not_allowed(self):
+        self._send(405, {"error": "metodo no permitido"},
+                   extra_headers={"Allow": "GET, POST, OPTIONS, HEAD"})
+
+    def do_HEAD(self):
+        self._safe(self._route_get)
+
+    def do_PUT(self):
+        self._method_not_allowed()
+
+    def do_DELETE(self):
+        self._method_not_allowed()
+
+    def do_PATCH(self):
+        self._method_not_allowed()
+
     def _redirect(self, url):
         self.send_response(302)
         self.send_header("Location", url)
@@ -628,6 +674,9 @@ class H(BaseHTTPRequestHandler):
 
     # ---------- rutas ----------
     def do_GET(self):
+        self._safe(self._route_get)
+
+    def _route_get(self):
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
         q = urllib.parse.parse_qs(parsed.query)
@@ -746,6 +795,9 @@ class H(BaseHTTPRequestHandler):
         return self._send(404, {"error": "not found"})
 
     def do_POST(self):
+        self._safe(self._route_post)
+
+    def _route_post(self):
         parsed = urllib.parse.urlsplit(self.path)
         admin_paths = ("/api/admin/tema-estado", "/api/admin/tema-cerrar")
         if parsed.path not in ("/api/subscribe", "/api/feedback", "/api/sugerir") + admin_paths:
