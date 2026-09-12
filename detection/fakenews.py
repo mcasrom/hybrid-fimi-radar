@@ -21,7 +21,34 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
+
+
+def _thresholded_adjacency(X, thresh, block=1024):
+    """Listas de adyacencia de los pares con cosine >= thresh, sin densificar n×n.
+
+    X: matriz TF-IDF sparse ya ajustada. Se normalizan filas (norma L2, igual que
+    cosine_similarity) y se multiplica por bloques: cada bloque da un CSR de
+    (block×n) que se umbrala al instante, de modo que la memoria pico queda
+    acotada al bloque (no a n²). Se conserva solo el triángulo superior (la
+    similitud es simétrica) y se devuelve una lista de vecinos por nodo.
+    """
+    Xn = normalize(X)
+    n = Xn.shape[0]
+    adj = [[] for _ in range(n)]
+    for i0 in range(0, n, block):
+        i1 = min(i0 + block, n)
+        S = (Xn[i0:i1] @ Xn.T).tocsr()
+        S.data = np.where(S.data >= thresh, 1.0, 0.0)
+        S.eliminate_zeros()
+        for r in range(i1 - i0):
+            gi = i0 + r
+            cols = S.indices[S.indptr[r]:S.indptr[r + 1]]
+            for c in cols:
+                if c > gi:  # solo triángulo superior; espejo a la fila del colega
+                    adj[gi].append(c)
+                    adj[c].append(gi)
+    return adj
 
 
 def detect_cascades(df, config):
@@ -39,28 +66,37 @@ def detect_cascades(df, config):
     if len(idx) < 3:
         return []
 
-    X = TfidfVectorizer(ngram_range=(1, 2), min_df=1).fit_transform([texts[i] for i in idx])
-    sim = cosine_similarity(X)
-    # clústeres de near-duplicates: un candidato se une si es similar a CUALQUIER
-    # miembro ya asignado (enlace único transitivo).
-    # members guarda POSICIONES en el espacio de idx (0..len(idx)-1), que son
-    # las filas/columnas de sim.
+    cand = [texts[i] for i in idx]
+    X = TfidfVectorizer(ngram_range=(1, 2), min_df=1).fit_transform(cand)
+    # Similitud UMBRALADA por bloques (memoria acotada, 12/sept): materializar la
+    # matriz densa n×n de cosine_similarity (n≈23k en frontera_sur) costaba ~4.3 GB
+    # y provocaba OOM en el server (3.4 GB RAM). Se calcula el producto por bloques
+    # y se retienen SOLO los pares con sim >= near_thresh. Los clusters de
+    # near-duplicates quedan como componentes conexas de ese grafo, que es
+    # matemáticamente idéntico al enlace transitivo "similar a CUALQUIER miembro".
+    adj = _thresholded_adjacency(X, near_thresh, block=1024)
+
+    # clústeres de near-duplicates: una componente conexa = conjunto de textos que
+    # se unen transitivamente por similitud >= umbral. members guarda POSICIONES en
+    # el espacio de idx (0..len(idx)-1), como antes con las filas de sim.
     clusters = []
-    assigned = set()
-    n = len(idx)
-    for i in range(n):
-        if i in assigned:
+    seen = [False] * len(adj)
+    min_cluster = config["thresholds"]["min_cluster_size"]
+    for i in range(len(adj)):
+        if seen[i]:
             continue
-        members = [i]
-        assigned.add(i)
-        for j in range(i + 1, n):
-            if j in assigned:
-                continue
-            if any(sim[j][m_pos] >= near_thresh for m_pos in members):
-                members.append(j)
-                assigned.add(j)
-        if len(members) >= config["thresholds"]["min_cluster_size"]:
-            clusters.append([idx[m] for m in members])
+        stack = [i]
+        seen[i] = True
+        members = []
+        while stack:
+            v = stack.pop()
+            members.append(v)
+            for u in adj[v]:
+                if not seen[u]:
+                    seen[u] = True
+                    stack.append(u)
+        if len(members) >= min_cluster:
+            clusters.append([idx[m] for m in sorted(members)])
 
     results = []
     for mem in clusters:
