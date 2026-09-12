@@ -46,18 +46,28 @@ def http_get(url):
 
 
 def grab_telegram(channel):
-    """Recopila mensajes de un canal público vía t.me/s/ (HTML)."""
+    """Recopila mensajes de un canal público vía t.me/s/ (HTML).
+
+    Se parsea por BLOQUES de mensaje (data-post="canal/N") para emparejar cada
+    texto con SU PROPIA fecha. Antes se hacía zip(dates, texts) sobre dos listas
+    independientes: si un mensaje no tenía texto (solo media/enlace), las listas
+    se desalineaban y se descartaban los mensajes más recientes del canal (p.ej.
+    burkinamaliniger: HTML con 20 mensajes hasta ago-2026 pero el parser solo
+    devolvía 14 hasta feb-2026).
+    """
     out = []
     try:
         html = http_get(f"https://t.me/s/{channel}")
         import re
-        dates = re.findall(r'datetime="([^"]+)"', html)
-        texts = re.findall(r'class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', html, re.S)
-        # limpiar HTML
-        texts = [re.sub(r"<[^>]+>", " ", t).strip()[:500] for t in texts]
-        for d, t in zip(dates, texts):
-            ts = int(datetime.fromisoformat(d.replace("+00:00", "")).timestamp())
-            out.append({"timestamp": ts, "author": f"tg:{channel}", "text": t,
+        blocks = re.split(r'data-post="', html)[1:]
+        for block in blocks:
+            dm = re.search(r'datetime="([^"]+)"', block)
+            tm = re.search(r'class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+            if not dm or not tm:
+                continue
+            ts = int(datetime.fromisoformat(dm.group(1).replace("+00:00", "")).timestamp())
+            text = re.sub(r"<[^>]+>", " ", tm.group(1)).strip()[:500]
+            out.append({"timestamp": ts, "author": f"tg:{channel}", "text": text,
                         "url": "", "hashtags": "", "mentions": "", "action": "post",
                         "source": f"telegram:{channel}"})
         out = out[:MAX_PER_SOURCE]

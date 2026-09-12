@@ -340,16 +340,6 @@ feeds:
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
   analytical_relevance: baja
-- nombre: Reuters World
-  url: https://www.reutersagency.com/feed/?best-topics=world
-  tipo: media
-  idioma: en
-  bias: least-biased
-  reliability: high
-  transparency: high
-  factcheck_url: https://mediabiasfactcheck.com/reuters/
-  note: 'Agencia global. MBFC: Least Biased, High factual. Equilibra centro-izquierda.'
-  analytical_relevance: media
 - nombre: Deutsche Welle (EN)
   url: https://rss.dw.com/rdf/rss-en-all
   tipo: media
@@ -697,8 +687,6 @@ telegram_canales:
 - maldita_es
 - burkinamaliniger
 - sahelbrut
-- sahelinfo
-
 subreddits:
 - spain
 - es
