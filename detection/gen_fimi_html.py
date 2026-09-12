@@ -262,11 +262,13 @@ def _sostenido_chip(diver):
     return ""
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None):
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
-    sostenida). Sin frases por componente: están en la leyenda única."""
+    sostenida). Sin frases por componente: están en la leyenda única.
+    evidencia: lista opcional de eventos miembro {ts, source, author, title,
+    text, url} para la cadena de evidencia colapsable (S2)."""
     import re as _re
     overall = c["overall_score"] or 0
     band = band_of(overall)
@@ -299,6 +301,47 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None)
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
          f'</div>')
+
+    # S1 — SEÑAL, NO ATRIBUCIÓN: cabecera fija que aclara cómo leer el cluster
+    # ANTES de ver peso/bandas. Cuando la atribución es UNKNOWN/NO_ATTRIBUTION
+    # (lo habitual: el radar observa comportamiento, no identifica actores), se
+    # muestra un banner explícito: la señal es real, la identidad NO está probada.
+    _senal_html = ""
+    if a:
+        _atr_s = str(a["attribution"] or "").upper()
+        _conf_s = str(a["attribution_confidence"] or "").upper()
+        if ("UNKNOWN" in _atr_s) or ("NO_ATTRIBUTION" in _atr_s):
+            _senal_html = (
+                f'<div style="display:flex;align-items:center;justify-content:space-between;'
+                f'gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid #cbd5e1;'
+                f'border-left:4px solid #64748b;border-radius:8px;padding:8px 12px;margin:6px 0 2px">'
+                f'<span style="font-size:.78rem;font-weight:800;color:#0f172a">⚖️ SEÑAL, '
+                f'NO ATRIBUCIÓN</span>'
+                f'<span style="font-size:.72rem;color:#475569">Actor: <b>UNKNOWN</b> · evidencia '
+                f'FIMI no concluyente — el radar detecta comportamiento coordinado, '
+                f'no acusa a ningún actor sin pruebas.</span></div>')
+        elif _conf_s != "HIGH":
+            # Atribución como HIPÓTESIS (confianza baja/media), no concluyente:
+            # se mantiene el banner para que no se lea como identidad probada.
+            _senal_html = (
+                f'<div style="display:flex;align-items:center;justify-content:space-between;'
+                f'gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid #cbd5e1;'
+                f'border-left:4px solid #64748b;border-radius:8px;padding:8px 12px;margin:6px 0 2px">'
+                f'<span style="font-size:.78rem;font-weight:800;color:#0f172a">⚖️ SEÑAL, '
+                f'NO ATRIBUCIÓN</span>'
+                f'<span style="font-size:.72rem;color:#475569">Actor: <b>{a["attribution"]}</b> '
+                f'· hipótesis con confianza {a["attribution_confidence"]} — evidencia FIMI '
+                f'NO concluyente; el radar no acusa a ningún actor sin pruebas.</span></div>')
+    elif band in ("HIGH", "CRITICAL"):
+        # sin assessment pero banda alta: al menos dejar claro que no hay atribución
+        _senal_html = (
+            f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
+            f'background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #64748b;'
+            f'border-radius:8px;padding:8px 12px;margin:6px 0 2px">'
+            f'<span style="font-size:.78rem;font-weight:800;color:#0f172a">⚖️ SEÑAL, NO '
+            f'ATRIBUCIÓN</span>'
+            f'<span style="font-size:.72rem;color:#475569">Sin datos de atribución: no se '
+            f'acusa a ningún actor.</span></div>')
 
     # GUARDIA DE INTERPRETACIÓN: evita que un lector no experto lea HIGH/CRITICAL
     # como "campaña extranjera confirmada". La banda es una señal conductual de
@@ -406,10 +449,54 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None)
         except Exception:
             pass
 
-    return h + content_html + _dom_html + svg_score_bar(overall, band) + bars + attr + hyp_html
+    # S2 — CADENA DE EVIDENCIA: <details> colapsable que sigue el hilo de cómo
+    # se formó el cluster (eventos miembro en orden cronológico: cuándo, desde
+    # qué fuente, qué cuenta, qué titular/enlace). Lectura interpretable sin
+    # exportar; la lista completa está en /api/export. Aditivo, no toca scoring.
+    _ev_html = ""
+    if evidencia:
+        import html as _ev_esc
+        total = int(evidencia.get("total", 0)) or 0
+        rows = evidencia.get("muestra") or []
+        if rows:
+            _items = ""
+            for r in rows:
+                _t_utc = time.strftime("%d %b %H:%M UTC", time.gmtime(r.get("ts") or 0))
+                _src = _ev_esc.escape(str(r.get("source") or "?"))
+                _auth = _ev_esc.escape(str(r.get("author") or ""))
+                _title = _ev_esc.escape(str(r.get("title") or r.get("text") or ""))[:110]
+                _url = _ev_esc.escape(str(r.get("url") or ""))
+                _l = (f' <a href="{_url}" target="_blank" rel="noopener noreferrer" '
+                      f'style="color:#c2410c;font-size:.7rem">↗</a>' if _url else "")
+                _items += (
+                    f'<div style="font-size:.73rem;color:#475569;line-height:1.35;'
+                    f'padding:2px 0;display:flex;gap:8px;align-items:baseline">'
+                    f'<span style="color:#94a3b8;white-space:nowrap;font-variant-numeric:'
+                    f'tabular-nums">{_t_utc}</span>'
+                    f'<span style="min-width:0;flex:1">“{_title}”{_l}'
+                    f'<span style="color:#94a3b8"> · {_src}'
+                    f'{" · " + _auth if _auth else ""}</span></span></div>')
+            _extra = (f'<span style="color:#94a3b8;font-size:.7rem">… y {total - len(rows)} más '
+                      f'(¡descarga el export para verlos todos):</span>'
+                      if total and total > len(rows) else "")
+            _ev_html = (
+                f'<details style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
+                f'padding:4px 10px 8px;margin:6px 0">'
+                f'<summary style="cursor:pointer;font-size:.72rem;color:#64748b;font-weight:600;'
+                f'text-transform:uppercase;padding:4px 0">🔗 Cadena de evidencia '
+                f'({total} eventos)</summary>'
+                f'<div style="border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:6px">'
+                f'<div style="font-size:.7rem;color:#94a3b8;margin-bottom:4px">Eventos que '
+                f'forman este cluster, en orden cronológico (primera → última aparición):</div>'
+                f'{_items}'
+                f'{_extra}'
+                f'</div></details>')
+
+    return (h + _senal_html + content_html + _dom_html + _ev_html
+            + svg_score_bar(overall, band) + bars + attr + hyp_html)
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -425,6 +512,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
     contenido_map = contenido_map or {}
     diversidad_map = diversidad_map or {}
+    evidencia_map = evidencia_map or {}
     order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
     expandidos = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
     resto = [c for c in order if band_of(c["overall_score"] or 0) not in EXPANDED_BANDS]
@@ -435,7 +523,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
         _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
-        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]))}</div>')
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]))}</div>')
 
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
@@ -512,7 +600,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid))}</div></div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid))}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -965,6 +1053,26 @@ def main():
                                          key=lambda x: -x["n"])[:4]
     except Exception:
         contenido_map = {}
+    # S2 — cadena de evidencia por cluster: los eventos miembro (ts, fuente,
+    # autor, titular, URL) en orden cronológico, para que el analista pueda
+    # seguir el hilo de CÓMO se formó el cluster. Solo lectura; se limita a
+    # pocos eventos por cluster en la tarjeta (el export tiene la lista completa).
+    evidencia_map = {}
+    try:
+        _cev = con.execute(
+            "SELECT cluster_id, ts, source, author, title, text, url"
+            " FROM cluster_events ORDER BY cluster_id, ts").fetchall()
+        from collections import defaultdict
+        _ev_acc = defaultdict(list)
+        for r in _cev:
+            _ev_acc[r["cluster_id"]].append(r)
+        for _cid, _rows in _ev_acc.items():
+            evidencia_map[_cid] = {
+                "total": len(_rows),
+                "muestra": [dict(x) for x in _rows[:7]],
+            }
+    except Exception:
+        evidencia_map = {}
     # diversidad de piezas por cluster (opción 3): nº de URLs distintas vs nº
     # de eventos y ventana temporal (min->max ts). Distingue un "eco puntual de
     # una pieza" (varias cuentas comparten la MISMA url) de una "coordinación
@@ -1783,7 +1891,7 @@ def main():
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
-                domains_map=domains_map)
+                domains_map=domains_map, evidencia_map=evidencia_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
@@ -2445,8 +2553,48 @@ def main():
         f"Calibración por tema (config.yaml → temas): {_t_over_html}</div>"
         f"</div>"
     )
+    # S1 — banner ejecutivo nivel 1 (vista resumen): una lectura de TODO el radar
+    # antes de entrar a los temas. Datos reales de la vista activa (sin inventar):
+    # nº de clusters activos, nº en alerta (score>=60) y nº con atribución
+    # CONCLUYENTE = distinta de UNKNOWN/NO_ATTRIBUTION Y con confianza HIGH
+    # (una atribución de confianza baja/media es hipótesis, no conclusión).
+    _n_clusters = len(clusters)
+    _n_alerta = sum(1 for c in clusters if (c["overall_score"] or 0) >= 60)
+    _atr_map_b = {}
+    for _a in assessments or []:
+        _atr_map_b[_a["cluster_id"]] = (
+            str(_a["attribution"] or "").upper(),
+            str(_a["attribution_confidence"] or "").upper(),
+        )
+    _n_atrib = sum(1 for c in clusters
+                   if (_atr_map_b.get(c["id"], ("", ""))[0]
+                       not in ("", "UNKNOWN", "NO_ATTRIBUTION")
+                       and _atr_map_b[c["id"]][1] == "HIGH"))
+    _banner_html = (
+        f"<div style='background:linear-gradient(180deg,#fff7ed,#ffedd5);border:1px solid #fdba74;"
+        f"border-radius:14px;padding:14px 16px;margin:0 0 16px'>"
+        f"<div style='font-size:.8rem;font-weight:800;color:#9a3412;text-transform:uppercase;"
+        f"letter-spacing:.05em;margin-bottom:8px'>¿Qué está cambiando hoy?</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:8px'>"
+        f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
+        f"background:#fff0e6;border:1px solid #fdba74;font-size:.78rem;font-weight:700;color:#7c2d12'>"
+        f"🚨 {_n_alerta} señales en alerta (≥60)</span>"
+        f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
+        f"background:#fff;border:1px solid #fcd34d;font-size:.78rem;font-weight:700;color:#78350f'>"
+        f"📊 {_n_clusters} clusters activos</span>"
+        f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
+        f"background:#fff;border:1px solid #e2e8f0;font-size:.78rem;font-weight:700;color:#475569'>"
+        f"⚖️ {_n_atrib}/{_n_clusters} con atribución concluyente</span>"
+        f"</div>"
+        f"<div style='font-size:.74rem;color:#7c2d12;margin-top:10px;line-height:1.5'>"
+        f"El radar marca <b>señales de comportamiento</b> (coordinación, amplificación, anomalía), "
+        f"no identidades: sin evidencia concluyente, <b>no se acusa a ningún actor</b>. "
+        f"Pulsa <b>ver detalle</b> en un tema para leer la evidencia y sus límites.</div>"
+        f"</div>"
+    )
     resumen_html = (
         f"<div id='vistaResumen'>"
+        f"{_banner_html}"
         f"<div style='border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin:0 0 26px'>"
         f"<p style='font-size:.9rem;color:#334155;margin:10px 0 2px'><b>¿Qué está pasando ahora?</b> "
         f"Estado de los temas monitorizados. Pulsa <b>ver detalle</b> si algo te interesa.</p>"

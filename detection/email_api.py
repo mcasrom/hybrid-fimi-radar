@@ -201,6 +201,57 @@ def _regen_bg():
         return False
 
 
+def _replay_meta():
+    """Metadata de reproducibilidad del score para el export (S2).
+
+    Con esto, cualquiera puede recomputar la banda/overall del cluster con la
+    MISMA configuración que el radar usó en ese ciclo (weights, bands, escala,
+    ventana de coordinación, versión del código). Viene de config.yaml y git;
+    si algo falla, devuelve parcial (nunca rompe el export).
+    """
+    cfg = {}
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
+    except Exception:
+        pass
+    scoring = (cfg or {}).get("scoring", {}) or {}
+    coord = (cfg or {}).get("coordination", {}) or {}
+    capture = (cfg or {}).get("capture", {}) or {}
+    ver = ""
+    try:
+        _r = subprocess.run(
+            ["git", "describe", "--tags", "--always"],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=10)
+        ver = (_r.stdout or "").strip() or "sin-tag"
+    except Exception:
+        ver = "desconocida"
+    return {
+        "programa": "hybrid-fimi-radar",
+        "version": ver,
+        "window_days": coord.get("window_days", 90),
+        "capture_window_days": capture.get("window_days", 90),
+        "scoring": {
+            "weights": (scoring.get("weights") or {}),
+            "bands": (scoring.get("bands") or {}),
+            "scale_min_accounts": (scoring.get("scale_min_accounts") or {}),
+            "scale_floor": (scoring.get("scale_floor") or {}),
+            "scale_bonus": (scoring.get("scale_bonus") or {}),
+            "origen_unico": (scoring.get("origen_unico") or {}),
+        },
+    }
+
+
+def _band_of(score, bands):
+    """Asigna banda según el dict de bandas de config.yaml (NORMAL/WATCH/...)."""
+    if not isinstance(bands, dict) or not bands:
+        return "NORMAL"
+    for _b, _rango in bands.items():
+        if len(_rango) == 2 and _rango[0] <= score <= _rango[1]:
+            return _b
+    return "NORMAL"
+
+
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     """Exporta la evidencia (cluster_events) de un cluster de la vista activa.
 
@@ -208,6 +259,11 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     limita a clusters de la vista ACTIVA (el snapshot más reciente en
     clusters), no a la BD histórica, y devuelve los eventos miembros con su
     fuente/autor/titular/URL para auditoría OSINT o compartir.
+
+    Desde S2 incluye un bloque "replay" (JSON) con la configuración y versión
+    exactas que produjeron el score (reproducibilidad). En CSV los campos de
+    replay se añaden como columnas por fila para no romper la estructura
+    tabular de eventos.
 
     Devuelve (content_type, bytes, filename) o levanta KeyError si no existe.
     """
@@ -220,6 +276,8 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
             (cluster_label,)).fetchone()
         if not row:
             raise KeyError("cluster no encontrado en la vista activa")
+        asm = conn.execute(
+            "SELECT * FROM assessments WHERE cluster_id=? LIMIT 1", (row["id"],)).fetchone()
         evs = conn.execute(
             "SELECT ts, source, author, title, text, url FROM cluster_events"
             " WHERE cluster_id=? ORDER BY ts", (row["id"],)).fetchall()
@@ -229,17 +287,37 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     cid = cluster_label
     fecha_snap = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(row["created_at"]))
     lat = [dict(r) for r in evs]
+    replay = _replay_meta()
+    banda = _band_of(row["overall_score"] or 0, replay["scoring"]["bands"])
     if fmt == "json":
         payload = {
             "cluster_label": cid,
             "tema": row["tema_id"],
             "overall_score": row["overall_score"],
+            "banda": banda,
             "snapshot_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(row["created_at"])),
+            "snapshot_iso": fecha_snap,
             "n_eventos": len(lat),
             "fuentes": sorted({e["source"] for e in lat}),
             "autores": sorted({e["author"] for e in lat if e.get("author")}),
-            "eventos": lat,
+            "replay": replay,
         }
+        if asm:
+            payload["components"] = {
+                k: asm[k] for k in (
+                    "coordination_score", "amplification_score", "anomaly_score",
+                    "infrastructure_score", "network_density", "confidence",
+                    "assessment", "missing_evidence")
+                if k in asm.keys()}
+            payload["attribution"] = {
+                k: asm[k] for k in (
+                    "attribution", "attribution_confidence", "attribution_evidence")
+                if k in asm.keys()}
+            try:
+                payload["hypotheses"] = json.loads(asm["hypotheses_json"]) if asm["hypotheses_json"] else []
+            except Exception:
+                payload["hypotheses"] = []
+        payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
     # CSV
@@ -247,10 +325,17 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     import csv
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["cluster_label", "tema", "overall_score", "ts_utc",
+    # cabecera con los campos de replay una vez (no tabular, no rompe la fila
+    # de datos: se pone como primera fila prefijada con '#' -> columna clave)
+    w.writerow(["# replay", "programa", replay["programa"]])
+    w.writerow(["# replay", "version", replay["version"]])
+    w.writerow(["# replay", "window_days", replay["window_days"]])
+    w.writerow(["# replay", "capture_window_days", replay["capture_window_days"]])
+    w.writerow(["# replay", "banda", banda])
+    w.writerow(["cluster_label", "tema", "overall_score", "banda", "ts_utc",
                 "source", "author", "title", "text", "url"])
     for e in evs:
-        w.writerow([cid, row["tema_id"], row["overall_score"],
+        w.writerow([cid, row["tema_id"], row["overall_score"], banda,
                     time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(e["ts"])),
                     e["source"], e["author"], e["title"], e["text"], e["url"]])
     body = buf.getvalue().encode("utf-8")
