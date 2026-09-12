@@ -19,6 +19,14 @@ Endpoints:
                                   (env/.env FIMI_ADMIN_SECRET). SOLO visible para el dueño:
                                   sin cómputo público (un radar FIMI no debe ser manipulable).
 
+  --- API pública v1 (read-only, S4; datos ya públicos, CORS *) ---
+  GET  /api/v1                -> índice de endpoints + meta/aviso
+  GET  /api/v1/temas          -> resumen por tema (n_clusters, n_alerta, top)
+  GET  /api/v1/tema/<slug>    -> clusters del tema (componentes, confianza, atribución)
+  GET  /api/v1/cluster/<label>-> cluster completo + evidencia (eventos)
+  GET  /api/v1/openapi.json   -> especificación OpenAPI 3.0
+  GET  /api/v1/health         -> estado del servicio
+
 Envía con Resend (API key de /home/deploy/newsletter/.env, emisor newsletter@viajeinteligencia.com).
 La tabla suscripciones la crea schema_suscripciones.py en data/radar.db; feedback/sugerencias
 las crea schema_feedback.py.
@@ -342,6 +350,226 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     return ("text/csv; charset=utf-8", body, f"fimi-evidence-{cid}.csv")
 
 
+# ---------------------------------------------------------------------------
+# API pública v1 (read-only, S4). Expone la MISMA señal que el dashboard, con
+# framing autodescriptivo para que sea interpretable sin contexto previo:
+# banda, componentes 0-100, confianza, atribución, disclaimers y replay.
+# Los cluster_label NO son estables entre ciclos (se regeneran cada 6h) -> cada
+# respuesta es una FOTO del último ciclo (meta.snapshot=true) y lleva el aviso.
+# No expone endpoints admin ni datos personales.
+# ---------------------------------------------------------------------------
+API_SCHEMA = "v1"
+
+_DISCLAIMER_CLUSTER = ("Señal de comportamiento observable (coordinación/amplificación). "
+                       "No constituye atribución de FIMI ni identifica actores.")
+_DISCLAIMER_API = ("Datos públicos de un radar de coordinación. Señal, no atribución. "
+                   "Los identificadores de cluster no son estables entre ciclos: cada "
+                   "respuesta es una foto del último ciclo (meta.snapshot=true).")
+
+
+def _temas_catalogo():
+    """Temas en produccion/piloto desde config.yaml (slug, nombre, estado)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
+    except Exception:
+        cfg = {}
+    out = []
+    for slug, meta in (cfg.get("temas") or {}).items():
+        meta = meta or {}
+        estado = meta.get("estado", "produccion")
+        if estado in ("produccion", "piloto"):
+            out.append({"tema": slug, "nombre": meta.get("nombre", slug), "estado": estado})
+    return out
+
+
+def _api_meta():
+    """Bloque meta autodescriptivo común a todas las respuestas v1."""
+    r = _replay_meta()
+    return {
+        "programa": r["programa"],
+        "version": r["version"],
+        "schema": API_SCHEMA,
+        "generado_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+        "snapshot": True,
+        "aviso": _DISCLAIMER_API,
+        "replay": r,
+    }
+
+
+def _cluster_obj(row, bands):
+    """Convierte una fila (join cluster+assessment) en el objeto JSON v1."""
+    d = dict(row)
+    comps = {k: d.get(k) for k in (
+        "coordination_score", "amplification_score", "anomaly_score",
+        "infrastructure_score", "network_density")}
+    try:
+        hyp = json.loads(d.get("hypotheses_json") or "[]")
+    except Exception:
+        hyp = []
+    label = d.get("cluster_label")
+    return {
+        "cluster_label": label,
+        "overall_score": d.get("overall_score"),
+        "banda": _band_of(d.get("overall_score") or 0, bands),
+        "components": comps,
+        "confidence": d.get("confidence"),
+        "assessment": d.get("assessment"),
+        "missing_evidence": d.get("missing_evidence"),
+        "attribution": {
+            "attribution": d.get("attribution") or "UNKNOWN",
+            "attribution_confidence": d.get("attribution_confidence"),
+            "attribution_evidence": d.get("attribution_evidence"),
+        },
+        "hypotheses": hyp,
+        "disclaimer": _DISCLAIMER_CLUSTER,
+        "export": f"/api/export?cluster={label}&fmt=json",
+    }
+
+
+def _api_temas():
+    """Resumen por tema del snapshot actual: n_clusters, n_alerta y top."""
+    bands = _replay_meta()["scoring"]["bands"]
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        temas = []
+        for t in _temas_catalogo():
+            rows = conn.execute(
+                "SELECT c.cluster_label, c.overall_score, c.created_at "
+                "FROM clusters c WHERE c.tema_id=? ORDER BY c.overall_score DESC",
+                (t["tema"],)).fetchall()
+            n = len(rows)
+            alerta = sum(1 for r in rows if (r["overall_score"] or 0) >= 60)
+            top = None
+            snap = None
+            if rows:
+                top = {
+                    "cluster_label": rows[0]["cluster_label"],
+                    "overall_score": rows[0]["overall_score"],
+                    "banda": _band_of(rows[0]["overall_score"] or 0, bands),
+                }
+                snap = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(rows[0]["created_at"]))
+            temas.append({
+                "tema": t["tema"], "nombre": t["nombre"], "estado": t["estado"],
+                "n_clusters": n, "n_alerta": alerta, "top": top, "snapshot_utc": snap,
+            })
+        return {"meta": _api_meta(), "temas": temas}
+    finally:
+        conn.close()
+
+
+def _api_tema(slug):
+    """Clusters de un tema (snapshot actual) con componentes y atribución."""
+    replay = _replay_meta()
+    bands = replay["scoring"]["bands"]
+    cat = {t["tema"]: t for t in _temas_catalogo()}
+    if slug not in cat:
+        return None
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT c.cluster_label, c.overall_score, c.created_at, c.confidence, "
+            " a.coordination_score, a.amplification_score, a.anomaly_score, "
+            " a.infrastructure_score, a.network_density, a.assessment, a.missing_evidence, "
+            " a.attribution, a.attribution_confidence, a.attribution_evidence, a.hypotheses_json "
+            "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
+            "WHERE c.tema_id=? ORDER BY c.overall_score DESC", (slug,)).fetchall()
+    finally:
+        conn.close()
+    clusters = [_cluster_obj(r, bands) for r in rows]
+    snap = None
+    if rows:
+        snap = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(rows[0]["created_at"]))
+    return {
+        "meta": _api_meta(),
+        "tema": slug,
+        "nombre": cat[slug]["nombre"],
+        "estado": cat[slug]["estado"],
+        "snapshot_utc": snap,
+        "n_clusters": len(clusters),
+        "clusters": clusters,
+    }
+
+
+def _openapi_spec():
+    """Especificación OpenAPI 3.0.3 de la API pública v1."""
+    v = _replay_meta()["version"]
+    comp = {
+        "type": "object",
+        "properties": {
+            "coordination_score": {"type": "number", "description": "Coordinación 0-100"},
+            "amplification_score": {"type": "number", "description": "Amplificación 0-100 (global del tema)"},
+            "anomaly_score": {"type": "number", "description": "Anomalía 0-100"},
+            "infrastructure_score": {"type": "number", "description": "Infraestructura compartida 0-100"},
+            "network_density": {"type": "number", "description": "Densidad de red 0-100"},
+        },
+    }
+    cluster = {
+        "type": "object",
+        "properties": {
+            "cluster_label": {"type": "string", "description": "ID del cluster en ESTE ciclo (no estable entre ciclos)"},
+            "overall_score": {"type": "number"},
+            "banda": {"type": "string", "enum": ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]},
+            "components": comp,
+            "confidence": {"type": "string"},
+            "assessment": {"type": "string"},
+            "missing_evidence": {"type": "string"},
+            "attribution": {
+                "type": "object",
+                "properties": {
+                    "attribution": {"type": "string"},
+                    "attribution_confidence": {"type": "string"},
+                    "attribution_evidence": {"type": "string"},
+                },
+            },
+            "hypotheses": {"type": "array", "items": {"type": "object"}},
+            "disclaimer": {"type": "string"},
+            "export": {"type": "string"},
+        },
+    }
+    meta = {
+        "type": "object",
+        "properties": {
+            "programa": {"type": "string"},
+            "version": {"type": "string"},
+            "schema": {"type": "string"},
+            "generado_utc": {"type": "string"},
+            "snapshot": {"type": "boolean"},
+            "aviso": {"type": "string"},
+        },
+    }
+    return {
+        "openapi": "3.0.3",
+        "info": {
+            "title": "Radar FIMI — API pública",
+            "version": f"{API_SCHEMA} ({v})",
+            "description": _DISCLAIMER_API,
+            "contact": {"url": "https://fimi.viajeinteligencia.com/"},
+            "license": {"name": "Open Source",
+                        "url": "https://github.com/mcasrom/hybrid-fimi-radar"},
+        },
+        "servers": [{"url": "https://fimi.viajeinteligencia.com"}],
+        "paths": {
+            "/api/v1/temas": {"get": {"summary": "Resumen de temas monitorizados",
+                "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {
+                    "type": "object", "properties": {"meta": meta, "temas": {"type": "array"}}}}}}}}},
+            "/api/v1/tema/{slug}": {"get": {"summary": "Clusters de un tema (snapshot actual)",
+                "parameters": [{"name": "slug", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {
+                    "type": "object", "properties": {"meta": meta, "clusters": {"type": "array", "items": cluster}}}}}},
+                    "404": {"description": "Tema no monitorizado"}}}},
+            "/api/v1/cluster/{label}": {"get": {"summary": "Cluster completo con evidencia (eventos)",
+                "parameters": [{"name": "label", "in": "path", "required": True, "schema": {"type": "string"},
+                                "example": "frontera_sur_cluster_000"}],
+                "responses": {"200": {"description": "OK"}, "404": {"description": "Cluster no encontrado"}}}},
+            "/api/v1/health": {"get": {"summary": "Estado del servicio",
+                "responses": {"200": {"description": "OK"}}}},
+        },
+    }
+
+
 class H(BaseHTTPRequestHandler):
     def _send(self, code, obj, ctype="application/json"):
         if isinstance(obj, str):
@@ -352,6 +580,9 @@ class H(BaseHTTPRequestHandler):
         # CORS para semilla newsletter (blog -> fimi)
         if self.path.startswith("/api/subscribe"):
             self._cors()
+        # API pública v1: lectura abierta (datos públicos) -> CORS *
+        if self.path.startswith("/api/v1"):
+            self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -473,6 +704,45 @@ class H(BaseHTTPRequestHandler):
             except KeyError:
                 return self._send(404, {"error": f"cluster no encontrado: {cid}"})
             return self._send_download(200, body, ctype, fname)
+        # ---- API pública v1 (read-only) ----
+        if path in ("/api/v1", "/api/v1/"):
+            return self._send(200, {
+                "meta": _api_meta(),
+                "endpoints": [
+                    {"path": "/api/v1/temas", "desc": "Resumen de temas monitorizados (snapshot actual)"},
+                    {"path": "/api/v1/tema/<slug>", "desc": "Clusters de un tema con componentes, confianza y atribución"},
+                    {"path": "/api/v1/cluster/<label>", "desc": "Cluster completo + evidencia (eventos)"},
+                    {"path": "/api/v1/openapi.json", "desc": "Especificación OpenAPI 3.0"},
+                    {"path": "/api/v1/health", "desc": "Estado del servicio"},
+                ],
+            })
+        if path == "/api/v1/health":
+            return self._send(200, {"ok": True, "schema": API_SCHEMA,
+                                    "version": _replay_meta()["version"]})
+        if path == "/api/v1/temas":
+            return self._send(200, _api_temas())
+        if path == "/api/v1/openapi.json":
+            return self._send(200, _openapi_spec())
+        if path.startswith("/api/v1/tema/"):
+            slug = path[len("/api/v1/tema/"):].strip("/")
+            if not re.match(r"^[a-z0-9_]+$", slug):
+                return self._send(400, {"error": "tema invalido"})
+            d = _api_tema(slug)
+            if d is None:
+                return self._send(404, {"error": f"tema no monitorizado: {slug}"})
+            return self._send(200, d)
+        if path.startswith("/api/v1/cluster/"):
+            cid = path[len("/api/v1/cluster/"):].strip("/")
+            if not re.match(r"^[a-z0-9_]+(_cluster_[0-9]{3})?$", cid):
+                return self._send(400, {"error": "cluster_label invalido"})
+            try:
+                ctype, body, _fn = exportar_cluster(cid, "json")
+            except KeyError:
+                return self._send(404, {"error": f"cluster no encontrado: {cid}"})
+            payload = json.loads(body.decode("utf-8"))
+            payload["meta"] = _api_meta()
+            payload["disclaimer"] = _DISCLAIMER_CLUSTER
+            return self._send(200, payload)
         return self._send(404, {"error": "not found"})
 
     def do_POST(self):

@@ -248,6 +248,30 @@ y URLs de un cluster en CSV o JSON (`--cluster <label> --fmt csv|json`), o en el
 (los links "Exportar evidencia" de cada tarjeta). Recurso público: los datos ya eran
 visibles en las tarjetas; el export solo los facilita.
 
+## API pública v1 (read-only)
+
+La misma señal del dashboard, en JSON autodescriptivo, para reutilizarla sin scrapear
+el HTML. Servida por `detection/email_api.py` (stdlib) detrás de nginx (`/api/*`,
+rate-limit 20 req/min por IP) y con CORS abierto para lectura.
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /api/v1` | Índice de endpoints + bloque `meta` (versión, snapshot, aviso) |
+| `GET /api/v1/temas` | Resumen por tema: nº clusters, en alerta (≥60) y top (score/banda) |
+| `GET /api/v1/tema/<slug>` | Clusters del tema con componentes 0-100, confianza y atribución |
+| `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) |
+| `GET /api/v1/openapi.json` | Especificación OpenAPI 3.0 |
+| `GET /api/v1/health` | Estado del servicio |
+
+Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: true`,
+`aviso` y `replay` con pesos/bandas/ventana para reproducir el score) y, por cluster,
+`banda`, `components`, `confidence`, `attribution`, `hypotheses` y `disclaimer`
+("señal de comportamiento, no atribución").
+
+**Cautela**: los `cluster_label` se regeneran en cada ciclo (cada 6 h) y **no son
+estables**; cada respuesta es una **foto del último ciclo** (`meta.snapshot=true`).
+No expone endpoints de administración ni datos personales.
+
 ## Contexto de interpretación en las tarjetas de cluster
 
 Cada cluster se presenta con bloques de contexto que ayudan al analista a no sobreleer la
