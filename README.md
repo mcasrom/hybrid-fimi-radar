@@ -417,3 +417,12 @@ Tres capas, todas avisando por Telegram al dueño solo ante cambios (sin spam):
   congelamiento de `frontera_sur` por OOM (2026-09-11): la captura estaba fresca pero el
   tema llevaba 30 h sin regenerar su snapshot.
 
+## Licencia
+
+Este proyecto se publica bajo la **GNU Affero General Public License v3.0 (AGPL-3.0)**
+— ver [`LICENSE`](LICENSE). Es una licencia copyleft de red: si despliegas una versión
+modificada de este software como servicio accesible por red, debes ofrecer el código
+fuente completo de tu versión bajo la misma licencia. El texto completo está en
+<https://www.gnu.org/licenses/agpl-3.0.html>.
+
+
