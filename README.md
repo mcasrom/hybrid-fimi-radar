@@ -27,12 +27,21 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitor
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
   **barra de ecosistema persistente** (viajeinteligencia.com · Herramientas · Blog
-  analisis.pruebapublica.com · pruebapublica.com), diales por tema, tarjetas de cluster
+  analisis.pruebapublica.com · pruebapublica.com), un **panel de situación "de un vistazo"**
+  (tiles KPI: eventos · fuentes · clusters · en alerta · temas; **distribución de clusters
+  por banda**; y una **tira por tema** con color de banda, score, tendencia y nº de
+  clusters — aditivo, no sustituye los diales), diales por tema, tarjetas de cluster
   (con "De qué habla", **dominios que amplifican por cluster** — eco de un medio vs red —,
   chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida", export CSV/JSON y
   **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
   WATCH) para que la gravedad se perciba a contraluz de la página),
   narrativas, historial, resumen por tema, salud de fuentes y bitácora.
+- **Divulgación progresiva (detalle de un tema)**: solo se expanden los **6 clusters de
+  mayor score**; el resto (incluidos HIGH/CRITICAL fuera del top-6) va a un bloque plegado
+  con **gráfico de barras clicable**. Las secciones **globales** (Narrativas + Historial,
+  que no pertenecen al tema) y la **leyenda de componentes** quedan en `<details>` cerrados
+  por defecto. Evita paneles de decenas de miles de píxeles cuando un tema tiene muchas
+  señales en alerta (frontera_sur: ~61.500 px → ~6.000 px).
 - **Piloto vs producción visible**: cada tema lleva su estado a la vista — en las
   tarjetas dial y en las pestañas, un badge **`● Producción`** (verde) o
   **`● PILOTO · en calibración`** (naranja, con pulso suave). Los temas en piloto
