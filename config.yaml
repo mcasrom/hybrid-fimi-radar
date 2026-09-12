@@ -107,6 +107,7 @@ feeds:
   transparency: medium
   note: Periódico local Ceuta. Cobertura frontera sur.
   idioma: es
+  analytical_relevance: baja
 - nombre: Ceuta TV
   url: https://ceutatv.com/feed/
   tipo: official
@@ -115,6 +116,7 @@ feeds:
   transparency: medium
   note: TV local Ceuta. Cobertura frontera sur.
   idioma: es
+  analytical_relevance: baja
 - nombre: Melilla Hoy
   url: https://www.melillahoy.es/rss
   tipo: official
@@ -123,6 +125,7 @@ feeds:
   transparency: medium
   note: Periódico local Melilla. Cobertura frontera sur.
   idioma: es
+  analytical_relevance: baja
 - nombre: El Pais Espana
   url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada
   tipo: media
@@ -132,6 +135,7 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/el-pais/
   note: 'Referencia prensa española. MBFC: Left-Center, High factual.'
   idioma: es
+  analytical_relevance: media
 - nombre: BBC Mundo
   url: https://feeds.bbci.co.uk/mundo/rss.xml
   tipo: media
@@ -142,6 +146,7 @@ feeds:
   note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés
     de BBC Europa por error).'
   idioma: es
+  analytical_relevance: media
 - nombre: Al Jazeera
   url: https://www.aljazeera.com/xml/rss/all.xml
   tipo: media
@@ -151,6 +156,7 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/al-jazeera/
   note: 'Financiada por Qatar. Sesgo pro-Palestina en opiniones. MBFC: Mixed factual.'
   idioma: en
+  analytical_relevance: media
 - nombre: El Mundo
   url: https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml
   tipo: media
@@ -160,6 +166,7 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/el-mundo/
   note: 'Línea conservadora. MBFC: Right-Center, Mostly Factual.'
   idioma: es
+  analytical_relevance: media
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
@@ -169,6 +176,7 @@ feeds:
   transparency: medium
   note: Diáspora marroquí en Francia. Crítico con gobierno MA.
   idioma: fr
+  analytical_relevance: media
 - nombre: Algerie360 (FR)
   url: https://www.algerie360.com/feed/
   tipo: media
@@ -178,6 +186,7 @@ feeds:
   transparency: medium
   note: Medio argelino francófono. Línea oficial.
   idioma: fr
+  analytical_relevance: media
 - nombre: Hespress Maroc (FR)
   url: https://fr.hespress.com/feed/
   tipo: media
@@ -187,6 +196,7 @@ feeds:
   transparency: medium
   note: Independiente marroquí. Presión gubernamental.
   idioma: fr
+  analytical_relevance: media
 - nombre: TSA Algerie (FR)
   url: https://www.tsa-algerie.com/feed/
   tipo: media
@@ -196,6 +206,7 @@ feeds:
   transparency: medium
   note: Independiente argelino. Línea opositora.
   idioma: fr
+  analytical_relevance: media
 - nombre: AMI Mauritanie (FR)
   url: https://fr.ami.mr/feed
   tipo: oficial
@@ -206,6 +217,7 @@ feeds:
   note: Agencia oficial Mauritania.
 # === Fuentes añadidas 2026-09-02: análisis + francofonía + OSINT ===
   idioma: fr
+  analytical_relevance: baja
 - nombre: Le Monde Diplomatique
   url: https://www.monde-diplomatique.fr/rss
   tipo: analisis
@@ -215,6 +227,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/le-monde-bias/
   note: 'Análisis geopolítico. MBFC: Left-Center, High factual.'
+  analytical_relevance: alta
 - nombre: Foreign Affairs
   url: https://www.foreignaffairs.com/rss.xml
   tipo: analisis
@@ -224,6 +237,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/foreign-affairs/
   note: 'CFR. Análisis. MBFC: Least Biased, High factual.'
+  analytical_relevance: alta
 - nombre: RFI France
   url: https://www.rfi.fr/fr/rss
   tipo: media
@@ -233,6 +247,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
   note: 'Radio pública francesa. MBFC: Least Biased, Mostly Factual.'
+  analytical_relevance: media
 - nombre: France 24
   url: https://www.france24.com/fr/rss
   tipo: media
@@ -242,6 +257,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/france24/
   note: 'TV pública francesa. Verificador IFCN. MBFC: Least Biased, High.'
+  analytical_relevance: media
 - nombre: EUvsDisinfo
   url: https://euvsdisinfo.eu/feed/
   tipo: osint
@@ -252,6 +268,7 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/eu-vs-disinformation-bias/
   note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo 
     anti-derecha.
+  analytical_relevance: alta
 - nombre: Bellingcat
   url: https://www.bellingcat.com/feed/
   tipo: osint
@@ -261,6 +278,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/bellingcat/
   note: OSINT independiente. Investigaciones originales. Países Bajos.
+  analytical_relevance: alta
 - nombre: Middle East Eye
   url: https://www.middleeasteye.net/rss
   tipo: media
@@ -270,6 +288,7 @@ feeds:
   transparency: low
   factcheck_url: https://mediabiasfactcheck.com/middle-east-eye/
   note: 'Cobertura ME. Vínculos con Qatar cuestionados. MBFC: Mostly Factual.'
+  analytical_relevance: alta
 - nombre: EUobserver
   url: https://euobserver.com/rss
   tipo: media
@@ -279,6 +298,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/eu-observer/
   note: 'Periodismo UE independiente. Bruselas. MBFC: Left-Center, High.'
+  analytical_relevance: media
 - nombre: The Intercept
   url: https://theintercept.com/feed/
   tipo: investigacion
@@ -288,6 +308,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/the-intercept/
   note: 'Investigación. Incidente de fabricación 2016. MBFC: Left, Mostly Factual.'
+  analytical_relevance: alta
 - nombre: Hespress (AR)
   url: https://www.hespress.com/feed/
   tipo: media
@@ -305,6 +326,7 @@ feeds:
 # RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
 # Se vigila como FUENTE DE NARRATIVAS FIMI, no como fuente fiable: su
 # contenido propio es material de análisis de desinformación.
+  analytical_relevance: baja
 - nombre: RT en Español
   url: https://actualidad.rt.com/feeds/all.rss
   tipo: media
@@ -317,6 +339,7 @@ feeds:
     máx.'
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
+  analytical_relevance: baja
 - nombre: Reuters World
   url: https://www.reutersagency.com/feed/?best-topics=world
   tipo: media
@@ -326,6 +349,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/reuters/
   note: 'Agencia global. MBFC: Least Biased, High factual. Equilibra centro-izquierda.'
+  analytical_relevance: media
 - nombre: Deutsche Welle (EN)
   url: https://rss.dw.com/rdf/rss-en-all
   tipo: media
@@ -335,6 +359,7 @@ feeds:
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/deutsche-welle/
   note: 'Servicio internacional alemán. MBFC: Least Biased.'
+  analytical_relevance: media
 - nombre: Malijet (ML)
   url: https://malijet.com/rss/
   tipo: media
@@ -344,6 +369,7 @@ feeds:
   reliability: mostly-factual
   transparency: low
   note: Actualidad de Mali (francófono). Principal portal de noticias del país.
+  analytical_relevance: media
 - nombre: Koloni (ML)
   url: https://koloni.ml/feed/
   tipo: media
@@ -353,6 +379,7 @@ feeds:
   reliability: mostly-factual
   transparency: low
   note: 'Periodismo maliense: operaciones militares y seguridad en el Sahel central.'
+  analytical_relevance: media
 - nombre: Niger Report
   url: https://nigerreport.net/feed/
   tipo: media
@@ -362,6 +389,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Periodismo investigativo nigerino sobre juntas, seguridad y Sahel.
+  analytical_relevance: media
 - nombre: Burkina24.com
   url: https://burkina24.com/feed/
   tipo: media
@@ -371,6 +399,7 @@ feeds:
   reliability: mostly-factual
   transparency: low
   note: Actualidad de Burkina Faso (francófono).
+  analytical_relevance: media
 - nombre: AIB - Agence Info Burkina
   url: https://www.aib.media/feed/
   tipo: oficial
@@ -380,6 +409,7 @@ feeds:
   reliability: mostly-factual
   transparency: low
   note: Agencia estatal de Burkina Faso. Cotejar con prensa independiente.
+  analytical_relevance: baja
 - nombre: Sahel Horizon
   url: https://sahelhorizon.com/feed/
   tipo: media
@@ -389,6 +419,7 @@ feeds:
   transparency: low
   note: 'Narrativa pro-AES de línea soberanista. Contenidos vinculados al ecosistema
     African Initiative (Rusia). Vigilar como fuente de narrativas FIMI, no fiable.'
+  analytical_relevance: alta
 - nombre: La Nouvelle Tribune
   url: https://lanouvelletribune.info/feed/
   tipo: media
@@ -399,6 +430,7 @@ feeds:
   note: Medio de África Occidental (Benín); cobertura regional del Sahel.
 
 
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion

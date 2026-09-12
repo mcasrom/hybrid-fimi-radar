@@ -262,7 +262,107 @@ def _sostenido_chip(diver):
     return ""
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None):
+# S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
+# del modelo (sección 5 del análisis), una combinación de ALTA COORDINACIÓN con
+# BAJA ANOMALÍA y SIN infraestructura común apunta a propagación orgánica (una
+# oleada real de gente compartiendo el mismo hecho), no a una red inorgánica.
+# El chip lo deja dicho en la tarjeta para que no se lea como señal de campaña
+# lo que probablemente es eco de interés humano. Solo lectura: no toca scoring.
+def _organico_chip(coordination_score=None, anomaly_score=None, infrastructure_score=None):
+    try:
+        coord = float(coordination_score or 0)
+        anom = float(anomaly_score or 0)
+        infra = float(infrastructure_score or 0)
+    except (TypeError, ValueError):
+        return ""
+    if coord >= 70 and anom <= 20 and infra <= 30:
+        return ('<span style="display:inline-block;font-size:.72rem;color:#0e7490;'
+                'border:1px dashed #22d3ee;border-radius:999px;padding:1px 10px;'
+                'font-weight:600;background:#ecfeff" title="Alta coordinación + '
+                'baja anomalía + sin infraestructura común: probablemente '
+                'propagación orgánica, no red inorgánica">☁️ posible propagación orgánica</span>')
+    return ""
+
+
+# S5 — matriz de evidencia del cluster: las dimensiones del modelo (sección 5
+# del análisis) resumidas en una sola tabla para que el lector vea de un vistazo
+# qué dimensiones soportan señal y cuáles están en "no concluyente". Es lectura
+# de los componentes ya calculados (am/coord/anomalia/infra/densidad) + la
+# atribución (actor) + la conclusión FIMI. NO calcula nada nuevo ni acusa: la
+# inautenticidad se reporta honestamente como NO MEDIBLE (el radar no verifica
+# identidades), y el actor sale de attribution (habitualmente UNKNOWN).
+def _matriz_evidencia_html(comps, a, band, amp_global=None):
+    def _qual(v):
+        v = float(v or 0)
+        if v >= 80:
+            return "Muy alta"
+        if v >= 60:
+            return "Alta"
+        if v >= 40:
+            return "Media"
+        if v >= 20:
+            return "Baja"
+        return "Muy baja"
+
+    def _row(dim, lect, col="#334155"):
+        return (
+            f'<div style="display:flex;justify-content:space-between;gap:10px;'
+            f'padding:3px 0;border-top:1px dashed #e2e8f0;font-size:.74rem">'
+            f'<span style="color:#64748b;min-width:120px">{dim}</span>'
+            f'<span style="text-align:right;color:{col};font-weight:600">{lect}</span></div>')
+
+    coord = comps.get("coordination_score", 0) or 0
+    anom = comps.get("anomaly_score", 0) or 0
+    infra = comps.get("infrastructure_score", 0) or 0
+    dens = comps.get("network_density", 0) or 0
+    amp = amp_global if amp_global is not None else None
+
+    actor = "UNKNOWN"
+    actor_col = "#94a3b8"
+    concluyente = "No concluyente"
+    fimi_col = "#94a3b8"
+    if a:
+        try:
+            _atr = str(a["attribution"] or "")
+        except (KeyError, IndexError):
+            _atr = ""
+        try:
+            _conf = str(a["attribution_confidence"] or "")
+        except (KeyError, IndexError):
+            _conf = ""
+        if _atr and _atr.upper() not in ("", "UNKNOWN", "NO_ATTRIBUTION"):
+            actor = _atr
+            actor_col = "#b45309"
+        if _conf.upper() == "HIGH":
+            concluyente = "Concluyente (confianza HIGH)"
+            fimi_col = "#9a3412"
+
+    _amp_row = (_row("Amplificación", _qual(amp) + f" · {amp:.0f}/100 (global del tema)")
+                if amp is not None else "")
+    rows = (
+        _amp_row +
+        _row("Coordinación", _qual(coord) + f" · {coord:.0f}/100") +
+        _row("Anomalía", _qual(anom) + f" · {anom:.0f}/100") +
+        _row("Infraestructura", _qual(infra) + f" · {infra:.0f}/100") +
+        _row("Densidad de red", _qual(dens) + f" · {dens:.0f}/100") +
+        _row("Inautenticidad", "No medible (observaría cuentas, no identidades)",
+             "#94a3b8") +
+        _row("Actor extranjero", actor, actor_col) +
+        _row("Evaluación FIMI", concluyente, fimi_col))
+
+    return (
+        f'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
+        f'padding:8px 12px;margin:6px 0">'
+        f'<div style="font-size:.72rem;color:#64748b;font-weight:600;'
+        f'text-transform:uppercase;margin-bottom:2px">Matriz de evidencia '
+        f'(5 dimensiones)</div>'
+        f'{rows}'
+        f'<div style="color:#94a3b8;font-size:.68rem;margin-top:4px">Lectura de '
+        f'los componentes del cluster y su atribución. El sistema observa '
+        f'comportamiento; la identidad no se presume.</div></div>')
+
+
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
@@ -300,6 +400,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{ruido_html}'
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
+         f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
     # S1 — SEÑAL, NO ATRIBUCIÓN: cabecera fija que aclara cómo leer el cluster
@@ -493,10 +594,11 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'</div></details>')
 
     return (h + _senal_html + content_html + _dom_html + _ev_html
-            + svg_score_bar(overall, band) + bars + attr + hyp_html)
+            + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
+            + attr + hyp_html)
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -523,7 +625,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
         _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
-        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]))}</div>')
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global)}</div>')
 
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
@@ -600,7 +702,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid))}</div></div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global)}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -1004,12 +1106,36 @@ def main():
     if "frontera_sur" not in temas:
         temas.insert(0, "frontera_sur")
 
+    ax_col = {"alta": "#065f46", "media": "#92400e", "baja": "#475569"}
+    rel_col = {"high": "#065f46", "mostly-factual": "#166534", "mixed": "#92400e",
+               "low": "#b91c1c", "state": "#334155"}
+    def _ax_chip(f, key, labels, colors):
+        v = f.get(key, "")
+        if not v:
+            return ""
+        lab = labels.get(v, v)
+        col = colors.get(v, "#475569")
+        return (f"<span style='border:1px solid {col};color:{col};border-radius:999px;"
+                f"padding:0 7px;font-size:.72rem;line-height:1.6'>{lab}</span>")
+    bias_lab = {"least-biased": "LEAST BIASED", "center": "CENTER", "center-left": "CENTER-LEFT",
+                "center-right": "CENTER-RIGHT", "left": "LEFT", "right": "RIGHT", "state": "STATE"}
+    rel_lab = {"high": "high", "mostly-factual": "mostly-factual", "mixed": "mixed",
+               "low": "low", "state": "state"}
+    ax_lab = {"alta": "relevancia analítica alta", "media": "relevancia analítica media",
+              "baja": "relevancia analítica baja"}
     feeds_html = ""
     for f in feeds:
         pais = f.get("pais", "")
+        url = f.get("url", "")
+        _ch = (_ax_chip(f, "bias", bias_lab, {"least-biased": "#0e7490", "center": "#475569",
+                "center-left": "#1d4ed8", "center-right": "#b45309", "left": "#7c3aed",
+                "right": "#b91c1c", "state": "#334155"}) +
+               _ax_chip(f, "reliability", rel_lab, rel_col) +
+               _ax_chip(f, "analytical_relevance", ax_lab, ax_col))
         feeds_html += (f"<li>{f.get('nombre','?')} "
-                       f"<span style='color:#94a3b8;font-size:.8rem'>· {f.get('url','')}"
-                       f"{' · ' + pais if pais else ''}</span></li>")
+                       f"<span style='color:#94a3b8;font-size:.8rem'>· {url}"
+                       f"{' · ' + pais if pais else ''}</span>"
+                       f"{'<br>' + _ch if _ch else ''}</li>")
     kw_html = ""
     for k in keywords:
         kw_html += (f"<li><code>{k.get('palabra','?')}</code> → "
@@ -1891,7 +2017,7 @@ def main():
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
-                domains_map=domains_map, evidencia_map=evidencia_map)
+                domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
@@ -3109,6 +3235,8 @@ edita <code>config.yaml</code> en el repo (docs/FUENTES.md lo documenta).</p>
   <div style="flex:1;min-width:260px">
     <b style="font-size:.9rem">RSS / feeds ({len(feeds)})</b>
     <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{feeds_html}</ul>
+    <p style="font-size:.72rem;color:#94a3b8;margin:4px 0 8px">Cada feed muestra: orientación
+    editorial · fiabilidad · relevancia analítica (alta/media/baja, valoración editorial del equipo).</p>
     <b style="font-size:.9rem">Plataformas de búsqueda ({n_src_plt})</b>
     <ul style="font-size:.82rem;color:#334155;padding-left:18px;line-height:1.7">{plt_html}</ul>
   </div>

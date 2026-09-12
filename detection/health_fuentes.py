@@ -50,6 +50,7 @@ def _cargar_config():
                 "bias": f.get("bias", ""),
                 "reliability": f.get("reliability", ""),
                 "transparency": f.get("transparency", ""),
+                "analytical_relevance": f.get("analytical_relevance", ""),
                 "factcheck_url": f.get("factcheck_url", ""),
                 "note": f.get("note", ""),
             }
@@ -141,6 +142,7 @@ def analizar():
             "bias": ed.get("bias", ""),
             "reliability": ed.get("reliability", ""),
             "transparency": ed.get("transparency", ""),
+            "analytical_relevance": ed.get("analytical_relevance", ""),
             "factcheck_url": ed.get("factcheck_url", ""),
             "note": ed.get("note", ""),
             "corroboration": corrob_pct,
@@ -162,12 +164,14 @@ def analizar():
     inactivas = sum(1 for f in fuentes if f["estado"] == "inactiva")
     high_reliability = sum(1 for f in fuentes if f["reliability"] == "high")
     mixed_low = sum(1 for f in fuentes if f["reliability"] in ("mixed", "low"))
+    alta_relevancia = sum(1 for f in fuentes if f["analytical_relevance"] == "alta")
 
     return {
         "generado": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
         "resumen": {
             "total": n, "activas": activas, "bajas": bajas, "inactivas": inactivas,
             "high_reliability": high_reliability, "mixed_low": mixed_low,
+            "alta_relevancia": alta_relevancia,
         },
         "alerta": ("Fuentes inactivas" if inactivas else None),
         "fuentes": sorted(fuentes, key=lambda x: (x["estado"] != "activa", -x["n90"])),
@@ -204,6 +208,16 @@ REL_LABELS = {
     "mixed": "mixta",
     "low": "baja",
 }
+AX_COLORS = {
+    "alta": "#16a34a",
+    "media": "#2563eb",
+    "baja": "#64748b",
+}
+AX_LABELS = {
+    "alta": "alta",
+    "media": "media",
+    "baja": "baja",
+}
 ESTADO_COLORS = {"activa": "#16a34a", "baja": "#d97706", "inactiva": "#dc2626"}
 ESTADO_TXT = {"activa": "activa", "baja": "actividad baja", "inactiva": "inactiva"}
 
@@ -237,6 +251,8 @@ def _html(d):
         bt = BIAS_LABELS.get(f["bias"], f["bias"] or "\u2014")
         rc = REL_COLORS.get(f["reliability"], "#64748b")
         rt = REL_LABELS.get(f["reliability"], f["reliability"] or "\u2014")
+        ac = AX_COLORS.get(f["analytical_relevance"], "#64748b")
+        at = AX_LABELS.get(f["analytical_relevance"], f["analytical_relevance"] or "\u2014")
 
         corrob = f["corroboration"]
         cc = _corrob_color(corrob)
@@ -255,6 +271,7 @@ def _html(d):
             '<td style="padding:3px 8px;font-size:.75rem;color:#64748b">' + f["tipo"] + "</td>"
             '<td style="padding:3px 8px;font-size:.75rem"><span style="color:' + bc + ';font-weight:700">' + bt + "</span></td>"
             '<td style="padding:3px 8px;font-size:.75rem"><span style="color:' + rc + '">' + rt + "</span></td>"
+            '<td style="padding:3px 8px;font-size:.75rem"><span style="color:' + ac + '" title="relevancia anal\u00edtica para FIMI">' + at + "</span></td>"
             '<td style="padding:3px 8px;text-align:right;font-size:.75rem">' + str(f["n7"]) + "/" + str(f["n90"]) + "</td>"
             '<td style="padding:3px 8px;text-align:right;font-size:.75rem;color:#94a3b8">' + last + "</td>"
             '<td style="padding:3px 8px;text-align:right;font-size:.75rem"><span style="color:' + cc + ';font-weight:700">' + ct + "</span></td>"
@@ -288,7 +305,8 @@ def _html(d):
         '<b style="color:#dc2626">' + str(R["inactivas"]) + "</b> inactivas \xb7 "
         "<b>" + str(R["total"]) + "</b> configuradas \xb7 "
         '<b style="color:#16a34a">' + str(R["high_reliability"]) + "</b> alta fiabilidad \xb7 "
-        '<b style="color:#dc2626">' + str(R["mixed_low"]) + "</b> mixta/baja"
+        '<b style="color:#dc2626">' + str(R["mixed_low"]) + "</b> mixta/baja \xb7 "
+        '<b style="color:#16a34a">' + str(R["alta_relevancia"]) + "</b> alta relev. anal\u00edtica"
         "</p>" + aviso_inactive + aviso_mixed
         + '<details><summary style="cursor:pointer;font-size:.84rem;color:#c2410c">'
         + "Ver detalle por fuente</summary>"
@@ -298,6 +316,7 @@ def _html(d):
         + '<th align="left" style="font-size:.72rem;color:#94a3b8">tipo</th>'
         + '<th align="left" style="font-size:.72rem;color:#94a3b8">sesgo</th>'
         + '<th align="left" style="font-size:.72rem;color:#94a3b8">fiabilidad</th>'
+        + '<th align="left" style="font-size:.72rem;color:#94a3b8" title="relevancia anal\u00edtica para FIMI">relev. anal\u00edtica</th>'
         + '<th align="right" style="font-size:.72rem;color:#94a3b8">7d/90d</th>'
         + '<th align="right" style="font-size:.72rem;color:#94a3b8">\xfaltima</th>'
         + '<th align="right" style="font-size:.72rem;color:#94a3b8">corroboration</th>'
