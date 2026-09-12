@@ -2218,6 +2218,9 @@ def main():
         <p style="color:#64748b;font-size:.86rem;margin:.5rem 0 0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
            Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
       </div>
+      <img src="/fimi-overview.webp" alt="Vista general del Radar FIMI: del ruido a la señal"
+           width="1200" height="800" loading="lazy"
+           style="display:block;width:100%;height:auto;border-radius:10px;border:1px solid #e2e8f0;margin:2px 0 14px">
       {funnel_cards}
       <div style="margin-top:14px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;
                   border-radius:8px;font-size:.78rem;color:#78350f;line-height:1.45">
@@ -3109,7 +3112,7 @@ a{{color:#c2410c}}
 @media(prefers-reduced-motion:reduce){{.pilot-badge,.pilot-frase{{animation:none}}}}
 </style></head>
 <body>
-<main>
+<header>
 <div class="fimi-brandbar">
   <a class="brand" href="/" title="Radar FIMI · Centro de observación de desinformación en español">
     <span class="logo">📡</span> Radar FIMI
@@ -3124,6 +3127,8 @@ a{{color:#c2410c}}
   </div>
   <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
 </div>
+</header>
+<main>
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
