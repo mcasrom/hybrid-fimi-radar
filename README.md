@@ -1,5 +1,9 @@
 # European Hybrid & FIMI Radar
 
+[![CI](https://github.com/mcasrom/hybrid-fimi-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/mcasrom/hybrid-fimi-radar/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/mcasrom/hybrid-fimi-radar/badge)](https://securityscorecards.dev/viewer/?uri=github.com/mcasrom/hybrid-fimi-radar)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+
 Sistema OSINT **agnóstico al actor** para detectar comportamientos anómalos, coordinación,
 amplificación artificial, campañas e infraestructura relacionada con posibles operaciones
 de manipulación o interferencia (FIMI — Foreign Information Manipulation and Interference).
