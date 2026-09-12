@@ -207,11 +207,12 @@ def render_component_legend():
         rows += (f'<div style="display:flex;gap:10px;align-items:flex-start;min-width:170px;flex:1 1 40%">'
                  f'<b style="color:#334155;font-size:.82rem;min-width:110px">{label}</b>'
                  f'<span style="font-size:.76rem;color:#64748b;line-height:1.4">{frase}</span></div>')
-    return (f'<div class="card" style="padding:14px 16px;background:#f8fafc">'
-            f'<h3 style="font-size:.9rem;margin:0 0 8px">Cómo leer los componentes (0-100)</h3>'
-            f'<div style="display:flex;flex-wrap:wrap;gap:8px 18px">{rows}</div>'
+    return (f'<details class="card" style="padding:12px 16px;background:#f8fafc">'
+            f'<summary style="cursor:pointer;font-size:.88rem;font-weight:700;color:#475569">'
+            f'Cómo leer los componentes (0-100)</summary>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px">{rows}</div>'
             f'<p class="caption" style="margin:8px 0 0">Las barras miden cada señal de 0 a 100. '
-            f'El score global pondera estos 4 componentes + la amplificación del tema.</p></div>')
+            f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
 def _cluster_comps(c, a):
@@ -615,9 +616,17 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     contenido_map = contenido_map or {}
     diversidad_map = diversidad_map or {}
     evidencia_map = evidencia_map or {}
+    # Progressive disclosure: solo los N clusters más altos se muestran
+    # expandidos; el resto (incluidos los HIGH/CRITICAL que no entran en el top N)
+    # va al bloque colapsado con el gráfico de barras. Evita panes de decenas de
+    # miles de px cuando un tema tiene muchas señales en alerta (p.ej. frontera_sur
+    # con ~68 HIGH/CRITICAL = ~60k px si se expanden todos).
+    MAX_EXPAND = 6
     order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
-    expandidos = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
-    resto = [c for c in order if band_of(c["overall_score"] or 0) not in EXPANDED_BANDS]
+    _cands = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
+    expandidos = _cands[:MAX_EXPAND]
+    _exp_ids = {c["id"] for c in expandidos}
+    resto = [c for c in order if c["id"] not in _exp_ids]
 
     out = ""
     # --- clusters HIGH/CRITICAL: detalle completo visible ---
@@ -653,8 +662,9 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             overall_ = c["overall_score"] or 0
             band_ = band_of(overall_)
             nacc_ = _n_acc(c)
-            # color por banda: ANOMALOUS ámbar, WATCH/NORMAL gris neutro
-            barcol_ = "#f59e0b" if band_ == "ANOMALOUS" else "#94a3b8"
+            # color por banda (ahora el bloque "resto" incluye también HIGH/CRITICAL
+            # que no entran en el top-N expandido)
+            barcol_ = BAND_COLORS.get(band_, "#94a3b8")
             pct_ = max(2.0, min(100.0, overall_))
             # recorte por piso de masa: el assessment lo marca como ruido de
             # bajo volumen. Añadir anotación para que los "39/100" repetidos no
@@ -708,7 +718,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
                 f'<details><summary style="cursor:pointer;font-weight:600;color:#475569;font-size:.9rem">'
                 f'Ver los {len(resto)} {plural} restantes '
-                f'(WATCH/ANOMALOUS, sin nivel de alerta)</summary>'
+                f'(resto del listado, ordenado por score)</summary>'
                 f'<p style="font-size:.74rem;color:#94a3b8;margin:8px 0 2px">Pulsa una barra para ver su detalle '
                 f'(solo se muestra uno a la vez).</p>'
                 f'{bars}'
@@ -3152,7 +3162,7 @@ a{{color:#c2410c}}
 .fimi-hero-eyebrow .sep{{color:#fdba74;font-weight:400}}
 .fimi-hero-eyebrow .dot{{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}}
 .fimi-hero h1{{margin:0 0 6px;font-size:1.55rem;line-height:1.25;color:#0f172a;font-weight:800;letter-spacing:-.01em}}
-.fimi-hero .sub{{margin:0 auto 18px;font-size:.95rem;color:#475569;line-height:1.6;max-width:70ch}}
+.fimi-hero .sub{{margin:0 0 18px;font-size:.95rem;color:#475569;line-height:1.6;max-width:100%}}
 .fimi-hero .chain{{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 20px}}
 .fimi-hero .step{{background:#fff;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;flex:1 1 150px;min-width:150px;cursor:default;transition:border-color .15s,box-shadow .15s}}
 .fimi-hero .step:hover{{border-color:#fdba74;box-shadow:0 2px 6px rgba(194,65,12,.10)}}
@@ -3235,12 +3245,14 @@ a{{color:#c2410c}}
 
  {tabs_ui}
 
-<div style="border-top:2px solid #e2e8f0;margin:26px 0 4px;padding-top:4px"></div>
-<div style="font-size:.78rem;color:#94a3b8;margin:2px 0 12px">
-<b>Resumen global del radar</b> — las secciones de abajo (Narrativas, Historial,
-Salud y Bitácora) NO pertenecen a la pestaña activa: son el estado de TODO el
-catálogo (todos los temas juntos). Usa la pestaña de arriba para ver solo un
-tema; estas secciones son la vista de conjunto.
+<details style="margin:26px 0 4px">
+<summary style="cursor:pointer;border-top:2px solid #e2e8f0;padding-top:12px;font-size:.84rem;color:#c2410c;font-weight:700">
+Resumen global del radar (narrativas · historial) — no pertenece a la pestaña activa; pulsa para abrir
+</summary>
+<div style="font-size:.78rem;color:#94a3b8;margin:8px 0 12px">
+<b>Resumen global del radar</b> — las secciones de abajo (Narrativas, Historial) NO pertenecen
+a la pestaña activa: son el estado de TODO el catálogo (todos los temas juntos). Usa la pestaña
+de arriba para ver solo un tema; estas secciones son la vista de conjunto.
 </div>
 
  {narrativas_combined}
@@ -3248,6 +3260,7 @@ tema; estas secciones son la vista de conjunto.
 {narr_align_block}
 
 {hist_html}
+</details>
 
 {detalle_wrap_close}
 </div><!-- /tabRadar -->
