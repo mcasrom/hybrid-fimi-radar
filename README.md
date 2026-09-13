@@ -33,8 +33,11 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitor
   **barra de ecosistema persistente** (viajeinteligencia.com · Herramientas · Blog
   analisis.pruebapublica.com · pruebapublica.com), un **panel de situación "de un vistazo"**
   (tiles KPI: eventos · fuentes · clusters · en alerta · temas; **distribución de clusters
-  por banda**; y una **tira por tema** con color de banda, score, tendencia y nº de
-  clusters — aditivo, no sustituye los diales), diales por tema, tarjetas de cluster
+  por banda**; una **tira por tema** con color de banda, score, tendencia y nº de
+  clusters — aditivo, no sustituye los diales); y un **gráfico de burbujas global**
+  (una burbuja por cluster, agrupadas por tema, con **tamaño = nº de cuentas** y color =
+  banda, para una impresión visual global de qué temas concentran más cuentas),
+  diales por tema, tarjetas de cluster
   (con "De qué habla", **dominios que amplifican por cluster** — eco de un medio vs red —,
   chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida", export CSV/JSON y
   **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
