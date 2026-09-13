@@ -1837,7 +1837,7 @@ def main():
     # primer tema del catálogo que la reclama; en los demás se marca como
     # "duplicado de <tema origen>" y se oculta de la lista de tarjetas.
     _firma_duenho = {}       # frozenset(auth) -> cluster_label del 1er tema
-    _duplicados = {}         # cluster_label -> cluster_label origen
+    _duplicados = {}         # cluster_label -> tema (de la VISTA) del origen
     for _t_ord in temas:
         for _c_ord in clusters:
             if _vt(_c_ord) != _t_ord:
@@ -1847,7 +1847,9 @@ def main():
                 continue
             _dueno = _firma_duenho.get(_sig)
             if _dueno is None:
-                _firma_duenho[_sig] = _c_ord["cluster_label"]
+                # el propietario es el 1er tema del catálogo que reclama la firma;
+                # guardamos SU tema (de la vista) para la nota de dedupe.
+                _firma_duenho[_sig] = _t_ord
             else:
                 _duplicados[_c_ord["cluster_label"]] = _dueno
 
@@ -1984,7 +1986,7 @@ def main():
             _detalles = []
             for _c in _dup_aqui:
                 _o = _duplicados[_c["cluster_label"]]
-                _otema = _o.split("_cluster_")[0]
+                _otema = _o  # ya es el tema (de la vista) del propietario
                 _origenes.setdefault(_otema, []).append(_c["cluster_label"])
                 _aut = firma_cluster.get(_c["id"], ())
                 _quien = ", ".join(sorted(str(a).split(":")[-1] for a in _aut)) if _aut else ""
@@ -1998,12 +2000,13 @@ def main():
             for _t2, _m2 in (temas_cfg.items() if isinstance(temas_cfg, dict) else {}):
                 _cat_nombre[_t2] = _m2.get("nombre", _t2)
             _od_legible = " · ".join(
-                f"<b>{_cat_nombre.get(k, k)}</b> ({len(v)} duplicado{'s' if len(v)>1 else ''})"
+                (f"<b>este mismo tema</b>" if k == _t else f"<b>{_cat_nombre.get(k, k)}</b>")
+                + f" ({len(v)} duplicado{'s' if len(v)>1 else ''})"
                 for k, v in _origenes.items())
             _dup_note = (f'<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-left:5px solid #d97706;'
                          f'border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.8rem;'
                          f'color:#78350f;line-height:1.55">'
-                         f'<b>🔁 Señal ya contada en otro tema ({len(_dup_aqui)} cluster'
+                         f'<b>🔁 Señal ya contada ({len(_dup_aqui)} cluster'
                          f'{"s" if len(_dup_aqui)>1 else ""})</b><br>'
                          f'Estos <b>{len(_dup_aqui)} clusters</b> son <b>el mismo conjunto de '
                          f'cuentas</b> que el radar ya muestra en {_od_legible} ({" · ".join(_detalles)}). '

@@ -79,6 +79,10 @@ clustering:
   eps: 0.7
   min_samples: 2
   method: both
+  # Componentes conexas que superan este nº de cuentas se parten en comunidades
+  # (greedy modularity) para evitar "macro-clusters" por encadenamiento
+  # transitivo. 0 = desactivar el split. Los componentes pequeños no se tocan.
+  max_component_size: 50
 weights:
   same_url: 3
   same_domain: 1

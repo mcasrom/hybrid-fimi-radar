@@ -86,6 +86,30 @@ def merge_clusters(feat_df, graph, config, tema=None):
     return out
 
 
+def _split_large_component(g, comp, max_size):
+    """Parte un componente conexo GRANDE en comunidades (greedy modularity).
+
+    Las componentes conexas pueden fusionar grupos no relacionados por
+    encadenamiento transitivo (A comparte URL con B, B comparte near-dup con C…).
+    Cuando un componente supera `max_size`, se parte en comunidades cohesivas.
+    Si el componente ya es cohesivo (una sola comunidad) o falla el algoritmo,
+    se devuelve intacto. Los componentes pequeños no se tocan (max_size<=0 lo
+    desactiva).
+    """
+    if max_size <= 0 or len(comp) <= max_size:
+        return [comp]
+    sub = g.subgraph(comp)
+    try:
+        from networkx.algorithms.community import greedy_modularity_communities
+        comms = greedy_modularity_communities(sub, weight="weight")
+        parts = [set(c) for c in comms if len(c) >= 2]
+        if len(parts) >= 2:
+            return parts
+    except Exception:
+        pass
+    return [comp]
+
+
 def cluster_by_components(feat_df, edges_df, config, tema=None):
     """Clustering por COMPONENTES CONEXAS del grafo de coordinación fuerte.
 
@@ -93,6 +117,11 @@ def cluster_by_components(feat_df, edges_df, config, tema=None):
     coordinación (B temporal, C URL, D texto, E mixto) forma su propia componente
     conexa en el grafo de aristas fuertes, por lo que queda aislado de las
     cuentas normales A (que no tienen aristas fuertes).
+
+    Los componentes que superan `clustering.max_component_size` (encadenamiento
+    transitivo → "macro-cluster" que fusiona grupos no relacionados) se parten
+    en comunidades con greedy modularity, para no reportar como un único
+    hallazgo lo que son varios grupos distintos.
 
     `tema` se usa como prefijo del label para garantizar unicidad global
     (cluster_label es UNIQUE en la BD y el contador resetea por tema/run).
@@ -110,9 +139,16 @@ def cluster_by_components(feat_df, edges_df, config, tema=None):
     out["cluster_label"] = None
     out["cluster_id"] = -1
 
-    # componentes conexas
+    # componentes conexas; los gigantes se parten en comunidades
     comps = list(nx.connected_components(g))
-    big = [c for c in comps if len(c) >= config["thresholds"]["min_cluster_size"]]
+    try:
+        max_size = int((config.get("clustering", {}) or {}).get("max_component_size", 50))
+    except Exception:
+        max_size = 50
+    parts = []
+    for _comp in comps:
+        parts.extend(_split_large_component(g, _comp, max_size))
+    big = [c for c in parts if len(c) >= config["thresholds"]["min_cluster_size"]]
     big_sorted = sorted(big, key=len, reverse=True)
     pfx = _label_prefix(tema)
     label_map = {}

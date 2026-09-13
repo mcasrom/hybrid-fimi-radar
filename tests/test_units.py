@@ -172,3 +172,39 @@ def test_cluster_by_components_aisla_componente_y_prefija():
     assert out.at["bsky:b", "cluster_label"] == "t_cluster_000"
     # la cuenta aislada no recibe cluster
     assert pd.isna(out.at["bsky:c", "cluster_label"])
+
+
+def test_cluster_by_components_parte_componente_grande():
+    """Un componente conexo grande (encadenamiento transitivo) se parte en
+    comunidades, para no fusionar grupos no relacionados en un macro-cluster."""
+    nodes = ["bsky:a1", "bsky:a2", "bsky:a3", "bsky:b1", "bsky:b2", "bsky:b3"]
+    feat = pd.DataFrame({"anomaly_score": [0.1] * 6}, index=nodes)
+
+    def _e(s, t):
+        return {"source": s, "target": t, "weight": 1.0, "evidence": "texto"}
+    edges = pd.DataFrame([
+        _e("bsky:a1", "bsky:a2"), _e("bsky:a2", "bsky:a3"), _e("bsky:a1", "bsky:a3"),
+        _e("bsky:b1", "bsky:b2"), _e("bsky:b2", "bsky:b3"), _e("bsky:b1", "bsky:b3"),
+        _e("bsky:a1", "bsky:b1"),  # puente entre las dos comunidades
+    ])
+    cfg = {"thresholds": {"min_cluster_size": 2},
+           "clustering": {"max_component_size": 4}}
+    out = cluster_by_components(feat, edges, cfg, tema="t")
+    la = out.at["bsky:a1", "cluster_label"]
+    lb = out.at["bsky:b1", "cluster_label"]
+    assert la is not None and lb is not None and la != lb
+    assert out.at["bsky:a2", "cluster_label"] == la
+    assert out.at["bsky:b2", "cluster_label"] == lb
+
+
+def test_cluster_by_components_no_parte_componente_pequeno():
+    """Por debajo del umbral, el componente se mantiene como un solo cluster."""
+    feat = pd.DataFrame({"anomaly_score": [0.1, 0.2]}, index=["bsky:a", "bsky:b"])
+    edges = pd.DataFrame(
+        [{"source": "bsky:a", "target": "bsky:b", "weight": 1.0, "evidence": "texto"}]
+    )
+    cfg = {"thresholds": {"min_cluster_size": 2},
+           "clustering": {"max_component_size": 50}}
+    out = cluster_by_components(feat, edges, cfg, tema="t")
+    assert out.at["bsky:a", "cluster_label"] == "t_cluster_000"
+    assert out.at["bsky:b", "cluster_label"] == "t_cluster_000"
