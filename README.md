@@ -429,4 +429,9 @@ modificada de este software como servicio accesible por red, debes ofrecer el c�
 fuente completo de tu versión bajo la misma licencia. El texto completo está en
 <https://www.gnu.org/licenses/agpl-3.0.html>.
 
+El dashboard público (`fimi.viajeinteligencia.com`) lo hace visible: el chip
+**"Open Source"** de su barra de marca enlaza directamente a este fichero
+[`LICENSE`](LICENSE), de modo que la evidencia de la licencia FOSS "in its
+entirety" es accesible desde la propia interfaz.
+
 
