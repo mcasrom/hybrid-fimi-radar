@@ -141,6 +141,12 @@ Cruza la vista activa del radar con el dataset de campañas documentadas de EUvs
 1.311 dominios documentados; se auto-descarga a `data/`, gitignored). Uso:
 `tests/validacion_externa.py --json`.
 
+El dataset **incluye `article_language`**, así que la validación puede restringirse a un
+idioma con **`--lang spanish`** (más comparable para un radar de contenido en castellano):
+243 casos / 17 dominios documentados en español, dominados por Sputnik Mundo
+(`mundo.sputniknews.com`, `sputniknews.lat`) y RT en Español (`actualidad.rt.com`) — narrativa
+Ucrania/Rusia. El radar **sí captura RT en Español** (360 eventos) pero no Sputnik Mundo.
+
 Resultados reales sobre la vista activa (90 d, últimos 5 temas):
 
 - **Precision 0.0%**: los 14 clusters con score ≥ 60 no amplifican ningún dominio

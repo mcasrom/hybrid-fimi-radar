@@ -36,6 +36,7 @@ INTERPRETACIÓN DE LOS CERO:
 
 Uso:
   .venv/bin/python tests/validacion_externa.py [--db data/radar.db] [--min-score 60] [--json]
+  .venv/bin/python tests/validacion_externa.py --lang spanish   # ground truth en castellano
 
 El dataset se descarga automáticamente de Zenodo si no existe en --dataset
 (data/euvsdisinfo_base.csv), igual que se hizo al instalarlo manualmente.
@@ -51,16 +52,28 @@ import urllib.request
 from collections import Counter, defaultdict
 
 
-def load_documented_domains(csv_path):
+def load_documented_domains(csv_path, lang=None):
+    """Carga dominios/keywords documentados del CSV de EUvsDisinfo.
+
+    `lang` (p.ej. "spanish") restringe el ground truth a ese idioma, para
+    comparar el radar (contenido en castellano) contra el universo documentado
+    en castellano. Devuelve (domains, keywords, casos, idiomas) donde `idiomas`
+    es el Counter de `article_language` de TODAS las filas (para el informe).
+    """
     if not os.path.exists(csv_path) and csv_path == "data/euvsdisinfo_base.csv":
         _download_dataset()
     domains = set()
     keywords = Counter()
+    idiomas = Counter()
     cases = 0
     with open(csv_path, encoding="utf-8", errors="ignore") as fh:
         reader = csv.DictReader(fh)
         for row in reader:
+            lang_row = (row.get("article_language") or "").strip().lower()
+            idiomas[lang_row or "?"] += 1
             if row["class"] != "disinformation":
+                continue
+            if lang and lang_row != lang.strip().lower():
                 continue
             cases += 1
             d = (row["article_domain"] or "").strip().lower()
@@ -70,7 +83,7 @@ def load_documented_domains(csv_path):
                 kw = kw.strip().lower()
                 if kw and 3 <= len(kw) <= 60:
                     keywords[kw] += 1
-    return domains, keywords, cases
+    return domains, keywords, cases, idiomas
 
 
 def _download_dataset():
@@ -100,7 +113,7 @@ def netloc(url):
 
 
 def run(args):
-    domains, keywords, n_cases = load_documented_domains(args.dataset)
+    domains, keywords, n_cases, idiomas = load_documented_domains(args.dataset, lang=args.lang)
 
     con = sqlite3.connect(args.db)
     cur = con.cursor()
@@ -193,8 +206,10 @@ def run(args):
         "fecha": "2026-09-08",
         "ground_truth": {
             "dataset": "euvsdisinfo_base.csv (Zenodo 10514307)",
+            "filtro_idioma": args.lang,
             "casos_documentados": n_cases,
             "dominios_documentados": len(domains),
+            "idiomas": dict(idiomas.most_common()),
         },
         "vista_activa": {"snapshot": mx, "ventana_dias": args.window_days},
         "precision": {
@@ -217,7 +232,8 @@ def run(args):
         return
 
     print(f"== Validación externa vs EUvsDisinfo ==")
-    print(f"Ground truth: {n_cases} casos, {len(domains)} dominios documentados.")
+    _lang = f" (idioma: {args.lang})" if args.lang else ""
+    print(f"Ground truth{_lang}: {n_cases} casos, {len(domains)} dominios documentados.")
     print(f"\n[Precisión] clusters activos score>={args.min_score}: {n_señales}; "
           f"con dominio documentado: {n_señales_doc} -> precision {precision:.1%}")
     for pr in precision_rows[:10]:
@@ -251,10 +267,14 @@ def _fuentes_documentadas(con, domains):
         d = netloc(u)
         if d and d in domains:
             urls[src] = d
-    # mapeos conocidos cuando el feed no lleva dominio en la url del evento
+    # Mapeos conocidos SOLO cuando el feed no lleva dominio en la url del evento.
+    # OJO: antes era `if "rt" in s`, que mapeaba falsamente "Niger Report" a
+    # actualidad.rt.com ("repoRT" contiene "rt"). Ahora se exige coincidencia
+    # explícita con el nombre del feed.
+    _RT = ("rt en español", "rt en espanol")
     for src in [s for (s,) in con.execute("SELECT DISTINCT source FROM events")]:
         s = str(src).lower()
-        if "rt" in s and s not in urls:
+        if s not in urls and any(t in s for t in _RT):
             urls[src] = "actualidad.rt.com"
     return urls
 
@@ -297,6 +317,8 @@ def main():
     ap.add_argument("--min-score", type=float, default=60.0,
                     help="score mínimo para contar como 'señal' (def. 60 = HIGH)")
     ap.add_argument("--window-days", type=int, default=90)
+    ap.add_argument("--lang", default=None,
+                    help="filtra el ground truth a un idioma (p.ej. spanish)")
     ap.add_argument("--json", action="store_true")
     run(ap.parse_args())
 
