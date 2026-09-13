@@ -364,7 +364,16 @@ def _matriz_evidencia_html(comps, a, band, amp_global=None):
         f'comportamiento; la identidad no se presume.</div></div>')
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None):
+def _disp_label(c, disp_map=None):
+    """Etiqueta de cluster para MOSTRAR. `disp_map` (id -> etiqueta) la calcula
+    main(): usa el tema de la VISTA como prefijo (para no mostrar
+    'frontera_sur_cluster_000' dentro del tab de otro tema) y desambigua
+    colisiones con el tema almacenado. El `cluster_label` real se usa en
+    export/API."""
+    return (disp_map or {}).get(c["id"]) or str(c["cluster_label"] or "")
+
+
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
@@ -395,7 +404,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                   f'Posible ruido de bajo volumen</span>' if ruido else "")
 
     h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
-         f'<b style="font-size:1.02rem">{c["cluster_label"]}</b>'
+         f'<b style="font-size:1.02rem">{_disp_label(c, disp_map)}</b>'
          f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
@@ -600,7 +609,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             + attr + hyp_html)
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None, disp_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -635,7 +644,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
         _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
-        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global)}</div>')
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global, disp_map)}</div>')
 
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
@@ -702,7 +711,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'border-radius:8px;cursor:pointer;user-select:none;'
                 f'border:1px solid transparent">'
                 f'<div style="min-width:120px"><b style="min-width:92px;font-size:.82rem;'
-                f'color:#334155">{c["cluster_label"]}</b>{ctx_}</div>'
+                f'color:#334155">{_disp_label(c, disp_map)}</b>{ctx_}</div>'
                 f'<div style="flex:1;height:16px;background:#f1f5f9;border-radius:8px;overflow:hidden">'
                 f'<div style="width:{pct_:.0f}%;height:100%;background:{barcol_};border-radius:8px"></div>'
                 f'</div>'
@@ -713,7 +722,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global)}</div></div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map)}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -1264,6 +1273,25 @@ def main():
     def _vt(_c):
         return view_tema.get(_c["id"], _c["tema_id"])
 
+    # etiqueta de visualización por cluster: prefijo del tema de la VISTA (para
+    # no mostrar 'frontera_sur_cluster_000' dentro del tab de otro tema). Si dos
+    # clusters de temas almacenados distintos comparten sufijo dentro del mismo
+    # tema de vista, se desambigua con el tema almacenado entre paréntesis.
+    def _suf(_c):
+        _lab = str(_c["cluster_label"] or "")
+        return _lab.split("_cluster_")[-1] if "_cluster_" in _lab else _lab
+    _suf_counts = {}
+    for _c in clusters:
+        _k = (_vt(_c), _suf(_c))
+        _suf_counts[_k] = _suf_counts.get(_k, 0) + 1
+    disp_label_map = {}
+    for _c in clusters:
+        _vtc = _vt(_c)
+        _d = f"{_vtc}_cluster_{_suf(_c)}"
+        if _suf_counts[(_vtc, _suf(_c))] > 1:
+            _d = f"{_vtc}_cluster_{_suf(_c)} ({_c['tema_id']})"
+        disp_label_map[_c["id"]] = _d
+
     # diversidad de piezas por cluster (opción 3): nº de URLs distintas vs nº
     # de eventos y ventana temporal (min->max ts). Distingue un "eco puntual de
     # una pieza" (varias cuentas comparten la MISMA url) de una "coordinación
@@ -1812,7 +1840,7 @@ def main():
     _duplicados = {}         # cluster_label -> cluster_label origen
     for _t_ord in temas:
         for _c_ord in clusters:
-            if _c_ord["tema_id"] != _t_ord:
+            if _vt(_c_ord) != _t_ord:
                 continue
             _sig = frozenset(firma_cluster.get(_c_ord["id"], ()))
             if not _sig:
@@ -1977,7 +2005,7 @@ def main():
                          f'color:#78350f;line-height:1.55">'
                          f'<b>🔁 Señal ya contada en otro tema ({len(_dup_aqui)} cluster'
                          f'{"s" if len(_dup_aqui)>1 else ""})</b><br>'
-                         f'Los clusters de este tema que ves en 0 arriba son <b>el mismo conjunto de '
+                         f'Estos <b>{len(_dup_aqui)} clusters</b> son <b>el mismo conjunto de '
                          f'cuentas</b> que el radar ya muestra en {_od_legible} ({" · ".join(_detalles)}). '
                          f'Para no inflar la alerta con la misma señal dos veces, se listan una sola vez '
                          f'en el radar (solape temático entre dominios).</div>')
@@ -2082,7 +2110,8 @@ def main():
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _cl_txt = render_component_legend() + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
-                domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema)
+                domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
+                disp_map=disp_label_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
