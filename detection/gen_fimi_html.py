@@ -3207,7 +3207,7 @@ a{{color:#c2410c}}
   <a class="transp" href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
   <div class="chips">
     <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
-    <span class="chip"><span class="dot" style="background:#0284c7"></span>Open Source</span>
+    <a class="chip" href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" title="Licencia AGPL-3.0 del proyecto" style="text-decoration:none"><span class="dot" style="background:#0284c7"></span>Open Source</a>
     <span class="chip prod"><span class="dot"></span>En producción</span>
   </div>
   <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
