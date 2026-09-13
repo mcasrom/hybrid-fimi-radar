@@ -41,6 +41,9 @@ def mutate(t, p=0.08):
 
 
 def add(events, author, ts, text, url, tag, action="post", group="A", cluster="A"):
+    # Las cuentas sintéticas modelan REDES SOCIALES: el grafo de coordinación
+    # solo incluye cuentas con prefijo de red (bsky:/tg:/reddit:/masto:), no RSS.
+    author = f"bsky:{author}"
     events.append({"timestamp": ts, "author": author, "text": text, "url": url,
                    "hashtags": tag, "mentions": "", "action": action,
                    "source": "synthetic", "_group": group, "_cluster": cluster})

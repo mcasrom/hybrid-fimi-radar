@@ -123,8 +123,16 @@ Generador sintético con 6 escenarios (tests/generate_synthetic.py):
 | D (falsa alarma) | 0% (correctamente no disparada) |
 | E (evento viral orgánico) | parcial (correcto: viral ≠ coordinación) |
 
-**ARI = 1.000** (separación perfecta de los clusters coordinados), **precisión 100%**,
-**0 falsos positivos**.
+**ARI = 1.000** (separación perfecta de los clusters coordinados) y **0 falsos
+positivos** en los grupos orgánicos (A/D).
+
+La validación está **automatizada como gate de CI** (`tests/test_synthetic_ari.py`):
+genera los 6 escenarios, ejecuta el detector real (features → anomalías →
+coordinación → clustering de componentes conexas) **sin base de datos ni filtro de
+tema**, y exige **ARI ≥ 0.9** sobre los grupos coordinados (B/C/F) y una **tasa de
+falsos positivos ≤ 1 %** en los orgánicos (A/D; el evento viral E puede clusterizar
+parcialmente, que es el resultado correcto de *viral ≠ coordinación*). Medición
+actual: **ARI = 1.000**, FP = 2/1050 (0,19 %).
 
 ## Validación externa (EUvsDisinfo)
 
@@ -150,6 +158,20 @@ Además, EUvsDisinfo es histórico (2015-2023, foco Ucrania/Rusia), no cubre los
 del radar (Ceuta/Marruecos/España/EEUU/Oriente Medio), por lo que el benchmark valida la
 **mecánica** del cruce, no la ausencia de campañas. La evidencia real de que el detector
 funciona está en la validación sintética (ARI 1.000) + este cruce de dominios.
+
+## Pruebas y CI
+
+- **Tests unitarios** (`tests/test_units.py`): scoring (bandas, pesos con override por
+  tema, escala completa), `normalizer/clasificar.py` (match por límite de palabra) y
+  `clustering/clustering.py` (prefijo de label por tema + componentes conexas).
+- **Gate ARI** (`tests/test_synthetic_ari.py`): separación de las campañas inyectadas
+  (ver *Validación* arriba).
+- **Restore-test de backup** (`detection/restore_test.py`): restaura el backup más
+  reciente a un temporal y verifica `PRAGMA integrity_check`, las tablas clave y el
+  cuadre de conteos con la BD viva. **No toca producción**:
+  `python detection/restore_test.py [--backup ruta] [--json]`.
+- **CI** (`.github/workflows/ci.yml`): `compileall` + `ruff` + `bandit` (advisory) +
+  `pytest` con **cobertura** (gate `--cov-fail-under=50` sobre los módulos con tests).
 
 ## CTA cruzado con el blog (analisis.pruebapublica.com)
 
