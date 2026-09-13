@@ -62,6 +62,15 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitor
   muchas más fuentes sin volver a OOM.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
+- **Atribución de tema sin sobre-captura**: la captura por defecto etiqueta todo evento
+  RSS bajo `frontera_sur` (tema por defecto), así que clusters de otros temas podían
+  inflar su dial. El fix va en **dos capas**: (1) el dashboard **reclasifica cada cluster
+  por su tema dominante** (el de más keywords coincidentes en su texto/titular, `view_tema`)
+  y muestra una **nota de transparencia** ("de los N clusters que la captura etiquetó en
+  este tema, M amplifican contenido de otro tema"); (2) en origen,
+  `detection/backfill_tema_contenido.py` re-etiqueta los eventos en `event_temas`
+  (INSERT OR IGNORE, aditivo y multi-tema) tras cambiar las keywords de un tema. El dial
+  usa la señal **propia** (conservador) y el resumen ejecutivo el top view-clasificado.
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
   avisa; la decisión editorial es siempre humana (ver **Gestión de temas**).
 
