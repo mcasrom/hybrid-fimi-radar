@@ -3455,11 +3455,35 @@ Detalle completo (umbrales y variables configurables):
 {bitacora_html}
 
 {_emer_html}
+
+<div class="card" id="licencia">
+<h3>Licencia: GNU AGPL-3.0 (código abierto)</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Este proyecto se publica bajo la <b>GNU Affero General Public License v3.0</b> (AGPL-3.0), una licencia
+de código abierto (FOSS) reconocida por la Free Software Foundation, con <b>copyleft de red</b>: quien
+modifique el software y lo ofrezca como servicio a través de una red (como este radar), debe poner el
+código fuente de su versión modificada a disposición de quien use ese servicio.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Puedes usar, estudiar, modificar y redistribuir el código, con la única condición de compartir tus
+modificaciones bajo la misma licencia. El texto íntegro de la licencia está en el fichero
+<code>LICENSE</code> del repositorio; este aviso acompaña a la interfaz del proyecto como evidencia
+de licencia accesible desde la propia aplicación.
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+Repo: <a href="https://github.com/mcasrom/hybrid-fimi-radar"
+target="_blank" rel="noopener noreferrer" style="color:#c2410c">github.com/mcasrom/hybrid-fimi-radar</a> ·
+Licencia: <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/LICENSE"
+target="_blank" rel="noopener noreferrer" style="color:#c2410c">LICENSE (AGPL-3.0)</a> ·
+Código de conducta / contribución: <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/CONTRIBUTING.md"
+target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md</a>.
+</p>
+</div>
 </div><!-- /tabTransparencia -->
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -3726,7 +3750,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
