@@ -444,7 +444,7 @@ temas:
         network_density: 0.10
         anomaly: 0.40
   eeuu_politica:
-    estado: piloto
+    estado: produccion
     nombre: Política y desinformación EEUU
     # Tuning por tema (igual que politica_nacional): la coordinación partidista/
     # editorial legítima sobre política estadounidense tiene sync+contenido
@@ -460,7 +460,7 @@ temas:
         network_density: 0.10
         anomaly: 0.40
   oriente_medio:
-    estado: piloto
+    estado: produccion
     nombre: Oriente Medio (Israel-Irán-Gaza)
     # Tuning por tema (piloto): el ruido editorial/activista sobre el conflicto
     # tiene sync+contenido altos con anomalía baja; subir la anomalía evita
