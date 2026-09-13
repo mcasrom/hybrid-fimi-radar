@@ -53,6 +53,83 @@ def band_of(score):
     return "NORMAL"
 
 
+def render_bubble_chart(rows, temas, temas_cfg, width=1120):
+    """Gráfico de burbujas global: 1 cluster = 1 burbuja, agrupado por tema.
+
+    X = score (0-100), tamaño = nº de cuentas (área ∝ cuentas), color = banda.
+    Da una impresión visual global de qué temas concentran más cuentas y en qué
+    banda. Solo lectura (no toca scoring ni BD). `rows`: lista de dicts con
+    tema, label, score, cuentas, banda. SVG inline, sin librerías.
+    """
+    import math
+    if not rows:
+        return ""
+    left, right, top, row_h = 158, 104, 30, 52
+    n = len(temas)
+    plot_w = width - left - right
+    height = top + n * row_h + 54
+
+    def x_of(score):
+        return left + max(0.0, min(100.0, float(score))) / 100.0 * plot_w
+
+    max_acc = max([r["cuentas"] for r in rows] + [1])
+
+    def r_of(acc):
+        return max(3.0, 19.0 * math.sqrt(acc / max_acc))
+
+    p = [f"<svg viewBox='0 0 {width} {height}' width='100%' "
+         f"style='max-width:{width}px;display:block;margin:0 auto' "
+         f"role='img' aria-label='Clusters por tema; tamaño = número de cuentas'>"]
+    # rejilla vertical + etiquetas de score
+    for gx in (0, 20, 40, 60, 80, 100):
+        _x = x_of(gx)
+        p.append(f"<line x1='{_x:.0f}' y1='{top-6}' x2='{_x:.0f}' y2='{top+n*row_h}' "
+                 f"stroke='#e2e8f0' stroke-width='1'/>")
+        p.append(f"<text x='{_x:.0f}' y='{top+n*row_h+15}' text-anchor='middle' "
+                 f"font-size='10' fill='#94a3b8'>{gx}</text>")
+    # filas por tema
+    for i, t in enumerate(temas):
+        y0 = top + i * row_h
+        yc = y0 + row_h / 2
+        if i % 2 == 0:
+            p.append(f"<rect x='0' y='{y0:.0f}' width='{width}' height='{row_h}' fill='#fafaf9'/>")
+        nm = (temas_cfg.get(t, {}) if isinstance(temas_cfg, dict) else {}).get("nombre", t)
+        nm = str(nm).split(" (")[0]  # quita el paréntesis largo (p.ej. "(España-Marruecos)")
+        p.append(f"<text x='8' y='{yc+4:.0f}' font-size='12' font-weight='700' "
+                 f"fill='#334155'>{nm[:30]}</text>")
+        trows = [r for r in rows if r["tema"] == t]
+        tot = sum(r["cuentas"] for r in trows)
+        mx = max([r["cuentas"] for r in trows] + [0])
+        p.append(f"<text x='{width-6}' y='{yc-2:.0f}' text-anchor='end' font-size='10' "
+                 f"font-weight='700' fill='#475569'>{len(trows)} clusters · {tot} cuentas</text>")
+        p.append(f"<text x='{width-6}' y='{yc+10:.0f}' text-anchor='end' font-size='9' "
+                 f"fill='#94a3b8'>máx {mx} cuentas</text>")
+        for r in trows:
+            _x = x_of(r["score"])
+            _r = r_of(r["cuentas"])
+            _jit = ((sum(ord(ch) for ch in str(r["label"])) % 5) - 2) * 7
+            _y = yc + _jit
+            col = BAND_COLORS.get(r["banda"], "#94a3b8")
+            p.append(
+                f"<circle cx='{_x:.0f}' cy='{_y:.0f}' r='{_r:.1f}' fill='{col}' "
+                f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1'>"
+                f"<title>{r['label']} · {r['score']:.0f}/100 {r['banda']} · "
+                f"{r['cuentas']} cuentas</title></circle>")
+    # leyenda de tamaño (abajo-izquierda)
+    ly = top + n * row_h + 40
+    p.append(f"<text x='{left}' y='{ly}' font-size='9' fill='#94a3b8'>tamaño = cuentas:</text>")
+    lx = left + 100
+    for acc in (2, 10, 50, max_acc):
+        rr = r_of(acc)
+        p.append(f"<circle cx='{lx:.0f}' cy='{ly-3:.0f}' r='{rr:.1f}' fill='#94a3b8' "
+                 f"fill-opacity='0.5' stroke='#ffffff' stroke-width='1'/>")
+        p.append(f"<text x='{lx:.0f}' y='{ly+12:.0f}' text-anchor='middle' font-size='8' "
+                 f"fill='#94a3b8'>{acc}</text>")
+        lx += max(24, rr * 2 + 14)
+    p.append("</svg>")
+    return "".join(p)
+
+
 def kpi(label, value, sub, bg):
     return (f'<div style="flex:1 1 150px;background:{bg};border-radius:12px;padding:14px 16px;'
             f'box-shadow:0 1px 3px rgba(0,0,0,.06)">'
@@ -2869,6 +2946,31 @@ def main():
         f"Distribución de clusters por banda</div>"
         f"<div style='display:flex;height:14px;border-radius:7px;overflow:hidden;background:#f1f5f9'>{_seg}</div>"
         f"<div style='display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:.72rem;color:#475569'>{_leg}</div></div>")
+    # --- Gráfico de burbujas global (clusters por tema, tamaño = cuentas) ---
+    _bubble_rows = []
+    for _c in clusters:
+        if _c["cluster_label"] in _duplicados:
+            continue
+        _acc = len(firma_cluster.get(_c["id"], ()))
+        if _acc <= 0:
+            continue
+        _bubble_rows.append({
+            "tema": _vt(_c),
+            "label": _disp_label(_c, disp_label_map),
+            "score": float(_c["overall_score"] or 0),
+            "cuentas": _acc,
+            "banda": band_of(_c["overall_score"] or 0),
+        })
+    _bubble_html = ""
+    if _bubble_rows:
+        _bubble_html = (
+            f"<div style='margin-top:16px;border-top:1px solid #fed7aa;padding-top:12px'>"
+            f"<div style='font-size:.72rem;color:#9a3412;font-weight:700;margin-bottom:6px'>"
+            f"Clusters por tema · cada burbuja es un cluster "
+            f"(tamaño = nº de cuentas · color = banda)</div>"
+            f"{render_bubble_chart(_bubble_rows, temas, temas_cfg)}"
+            f"<div style='font-size:.68rem;color:#94a3b8;margin-top:6px'>Eje X = score. "
+            f"Pasa el cursor por una burbuja para ver el detalle. Sin duplicados entre temas.</div></div>")
     _panel_html = (
         f"<div id='situacion' style='background:linear-gradient(180deg,#ffffff,#fffaf5);border:1.5px solid #fed7aa;"
         f"border-radius:16px;padding:16px 18px;margin:0 0 18px'>"
@@ -2883,6 +2985,7 @@ def main():
         f"</div>"
         f"{_band_dist}"
         f"<div style='margin-top:12px'>{_board_rows}</div>"
+        f"{_bubble_html}"
         f"<div style='font-size:.72rem;color:#94a3b8;margin-top:10px'>Resumen aditivo — el detalle "
         f"sigue en los diales y tarjetas de abajo. Señal, no atribución.</div>"
         f"</div>"
