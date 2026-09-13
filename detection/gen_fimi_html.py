@@ -13,6 +13,7 @@ import time
 import pandas as pd
 from datetime import datetime, timezone
 from pathlib import Path
+import unicodedata
 
 ROOT = Path("/home/deploy/hybrid-fimi-radar")
 DB = ROOT / "data" / "radar.db"
@@ -1209,6 +1210,60 @@ def main():
             }
     except Exception:
         evidencia_map = {}
+    # Reclasificación por tema dominante en la VISTA (capa 1): frontera_sur es
+    # el default de captura, así que los clusters que amplifican contenido de
+    # OTRAS temáticas (oriente_medio, sahel...) quedan etiquetados como
+    # frontera_sur en clusters.tema_id. Aquí solo reasignamos la etiqueta de
+    # vista `view_tema` (nunca se borra ni se reescribe la BD): la tarjeta se
+    # reporta bajo el tema dominante real y, por el filtro por_tema, también
+    # se muestra en su pestaña verdadera. NO toca scoring.
+    _norm = lambda s: unicodedata.normalize("NFD", (s or "").lower()).encode("ascii", "ignore").decode()
+
+    def _kw_matches(_text, _kw):
+        _n = _norm(_text)
+        if not _n:
+            return False
+        _pk = _norm(_kw.get("palabra", ""))
+        if not _pk:
+            return False
+        if len(_kw.get("palabra", "").split()) > 1:
+            return _pk in _n
+        return re.search(r"\b" + re.escape(_pk) + r"\b", _n) is not None
+
+    _tema_kw = {}
+    try:
+        for _k in keywords:
+            _tema_kw.setdefault(_k.get("tema", "frontera_sur"), []).append(_k)
+    except Exception:
+        _tema_kw = {}
+    view_tema = {}
+    try:
+        _fs_ids = [c["id"] for c in clusters if c["tema_id"] == "frontera_sur"]
+        if _fs_ids:
+            _acc_txt = {}
+            _ce_rows = con.execute(
+                "SELECT cluster_id, text FROM cluster_events"
+                " WHERE cluster_id IN (%s) AND text IS NOT NULL AND text != ''"
+                % ",".join("?" * len(_fs_ids)), _fs_ids).fetchall()
+            for r in _ce_rows:
+                _acc_txt.setdefault(r["cluster_id"], []).append(r["text"])
+            _kws_all = [k for k in _tema_kw.keys() if k != "frontera_sur"]
+            for _cid, _txts in _acc_txt.items():
+                _cnt = {}
+                for _t0 in _txts:
+                    for _th in _kws_all:
+                        for _k0 in _tema_kw.get(_th, []):
+                            if _kw_matches(_t0, _k0):
+                                _cnt[_th] = _cnt.get(_th, 0) + 1
+                                break
+                if _cnt:
+                    view_tema[_cid] = max(_cnt, key=lambda th: (_cnt[th], th))
+    except Exception:
+        view_tema = {}
+
+    def _vt(_c):
+        return view_tema.get(_c["id"], _c["tema_id"])
+
     # diversidad de piezas por cluster (opción 3): nº de URLs distintas vs nº
     # de eventos y ventana temporal (min->max ts). Distingue un "eco puntual de
     # una pieza" (varias cuentas comparten la MISMA url) de una "coordinación
@@ -1312,7 +1367,7 @@ def main():
         else:
             _ev = con.execute("SELECT COUNT(*) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
             _src = con.execute("SELECT COUNT(DISTINCT source) FROM events WHERE tema_id=?", (_t,)).fetchone()[0]
-        _cl = [c for c in clusters if c["tema_id"] == _t]
+        _cl = [c for c in clusters if _vt(c) == _t]
         por_tema[_t] = {"eventos": _ev, "fuentes": _src, "clusters": _cl}
     # historial persistido de hallazgos, agrupado por tipo (top recientes de cada uno)
     try:
@@ -1361,7 +1416,7 @@ def main():
                 "SELECT COUNT(*) FROM findings WHERE tema_id=? AND date(fecha,'unixepoch')=?",
                 (_t, _hace48.isoformat())).fetchone()[0]
             # clusters HIGH/CRITICAL del tema HOY en vista activa
-            _cl_tema = [c for c in clusters if c["tema_id"] == _t]
+            _cl_tema = [c for c in clusters if _vt(c) == _t]
             _high_hoy = sum(1 for c in _cl_tema if (c["overall_score"] or 0) >= 60)
             # clusters HIGH/CRITICAL hace 48h (findings cluster de ese tema con >=60)
             _high_48 = con.execute(
@@ -1799,7 +1854,7 @@ def main():
         for _t_r in temas:
             _m_r = temas_cfg.get(_t_r, {}) if isinstance(temas_cfg, dict) else {}
             _nm_r = _m_r.get("nombre", _t_r)
-            _cl_r = [c for c in clusters if c["tema_id"] == _t_r]
+            _cl_r = [c for c in clusters if _vt(c) == _t_r]
             # cluster de mayor score con componentes + cuentas + banda
             _top_r = None
             if _cl_r:
@@ -1889,7 +1944,7 @@ def main():
                 + "</div>")
         else:
             _blog_html = ""
-        _tema_cl_raw = [c for c in clusters if c["tema_id"] == _t]
+        _tema_cl_raw = [c for c in clusters if _vt(c) == _t]
         # A2: quitar de este tema los clusters cuyo conjunto de cuentas ya se
         # muestra en un tema anterior del catálogo (no duplicar hallazgos).
         _dup_aqui = [c for c in _tema_cl_raw if c["cluster_label"] in _duplicados]
@@ -2307,7 +2362,7 @@ def main():
         y de su contenido real (cluster_events). Ideal para el lector que solo
         quiere "qué pasó hoy" y para compartir en redes."""
         _cli_t = [c for c in clusters
-                  if c["tema_id"] == _t and c["cluster_label"] not in _duplicados]
+                  if _vt(c) == _t and c["cluster_label"] not in _duplicados]
         if not _cli_t:
             return "Sin clusters exclusivos ahora (lo activo ya se muestra en otro tema)."
         _n_al = sum(1 for c in _cli_t if (c["overall_score"] or 0) >= 60)
@@ -2362,7 +2417,19 @@ def main():
         # su dial muestra 39, aunque el mismo conjunto de cuentas ya figure en
         # frontera_sur con nota "duplicado". Si no, un tema joven parecería en 0
         # pese a tener señal, como pasó con oriente_medio tras su calibración.
-        _cli_t = [c for c in clusters if c["tema_id"] == _t]
+        _stored_t = [c for c in clusters if c["tema_id"] == _t]
+        _n_orig = len(_stored_t)
+        _n_ajenos = sum(1 for c in _stored_t if _vt(c) != _t)
+        _transp_note = ""
+        if _n_ajenos > 0:
+            _transp_note = (
+                "<div style='margin-top:6px;padding:6px 9px;border:1px dashed #fdba74;"
+                "background:#fff7ed;border-radius:8px;font-size:.72rem;color:#7c2d12'>"
+                f"<b>Transparencia de tema:</b> de los {_n_orig} clusters que la captura "
+                f"etiquetó en este tema, {_n_ajenos} amplifican contenido de otro tema y se "
+                "reportan bajo su tema dominante real (ver su pestaña). El dial muestra solo la señal propia.</div>"
+            )
+        _cli_t = [c for c in _stored_t if _vt(c) == _t]
         _hoy_top = max((c["overall_score"] or 0) for c in _cli_t) if _cli_t else 0
         _lb_dias = _lb_t.get("dias", 0)
         _p25, _p75 = _lb_t.get("p25"), _lb_t.get("p75")
@@ -2462,7 +2529,7 @@ def main():
             f"{_frase_html}</div>"
             f"<div style='font-size:.76rem;color:#475569;background:#f0fdf4;border:1px solid #bbf7d0;"
             f"border-radius:8px;padding:6px 10px;margin:0 0 8px;text-align:left;line-height:1.5'>"
-            f"<span style='font-weight:700'>📈 {_ctx_html}</span>{_ctx_extra}</div>"
+            f"<span style='font-weight:700'>📈 {_ctx_html}</span>{_ctx_extra}</div>{_transp_note}"
             f"<div style='font-size:.72rem;color:#94a3b8;text-align:left;margin:0 0 8px;line-height:1.4'>"
             f"Zona verde = rango normal del tema (p25-p75 de los picos diarios) · "
             f"muesca roja = umbral de alerta (≥{_ALERTA_UMBRAL}). La aguja señala el score top de hoy "
