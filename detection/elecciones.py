@@ -12,6 +12,7 @@ electoral (pais, nombre, fecha, idioma, keywords, estado). Este motor:
      (Dismiss / Distort / Distract / Dismay / Divide) — señal LÉXICA, orientativa.
   4. Muestra en qué temas (`event_temas`) aterrizan.
 
+Salida VISUAL: línea de tiempo (SVG) + barras/chips por elección.
 Descriptivo y sin atribución: cuenta y clasifica por palabras, no afirma autoría.
 Añadir una elección = añadir una fila (o `elecciones_cli.py alta`).
 """
@@ -39,6 +40,7 @@ ACTORES = {
     "EEUU": ["estados unidos", "eeuu", "ee.uu", "united states", "usa", "washington",
              "trump", "casa blanca", "white house"],
 }
+_ACT_COL = {"rusófono": "#dc2626", "China": "#ea580c", "EEUU": "#2563eb"}
 
 # Objetivos 5D (framework EEAS).
 CINCO_D = {
@@ -204,6 +206,59 @@ def detectar(dias=90, registro_path=None, conn=None):
     return {"dias": dias, "n_eventos": len(eventos), "elecciones": salida}
 
 
+def _timeline_svg(els, ancho=1000, alto=132):
+    """Línea de tiempo: cada elección un punto (color = fase) + marca de 'hoy'."""
+    pts = [e for e in els if e["fase"]["dias"] is not None]
+    if not pts:
+        return ""
+    dias = [e["fase"]["dias"] for e in pts]
+    lo = min(dias + [0]) - 30
+    hi = max(dias + [0]) + 30
+    L, R = 90, 70
+    W, H = ancho, alto
+    y0 = H - 30
+    def x(d):
+        return L + (d - lo) / (hi - lo) * (W - L - R)
+    s = [f'<svg viewBox="0 0 {W} {H}" width="100%" style="display:block" '
+         f'font-family="system-ui,sans-serif">']
+    s.append(f'<line x1="{x(lo):.0f}" y1="{y0}" x2="{x(hi):.0f}" y2="{y0}" '
+             f'stroke="#cbd5e1" stroke-width="2"/>')
+    s.append(f'<line x1="{x(0):.0f}" y1="14" x2="{x(0):.0f}" y2="{y0+7}" '
+             f'stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>')
+    s.append(f'<text x="{x(0):.0f}" y="11" font-size="11" fill="#dc2626" '
+             f'text-anchor="middle" font-weight="700">hoy</text>')
+    for i, e in enumerate(sorted(pts, key=lambda z: z["fase"]["dias"])):
+        d = e["fase"]["dias"]
+        col = e["fase"]["color"]
+        cx = x(d)
+        arriba = (i % 2 == 0)
+        ly = 34 if arriba else y0 - 12
+        s.append(f'<circle cx="{cx:.0f}" cy="{y0}" r="7" fill="{col}" '
+                 f'stroke="#fff" stroke-width="2"/>')
+        s.append(f'<line x1="{cx:.0f}" y1="{y0-7 if arriba else y0+7}" '
+                 f'x2="{cx:.0f}" y2="{ly+4 if arriba else ly-11}" stroke="{col}" '
+                 f'stroke-width="1"/>')
+        lbl = f'{e["pais"]} · {e["nombre"][:20]}'
+        s.append(f'<text x="{cx:.0f}" y="{ly}" font-size="11" fill="#334155" '
+                 f'text-anchor="middle" font-weight="700">{lbl}</text>')
+        s.append(f'<text x="{cx:.0f}" y="{ly+12}" font-size="10" fill="#94a3b8" '
+                 f'text-anchor="middle">{e["fecha"]}</text>')
+    s.append('</svg>')
+    return "".join(s)
+
+
+def _chips(d, col):
+    if not d:
+        return "<span style='color:#94a3b8'>—</span>"
+    out = []
+    for k, v in d.items():
+        c = _ACT_COL.get(k, col)
+        out.append(f"<span style='font-size:.72rem;font-weight:700;color:{c};"
+                   f"background:{c}12;border:1px solid {c}44;border-radius:999px;"
+                   f"padding:1px 8px;margin:0 5px 3px 0;display:inline-block'>{k} {v}</span>")
+    return "".join(out)
+
+
 def _html(res):
     els = res.get("elecciones", [])
     if not els:
@@ -211,48 +266,57 @@ def _html(res):
                 "<p class='caption'>Sin elecciones en el registro "
                 "(<code>data/elecciones.yaml</code>). Añade una con "
                 "<code>elecciones_cli.py alta</code>.</p></div>")
-    rows = ""
+    max_ev = max((e["n_ev"] for e in els), default=1) or 1
+    filas = ""
     for e in els:
         f = e["fase"]
         fase_txt = f["nombre"]
         if f["dias"] is not None:
-            fase_txt += (f" (faltan {abs(int(f['dias']))} d)"
-                         if f["dias"] > 0 else f" (hace {abs(int(f['dias']))} d)")
-        act = " · ".join(f"{k} {v}" for k, v in e["actores"].items()) or "—"
-        cin = " · ".join(f"{k} {v}" for k, v in list(e["cinco_d"].items())[:3]) or "—"
-        temas = " · ".join(f"{t} ({n})" for t, n in e["temas"].items()) or "—"
-        rows += (
-            f"<div style='margin:8px 0;padding:9px 12px;border:1px solid #e2e8f0;"
-            f"border-left:4px solid {f['color']};border-radius:8px'>"
+            fase_txt += (f" · faltan {abs(int(f['dias']))} d"
+                         if f["dias"] > 0 else f" · hace {abs(int(f['dias']))} d")
+        pct = max(3, int(100 * e["n_ev"] / max_ev))
+        temas = " ".join(
+            f"<span style='font-size:.72rem;color:#475569;background:#f1f5f9;"
+            f"border:1px solid #e2e8f0;border-radius:999px;padding:1px 8px;"
+            f"margin:0 5px 3px 0;display:inline-block'>{t} · {n}</span>"
+            for t, n in e["temas"].items()) or "<span style='color:#94a3b8'>—</span>"
+        filas += (
+            f"<div style='margin:10px 0;padding:11px 13px;border:1px solid #e2e8f0;"
+            f"border-left:5px solid {f['color']};border-radius:9px'>"
             f"<div style='display:flex;justify-content:space-between;gap:10px;"
             f"align-items:baseline;flex-wrap:wrap'>"
-            f"<b style='font-size:.9rem;color:#1e293b'>{e['pais']} · {e['nombre']}</b>"
+            f"<b style='font-size:.95rem;color:#1e293b'>{e['pais']} · {e['nombre']}</b>"
             f"<span style='font-size:.72rem;font-weight:700;color:{f['color']};"
             f"background:{f['color']}15;border:1px solid {f['color']}44;"
-            f"border-radius:999px;padding:2px 9px'>{fase_txt}</span></div>"
-            f"<div style='font-size:.76rem;color:#475569;margin-top:3px'>"
-            f"<b>{e['n_ev']}</b> eventos · <b>{e['fuentes']}</b> fuentes · cobertura "
-            f"<span style='color:{e['cobertura_color']};font-weight:700'>"
-            f"{e['cobertura']}</span> · fecha {e['fecha'] or '—'} · idioma {e['idioma']}</div>"
-            f"<div style='font-size:.74rem;color:#64748b;margin-top:2px'>"
-            f"actores (señal léxica): {act}</div>"
-            f"<div style='font-size:.74rem;color:#64748b;margin-top:2px'>5D: {cin}</div>"
-            f"<div style='font-size:.74rem;color:#64748b;margin-top:2px'>"
-            f"aterriza en: {temas}</div>"
-            f"<div style='font-size:.76rem;color:#94a3b8;margin-top:3px;font-style:italic'>"
-            f"{e['ejemplo']}…</div></div>")
+            f"border-radius:999px;padding:2px 10px'>{fase_txt}</span></div>"
+            f"<div style='display:flex;align-items:center;gap:10px;margin:8px 0 4px'>"
+            f"<div style='flex:1;background:#f1f5f9;border-radius:6px;height:16px;"
+            f"overflow:hidden'><div style='width:{pct}%;height:100%;"
+            f"background:{e['cobertura_color']};opacity:.75'></div></div>"
+            f"<span style='font-size:.8rem;color:#334155;white-space:nowrap'>"
+            f"<b>{e['n_ev']}</b> eventos · {e['fuentes']} fuentes · "
+            f"<b style='color:{e['cobertura_color']}'>{e['cobertura']}</b></span></div>"
+            f"<div style='font-size:.76rem;color:#64748b;margin-top:4px'>"
+            f"<b>actores</b> {_chips(e['actores'], '#2563eb')}</div>"
+            f"<div style='font-size:.76rem;color:#64748b;margin-top:2px'>"
+            f"<b>5D</b> {_chips(e['cinco_d'], '#7c3aed')}</div>"
+            f"<div style='font-size:.76rem;color:#64748b;margin-top:2px'>"
+            f"<b>aterriza en</b> {temas}</div>"
+            f"<div style='font-size:.74rem;color:#94a3b8;margin-top:4px;"
+            f"font-style:italic'>{e['ejemplo']}…</div></div>")
     return (
         f"<div class='card' id='elecciones'><h3>Election Threat Landscape "
         f"(calendario electoral)</h3>"
         f"<p class='caption'>Registro de procesos electorales "
-        f"(<code>data/elecciones.yaml</code>). Para cada uno se calcula la <b>fase</b> "
-        f"desde su fecha (modelo EEAS: meses antes / mes electoral / 72 h / post), se "
-        f"cruza el corpus por país+proceso y se reporta <b>cobertura</b> (eventos/fuentes), "
-        f"<b>actor</b> (rusófono/China/EEUU) y objetivo <b>5D</b> por señal léxica, y en qué "
-        f"temas aterriza. <b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, "
+        f"(<code>data/elecciones.yaml</code>). <b>Línea de tiempo</b> por fecha "
+        f"(el punto = elección, color = fase; línea roja = hoy). Por elección: "
+        f"<b>fase</b> (modelo EEAS: meses antes / mes electoral / 72 h / post), "
+        f"<b>cobertura</b> (barra = eventos, color = alta/media/baja), <b>actor</b> "
+        f"(rusófono/China/EEUU) y objetivo <b>5D</b> por señal léxica, y en qué temas "
+        f"aterriza. <b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, "
         f"no afirma autoría. Cobertura baja = faltan feeds de ese país, no ausencia de "
         f"campaña. Ventana: últimos {res.get('dias', 90)} días.</p>"
-        f"{rows}"
+        f"{_timeline_svg(els)}{filas}"
         f"<p class='caption' style='margin-top:6px'>Añadir una elección: "
         f"<code>elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD "
         f"--keywords \"…\"</code>.</p></div>")
