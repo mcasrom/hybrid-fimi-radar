@@ -143,7 +143,9 @@ el corpus por país+proceso y reporta **cobertura** (eventos/fuentes), **actor**
 cobertura baja indica falta de feeds de ese país, no ausencia de campaña. Se muestra como
 **card visual** en la pestaña **Transparencia**: una **línea de tiempo (SVG)** con cada
 elección (punto = elección, color = fase, línea roja = hoy) y, por elección, una **barra de
-cobertura** (eventos) + **chips** de actor (rusófono/China/EEUU), 5D y temas de aterrizaje.
+cobertura** (eventos) + la **señal de coordinación** (cuántos de sus eventos forman parte de
+un **cluster detectado** — amplificación coordinada — y el mayor implicado) + **chips** de
+actor (rusófono/China/EEUU), 5D y temas de aterrizaje.
 Añadir una elección = una fila (o
 `detection/elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD --keywords "…"`;
 `list` y `cerrar` para gestionar). No toca captura ni scoring (coste ~0 de memoria).

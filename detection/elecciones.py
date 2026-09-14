@@ -6,15 +6,16 @@ electoral (pais, nombre, fecha, idioma, keywords, estado). Este motor:
 
   1. Calcula la FASE desde la fecha (modelo EEAS: meses antes / mes electoral /
      72 h / post).
-  2. Cruza el corpus (`events`, ventana configurable) por el vocabulario de cada
-     fila (país + proceso) y reporta COBERTURA (eventos, fuentes, idioma).
-  3. Clasifica esos eventos por ACTOR (rusófono / China / EEUU) y objetivo 5D
-     (Dismiss / Distort / Distract / Dismay / Divide) — señal LÉXICA, orientativa.
-  4. Muestra en qué temas (`event_temas`) aterrizan.
+  2. Cruza el corpus (`events`) por el vocabulario de cada fila (país + proceso)
+     y reporta COBERTURA (eventos, fuentes, idioma).
+  3. **Cruza con los CLUSTERS** (coordinación): cuántos de esos eventos forman
+     parte de un cluster detectado y el score top. ESTA es la señal del radar
+     (amplificación coordinada), no el simple recuento.
+  4. Clasifica por ACTOR (rusófono / China / EEUU) y objetivo 5D — señal léxica.
+  5. Muestra en qué temas (`event_temas`) aterrizan.
 
 Salida VISUAL: línea de tiempo (SVG) + barras/chips por elección.
 Descriptivo y sin atribución: cuenta y clasifica por palabras, no afirma autoría.
-Añadir una elección = añadir una fila (o `elecciones_cli.py alta`).
 """
 import argparse
 import collections
@@ -31,7 +32,6 @@ ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "radar.db"
 REGISTRO = ROOT / "data" / "elecciones.yaml"
 
-# Actores estatales (señal léxica, orientativa).
 ACTORES = {
     "rusófono": ["rusia", "ruso", "rusa", "russian", "russe", "kremlin", "putin",
                  "moscú", "moscow", "sputnik", "lavrov", "actualidad.rt"],
@@ -42,7 +42,6 @@ ACTORES = {
 }
 _ACT_COL = {"rusófono": "#dc2626", "China": "#ea580c", "EEUU": "#2563eb"}
 
-# Objetivos 5D (framework EEAS).
 CINCO_D = {
     "Dismiss": ["desmentir", "desmiente", "desmentido", "niega", "falso", "bulo",
                 "bulos", "hoax", "fake", "debunk", "desinformación", "mentira"],
@@ -55,6 +54,8 @@ CINCO_D = {
     "Divide": ["divide", "división", "polariza", "enfrenta", "crispación",
                "extrem", "ultra"],
 }
+_BAND_COL = {"CRITICAL": "#dc2626", "HIGH": "#ea580c", "ANOMALOUS": "#d97706",
+             "WATCH": "#0e7490", "NORMAL": "#64748b"}
 
 
 def _norm(s):
@@ -89,6 +90,24 @@ def _match_vocab(texto_norm, tokens_set, vocab_pre):
 
 ACT_PRE = {a: _prep_vocab(v) for a, v in ACTORES.items()}
 D_PRE = {d: _prep_vocab(v) for d, v in CINCO_D.items()}
+
+
+def _bands():
+    try:
+        c = yaml.safe_load(open(ROOT / "config.yaml"))
+        b = c.get("scoring", {}).get("bands", {})
+        return {k: (v[0], v[1]) for k, v in b.items()}
+    except Exception:
+        return {"NORMAL": (0, 19), "WATCH": (20, 39), "ANOMALOUS": (40, 59),
+                "HIGH": (60, 79), "CRITICAL": (80, 100)}
+
+
+def _banda(score, bands):
+    for k in ("CRITICAL", "HIGH", "ANOMALOUS", "WATCH", "NORMAL"):
+        lo, hi = bands.get(k, (0, 0))
+        if lo <= score <= hi:
+            return k
+    return "NORMAL"
 
 
 def cargar_registro(path=None):
@@ -139,6 +158,7 @@ def detectar(dias=90, registro_path=None, conn=None):
         conn.row_factory = sqlite3.Row
     ahora = int(conn.execute("SELECT strftime('%s','now')").fetchone()[0])
     desde = ahora - dias * 86400
+    bands = _bands()
 
     prep = []
     for f in cargar_registro(registro_path):
@@ -151,17 +171,30 @@ def detectar(dias=90, registro_path=None, conn=None):
             "kw_pre": _prep_vocab(f.get("keywords") or []),
             "n_ev": 0, "fuentes": set(), "temas": collections.Counter(),
             "actores": collections.Counter(), "cinco_d": collections.Counter(),
-            "ejemplo": "",
+            "n_cluster": 0, "cluster_ids": set(), "ejemplo": "",
         })
 
     eventos = conn.execute(
-        "SELECT id, source, title, text FROM events WHERE timestamp >= ?",
-        (desde,)).fetchall()
+        "SELECT id, timestamp, source, author, url, title, text FROM events"
+        " WHERE timestamp >= ?", (desde,)).fetchall()
     temas_ev = {}
     for r in conn.execute(
             "SELECT et.event_id, et.tema_id FROM event_temas et JOIN events e"
             " ON e.id=et.event_id WHERE e.timestamp >= ?", (desde,)).fetchall():
         temas_ev.setdefault(r["event_id"], []).append(r["tema_id"])
+    # Clusters actuales (coordinación) + firmas para enlazar evento↔cluster.
+    clusters = {}
+    for r in conn.execute("SELECT id, cluster_label, tema_id, overall_score"
+                          " FROM clusters"):
+        sc = round(float(r["overall_score"] or 0), 1)
+        clusters[r["id"]] = {"label": r["cluster_label"], "tema": r["tema_id"],
+                             "score": sc, "banda": _banda(sc, bands)}
+    sig_url, sig_ts = {}, {}
+    for r in conn.execute("SELECT cluster_id, author, url, ts FROM cluster_events"):
+        a = r["author"] or ""
+        if r["url"]:
+            sig_url[(a, r["url"])] = r["cluster_id"]
+        sig_ts[(a, r["ts"])] = r["cluster_id"]
     if cerrar:
         conn.close()
 
@@ -171,6 +204,11 @@ def detectar(dias=90, registro_path=None, conn=None):
         toks = _tokens_norm(txt)
         act_hits = [a for a, ap in ACT_PRE.items() if _match_vocab(tn, toks, ap)]
         d_hits = [d for d, dp in D_PRE.items() if _match_vocab(tn, toks, dp)]
+        cid = None
+        if e["url"]:
+            cid = sig_url.get((e["author"] or "", e["url"]))
+        if cid is None:
+            cid = sig_ts.get((e["author"] or "", e["timestamp"]))
         for p in prep:
             if not _match_vocab(tn, toks, p["kw_pre"]):
                 continue
@@ -182,6 +220,9 @@ def detectar(dias=90, registro_path=None, conn=None):
                 p["actores"][a] += 1
             for d in d_hits:
                 p["cinco_d"][d] += 1
+            if cid is not None and cid in clusters:
+                p["n_cluster"] += 1
+                p["cluster_ids"].add(cid)
             if not p["ejemplo"]:
                 p["ejemplo"] = (e["title"] or e["text"] or "").strip()[:150]
 
@@ -191,11 +232,15 @@ def detectar(dias=90, registro_path=None, conn=None):
             continue
         n_ev, n_fu = p["n_ev"], len(p["fuentes"])
         cob, cob_col = _cobertura(n_ev, n_fu)
+        tops = [clusters[c] for c in p["cluster_ids"] if c in clusters]
+        top = max(tops, key=lambda z: z["score"]) if tops else None
         salida.append({
             "pais": p["pais"], "nombre": p["nombre"], "fecha": p["fecha"],
             "idioma": p["idioma"], "fase": _fase(p["fecha"], ahora),
             "n_ev": n_ev, "fuentes": n_fu,
             "cobertura": cob, "cobertura_color": cob_col,
+            "n_cluster": p["n_cluster"], "n_clusters": len(p["cluster_ids"]),
+            "top": top,
             "actores": dict(p["actores"].most_common()),
             "cinco_d": dict(p["cinco_d"].most_common()),
             "temas": dict(p["temas"].most_common(4)),
@@ -207,7 +252,6 @@ def detectar(dias=90, registro_path=None, conn=None):
 
 
 def _timeline_svg(els, ancho=1000, alto=132):
-    """Línea de tiempo: cada elección un punto (color = fase) + marca de 'hoy'."""
     pts = [e for e in els if e["fase"]["dias"] is not None]
     if not pts:
         return ""
@@ -259,6 +303,23 @@ def _chips(d, col):
     return "".join(out)
 
 
+def _coordinacion_html(e):
+    if e["n_ev"] == 0:
+        return "<span style='color:#94a3b8'>—</span>"
+    if e["n_cluster"] == 0:
+        return (f"<span style='color:#16a34a;font-weight:700'>sin coordinación "
+                f"detectada</span> <span style='color:#94a3b8'>(0 de {e['n_ev']} eventos "
+                f"en clusters)</span>")
+    tb = e["top"]
+    bcol = _BAND_COL.get(tb["banda"], "#64748b") if tb else "#64748b"
+    extra = (f" · mayor: <b style='color:{bcol}'>{tb['score']:.0f}/100 {tb['banda']}</b> "
+             f"<span style='color:#94a3b8'>({tb['label']}; puede ser un cluster "
+             f"general)</span>") if tb else ""
+    pct = 100.0 * e["n_cluster"] / e["n_ev"]
+    return (f"<b style='color:#c2410c'>{e['n_cluster']} de {e['n_ev']}</b> "
+            f"({pct:.0f}%) en <b>{e['n_clusters']}</b> cluster(s){extra}")
+
+
 def _html(res):
     els = res.get("elecciones", [])
     if not els:
@@ -296,6 +357,9 @@ def _html(res):
             f"<span style='font-size:.8rem;color:#334155;white-space:nowrap'>"
             f"<b>{e['n_ev']}</b> eventos · {e['fuentes']} fuentes · "
             f"<b style='color:{e['cobertura_color']}'>{e['cobertura']}</b></span></div>"
+            f"<div style='font-size:.8rem;color:#334155;margin-top:4px;padding:5px 8px;"
+            f"background:#fff7ed;border:1px solid #fed7aa;border-radius:7px'>"
+            f"<b>coordinación</b> · {_coordinacion_html(e)}</div>"
             f"<div style='font-size:.76rem;color:#64748b;margin-top:4px'>"
             f"<b>actores</b> {_chips(e['actores'], '#2563eb')}</div>"
             f"<div style='font-size:.76rem;color:#64748b;margin-top:2px'>"
@@ -309,13 +373,15 @@ def _html(res):
         f"(calendario electoral)</h3>"
         f"<p class='caption'>Registro de procesos electorales "
         f"(<code>data/elecciones.yaml</code>). <b>Línea de tiempo</b> por fecha "
-        f"(el punto = elección, color = fase; línea roja = hoy). Por elección: "
+        f"(punto = elección, color = fase; línea roja = hoy). Por elección: "
         f"<b>fase</b> (modelo EEAS: meses antes / mes electoral / 72 h / post), "
-        f"<b>cobertura</b> (barra = eventos, color = alta/media/baja), <b>actor</b> "
-        f"(rusófono/China/EEUU) y objetivo <b>5D</b> por señal léxica, y en qué temas "
-        f"aterriza. <b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, "
-        f"no afirma autoría. Cobertura baja = faltan feeds de ese país, no ausencia de "
-        f"campaña. Ventana: últimos {res.get('dias', 90)} días.</p>"
+        f"<b>cobertura</b> (barra = eventos, color = alta/media/baja) y la señal clave: "
+        f"<b>coordinación</b> — cuántos de sus eventos forman parte de un <b>cluster "
+        f"detectado</b> (amplificación coordinada) y el score top. Además, <b>actor</b> "
+        f"(rusófono/China/EEUU) y <b>5D</b> por señal léxica, y temas de aterrizaje. "
+        f"<b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, no afirma "
+        f"autoría. Cobertura baja = faltan feeds de ese país, no ausencia de campaña. "
+        f"Ventana: últimos {res.get('dias', 90)} días.</p>"
         f"{_timeline_svg(els)}{filas}"
         f"<p class='caption' style='margin-top:6px'>Añadir una elección: "
         f"<code>elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD "
