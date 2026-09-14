@@ -453,6 +453,72 @@ feeds:
   transparency: medium
   note: Energía solar/fotovoltaica España. Política energética y precios.
   analytical_relevance: media
+# === Feeds capítulo electoral (14-sep-2026): Alemania + Suecia ===
+# Añadidos para la cobertura del capítulo "Election Threat Landscape" (elecciones de
+# Alemania -Länder sep-2026- y Suecia -Riksdag 13-sep-2026). Balance por país:
+# público (least-biased) / centro-izq / centro-der. Todos verificados HTTP 200 con UA
+# de navegador. EEUU NO añade feeds: se cubre con las keywords de `eeuu_politica` +
+# feeds existentes, para no engordar el sumidero por defecto `frontera_sur`.
+- nombre: Tagesschau (DE)
+  url: https://www.tagesschau.de/index~rss2.xml
+  tipo: media
+  pais: DE
+  idioma: de
+  bias: least-biased
+  reliability: high
+  transparency: high
+  note: Telediario público alemán (ARD). Cobertura electoral Alemania y Länder.
+  analytical_relevance: media
+- nombre: Der Spiegel (DE)
+  url: https://www.spiegel.de/schlagzeilen/tops/index.rss
+  tipo: media
+  pais: DE
+  idioma: de
+  bias: center-left
+  reliability: mostly-factual
+  transparency: high
+  note: Semanario alemán. Cobertura política y electoral DE.
+  analytical_relevance: media
+- nombre: FAZ (DE)
+  url: https://www.faz.net/rss/aktuell/politik/
+  tipo: media
+  pais: DE
+  idioma: de
+  bias: center-right
+  reliability: mostly-factual
+  transparency: high
+  note: Frankfurter Allgemeine, sección política. Equilibrio centro-der en cobertura DE.
+  analytical_relevance: media
+- nombre: SVT Nyheter (SV)
+  url: https://www.svt.se/rss.xml
+  tipo: media
+  pais: SE
+  idioma: sv
+  bias: least-biased
+  reliability: high
+  transparency: high
+  note: Televisión pública sueca. Cobertura electoral SE (Riksdag).
+  analytical_relevance: media
+- nombre: Dagens Nyheter (SV)
+  url: https://www.dn.se/rss/
+  tipo: media
+  pais: SE
+  idioma: sv
+  bias: center-left
+  reliability: mostly-factual
+  transparency: medium
+  note: Diario sueco independiente. Cobertura política y electoral SE.
+  analytical_relevance: media
+- nombre: Svenska Dagbladet (SV)
+  url: https://www.svd.se/feed/articles.rss
+  tipo: media
+  pais: SE
+  idioma: sv
+  bias: center-right
+  reliability: mostly-factual
+  transparency: medium
+  note: Diario sueco (centro-der). Equilibrio en cobertura electoral SE.
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion

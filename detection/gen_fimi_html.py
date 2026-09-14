@@ -3217,6 +3217,19 @@ def main():
         _trans_html = (f"<div class='card'><h3>Pulso transversal</h3>"
                        f"<p class='caption'>No disponible: {_e_tr}</p></div>")
 
+    # Election Threat Landscape (opción B, 14/Sep): registro dirigido por datos
+    # (data/elecciones.yaml). Fases EEAS + cobertura + actor + 5D. Descriptivo.
+    try:
+        import importlib.util as _ilu_el
+        _spec_el = _ilu_el.spec_from_file_location(
+            "elecciones", ROOT / "detection" / "elecciones.py")
+        _el_mod = _ilu_el.module_from_spec(_spec_el)
+        _spec_el.loader.exec_module(_el_mod)
+        _elec_html = _el_mod._html(_el_mod.detectar(dias=90))
+    except Exception as _e_el:
+        _elec_html = (f"<div class='card'><h3>Election Threat Landscape</h3>"
+                      f"<p class='caption'>No disponible: {_e_el}</p></div>")
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -3725,6 +3738,8 @@ Detalle completo (umbrales y variables configurables):
 
 {_ind_html}
 
+{_elec_html}
+
 {_trans_html}
 
 <div class="card" id="licencia">
@@ -3754,7 +3769,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -4021,7 +4036,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
+  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','elecciones','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{

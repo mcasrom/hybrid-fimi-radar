@@ -120,6 +120,31 @@ contenido mezclado (Ceuta + OPEP). Fix en dos capas:
 Resultado real: `energia` pasó de 705 a **606 eventos** y de 11 a **6 clusters**, todos
 energéticos (OPEP/Brent/gas/Ormuz); el cluster mezclado volvió a su tema real (frontera_sur).
 
+### Cobertura electoral — Alemania y Suecia (14/09/2026)
+
+Para el capítulo **Election Threat Landscape** (elecciones de Alemania —Länder, sep-2026— y
+Suecia —Riksdag, 13-sep-2026—) se añadieron **6 feeds** de discurso doméstico con balance
+por país (público / centro-izq / centro-der), todos verificados HTTP 200 con UA de navegador:
+**Tagesschau (ARD), Der Spiegel, FAZ** (Alemania) y **SVT Nyheter, Dagens Nyheter, Svenska
+Dagbladet** (Suecia). Catálogo total: **40 feeds** (fr 15 · es 9 · en 9 · de 3 · sv 3 · ar 1).
+**EEUU no añade feeds** (midterms nov-2026): se cubre con las keywords de `eeuu_politica` +
+feeds existentes, para no engordar el sumidero por defecto `frontera_sur`. Detalle y probaturas
+en [`docs/FUENTES.md`](docs/FUENTES.md).
+
+### Capítulo Election Threat Landscape (opción B, registro)
+
+`detection/elecciones.py` es una capa **transversal** (solo lectura) dirigida por un
+**registro de elecciones** (`data/elecciones.yaml`, una fila por proceso: `pais`,
+`nombre`, `fecha`, `idioma`, `keywords`, `estado`). Para cada elección calcula la
+**fase** desde su fecha (modelo EEAS: meses antes / mes electoral / 72 h / post), cruza
+el corpus por país+proceso y reporta **cobertura** (eventos/fuentes), **actor**
+(rusófono/China/EEUU) y objetivo **5D** por señal léxica, y en qué temas aterriza. Es
+**descriptivo, sin atribución**: cuenta y clasifica por palabras, no afirma autoría; una
+cobertura baja indica falta de feeds de ese país, no ausencia de campaña. Se muestra como
+card en la pestaña **Transparencia**. Añadir una elección = una fila (o
+`detection/elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD --keywords "…"`;
+`list` y `cerrar` para gestionar). No toca captura ni scoring (coste ~0 de memoria).
+
 ## Ciclo de vida y gobernanza
 
 El radar **no decide**: observa, sugiere y avisa; toda transición de estado la toma una

@@ -1,0 +1,39 @@
+# Registro de elecciones — capítulo "Election Threat Landscape".
+#
+# Una fila por proceso. El motor (detection/elecciones.py) calcula la FASE desde
+# `fecha` y cruza el corpus por `keywords` (país + proceso). `estado: cerrado`
+# desactiva la fila sin borrarla.
+#
+# Gestión: detection/elecciones_cli.py {list | alta | cerrar}
+# Añadir una elección = añadir una fila aquí (o `elecciones_cli.py alta`).
+#
+# Nota: la COBERTURA depende de los feeds (idioma/país). Si un país no tiene
+# feeds, la fila saldrá con cobertura "baja" — es honesto, no es ausencia de campaña.
+
+- pais: Alemania
+  nombre: Saxony-Anhalt (Landtag)
+  fecha: 2026-09-06
+  idioma: de
+  estado: activo
+  keywords: [alemania, germany, deutschland, afd, sachsen-anhalt, landtag]
+
+- pais: Alemania
+  nombre: Berlin + Mecklenburg-Vorpommern (Landtag)
+  fecha: 2026-09-20  # fecha a verificar
+  idioma: de
+  estado: activo
+  keywords: [alemania, germany, deutschland, berlin, mecklenburg, landtag, wahl]
+
+- pais: Suecia
+  nombre: Riksdag
+  fecha: 2026-09-13
+  idioma: sv
+  estado: activo
+  keywords: [suecia, sweden, sverige, riksdag]
+
+- pais: EEUU
+  nombre: Midterms (Congreso)
+  fecha: 2026-11-03
+  idioma: en
+  estado: activo
+  keywords: [midterm, midterms, elecciones medio mandato, ballot, us election, congressional]
