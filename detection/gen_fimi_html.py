@@ -3153,6 +3153,20 @@ def main():
         _emer_html = (f"<div class='card'><h3>Volumen fuera del catálogo</h3>"
                       f"<p class='caption'>No disponible: {_e_em}</p></div>")
 
+    # Ejes transversales e indicadores explícitos (Fase A, 14/Sep).
+    # detection/indicadores.py: lentes que cruzan temas (elecciones, energía,
+    # clima, ciber) + resumen de forma de los clusters (eco/ráfaga/sostenida).
+    try:
+        import importlib.util as _ilu_in
+        _spec_in = _ilu_in.spec_from_file_location(
+            "indicadores", ROOT / "detection" / "indicadores.py")
+        _ind_mod = _ilu_in.module_from_spec(_spec_in)
+        _spec_in.loader.exec_module(_ind_mod)
+        _ind_html = _ind_mod._html(_ind_mod.detectar(dias=14))
+    except Exception as _e_in:
+        _ind_html = (f"<div class='card'><h3>Ejes transversales e indicadores</h3>"
+                     f"<p class='caption'>No disponible: {_e_in}</p></div>")
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -3658,6 +3672,8 @@ Detalle completo (umbrales y variables configurables):
 {bitacora_html}
 
 {_emer_html}
+
+{_ind_html}
 
 <div class="card" id="licencia">
 <h3>Licencia: GNU AGPL-3.0 (código abierto)</h3>

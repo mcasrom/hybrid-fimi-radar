@@ -30,6 +30,23 @@ _UMBRAL = 0.18          # similitud coseno mínima para alinear dos clusters
 _MAX_GRUPOS = 8         # grupos que se muestran en el dashboard
 _MIN_EVENTOS = 2        # clusters con <2 eventos no participan (ruido)
 
+# Familia temática por tema (taxonomía, ver docs/TAXONOMIA.md). Un grupo que
+# cruza >=2 familias distintas señala un "salto de dominio": la misma narrativa
+# viajando entre ámbitos (p. ej. geopolítica -> migración -> política).
+_FAMILIAS = {
+    "frontera_sur": "A/E crisis-sociedad",
+    "geopolitica_ue_marruecos": "B/C instituciones-recursos",
+    "politica_nacional": "B/E instituciones-sociedad",
+    "eeuu_politica": "B/D instituciones-tecnología",
+    "oriente_medio": "A/C crisis-recursos",
+    "sahel": "A/E crisis-sociedad",
+}
+
+
+def _familia(tema):
+    return _FAMILIAS.get(tema, str(tema))
+
+
 _STOP = frozenset(
     "el la los las un una unos unas de del que y o en a al con por para es son fue han ha su sus "
     "se le lo les entre como mas pero si no ya este esta estos estas ese esa eso yo tu mi mis "
@@ -137,6 +154,7 @@ def detectar(conn, umbral=_UMBRAL, min_eventos=_MIN_EVENTOS, max_grupos=_MAX_GRU
             conn.execute("SELECT overall_score FROM clusters WHERE cluster_label=?",
                          (lab,)).fetchone()[0] or 0 for lab in cluster_labels)
         ejemplo = docs[mem[0]]["textos"][0][:140] if docs[mem[0]]["textos"] else ""
+        familias = sorted({_familia(t) for t in temas})
         resultado.append({
             "label": cluster_labels[0] if len(cluster_labels) == 1 else " + ".join(cluster_labels[:3]),
             "miembros": cluster_labels,
@@ -144,6 +162,8 @@ def detectar(conn, umbral=_UMBRAL, min_eventos=_MIN_EVENTOS, max_grupos=_MAX_GRU
             "n_eventos": n_eventos,
             "n_cuentas": n_cuentas,
             "temas": temas,
+            "familias": familias,
+            "salto_dominio": len(familias) >= 2,
             "score_max": round(float(score_max), 1),
             "terminos": terminos,
             "ejemplo": ejemplo,
@@ -165,12 +185,20 @@ def _html(grupos):
         temas = ", ".join(g["temas"])
         mem = " · ".join(f"<code>{m}</code>" for m in g["miembros"])
         terms = ", ".join(f"<i>{t}</i>" for t in g["terminos"][:4])
+        badge = ""
+        if g.get("salto_dominio"):
+            fams = " ↔ ".join(g.get("familias", []))
+            badge = ("<span title='La misma narrativa cruza familias temáticas distintas' "
+                     "style='font-size:.7rem;font-weight:700;color:#7c3aed;background:#f5f3ff;"
+                     "border:1px solid #ddd6fe;border-radius:999px;padding:2px 9px'>"
+                     f"⚡ salto de dominio: {fams}</span>")
         items += (f"<div style='border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin:8px 0'>"
                   f"<div style='display:flex;flex-wrap:wrap;align-items:center;gap:10px'>"
                   f"<b style='font-size:.9rem'>{g['label'][:70]}</b>"
                   f"<span style='font-size:.74rem;color:#475569'>grupos: {g['n_clusters']} clusters · "
                   f"{g['n_cuentas']} cuentas · {g['n_eventos']} eventos</span>"
-                  f"<span style='font-size:.72rem;color:#78716c'>temas: {temas}</span></div>"
+                  f"<span style='font-size:.72rem;color:#78716c'>temas: {temas}</span>"
+                  f"{badge}</div>"
                   f"<div style='font-size:.76rem;color:#64748b;margin-top:4px'>hablan de: {terms}</div>"
                   f"<div style='font-size:.74rem;color:#94a3b8;margin-top:2px'>{mem}</div>"
                   f"<div style='font-size:.72rem;color:#9ca3af;margin-top:4px;font-style:italic'>"
@@ -179,5 +207,6 @@ def _html(grupos):
             f"(cluster-of-clusters)</h3>"
             f"<p class='caption'>Varios clusters distintos hablando de lo mismo con solapamiento léxico. "
             f"No implica una campaña: es la base estructural que el analista debe revisar (p. ej. la "
-            f"misma historia en un cluster de un medio y en cuentas de otro tema). Detección TF-IDF "
-            f"sobre el texto real de cada cluster.</p>{items}</div>")
+            f"misma historia en un cluster de un medio y en cuentas de otro tema). Una narrativa que "
+            f"cruza familias temáticas distintas lleva el chip <b>⚡ salto de dominio</b> (geopolítica → "
+            f"migración → política). Detección TF-IDF sobre el texto real de cada cluster.</p>{items}</div>")

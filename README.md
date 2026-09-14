@@ -42,7 +42,10 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitor
   chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida", export CSV/JSON y
   **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
   WATCH) para que la gravedad se perciba a contraluz de la página),
-  narrativas, historial, resumen por tema, salud de fuentes y bitácora.
+  narrativas, historial, resumen por tema, salud de fuentes, bitácora, **tendencias fuera
+  del catálogo** (candidatos a tema con delta 3d), **ejes transversales e indicadores**
+  (elecciones/energía/clima/ciber + forma de clusters) y **salto de dominio** en narrativas
+  alineadas.
 - **Divulgación progresiva (detalle de un tema)**: solo se expanden los **6 clusters de
   mayor score**; el resto (incluidos HIGH/CRITICAL fuera del top-6) va a un bloque plegado
   con **gráfico de barras clicable**. Las secciones **globales** (Narrativas + Historial,
@@ -230,10 +233,11 @@ hybrid-fimi-radar/
 │   ├── attribution/        # atribución con confianza + hipótesis H1-H6
 │   ├── radar_trend.py      # dial de estado (fuente de verdad HOY vs hace 48h)
 │   ├── salud_tema.py       # score compuesto de salud por tema
-│   ├── temas_emergentes.py # volumen fuera de catálogo (posible tema nuevo)
+│   ├── temas_emergentes.py # tendencias fuera de catálogo (candidatos + delta 3d)
+│   ├── indicadores.py      # ejes transversales (elecciones/energía/clima/ciber) + forma de clusters
 │   ├── resumen_tema.py     # síntesis por tema (sin IA)
 │   ├── health_fuentes.py   # salud y fiabilidad de fuentes (bias/reliability/corroboration)
-│   ├── narrativas_alineadas.py  # cluster-of-clusters cross-tema (TF-IDF + coseno)
+│   ├── narrativas_alineadas.py  # cluster-of-clusters cross-tema + salto de dominio (TF-IDF + coseno)
 │   ├── whois_signal.py     # señal de dominio (RDAP) para clusters de alta banda
 │   ├── export_evidencia.py # export CSV/JSON de la evidencia de un cluster
 │   ├── bitacora.py         # bitácora de temas (inicio/cambio/cierre/sugerencia)
@@ -254,7 +258,7 @@ hybrid-fimi-radar/
 │   └── pipeline.py         # (legacy, sin uso)
 ├── tests/                  # generador sintético + validación
 ├── reports/                # informes Markdown (gitignored)
-└── docs/                   # SCORING.md, ATRIBUCION-LIMITACIONES.md, TRAZABILIDAD.md, FUENTES.md
+└── docs/                   # TAXONOMIA.md, SCORING.md, ATRIBUCION-LIMITACIONES.md, TRAZABILIDAD.md, FUENTES.md
 ```
 
 ## Modelo de datos (SQLite)
@@ -269,6 +273,27 @@ El score de coordinación por cluster combina componentes 0-100 (sincronización
 similar, amplificación, infraestructura, densidad de red, anomalía) con una **escala** de
 cuentas (piso de masa, tope por banda y bonus) y es calibrable **por tema**. Todo esto se
 expone en la pestaña *Transparencia* del dashboard y se documenta en `docs/SCORING.md`.
+
+## Taxonomía, tendencias y ejes transversales (Fase A)
+
+Capa de estructura temática y lectura transversal, **sin captura nueva ni cambio en el
+scoring** (coste ~0, sin riesgo de memoria). Documentada en `docs/TAXONOMIA.md`.
+
+- **Taxonomía**: cada tema pertenece a familias transversales (A crisis · B instituciones ·
+  C recursos · D tecnología · E sociedad). Se distingue **tema** (superficie de observación)
+  de **narrativa** (relato que puede cruzar temas).
+- **Tendencias fuera del catálogo** (`temas_emergentes.py`): eventos que no matchean ninguna
+  keyword del catálogo, agrupados por término, con **delta temporal 3d vs 3d** (▲ subiendo ·
+  ▼ bajando · 🆕 nuevo · ▬ estable). Ranking por volumen sostenido 14d; la tendencia es
+  anotación. Candidatos a keyword/tema — el sistema no añade nada.
+- **Salto de dominio** (`narrativas_alineadas.py`): un grupo de clusters que cruza **≥2
+  familias** lleva el chip *⚡ salto de dominio* (misma narrativa viajando entre ámbitos).
+- **Ejes transversales e indicadores** (`indicadores.py`, card `#ejes-transversales`):
+  lentes que cruzan temas (Elecciones e interferencia democrática · Energía/precios ·
+  Clima/agua/incendios · Ciberseguridad) contando volumen, fuentes y en qué temas aterrizan;
+  y **indicadores de forma** de los clusters (eco de 1 pieza / ráfaga / coordinación
+  sostenida), separados del score. **Un eje no es un tema**: es una dimensión compartida que,
+  con volumen alto y multi-fuente, puede justificar un tema propio (decisión humana).
 
 ## Suscripciones (Telegram / email)
 

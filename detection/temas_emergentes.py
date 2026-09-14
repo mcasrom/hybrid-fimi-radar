@@ -105,45 +105,48 @@ def cargar_config():
         return {}
 
 
-def _matches_any(texto, kws):
-    tt = set(_tokens(texto))
+def _preparar_kws(kws):
+    """Precalcula los tokens de cada keyword UNA vez (evita re-tokenizar por evento)."""
+    out = []
     for kw in kws:
         kt = _tokens(kw)
         if not kt:
             continue
+        need = len(kt) if len(kt) <= 2 else int(math.ceil(0.6 * len(kt)))
+        out.append((kt, need))
+    return out
+
+
+def _matches_any_tok(tt, kws_tok):
+    for kt, need in kws_tok:
         if len(kt) == 1:
             if kt[0] in tt:
                 return True
-        else:
-            need = len(kt) if len(kt) <= 2 else int(math.ceil(0.6 * len(kt)))
-            if sum(1 for t in kt if t in tt) >= need:
-                return True
+        elif sum(1 for t in kt if t in tt) >= need:
+            return True
     return False
 
 
-def detectar(dias=14, min_eventos=10, conn=None):
-    cerrar = conn is None
-    if conn is None:
-        conn = sqlite3.connect(DB)
-        conn.row_factory = sqlite3.Row
-    cfg = cargar_config()
-    kws = [str(k.get("palabra") or "") for k in (cfg.get("keywords") or []) if k.get("palabra")]
+def _eventos_fuera(conn, kws_tok, desde, hasta=None):
+    """Eventos que solo llevan el default frontera_sur y no matchean el catálogo."""
     q = ("SELECT source, text, title, timestamp FROM events e "
          "WHERE NOT EXISTS (SELECT 1 FROM event_temas t WHERE t.event_id=e.id"
          " AND t.tema_id != 'frontera_sur') AND e.timestamp >= ?")
-    inicio = int(conn.execute("SELECT strftime('%s','now',?)", (f"-{dias} days",)).fetchone()[0])
-    rows = conn.execute(q, (inicio,)).fetchall()
-    if cerrar:
-        conn.close()
-
-    eventos_fuera = []
+    params = [desde]
+    if hasta is not None:
+        q += " AND e.timestamp < ?"
+        params.append(hasta)
+    rows = conn.execute(q, params).fetchall()
+    fuera = []
     for r in rows:
         txt = (r["text"] or "") + " " + (r["title"] or "")
-        if not _matches_any(txt, kws):
-            eventos_fuera.append((r["source"], (r["title"] or r["text"] or "").strip()[:160]))
+        if not _matches_any_tok(set(_tokens(txt)), kws_tok):
+            fuera.append((r["source"], (r["title"] or r["text"] or "").strip()[:160]))
+    return fuera
 
-    # Frecuencia por término CANÓNICO (variantes léxicas fusionadas: israel +
-    # israeli cuentan juntas). Al guardar el ejemplo se conserva el texto real.
+
+def _contar(eventos_fuera):
+    """Frecuencia por término CANÓNICO (variantes léxicas fusionadas)."""
     term_eventos = collections.Counter()
     term_sources = {}
     term_ejemplo = {}
@@ -161,6 +164,47 @@ def detectar(dias=14, min_eventos=10, conn=None):
         for t in tset:
             if t not in term_ejemplo:
                 term_ejemplo[t] = txt[:160]
+    return term_eventos, term_sources, term_ejemplo, term_variantes
+
+
+_MIN_DELTA = 3  # eventos mínimos en la ventana de tendencia (3d por defecto)
+
+
+def _tendencia(n, prev, min_eventos):
+    """Compara la ventana de tendencia con la anterior (delta temporal)."""
+    if prev == 0 and n >= min_eventos:
+        return "nuevo"
+    if n >= prev * 1.5 and (n - prev) >= min_eventos:
+        return "subiendo"
+    if prev > 0 and n <= prev * 0.5:
+        return "bajando"
+    return "estable"
+
+
+def detectar(dias=14, min_eventos=10, delta_dias=3, conn=None):
+    cerrar = conn is None
+    if conn is None:
+        conn = sqlite3.connect(DB)
+        conn.row_factory = sqlite3.Row
+    cfg = cargar_config()
+    kws = [str(k.get("palabra") or "") for k in (cfg.get("keywords") or []) if k.get("palabra")]
+    kws_tok = _preparar_kws(kws)
+    ahora = int(conn.execute("SELECT strftime('%s','now')").fetchone()[0])
+    desde = ahora - dias * 86400
+    # La ventana de RANKING es `dias` (volumen); la de TENDENCIA es `delta_dias`
+    # reciente vs la anterior (comparación equilibrada; con el proyecto joven una
+    # ventana larga marcaría todo como "nuevo" por el crecimiento de captura).
+    desde_d = ahora - delta_dias * 86400
+    desde_dp = desde_d - delta_dias * 86400
+    eventos_actual = _eventos_fuera(conn, kws_tok, desde)
+    eventos_d = _eventos_fuera(conn, kws_tok, desde_d)
+    eventos_dp = _eventos_fuera(conn, kws_tok, desde_dp, desde_d)
+    if cerrar:
+        conn.close()
+
+    term_eventos, term_sources, term_ejemplo, term_variantes = _contar(eventos_actual)
+    counts_d, _, _, _ = _contar(eventos_d)
+    counts_dp, _, _, _ = _contar(eventos_dp)
 
     cands = []
     for t, n in term_eventos.items():
@@ -170,21 +214,39 @@ def detectar(dias=14, min_eventos=10, conn=None):
         if fuentes < 2:
             continue  # un solo canal no es un "tema emergente"
         variantes = sorted(v for v in term_variantes[t] if v != t)
+        n3 = counts_d.get(t, 0)
+        p3 = counts_dp.get(t, 0)
         cands.append({
             "termino": t,
             "variantes": variantes,
             "eventos": n,
+            "eventos_3d": n3,
+            "eventos_3d_prev": p3,
+            "delta": n3 - p3,
+            "tendencia": _tendencia(n3, p3, _MIN_DELTA),
             "fuentes": fuentes,
             "ejemplo": (term_ejemplo.get(t) or "")[:160],
         })
-    cands.sort(key=lambda c: (-c["eventos"], -c["fuentes"]))
-    return {"total_fuera": len(eventos_fuera), "dias": dias, "candidatos": cands[:12]}
+    # Orden por volumen sostenido (14d) — candidatos sólidos; la tendencia
+    # (delta 3d) se muestra como ANOTACIÓN, no como criterio de orden (evita que
+    # el ranking lo dominen tokens ruidosos de la última ventana).
+    cands.sort(key=lambda c: (-c["eventos"], -c["fuentes"], -c["delta"]))
+    return {"total_fuera": len(eventos_actual), "total_fuera_prev": len(eventos_dp),
+            "dias": dias, "delta_dias": delta_dias, "candidatos": cands[:12]}
+
+
+_TREND_UI = {
+    "nuevo": ("🆕 nuevo", "#0ea5e9"),
+    "subiendo": ("▲ subiendo", "#dc2626"),
+    "bajando": ("▼ bajando", "#16a34a"),
+    "estable": ("▬ estable", "#64748b"),
+}
 
 
 def _html(res):
     cands = res.get("candidatos", [])
     if not cands:
-        return ("<div class='card'><h3>Volumen fuera de catálogo</h3>"
+        return ("<div class='card'><h3>Tendencias fuera del catálogo (¿temas emergentes?)</h3>"
                 "<p class='caption'>Sin candidatos a tema emergente: todo el volumen reciente "
                 "casa con alguna keyword del catálogo.</p></div>")
     rows = ""
@@ -194,12 +256,19 @@ def _html(res):
         if variantes:
             sub = (f"<div style='font-size:.72rem;color:#94a3b8;margin-top:2px'>"
                    f"incluye variantes: {', '.join(variantes)}</div>")
+        lab, col = _TREND_UI.get(c.get("tendencia", "estable"), _TREND_UI["estable"])
+        prev = c.get("eventos_3d_prev", 0)
+        now3 = c.get("eventos_3d", 0)
+        dd = res.get("delta_dias", 3)
         rows += (f"<div style='margin:8px 0;padding:8px 12px;border:1px solid #e2e8f0;"
                  f"border-radius:8px'>"
                  f"<div style='display:flex;justify-content:space-between;gap:10px;align-items:baseline'>"
                  f"<b style='font-size:.88rem;color:#1e293b'>{c['termino']}</b>"
                  f"<span style='font-size:.78rem;color:#c2410c;font-weight:700'>{c['eventos']} eventos · "
                  f"{c['fuentes']} fuentes</span></div>"
+                 f"<div style='font-size:.72rem;margin-top:2px'>"
+                 f"<span style='color:{col};font-weight:700'>{lab}</span>"
+                 f"<span style='color:#94a3b8'> · últimos {dd}d: {now3} vs {prev} previos</span></div>"
                  f"{sub}"
                  f"<div style='font-size:.78rem;color:#64748b;margin-top:3px;line-height:1.4'>"
                  f"{c['ejemplo']}</div>"
@@ -207,15 +276,17 @@ def _html(res):
                  f"style='cursor:pointer;border:1px solid #c2410c;background:#fff;color:#c2410c;"
                  f"border-radius:999px;padding:4px 12px;font-size:.75rem;font-weight:700;"
                  f"font-family:inherit;margin-top:6px'>💡 Sugerir tema: {c['termino']}</button></div>")
-    return (f"<div class='card'><h3>Volumen fuera del catálogo (¿tema emergente?)</h3>"
+    dd = res.get("delta_dias", 3)
+    return (f"<div class='card'><h3>Tendencias fuera del catálogo (¿temas emergentes?)</h3>"
             f"<p class='caption'>{res['total_fuera']} eventos en los últimos {res['dias']}d "
             f"no matchean ninguna keyword de los temas activos (llegaron por feeds generales al "
-            f"default). Las variantes del mismo actor (p. ej. israel/israeli, marruecos/maroc) se "
-            f"fusionan en una sola fila. No son conclusión, son candidatos a revisar. "
-            f"El sistema no añade nada: el catálogo lo decide el dueño.</p>"
+            f"default). El delta compara los últimos {dd}d con los {dd}d anteriores: ▲ subiendo · "
+            f"▼ bajando · 🆕 nuevo. Las variantes del mismo actor (israel/israeli, marruecos/maroc) se "
+            f"fusionan en una sola fila. No son conclusión, son candidatos a revisar. El sistema no "
+            f"añade nada: el catálogo lo decide el dueño.</p>"
             f"{rows}"
-            f"<p class='caption' style='margin-top:6px'>Lectura: si un término repite volumen y "
-            f"fuentes, puede merecer una keyword o un tema nuevo en "
+            f"<p class='caption' style='margin-top:6px'>Lectura: si un término sube y mantiene "
+            f"volumen y fuentes, puede merecer una keyword o un tema nuevo en "
             f"<code>config.yaml</code>.</p></div>")
 
 
