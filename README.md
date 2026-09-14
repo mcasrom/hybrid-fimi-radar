@@ -235,6 +235,7 @@ hybrid-fimi-radar/
 │   ├── salud_tema.py       # score compuesto de salud por tema
 │   ├── temas_emergentes.py # tendencias fuera de catálogo (candidatos + delta 3d)
 │   ├── indicadores.py      # ejes transversales (elecciones/energía/clima/ciber) + forma de clusters
+│   ├── transversal.py      # pulso transversal (¿migra una narrativa de dominio entre semanas?)
 │   ├── resumen_tema.py     # síntesis por tema (sin IA)
 │   ├── health_fuentes.py   # salud y fiabilidad de fuentes (bias/reliability/corroboration)
 │   ├── narrativas_alineadas.py  # cluster-of-clusters cross-tema + salto de dominio (TF-IDF + coseno)
@@ -294,6 +295,23 @@ scoring** (coste ~0, sin riesgo de memoria). Documentada en `docs/TAXONOMIA.md`.
   y **indicadores de forma** de los clusters (eco de 1 pieza / ráfaga / coordinación
   sostenida), separados del score. **Un eje no es un tema**: es una dimensión compartida que,
   con volumen alto y multi-fuente, puede justificar un tema propio (decisión humana).
+
+## Pulso transversal (Fase C)
+
+`detection/transversal.py` (card `#pulso-transversal`) hace observable el análisis
+transversal que pide la matriz de temas: una misma narrativa puede desplazarse entre
+ámbitos (`conflicto → energía → economía → migración → política`). Para cada **narrativa
+ancla** (actores/temas que viajan: petróleo, ormuz, ucrania, gaza, migración, elecciones…)
+calcula, por semana y sobre el texto de los eventos, en qué **familia temática** (A–E) aterrizan
+sus eventos, y marca:
+
+- **◧ multi-dominio** — el ancla vive en ≥2 familias a la vez.
+- **⚡ migra de dominio** — la familia dominante cambió entre las dos semanas más recientes
+  comparables (7 d vs 7 d; umbral adaptativo por ancla para no leer la rampa inicial del corpus).
+
+**Descriptivo, no causal**: no afirma que A causó B, solo que la conversación sobre un ancla
+pasó de concentrarse en un dominio a otro. Los eventos que no matchean ninguna keyword no
+cuentan como dominio (bucket *"sin clasificar"*). El sistema no decide: señala dónde mirar.
 
 ## Suscripciones (Telegram / email)
 

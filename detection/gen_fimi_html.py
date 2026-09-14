@@ -3167,6 +3167,19 @@ def main():
         _ind_html = (f"<div class='card'><h3>Ejes transversales e indicadores</h3>"
                      f"<p class='caption'>No disponible: {_e_in}</p></div>")
 
+    # Pulso transversal (Fase C): ¿migra una narrativa de dominio entre semanas?
+    # detection/transversal.py (descriptivo, sin atribución).
+    try:
+        import importlib.util as _ilu_tr
+        _spec_tr = _ilu_tr.spec_from_file_location(
+            "transversal", ROOT / "detection" / "transversal.py")
+        _tr_mod = _ilu_tr.module_from_spec(_spec_tr)
+        _spec_tr.loader.exec_module(_tr_mod)
+        _trans_html = _tr_mod._html(_tr_mod.detectar(semanas=4))
+    except Exception as _e_tr:
+        _trans_html = (f"<div class='card'><h3>Pulso transversal</h3>"
+                       f"<p class='caption'>No disponible: {_e_tr}</p></div>")
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -3674,6 +3687,8 @@ Detalle completo (umbrales y variables configurables):
 {_emer_html}
 
 {_ind_html}
+
+{_trans_html}
 
 <div class="card" id="licencia">
 <h3>Licencia: GNU AGPL-3.0 (código abierto)</h3>
