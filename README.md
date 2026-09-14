@@ -150,6 +150,11 @@ Añadir una elección = una fila (o
 `detection/elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD --keywords "…"`;
 `list` y `cerrar` para gestionar). No toca captura ni scoring (coste ~0 de memoria).
 
+**Futuro (opción B)**: elevar `elecciones` a **tema propio** (`temas_cli.py alta` con `filtro`)
+para que `run_fimi` **clusterice específicamente** el contenido electoral — hoy el cruce usa los
+clusters generales, que absorben buena parte en `frontera_sur`. Con B, la card mostraría
+**clusters propios de campaña electoral** (con score/banda/cuentas) en vez de los generales.
+
 ## Ciclo de vida y gobernanza
 
 El radar **no decide**: observa, sugiere y avisa; toda transición de estado la toma una
