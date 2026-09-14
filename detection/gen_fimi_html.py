@@ -3317,6 +3317,7 @@ main{{max-width:1200px;margin:0 auto;padding:20px 16px 56px}}
 .card{{background:#fff;border:1.5px solid #cbd5e1;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(15,23,42,.06)}}
 .card h3{{margin-top:0;font-size:1.02rem}}
 .caption{{font-size:.84rem;color:#64748b;margin:.3rem 0;max-width:82ch}}
+.tab-panel .caption{{max-width:none}}
 .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}}
 .sit-row{{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px dashed #e2e8f0}}
 .sit-dot{{width:10px;height:10px;border-radius:50%;flex:0 0 auto}}
