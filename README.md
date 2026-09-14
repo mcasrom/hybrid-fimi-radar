@@ -14,16 +14,17 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **6 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitorizados**:
 
 | Tema | Estado |
 |---|---|
 | Frontera Sur (España-Marruecos) | Producción |
 | Geopolítica UE-Marruecos | Producción |
 | Política nacional | Producción |
-| Política y desinformación EEUU | Piloto (en calibración) |
-| Oriente Medio (Israel-Irán-Gaza) | Piloto (en calibración) |
+| Política y desinformación EEUU | Producción |
+| Oriente Medio (Israel-Irán-Gaza) | Producción |
 | Sahel (África Occidental) | Piloto (en calibración) |
+| Energía (petróleo/gas/precios) | Piloto (en calibración) |
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
@@ -92,6 +93,16 @@ exporta la evidencia a `data/export/`, marca el tema como cerrado (el pipeline l
 lo registra en la bitácora. `alta --verifica` simula la cobertura de las keywords contra el
 corpus antes de crear el tema (evita keywords de registro metodológico que no matchean
 titulares reales).
+
+### Fase B — tema Energía (test controlado)
+
+`energia` (piloto) se añadió como **test controlado** de ampliación temática: 3 feeds
+especializados (OilPrice, El Periódico de la Energía, pv magazine España) + 8 keywords. Antes de
+darlo por bueno se midió el **impacto en memoria** del tema pesado (`frontera_sur`, que carga
+el corpus completo): pico **2,46 GB** con el corpus ya ampliado (33.873 eventos, 42 fuentes),
+muy por debajo del margen OOM (~3,4 GB). El tema se re-evalúa con datos: si no aporta señal
+útil, `temas_cli.py cerrar energia` lo exporta y lo saca del pipeline. **Regla:** toda
+ampliación de feeds pasa por medir el pico (`/usr/bin/time -v`) antes de darla por buena.
 
 ## Ciclo de vida y gobernanza
 

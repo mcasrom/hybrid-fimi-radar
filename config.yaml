@@ -425,6 +425,34 @@ feeds:
 
 
   analytical_relevance: media
+- nombre: OilPrice (EN)
+  url: https://oilprice.com/rss/main
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Portal especializado en energía (petróleo/gas). Mercados globales y 
+    chokepoints.
+  analytical_relevance: media
+- nombre: El Periódico de la Energía (ES)
+  url: https://elperiodicodelaenergia.com/feed/
+  tipo: media
+  idioma: es
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: 'Sector energético español: luz, gas, renovables y precios.'
+  analytical_relevance: media
+- nombre: pv magazine España (ES)
+  url: https://www.pv-magazine.es/feed/
+  tipo: media
+  idioma: es
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Energía solar/fotovoltaica España. Política energética y precios.
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion
@@ -480,6 +508,9 @@ temas:
   sahel:
     estado: piloto
     nombre: Sahel (África Occidental)
+  energia:
+    estado: piloto
+    nombre: Energía (petróleo/gas/precios)
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -686,6 +717,32 @@ keywords:
   - bluesky
   - google-news
 
+- palabra: petróleo
+  plataformas: &id004
+  - bluesky
+  - google-news
+  tema: energia
+- palabra: gas natural
+  plataformas: *id004
+  tema: energia
+- palabra: Brent
+  plataformas: *id004
+  tema: energia
+- palabra: OPEP
+  plataformas: *id004
+  tema: energia
+- palabra: Sonatrach
+  plataformas: *id004
+  tema: energia
+- palabra: Medgaz
+  plataformas: *id004
+  tema: energia
+- palabra: gasoducto
+  plataformas: *id004
+  tema: energia
+- palabra: precio de la luz
+  plataformas: *id004
+  tema: energia
 telegram_canales:
 - elfarodeceuta
 - maldita_es
