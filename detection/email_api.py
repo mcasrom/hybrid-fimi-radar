@@ -18,6 +18,9 @@ Endpoints:
   GET  /api/admin/feedback    -> resumen de votos y sugerencias. Header `x-admin-secret`
                                   (env/.env FIMI_ADMIN_SECRET). SOLO visible para el dueño:
                                   sin cómputo público (un radar FIMI no debe ser manipulable).
+  GET  /api/admin/tendencias  -> tendencias y temas hot (momentum + candidatos a tema nuevo +
+                                  ejes transversales; ?full=1 añade migración de dominio).
+                                  Header `x-admin-secret`. Solo el dueño.
 
   --- API pública v1 (read-only, S4; datos ya públicos, CORS *) ---
   GET  /api/v1                -> índice de endpoints + meta/aviso
@@ -262,6 +265,89 @@ def _band_of(score, bands):
         if len(_rango) == 2 and _rango[0] <= score <= _rango[1]:
             return _b
     return "NORMAL"
+
+
+def _cargar_modulo(nombre):
+    """Carga un módulo de detection/ por ruta (evita dependencias de paquete)."""
+    import importlib.util
+    ruta = ROOT / "detection" / f"{nombre}.py"
+    spec = importlib.util.spec_from_file_location(nombre, ruta)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _api_admin_tendencias(full=False):
+    """Tendencias y temas hot para el panel admin (read-only, solo el dueño).
+
+    Ligero por defecto: temas hot (momentum) + candidatos a tema nuevo (fuera de
+    catálogo) + ejes transversales. Con full=1 añade la migración de dominio
+    (transversal, más pesado ~14s). Reutiliza los módulos de Fase A/C.
+    """
+    import yaml
+    try:
+        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
+    except Exception:
+        cfg = {}
+    temas_cfg = cfg.get("temas", {}) or {}
+    bands = _replay_meta()["scoring"]["bands"]
+    try:
+        salud = _cargar_modulo("salud_tema").salud_por_tema() or {}
+    except Exception:
+        salud = {}
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    ahora = int(time.time())
+
+    def _f(tema, desde, hasta=None):
+        q = "SELECT COUNT(*) FROM findings WHERE tema_id=? AND fecha>=?"
+        p = [tema, desde]
+        if hasta is not None:
+            q += " AND fecha<?"
+            p.append(hasta)
+        return conn.execute(q, p).fetchone()[0]
+
+    temas_hot = []
+    for t, meta in temas_cfg.items():
+        meta = meta or {}
+        r = conn.execute(
+            "SELECT COUNT(*) n, COALESCE(MAX(overall_score),0) s FROM clusters WHERE tema_id=?",
+            (t,)).fetchone()
+        s = float(r["s"] or 0)
+        f3 = _f(t, ahora - 3 * 86400)
+        fp3 = _f(t, ahora - 6 * 86400, ahora - 3 * 86400)
+        st = salud.get(t) or {}
+        temas_hot.append({
+            "tema": t, "nombre": meta.get("nombre", t),
+            "estado": meta.get("estado", "produccion"),
+            "n_clusters": int(r["n"] or 0), "top_score": round(s, 1),
+            "top_banda": _band_of(s, bands),
+            "findings_3d": f3, "findings_prev3d": fp3, "delta": f3 - fp3,
+            "salud": st.get("score"), "salud_nivel": st.get("nivel"),
+        })
+    conn.close()
+    temas_hot.sort(key=lambda x: (-x["delta"], -x["findings_3d"]))
+
+    candidatos, ejes, migraciones = [], [], []
+    try:
+        candidatos = (_cargar_modulo("temas_emergentes").detectar(dias=14).get("candidatos", []))[:8]
+    except Exception:
+        pass
+    try:
+        ejes = _cargar_modulo("indicadores").detectar(dias=14).get("ejes", [])
+    except Exception:
+        pass
+    if full:
+        try:
+            filas = _cargar_modulo("transversal").detectar(semanas=4).get("filas", [])
+            migraciones = [{"ancla": x["ancla"], "total": x["total"], "cadena": x["cadena"],
+                            "migra": x["migra"], "multi_dominio": x["multi_dominio"]}
+                           for x in filas if x.get("migra") or x.get("multi_dominio")][:10]
+        except Exception:
+            pass
+    return {"ok": True, "generado_utc": ahora, "full": bool(full),
+            "temas_hot": temas_hot, "candidatos": candidatos,
+            "ejes": ejes, "migraciones": migraciones}
 
 
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
@@ -740,6 +826,13 @@ class H(BaseHTTPRequestHandler):
             if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             return self._send(200, {"ok": True, "temas": temas_estado()})
+        if path == "/api/admin/tendencias":
+            # Tendencias / temas hot (read-only). Ligero por defecto; full=1
+            # añade el análisis de migración de dominio. Solo el dueño.
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
+                return self._send(403, {"error": "prohibido"})
+            full = (q.get("full") or ["0"])[0].lower() in ("1", "true", "yes")
+            return self._send(200, _api_admin_tendencias(full=full))
         if path == "/api/export":
             # Evidencia por cluster (OSINT): devuelve cluster_events de un
             # cluster de la vista activa en CSV/JSON. Datos ya públicos en las

@@ -350,6 +350,12 @@ El panel del dueño vive en **`/admin.html`** (estático en `/var/www/fimi/`, `n
 no está en el repo) y se autentica con `x-admin-secret` (`FIMI_ADMIN_SECRET`). Muestra
 votos por tema, sugerencias, suscriptores por proyecto y **Gestión de temas**.
 
+Incluye un módulo **"Tendencias y temas hot"** (`GET /api/admin/tendencias`, read-only):
+**temas hot** por momentum (hallazgos 3 d vs 3 d anteriores), **candidatos a tema nuevo**
+(volumen fuera del catálogo) y **ejes transversales**; con `?full=1` añade la **migración de
+dominio** (bloque más pesado, ~15 s). Reutiliza los módulos de Fase A/C; **ligero por
+defecto** y el bloque de migraciones se carga bajo demanda desde el panel.
+
 La gestión de temas refleja el principio *"el sistema no decide"*: los controles solo se
 activan cuando el propio radar ya marcó la señal, y la acción la ejecuta el dueño.
 
