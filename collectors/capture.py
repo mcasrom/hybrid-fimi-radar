@@ -404,6 +404,46 @@ def main():
     except Exception as _exc:
         print(f"  clasificacion por contenido error: {_exc}")
 
+    # Gate por tema (config: temas.<tema>.filtro): un tema con `filtro` solo se
+    # conserva si el texto contiene al menos un término del filtro. Evita que
+    # keywords amplias (p. ej. 'petróleo') etiqueten posts políticos que solo
+    # mencionan el dominio de pasada. Los eventos que se queden sin ningún tema
+    # se descartan (no se vuelcan al default frontera_sur).
+    _filtros_cfg = {t: (m or {}).get("filtro") for t, m in _temas_cfg.items()
+                    if (m or {}).get("filtro")}
+    if _filtros_cfg:
+        try:
+            from normalizer.clasificar import normalizar as _norm, _tokens as _tok, _matches as _mat
+            _filtros = {}
+            for _t, _terms in _filtros_cfg.items():
+                _prep = [(_norm(str(_x)), _tok(str(_x))) for _x in (_terms or []) if _norm(str(_x))]
+                if _prep:
+                    _filtros[_t] = _prep
+            if _filtros:
+                _keep = []
+                for e in uniq:
+                    _temas_e = e.get("_temas")
+                    if not _temas_e:
+                        _keep.append(e)
+                        continue
+                    nt = _norm((e.get("text") or "") + " " + (e.get("title") or ""))
+                    ntok = [x for x in nt.split() if len(x) > 2]
+                    for _t, _prep in _filtros.items():
+                        if _t in _temas_e and not any(_mat(tn, tk, nt, ntok) for tn, tk in _prep):
+                            if isinstance(_temas_e, list):
+                                if _t in _temas_e:
+                                    _temas_e.remove(_t)
+                            else:
+                                _temas_e.discard(_t)
+                    if _temas_e:
+                        _keep.append(e)
+                _dropped = len(uniq) - len(_keep)
+                uniq = _keep
+                if _dropped:
+                    print(f"  gate por tema (filtro): descartados {_dropped} eventos sin tema válido")
+        except Exception as _exc:
+            print(f"  gate por tema error: {_exc}")
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     # _temas es un set (no serializable a JSON): convertir a lista para el dump
     for e in uniq:

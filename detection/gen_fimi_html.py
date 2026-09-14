@@ -1334,16 +1334,53 @@ def main():
             for r in _ce_rows:
                 _acc_txt.setdefault(r["cluster_id"], []).append(r["text"])
             _kws_all = [k for k in _tema_kw.keys() if k != "frontera_sur"]
+            # Gate de vista: un tema con `filtro` (config) solo reclama un cluster
+            # si su texto agregado contiene algún término del filtro. Evita que
+            # clusters de bots genéricos con contenido mezclado (p. ej. Ceuta +
+            # OPEP) se asignen a un tema (energia) solo por mencionar una keyword.
+            _filtros_cfg = {}
+            for _tf in _kws_all:
+                _fl = (temas_cfg.get(_tf, {}) or {}).get("filtro") if isinstance(temas_cfg, dict) else None
+                if _fl:
+                    _filtros_cfg[_tf] = [_norm(x) for x in _fl if _norm(x)]
+
+            def _passa_filtro(_agg_n, _th):
+                _fs = _filtros_cfg.get(_th)
+                if not _fs:
+                    return True
+                for _f in _fs:
+                    if " " in _f:
+                        if _f in _agg_n:
+                            return True
+                    elif re.search(r"\b" + re.escape(_f) + r"\b", _agg_n):
+                        return True
+                return False
+
             for _cid, _txts in _acc_txt.items():
+                _agg_n = _norm(" ".join(_txts))
+                _ok = {_th: _passa_filtro(_agg_n, _th) for _th in _kws_all}
                 _cnt = {}
+                _ev = {}
                 for _t0 in _txts:
+                    _hit = set()
                     for _th in _kws_all:
+                        if not _ok.get(_th):
+                            continue
                         for _k0 in _tema_kw.get(_th, []):
                             if _kw_matches(_t0, _k0):
                                 _cnt[_th] = _cnt.get(_th, 0) + 1
+                                _hit.add(_th)
                                 break
-                if _cnt:
-                    view_tema[_cid] = max(_cnt, key=lambda th: (_cnt[th], th))
+                    for _th in _hit:
+                        _ev[_th] = _ev.get(_th, 0) + 1
+                if _ev:
+                    _top = max(_ev, key=lambda th: (_ev[th], _cnt.get(th, 0), th))
+                    # COBERTURA: el tema debe explicar >=50% de los eventos del
+                    # cluster (y >=2). Un cluster de bot genérico con contenido
+                    # mezclado (Ceuta + OPEP + Líbano) no se atribuye a un tema
+                    # no-frontera solo por mencionar alguna keyword.
+                    if _ev[_top] >= max(2, 0.5 * len(_txts)):
+                        view_tema[_cid] = _top
     except Exception:
         view_tema = {}
 

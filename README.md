@@ -104,6 +104,22 @@ muy por debajo del margen OOM (~3,4 GB). El tema se re-evalúa con datos: si no 
 útil, `temas_cli.py cerrar energia` lo exporta y lo saca del pipeline. **Regla:** toda
 ampliación de feeds pasa por medir el pico (`/usr/bin/time -v`) antes de darla por buena.
 
+**Gate de contenido por tema (`filtro`).** Tras el alta inicial se observó que keywords
+amplias ("petróleo", "gas natural") etiquetaban posts **políticos** que solo mencionaban la
+energía de pasada, y que el dashboard reasignaba a `energia` un **cluster de bot genérico** con
+contenido mezclado (Ceuta + OPEP). Fix en dos capas:
+
+1. **Captura** (`collectors/capture.py`): un tema puede declarar `temas.<tema>.filtro` (lista
+   de términos fuertes). Un evento solo conserva ese tema si su texto contiene ≥1 término del
+   filtro; si se queda sin tema, se descarta. `detection/gate_tema_contenido.py` aplica el
+   mismo gate al **histórico** (`--dry` disponible).
+2. **Vista** (`gen_fimi_html.py` → `view_tema`): al reasignar un cluster por contenido se
+   exige (a) que pase el `filtro` del tema y (b) **cobertura ≥50%** de sus eventos, para no
+   atribuir a un tema un cluster de bot con contenido mezclado.
+
+Resultado real: `energia` pasó de 705 a **606 eventos** y de 11 a **6 clusters**, todos
+energéticos (OPEP/Brent/gas/Ormuz); el cluster mezclado volvió a su tema real (frontera_sur).
+
 ## Ciclo de vida y gobernanza
 
 El radar **no decide**: observa, sugiere y avisa; toda transición de estado la toma una
@@ -258,6 +274,7 @@ hybrid-fimi-radar/
 │   ├── check_ingesta.py    # alerta si el cron se salta la captura
 │   ├── salud_keywords.py   # ¿captura cada tema su ruido real? (patrón "tema ciego")
 │   ├── backfill_tema_contenido.py  # re-etiqueta por contenido tras cambiar keywords
+│   ├── gate_tema_contenido.py      # aplica el gate `filtro` de un tema al histórico
 │   ├── check_sistema.py    # check médico integral del pipeline (BD/config/frescura)
 │   ├── mantenimiento.py    # retención >90 d + backup gzip + VACUUM
 │   ├── radar_bot.py        # bot de Telegram (long-poll)

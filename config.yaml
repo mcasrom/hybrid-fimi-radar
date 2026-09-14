@@ -511,6 +511,38 @@ temas:
   energia:
     estado: piloto
     nombre: Energía (petróleo/gas/precios)
+    filtro:
+    - petróleo
+    - crudo
+    - oil
+    - opep
+    - opec
+    - brent
+    - ormuz
+    - hormuz
+    - gas
+    - gasoducto
+    - lng
+    - medgaz
+    - sonatrach
+    - refinería
+    - hidrocarburo
+    - combustible
+    - barril
+    - electricidad
+    - eléctrica
+    - eléctrico
+    - energía
+    - energético
+    - tarifa
+    - renovable
+    - solar
+    - eólica
+    - eólico
+    - nuclear
+    - hidrógeno
+    - carbón
+    - precio de la luz
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -718,31 +750,55 @@ keywords:
   - google-news
 
 - palabra: petróleo
-  plataformas: &id004
+  tema: energia
+  plataformas:
   - bluesky
   - google-news
-  tema: energia
 - palabra: gas natural
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: Brent
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: OPEP
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: Sonatrach
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: Medgaz
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: gasoducto
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 - palabra: precio de la luz
-  plataformas: *id004
   tema: energia
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: Ormuz
+  tema: energia
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: tarifa eléctrica
+  tema: energia
+  plataformas:
+  - bluesky
+  - google-news
 telegram_canales:
 - elfarodeceuta
 - maldita_es
