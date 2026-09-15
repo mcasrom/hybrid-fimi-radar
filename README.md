@@ -53,6 +53,10 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
   que no pertenecen al tema) y la **leyenda de componentes** quedan en `<details>` cerrados
   por defecto. Evita paneles de decenas de miles de píxeles cuando un tema tiene muchas
   señales en alerta (frontera_sur: ~61.500 px → ~6.000 px).
+- **Hipótesis por cluster (H1–H6)**: cada tarjeta de cluster muestra, bajo la explicación más
+  probable, las **6 hipótesis como barras** (orgánico, doméstico, **extranjero**, mediático,
+  político, desconocido) con su % — reutiliza `hypotheses_json` de `attribution/attribution.py`
+  (cero dato nuevo), con **H3 "operación de influencia extranjera" destacada en rojo**.
 - **Piloto vs producción visible**: cada tema lleva su estado a la vista — en las
   tarjetas dial y en las pestañas, un badge **`● Producción`** (verde) o
   **`● PILOTO · en calibración`** (naranja, con pulso suave). Los temas en piloto
@@ -129,10 +133,22 @@ Para el capítulo **Election Threat Landscape** (elecciones de Alemania —Länd
 Suecia —Riksdag, 13-sep-2026—) se añadieron **6 feeds** de discurso doméstico con balance
 por país (público / centro-izq / centro-der), todos verificados HTTP 200 con UA de navegador:
 **Tagesschau (ARD), Der Spiegel, FAZ** (Alemania) y **SVT Nyheter, Dagens Nyheter, Svenska
-Dagbladet** (Suecia). Catálogo total: **40 feeds** (fr 15 · es 9 · en 9 · de 3 · sv 3 · ar 1).
+Dagbladet** (Suecia). Catálogo entonces: **40 feeds** (fr 15 · es 9 · en 9 · de 3 · sv 3 · ar 1;
+hoy **44** tras añadir las fuentes de esfera, ver abajo).
 **EEUU no añade feeds** (midterms nov-2026): se cubre con las keywords de `eeuu_politica` +
 feeds existentes, para no engordar el sumidero por defecto `frontera_sur`. Detalle y probaturas
 en [`docs/FUENTES.md`](docs/FUENTES.md).
+
+### Fuentes de esfera (rusa/china) — 15/09/2026
+
+Para poder cruzar **narrativas de esfera estatal** en los temas se añadieron **4 feeds**
+estatales verificados (HTTP 200 + RSS): **TASS (EN)** y **RIA Novosti (RU)** (Rusia) ·
+**CGTN (EN)** y **Global Times (EN)** (China), todos con `bias: state`, `reliability: mixed`,
+`pais` RU/CN y nota "vigilar como fuente FIMI". **Catálogo 40 → 44 feeds** (8 estatales, con
+RT en Español y las agencias del Sahel). **Nota honesta**: al ser **RSS**, estas fuentes **no
+entran al grafo de coordinación** → aportan **cobertura y catalogación de dominio/esfera**, no
+señal de coordinación por sí solas (su contenido actual, además, es general —BRICS, ciencia,
+deportes—, no electoral).
 
 ### Capítulo Election Threat Landscape (opción B, registro)
 
