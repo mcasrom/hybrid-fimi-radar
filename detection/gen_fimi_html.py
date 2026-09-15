@@ -993,7 +993,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:title" content="FIMI Radar · Research">
 <meta property="og:description" content="De la pregunta a la incertidumbre: cómo detecta el radar FIMI coordinación y amplificación, qué puede equivocarse y cómo repetirlo.">
-<meta property="og:image" content="/og-preview.png">
+<meta property="og:image" content="/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <style>
 :root{{color-scheme:light}}
@@ -3472,11 +3472,11 @@ def main():
 <meta property="og:description" content="Radar OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_clusters} clusters señalados hoy ({n_high} HIGH). Sin atribución sin evidencia.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
-<meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.png">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.png">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FIMI Radar · Multi-tema">
 <meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
