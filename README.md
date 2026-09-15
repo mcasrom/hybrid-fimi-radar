@@ -150,10 +150,16 @@ Añadir una elección = una fila (o
 `detection/elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD --keywords "…"`;
 `list` y `cerrar` para gestionar). No toca captura ni scoring (coste ~0 de memoria).
 
-**Futuro (opción B)**: elevar `elecciones` a **tema propio** (`temas_cli.py alta` con `filtro`)
-para que `run_fimi` **clusterice específicamente** el contenido electoral — hoy el cruce usa los
-clusters generales, que absorben buena parte en `frontera_sur`. Con B, la card mostraría
-**clusters propios de campaña electoral** (con score/banda/cuentas) en vez de los generales.
+**Opción B (HECHA, 15/09/2026)**: `elecciones` es ahora **tema propio** (piloto) con `filtro`
+de contenido electoral (≥1 término real: `elecciones`, `electoral`, `urnas`, `midterms`,
+`fraude electoral`, `election interference`…; el `filtro` evita falsos positivos como siglas
+sueltas tipo `afd` del boletín meteorológico "Area Forecast Discussion"). Así `run_fimi`
+**clusteriza específicamente** el contenido electoral en vez de absorberlo en `frontera_sur`.
+La card añade el bloque **"Detección: clusters electorales (tema `elecciones`)"** con los
+clusters propios (score/banda · cuentas · eventos · URLs · titular), y la señal de
+coordinación por elección cuenta **solo** los clusters de ese tema. Verificado en el ciclo
+real (00:44 UTC): **17 clusters**, top **76/100 HIGH** (Riksdag Suecia; interferencia
+electoral EEUU).
 
 ## Ciclo de vida y gobernanza
 

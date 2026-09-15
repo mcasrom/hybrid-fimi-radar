@@ -610,6 +610,24 @@ temas:
     - hidrógeno
     - carbón
     - precio de la luz
+  elecciones:
+    estado: piloto
+    nombre: Elecciones e interferencia electoral
+    # Gate: un evento solo conserva el tema si su texto contiene >=1 término
+    # electoral real (evita que "afd" del boletín meteorológico "Area Forecast
+    # Discussion", o menciones tangenciales, lo etiqueten como electoral).
+    filtro:
+    - elecciones
+    - electoral
+    - campaña electoral
+    - urnas
+    - papeletas
+    - fraude electoral
+    - midterms
+    - medio mandato
+    - election interference
+    - sondeos
+    - votantes
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -866,6 +884,44 @@ keywords:
   plataformas:
   - bluesky
   - google-news
+- palabra: elecciones
+  plataformas: &id004
+  - bluesky
+  - google-news
+  tema: elecciones
+- palabra: electoral
+  plataformas: *id004
+  tema: elecciones
+- palabra: campaña electoral
+  plataformas: *id004
+  tema: elecciones
+- palabra: urnas
+  plataformas: *id004
+  tema: elecciones
+- palabra: papeletas
+  plataformas: *id004
+  tema: elecciones
+- palabra: fraude electoral
+  plataformas: *id004
+  tema: elecciones
+- palabra: afd
+  plataformas: *id004
+  tema: elecciones
+- palabra: midterms
+  plataformas: *id004
+  tema: elecciones
+- palabra: medio mandato
+  plataformas: *id004
+  tema: elecciones
+- palabra: election interference
+  plataformas: *id004
+  tema: elecciones
+- palabra: sondeos
+  plataformas: *id004
+  tema: elecciones
+- palabra: votantes
+  plataformas: *id004
+  tema: elecciones
 telegram_canales:
 - elfarodeceuta
 - maldita_es

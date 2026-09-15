@@ -195,6 +195,21 @@ def detectar(dias=90, registro_path=None, conn=None):
         if r["url"]:
             sig_url[(a, r["url"])] = r["cluster_id"]
         sig_ts[(a, r["ts"])] = r["cluster_id"]
+    # Top clusters del tema `elecciones` (detección real de coordinación electoral).
+    elec_top = []
+    for cid, info in clusters.items():
+        if info["tema"] != "elecciones":
+            continue
+        agg = conn.execute(
+            "SELECT COUNT(*) n, COUNT(DISTINCT author) a, COUNT(DISTINCT url) u"
+            " FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()
+        ev = conn.execute("SELECT title, text FROM cluster_events WHERE cluster_id=?"
+                          " LIMIT 1", (cid,)).fetchone()
+        hl = ((ev["title"] or ev["text"] or "") if ev else "").strip()[:130]
+        elec_top.append({"label": info["label"], "score": info["score"],
+                         "banda": info["banda"], "cuentas": agg["a"],
+                         "ev": agg["n"], "urls": agg["u"], "headline": hl})
+    elec_top.sort(key=lambda z: -z["score"])
     if cerrar:
         conn.close()
 
@@ -220,7 +235,7 @@ def detectar(dias=90, registro_path=None, conn=None):
                 p["actores"][a] += 1
             for d in d_hits:
                 p["cinco_d"][d] += 1
-            if cid is not None and cid in clusters:
+            if cid is not None and clusters.get(cid, {}).get("tema") == "elecciones":
                 p["n_cluster"] += 1
                 p["cluster_ids"].add(cid)
             if not p["ejemplo"]:
@@ -248,7 +263,8 @@ def detectar(dias=90, registro_path=None, conn=None):
         })
     salida.sort(key=lambda x: (x["fase"]["dias"] is None,
                                abs(x["fase"]["dias"] or 9e9)))
-    return {"dias": dias, "n_eventos": len(eventos), "elecciones": salida}
+    return {"dias": dias, "n_eventos": len(eventos), "elecciones": salida,
+            "elec_top": elec_top[:8]}
 
 
 def _timeline_svg(els, ancho=1000, alto=132):
@@ -368,6 +384,29 @@ def _html(res):
             f"<b>aterriza en</b> {temas}</div>"
             f"<div style='font-size:.74rem;color:#94a3b8;margin-top:4px;"
             f"font-style:italic'>{e['ejemplo']}…</div></div>")
+    top_rows = ""
+    for c in res.get("elec_top", []):
+        bc = _BAND_COL.get(c["banda"], "#64748b")
+        top_rows += (
+            f"<div style='margin:6px 0;padding:8px 11px;border:1px solid #e2e8f0;"
+            f"border-left:4px solid {bc};border-radius:8px'>"
+            f"<div style='display:flex;justify-content:space-between;gap:8px;"
+            f"flex-wrap:wrap'>"
+            f"<b style='font-size:.84rem;color:#1e293b'>{c['label']}</b>"
+            f"<span style='font-size:.78rem;font-weight:700;color:{bc}'>"
+            f"{c['score']:.0f}/100 {c['banda']}</span></div>"
+            f"<div style='font-size:.74rem;color:#64748b;margin-top:2px'>"
+            f"{c['cuentas']} cuentas · {c['ev']} eventos · {c['urls']} URLs</div>"
+            f"<div style='font-size:.74rem;color:#94a3b8;font-style:italic'>"
+            f"{c['headline']}…</div></div>")
+    if not top_rows:
+        top_rows = ("<p class='caption'>Aún no hay clusters del tema "
+                    "<code>elecciones</code> (se generan en el ciclo del cron; piloto).</p>")
+    det = ("<h4 style='margin:14px 0 4px;font-size:.9rem;color:#c2410c'>"
+           "Detección: clusters electorales (tema <code>elecciones</code>)</h4>"
+           "<p class='caption' style='margin:0 0 6px'>Coordinación detectada en el "
+           "contenido electoral (no en el sumidero general). Score/banda = amplificación "
+           "coordinada.</p>" + top_rows)
     return (
         f"<div class='card' id='elecciones'><h3>Election Threat Landscape "
         f"(calendario electoral)</h3>"
@@ -382,7 +421,7 @@ def _html(res):
         f"<b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, no afirma "
         f"autoría. Cobertura baja = faltan feeds de ese país, no ausencia de campaña. "
         f"Ventana: últimos {res.get('dias', 90)} días.</p>"
-        f"{_timeline_svg(els)}{filas}"
+        f"{_timeline_svg(els)}{det}{filas}"
         f"<p class='caption' style='margin-top:6px'>Añadir una elección: "
         f"<code>elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD "
         f"--keywords \"…\"</code>.</p></div>")
