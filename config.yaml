@@ -628,6 +628,20 @@ temas:
     - election interference
     - sondeos
     - votantes
+    # Términos electorales DE/SE (idiomas de los feeds del capítulo electoral):
+    # sin ellos, el contenido electoral alemán/sueco no pasa el gate del tema.
+    - landtagswahl
+    - bundestagswahl
+    - europawahl
+    - wahlkampf
+    - wahlen
+    - wähler
+    - riksdag
+    - riksdagsval
+    - valet
+    - väljare
+    - rösta
+    - valrörelse
     # Segundo nivel (CLASIFICACIÓN, no captura): un cluster del tema se marca
     # como "interferencia" (señal) si su texto contiene >=1 término de esta
     # lista; si no, "cobertura electoral" (ruido esperable). Separa señal de
@@ -959,6 +973,42 @@ keywords:
   plataformas: *id004
   tema: elecciones
 - palabra: votantes
+  plataformas: *id004
+  tema: elecciones
+- palabra: landtagswahl
+  plataformas: *id004
+  tema: elecciones
+- palabra: bundestagswahl
+  plataformas: *id004
+  tema: elecciones
+- palabra: europawahl
+  plataformas: *id004
+  tema: elecciones
+- palabra: wahlkampf
+  plataformas: *id004
+  tema: elecciones
+- palabra: wahlen
+  plataformas: *id004
+  tema: elecciones
+- palabra: wähler
+  plataformas: *id004
+  tema: elecciones
+- palabra: riksdag
+  plataformas: *id004
+  tema: elecciones
+- palabra: riksdagsval
+  plataformas: *id004
+  tema: elecciones
+- palabra: valet
+  plataformas: *id004
+  tema: elecciones
+- palabra: väljare
+  plataformas: *id004
+  tema: elecciones
+- palabra: rösta
+  plataformas: *id004
+  tema: elecciones
+- palabra: valrörelse
   plataformas: *id004
   tema: elecciones
 telegram_canales:
