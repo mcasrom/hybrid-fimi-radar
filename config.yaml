@@ -487,7 +487,8 @@ feeds:
   bias: center-right
   reliability: mostly-factual
   transparency: high
-  note: Frankfurter Allgemeine, sección política. Equilibrio centro-der en cobertura DE.
+  note: Frankfurter Allgemeine, sección política. Equilibrio centro-der en 
+    cobertura DE.
   analytical_relevance: media
 - nombre: SVT Nyheter (SV)
   url: https://www.svt.se/rss.xml
@@ -572,7 +573,7 @@ temas:
         network_density: 0.10
         anomaly: 0.40
   sahel:
-    estado: piloto
+    estado: produccion
     nombre: Sahel (África Occidental)
   energia:
     estado: piloto
