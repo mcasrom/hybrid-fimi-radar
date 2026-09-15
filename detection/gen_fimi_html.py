@@ -616,25 +616,44 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'<b>Atribución:</b> {a["attribution"]} · confianza {a["attribution_confidence"]}'
                 f' — {a["attribution_evidence"]}</p>')
 
-    # hipótesis: solo las 2 más probables
+    # hipótesis: resumen (top) + barras H1-H6 (visualiza la distribución completa;
+    # H3 "operación de influencia extranjera" destacada). Solo lectura: reusa
+    # hypotheses_json que ya calcula attribution.py, no añade dato nuevo.
     hyp_html = ""
     if a:
         try:
             hyp = json.loads(a["hypotheses_json"]) if a["hypotheses_json"] else []
             hyp = sorted(hyp, key=lambda x: -(x.get("score") or 0))
             if hyp:
-                chips = ""
-                for x in hyp[:2]:
-                    code = x.get("hypothesis", "?")
-                    es = HYPOTHESIS_ES.get(code, {"t": x.get("label", code), "d": ""})
-                    pct = int(round((x.get("score") or 0) * 100))
-                    chips += (f'<span style="display:inline-flex;align-items:center;gap:8px;'
-                              f'background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;'
-                              f'border-radius:999px;padding:3px 12px;font-size:.78rem;margin:2px 6px 2px 0">'
-                              f'<b>{es["t"]}</b><span style="color:#c2410c;font-weight:700">{pct}%</span>'
-                              f'</span>')
+                _top = hyp[0]
+                _tc = _top.get("hypothesis", "?")
+                _te = HYPOTHESIS_ES.get(_tc, {"t": _top.get("label", _tc), "d": ""})
+                _tp = int(round((_top.get("score") or 0) * 100))
+                chips = (f'<span style="display:inline-flex;align-items:center;gap:8px;'
+                         f'background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;'
+                         f'border-radius:999px;padding:3px 12px;font-size:.78rem;margin:2px 6px 2px 0">'
+                         f'<b>{_te["t"]}</b><span style="color:#c2410c;font-weight:700">{_tp}%</span>'
+                         f'</span>')
+                rows = ""
+                for _x in hyp:
+                    _code = _x.get("hypothesis", "?")
+                    _es = HYPOTHESIS_ES.get(_code, {"t": _x.get("label", _code), "d": ""})
+                    _pct = int(round((_x.get("score") or 0) * 100))
+                    _col = "#b91c1c" if _code == "H3" else "#94a3b8"
+                    _star = " ⭐" if _code == "H3" else ""
+                    rows += (f'<div style="display:flex;align-items:center;gap:8px;margin:2px 0">'
+                             f'<span style="width:215px;font-size:.72rem;color:#475569" title="{_es["d"]}">'
+                             f'<b>{_code}</b> · {_es["t"]}{_star}</span>'
+                             f'<div style="flex:1;background:#f1f5f9;border-radius:4px;height:9px;min-width:50px;overflow:hidden">'
+                             f'<div style="width:{_pct}%;height:100%;background:{_col}"></div></div>'
+                             f'<span style="width:34px;text-align:right;font-size:.72rem;font-weight:700;color:#334155">{_pct}%</span>'
+                             f'</div>')
                 hyp_html = (f'<div style="margin-top:2px"><span style="font-size:.74rem;color:#94a3b8">'
-                            f'Explicación más probable: </span>{chips}</div>')
+                            f'Explicación más probable: </span>{chips}</div>'
+                            f'<div style="margin-top:4px">'
+                            f'<span style="font-size:.72rem;color:#94a3b8">Hipótesis evaluadas (0-100; '
+                            f'<b style="color:#b91c1c">H3</b> = operación de influencia extranjera):</span>'
+                            f'{rows}</div>')
         except Exception:
             pass
 
