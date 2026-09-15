@@ -2056,6 +2056,87 @@ def main():
     except Exception as _e_r:
         # si falla el resumen, no romper el dashboard: pestañas normales
         _resumen_tema_html = {}
+    # --- Panel "de un vistazo" del tema elecciones: SOLO números/KPIs, sin barras ---
+    # Reutiliza la clasificación de actores de detection/elecciones.py (rusófono/
+    # China/EEUU por señal léxica) sobre los eventos del tema. NO es atribución:
+    # cuenta menciones de términos. Aditivo y tolerante a fallo.
+    _esfera_html = {}
+    try:
+        import importlib.util as _ilu_e
+        _spec_e = _ilu_e.spec_from_file_location("elecciones", ROOT / "detection" / "elecciones.py")
+        _el_e = _ilu_e.module_from_spec(_spec_e)
+        _spec_e.loader.exec_module(_el_e)
+        _ce = sqlite3.connect(DB)
+        _ce.row_factory = sqlite3.Row
+        _evq = _ce.execute(
+            "SELECT e.title, e.text, e.source FROM events e"
+            " JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id='elecciones'").fetchall()
+        _prep_e = {_a: _el_e._prep_vocab(_v) for _a, _v in _el_e.ACTORES.items()}
+        _cesp = {_a: 0 for _a in _prep_e}
+        _srcs = set()
+        for _e in _evq:
+            _txt = (_e["title"] or "") + " " + (_e["text"] or "")
+            _srcs.add(_e["source"])
+            _nt = _el_e._norm(_txt)
+            _ntk = _el_e._tokens_norm(_txt)
+            for _a, _pp in _prep_e.items():
+                if _el_e._match_vocab(_nt, _ntk, _pp):
+                    _cesp[_a] += 1
+        _n_ev = len(_evq)
+        _n_cl = sum(1 for c in clusters if c["tema_id"] == "elecciones")
+        try:
+            _procs = [p for p in _el_e.cargar_registro() if p.get("estado") != "cerrado"]
+        except Exception:
+            _procs = []
+        try:
+            _n_concl = _ce.execute(
+                "SELECT COUNT(*) FROM assessments a JOIN clusters c ON c.id=a.cluster_id"
+                " WHERE c.tema_id='elecciones' AND a.attribution NOT IN"
+                " ('UNKNOWN','NO_ATTRIBUTION','') AND a.attribution_confidence='HIGH'").fetchone()[0]
+        except Exception:
+            _n_concl = 0
+        _ce.close()
+
+        def _tile_e(_lbl, _val, _col="#0f172a", _sub=""):
+            _s = (f"<div style='font-size:.63rem;color:#94a3b8'>{_sub}</div>") if _sub else ""
+            return (f"<div style='flex:1;min-width:92px;background:#fff;border:1px solid #e2e8f0;"
+                    f"border-radius:10px;padding:9px 10px;text-align:center'>"
+                    f"<div style='font-size:.64rem;color:#64748b;text-transform:uppercase;"
+                    f"letter-spacing:.04em'>{_lbl}</div>"
+                    f"<div style='font-size:1.5rem;font-weight:800;color:{_col};line-height:1.15'>{_val}</div>{_s}</div>")
+
+        _ecol = {"rusófono": "#dc2626", "China": "#ea580c", "EEUU": "#2563eb"}
+        _esp_tiles = "".join(
+            _tile_e(_a, _cesp.get(_a, 0), _ecol.get(_a, "#0f172a"), "menciones")
+            for _a in ("rusófono", "China", "EEUU"))
+        _atrib_val = f"{_n_concl}/{_n_cl}"
+        _t_atrib = _tile_e("Atribución concluyente", _atrib_val,
+                           "#16a34a" if _n_concl else "#64748b")
+        _tiles_vol = (_tile_e("Eventos", _n_ev) + _tile_e("Clusters", _n_cl)
+                      + _tile_e("Fuentes", len(_srcs)) + _t_atrib)
+        _proc_txt = " · ".join(
+            f"{p.get('pais', '?')}: {p.get('nombre', '')} ({p.get('fecha', '')})"
+            for p in _procs) or "—"
+        _esfera_html["elecciones"] = (
+            "<div class='card' id='elec-panel' style='margin:0 0 12px;border-left:5px solid #c2410c'>"
+            "<h3 style='margin:0 0 8px;font-size:1.02rem'>📊 Elecciones — de un vistazo</h3>"
+            "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>"
+            + _tiles_vol + "</div>"
+            "<div style='margin:2px 0 10px;padding:7px 11px;background:#f8fafc;"
+            "border:1px solid #e2e8f0;border-left:4px solid #64748b;border-radius:8px;"
+            "font-size:.77rem;color:#334155'><b>⚖️ Señal, no atribución.</b> El radar observa "
+            f"comportamiento, no identidades: <b>{_n_cl - _n_concl} de {_n_cl}</b> clusters del tema "
+            "sin atribución concluyente (UNKNOWN).</div>"
+            "<div style='font-size:.72rem;color:#94a3b8;margin:0 0 4px'>"
+            "<b style='color:#b91c1c'>MENCIONES DE TÉRMINOS</b> por esfera — "
+            "<b style='color:#b91c1c'>NO es atribución</b> (nº de eventos del tema que "
+            "<i>nombran</i> a cada actor):</div>"
+            f"<div style='display:flex;gap:8px;flex-wrap:wrap'>{_esp_tiles}</div>"
+            f"<div class='caption' style='margin-top:8px'>Procesos en el registro: {_proc_txt}. "
+            "Las cifras por esfera cuentan <b>menciones de términos</b> (Rusia/China/EEUU…) en el "
+            "texto, no autoría ni coordinación.</div></div>")
+    except Exception:
+        _esfera_html = {}
     for i, _t in enumerate(temas):
         d = por_tema.get(_t, {"eventos": 0, "fuentes": 0, "clusters": []})
         _cl = d["clusters"]
@@ -2304,6 +2385,7 @@ def main():
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
                        f"{_resumen_tema_html.get(_t, '')}"
+                       f"{_esfera_html.get(_t, '')}"
                        f"{_blog_html}"
                        f"{_bias_note}{_dup_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
     # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
