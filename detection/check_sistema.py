@@ -124,7 +124,11 @@ def chequea():
             issues.append({"check": "config", "nivel": "warn",
                            "msg": f"keyword(s) con tema '{kt}' no definido en config.temas"})
     if not issues or not any(i["check"] == "config" for i in issues):
-        ok.append({"check": "config", "msg": f"{len(kw_temas)} temas con keywords coherentes"})
+        sin_kw = sorted(t for t in temas_cfg if t not in kw_temas)
+        extra = (f" (sin keywords propias: {', '.join(sin_kw)} — sumidero por defecto)"
+                 if sin_kw else "")
+        ok.append({"check": "config",
+                   "msg": f"{len(kw_temas)}/{len(temas_cfg)} temas con keywords propias{extra}"})
 
     # 5) errores del último ciclo (tracebacks tras la última marca de dashboard)
     try:
