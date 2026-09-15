@@ -59,14 +59,15 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
   muestran además la frase *"piloto en calibración — lectura con cautela"* en una caja
   naranja destacada y un aviso de riesgo de sesgo en su panel. La animación respeta
   `prefers-reduced-motion`.
-- **Rendimiento y robustez**: `frontera_sur` es el tema por defecto de los RSS, así que
-  procesa el corpus completo (~20.000 eventos, ~3.700 cuentas). Los centroides TF-IDF de
-  la coordinación se calculan **en sparse** (`scipy.sparse`) para no agotar la RAM: un
-  `np.vstack` denso (cuentas × vocabulario de bigramas) provocaba **OOM** en el server de
-  3,7 GB. Run de frontera_sur: ~375 s, pico ~2,7 GB. **Palancas de memoria** ya
-  configurables en `config.yaml → coordination`: `window_days` (ventana del grafo, def. 90)
-  y `tfidf_max_features` (tope de vocabulario, def. 200.000). Bajarlas permite añadir
-  muchas más fuentes sin volver a OOM.
+- **Rendimiento y robustez**: `frontera_sur` procesa el corpus completo (hoy ~43.000 eventos,
+  ~9.600 cuentas). El **pico de memoria** (llegó a ~3,18 GB, con poco margen al OOM en el
+  server de 3,7 GB) bajó a **~1,1 GB** y el run de **580 s → 221 s** con dos fixes: (1) los
+  centroides TF-IDF de la coordinación se calculan **en sparse**; (2) el ratio de
+  *near-duplicates* (`features/content.py`) se computa **por bloques y con umbral al
+  instante**, sin materializar la matriz densa m×(N−m) (mismo patrón que las cascadas).
+  **Palancas de memoria** en `config.yaml → coordination`: `window_days` (ventana del grafo,
+  def. 90) y `tfidf_max_features` (tope de vocabulario, def. 200.000). Toda ampliación de
+  feeds pasa por **medir el pico con `/usr/bin/time -v`** antes de darla por buena.
 - **Modelo transparente**: la pestaña *Transparencia* expone los pesos del scoring, las
   bandas y la calibración por tema; el dashboard nunca atribuye a un actor sin respaldo.
 - **Atribución de tema sin sobre-captura**: la captura por defecto etiqueta todo evento
