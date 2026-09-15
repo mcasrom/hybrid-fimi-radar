@@ -57,6 +57,13 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
   probable, las **6 hipótesis como barras** (orgánico, doméstico, **extranjero**, mediático,
   político, desconocido) con su % — reutiliza `hypotheses_json` de `attribution/attribution.py`
   (cero dato nuevo), con **H3 "operación de influencia extranjera" destacada en rojo**.
+- **Panel "de un vistazo" del tema `elecciones`**: cabecera que resume el tema de un golpe —
+  **volumen** (eventos · clusters · fuentes), **atribución concluyente** (`0/27` hoy) con una
+  franja **"⚖️ señal, no atribución"**, y **menciones de términos por esfera** (rusófono /
+  China / EEUU) **etiquetadas en grande como "NO es atribución"**, más los procesos del
+  registro. **Sin barras** (solo KPIs): el radar **no puede** decir "cuántos son rusófonos/
+  chinos/EEUU" (los clusters salen UNKNOWN) y el panel lo declara, en vez de presentar las
+  menciones como si fueran atribución.
 - **Piloto vs producción visible**: cada tema lleva su estado a la vista — en las
   tarjetas dial y en las pestañas, un badge **`● Producción`** (verde) o
   **`● PILOTO · en calibración`** (naranja, con pulso suave). Los temas en piloto
