@@ -434,7 +434,7 @@ def _html(res):
         interf = c.get("tipo") == "interferencia"
         chip = ("<span style='font-size:.68rem;font-weight:700;color:#b91c1c;"
                 "background:#fef2f2;border:1px solid #fecaca;border-radius:999px;"
-                "padding:1px 8px'>⚠ interferencia</span>" if interf else
+                "padding:1px 8px'>⚠ menciona interferencia</span>" if interf else
                 "<span style='font-size:.68rem;font-weight:700;color:#475569;"
                 "background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;"
                 "padding:1px 8px'>○ cobertura</span>")
@@ -464,15 +464,16 @@ def _html(res):
             f"<div style='margin:0 0 6px'><span style='font-size:.78rem;"
             f"color:#334155;background:#fff7ed;border:1px solid #fed7aa;"
             f"border-radius:7px;padding:2px 9px'>de <b>{rs.get('n', 0)}</b> clusters: "
-            f"<b>{rs.get('interferencia', 0)}</b> con señal de interferencia · "
+            f"<b>{rs.get('interferencia', 0)}</b> mencionan interferencia · "
             f"<b>{rs.get('cobertura', 0)}</b> cobertura electoral (se listan los "
             f"principales, señal primero)</span></div>")
     det = ("<h4 style='margin:14px 0 4px;font-size:.9rem;color:#c2410c'>"
            "Detección: clusters electorales (tema <code>elecciones</code>)</h4>"
            "<p class='caption' style='margin:0 0 6px'>Coordinación detectada en el "
            "contenido electoral (no en el sumidero general). Score/banda = amplificación "
-           "coordinada. <b>2º nivel</b>: cada cluster se marca como "
-           "<b>interferencia</b> (texto con términos de desinformación/injerencia) o "
+           "coordinada. <b>2º nivel (léxico)</b>: cada cluster se marca como "
+           "<b>menciona interferencia</b> (su texto contiene términos de "
+           "desinformación/injerencia — es <b>mención</b>, no prueba de operación) o "
            "<b>cobertura electoral</b> (ruido esperable de campaña).</p>"
            + resumen_txt + top_rows)
     return (
