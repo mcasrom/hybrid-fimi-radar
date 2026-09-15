@@ -86,13 +86,18 @@ def near_duplicate_ratio(df, author, config):
 
 
 def near_duplicate_ratio_all(df, config):
-    """Ratios near-dup de TODAS las cuentas en una sola pasada de TF-IDF.
+    """Ratios near-dup de TODAS las cuentas en una pasada de TF-IDF SIN densificar.
 
-    Equivalente a llamar near_duplicate_ratio() por cuenta, pero el corpus de
-    cada cuenta es siempre "todos los textos no vacíos del dataset" (non_empty
-    de la cuenta + others). Vectorizando una única vez sobre ese corpus el
-    resultado es numéricamente idéntico y se evita re-fitear el vectorizador
-    N veces (1768 cuentas ≈ el 87% del tiempo de run_fimi en frontera_sur).
+    Para cada texto del corpus se calcula si tiene algún vecino con coseno >=
+    umbral **de otra cuenta** (near-dup externo). El producto X·Xᵀ se hace por
+    bloques y se umbrala al instante (patrón de `detection/fakenews._thresholded_
+    adjacency`), de modo que la memoria pico queda acotada al bloque y NO se
+    materializa la matriz densa m×(N-m).
+
+    BUG corregido 15/09/2026 (profiling de memoria): la versión anterior hacía
+    `sim.toarray()` sobre `X[mine] @ X[rest].T`; con una cuenta de miles de
+    eventos eso era una matriz densa de ~2,5 GB y >5 min → era el pico real del
+    paso [2/7] Features de run_fimi (3,18 GB), no coordinación/cascadas.
     """
     from collections import defaultdict
     threshold = config["thresholds"]["near_duplicate_threshold"]
@@ -102,26 +107,35 @@ def near_duplicate_ratio_all(df, config):
     out = {a: 0.0 for a in set(authors)}
     if len(keep) < 2:
         return out
-    pos_by_auth = defaultdict(list)
-    corpus = []
-    for i, idx in enumerate(keep):
-        pos_by_auth[authors[idx]].append(i)
-        corpus.append(texts[idx])
+    auth_of = [authors[i] for i in keep]
+    corpus = [texts[i] for i in keep]
     try:
         vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, stop_words=None)
         X = normalize(vec.fit_transform(corpus))
     except Exception:
         return out
-    N = X.shape[0]
-    for a, mine in pos_by_auth.items():
-        if len(mine) < 2:
-            continue
-        mset = set(mine)
-        rest = np.array([i for i in range(N) if i not in mset], dtype=int)
-        if rest.size == 0:
-            continue
-        sim = X[mine] @ X[rest].T
-        sim = sim.toarray() if hasattr(sim, "toarray") else np.atleast_2d(sim)
-        hits = (sim.max(axis=1) >= threshold).sum()
-        out[a] = hits / len(mine)
+    n = X.shape[0]
+    pos_by_auth = defaultdict(list)
+    for pos, a in enumerate(auth_of):
+        pos_by_auth[a].append(pos)
+    # por bloques de filas: vecinos >= umbral al instante (sin densificar)
+    has_ext = np.zeros(n, dtype=bool)
+    block = 1024
+    for i0 in range(0, n, block):
+        i1 = min(i0 + block, n)
+        S = (X[i0:i1] @ X.T).tocsr()
+        S.data = np.where(S.data >= threshold, 1.0, 0.0)
+        S.eliminate_zeros()
+        for r in range(i1 - i0):
+            gi = i0 + r
+            a_gi = auth_of[gi]
+            cols = S.indices[S.indptr[r]:S.indptr[r + 1]]
+            for c in cols:
+                if c != gi and auth_of[c] != a_gi:
+                    has_ext[gi] = True
+                    break
+    for a, poss in pos_by_auth.items():
+        m = len(poss)
+        if m >= 2:
+            out[a] = float(has_ext[poss].sum()) / m
     return out
