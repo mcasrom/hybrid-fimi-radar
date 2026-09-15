@@ -76,7 +76,8 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
   y muestra una **nota de transparencia** ("de los N clusters que la captura etiquetó en
   este tema, M amplifican contenido de otro tema"); (2) en origen,
   `detection/backfill_tema_contenido.py` re-etiqueta los eventos en `event_temas`
-  (INSERT OR IGNORE, aditivo y multi-tema) tras cambiar las keywords de un tema. El dial
+  (INSERT OR IGNORE, aditivo y multi-tema) tras cambiar las keywords de un tema —
+  **respetando el gate `filtro`** del tema (no reintroduce lo que el gate rechaza). El dial
   usa la señal **propia** (conservador) y el resumen ejecutivo el top view-clasificado.
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
   avisa; la decisión editorial es siempre humana (ver **Gestión de temas**).
@@ -112,7 +113,8 @@ contenido mezclado (Ceuta + OPEP). Fix en dos capas:
 1. **Captura** (`collectors/capture.py`): un tema puede declarar `temas.<tema>.filtro` (lista
    de términos fuertes). Un evento solo conserva ese tema si su texto contiene ≥1 término del
    filtro; si se queda sin tema, se descarta. `detection/gate_tema_contenido.py` aplica el
-   mismo gate al **histórico** (`--dry` disponible).
+   mismo gate al **histórico** (`--dry` disponible). El **backfill** y `detection/salud_keywords.py`
+   (medición de cobertura/ámbito) también aplican el gate, para ser consistentes con la captura.
 2. **Vista** (`gen_fimi_html.py` → `view_tema`): al reasignar un cluster por contenido se
    exige (a) que pase el `filtro` del tema y (b) **cobertura ≥50%** de sus eventos, para no
    atribuir a un tema un cluster de bot con contenido mezclado.

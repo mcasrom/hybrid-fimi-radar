@@ -9,7 +9,8 @@ zone near Hormuz") nunca matchean -> 37 eventos etiquetados de ~600 posibles.
 
 Métricas por tema (ventana configurable, default 14 días):
   - ruido_potencial : eventos del corpus cuyo texto matchea las keywords del
-                      tema (mismo criterio que capture.py: temas_por_contenido).
+                      tema **y pasa su gate `filtro`** (si lo tiene). Mismo
+                      criterio que capture.py (temas_por_contenido + filtro).
   - etiquetados     : eventos en event_temas del tema.
   - cobertura %     : etiquetados / ruido_potencial. Baja con ruido alto =
                       tema posiblemente ciego (o keywords recién añadidas).
@@ -89,7 +90,10 @@ def _cargar_config():
             continue
         t = k.get("tema") or "frontera_sur"
         por_tema.setdefault(t, []).append(k.get("palabra", "").strip())
-    return por_tema
+    # Gate de contenido por tema (temas.<tema>.filtro), igual que capture.py.
+    filtros = {t: ((m or {}).get("filtro") or [])
+               for t, m in (cfg.get("temas") or {}).items()}
+    return por_tema, filtros
 
 
 def analizar(dias=None):
@@ -98,7 +102,15 @@ def analizar(dias=None):
     from normalizer.clasificar import normalizar, _tokens, _matches, STOP
 
     dias = dias or DIAS_DEFECTO
-    por_tema = _cargar_config()
+    por_tema, filtros = _cargar_config()
+    # Pre-normalizar el gate `filtro` por tema (consistencia con capture.py:
+    # un tema con filtro solo cuenta como "ámbito" si el texto pasa el gate).
+    filtros_pre = {}
+    for _t, _terms in filtros.items():
+        _prep = [(normalizar(str(x)), _tokens(str(x)))
+                 for x in _terms if normalizar(str(x))]
+        if _prep:
+            filtros_pre[_t] = _prep
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
 
@@ -134,6 +146,13 @@ def analizar(dias=None):
             if _matches(kw_norm, kw_toks, nt, ntok):
                 temas_hit.add(tema)
                 kw_matches[palabra] += 1
+        # Gate `filtro`: un tema con filtro solo cuenta como "ámbito" si el texto
+        # contiene >=1 término del filtro (igual que capture.py / gate / backfill).
+        if temas_hit:
+            for _t in list(temas_hit):
+                _prep = filtros_pre.get(_t)
+                if _prep and not any(_matches(tn, tk, nt, ntok) for tn, tk in _prep):
+                    temas_hit.discard(_t)
         if temas_hit:
             match_por_evento[e["id"]] = temas_hit
 
