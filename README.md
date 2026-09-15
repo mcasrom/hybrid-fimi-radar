@@ -188,8 +188,16 @@ solo tras superar una ventana de validación; el cierre es siempre una **sugeren
   **>90 días** sin promocionar — salvo que haya señal clara (último cluster ≥60). Avisa por
   Telegram + bitácora; el cierre real (`temas_cli.py --cerrar`) exporta la evidencia,
   detiene el pipeline del tema y se puede **reabrir**.
+- **Ventanas por tema (ciclos largos)**: los umbrales anteriores son **defaults**. Un tema
+  puede declarar `temas.<tema>.ventanas` en `config.yaml` (`promocion_h`, `promocion_ciclos`,
+  `cierre_ventana_dias`, `cierre_findings_por_dia`, `cierre_min_dias`, `cierre_piloto_dias`,
+  `cierre_calendario_dias`). Pensado para temas de **ciclo largo**: `elecciones` usa promoción
+  de **30 días** (no 72 h) y cierre a **90 días**, y con `cierre_calendario_dias: 120` **no se
+  sugiere cerrar** si hay una elección del registro (`data/elecciones.yaml`) a ±120 días — el
+  tema puede estar **dormido entre procesos**, no muerto. Sin el bloque, se usan los defaults
+  globales (env `FIMI_*`).
 - **Panel de administración**: muestra el **progreso de la ventana** por tema
-  (`X/72 h · N/8 ciclos · errores`), la señal y los botones Promover / Cerrar / Reabrir.
+  (`X/<ventana> h · N/<ciclos> ciclos · errores`), la señal y los botones Promover / Cerrar / Reabrir.
 
 Detalle completo (criterios, umbrales y variables configurables):
 [`docs/GOBERNANZA.md`](docs/GOBERNANZA.md). En la web:
@@ -322,7 +330,7 @@ hybrid-fimi-radar/
 │   ├── export_evidencia.py # export CSV/JSON de la evidencia de un cluster
 │   ├── bitacora.py         # bitácora de temas (inicio/cambio/cierre/sugerencia)
 │   ├── check_cierre.py     # candidatura a cierre (solo sugiere, no decide)
-│   ├── check_promocion.py  # validación de piloto→producción (72 h, ciclo BD)
+│   ├── check_promocion.py  # validación de piloto→producción (ventana por tema, ciclo BD)
 │   ├── check_ingesta.py    # alerta si el cron se salta la captura
 │   ├── salud_keywords.py   # ¿captura cada tema su ruido real? (patrón "tema ciego")
 │   ├── backfill_tema_contenido.py  # re-etiqueta por contenido tras cambiar keywords
