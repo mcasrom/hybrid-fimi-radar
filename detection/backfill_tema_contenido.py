@@ -7,6 +7,11 @@ automáticamente: capture.py solo clasifica lo nuevo. Este script re-ejecuta
 temas_por_contenido sobre el histórico reciente y añade el tema a event_temas
 (INSERT OR IGNORE), sin quitar ningún tema existente (multi-tema).
 
+Respeta el gate `temas.<tema>.filtro`: un tema con filtro solo se etiqueta si el
+texto contiene >=1 término del filtro (mismo criterio que capture.py y
+gate_tema_contenido.py), para no reintroducir falsos positivos que el gate
+rechaza (p. ej. eventos solo-`afd` en `elecciones`).
+
 Uso:
   venv/bin/python detection/backfill_tema_contenido.py [--tema oriente_medio] [--dias 30] [--dry]
 
@@ -23,7 +28,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from normalizer.clasificar import temas_por_contenido
+from normalizer.clasificar import (temas_por_contenido, normalizar, _tokens,
+                                   _matches)
 
 
 def main():
@@ -49,6 +55,13 @@ def main():
             sys.exit(1)
         temas_con_kw = {args.tema: temas_con_kw[args.tema]}
 
+    # Gate por tema (config: temas.<tema>.filtro), igual que capture.py.
+    filtros = {t: (m or {}).get("filtro")
+               for t, m in (cfg.get("temas") or {}).items()
+               if (m or {}).get("filtro")}
+    if args.tema:
+        filtros = {k: v for k, v in filtros.items() if k == args.tema}
+
     con = sqlite3.connect(args.db)
     con.row_factory = sqlite3.Row
     t0 = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - args.dias * 86400
@@ -65,17 +78,25 @@ def main():
 
     total_add = 0
     for tema, kws in temas_con_kw.items():
+        prep = [(normalizar(str(x)), _tokens(str(x)))
+                for x in (filtros.get(tema) or []) if normalizar(str(x))]
         añadidos = 0
         for r in rows:
             txt = (r["title"] or "") + " " + (r["text"] or "")
-            if tema in temas_por_contenido(txt, kws):
-                prev = ya.get(r["id"], set())
-                if tema not in prev:
-                    añadidos += 1
-                    if not args.dry:
-                        con.execute(
-                            "INSERT OR IGNORE INTO event_temas (event_id, tema_id) VALUES (?,?)",
-                            (r["id"], tema))
+            if tema not in temas_por_contenido(txt, kws):
+                continue
+            if prep:
+                nt = normalizar(txt)
+                ntok = [x for x in nt.split() if len(x) > 2]
+                if not any(_matches(tn, tk, nt, ntok) for tn, tk in prep):
+                    continue  # falla el filtro -> NO etiquetar
+            prev = ya.get(r["id"], set())
+            if tema not in prev:
+                añadidos += 1
+                if not args.dry:
+                    con.execute(
+                        "INSERT OR IGNORE INTO event_temas (event_id, tema_id) VALUES (?,?)",
+                        (r["id"], tema))
         con.commit()
         total_add += añadidos
         print(f"  tema {tema}: {añadidos} eventos nuevos etiquetados ({'DRY' if args.dry else 'OK'})")
