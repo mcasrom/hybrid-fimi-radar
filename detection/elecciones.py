@@ -110,6 +110,33 @@ def _banda(score, bands):
     return "NORMAL"
 
 
+# Segundo nivel (clasificación, no captura): léxico de "interferencia" para
+# separar señal (desinformación/injerencia/coordinación inauténtica) de la
+# cobertura electoral normal. Fallback si config.yaml no trae `senal`.
+DEFAULT_SENAL = [
+    "desinformación", "disinformation", "misinformation", "manipulación",
+    "manipular", "interferencia", "interference", "injerencia", "propaganda",
+    "operación de influencia", "influence operation", "noticias falsas",
+    "fake news", "fake", "bulo", "bulos", "hoax", "troll", "trolls", "bot",
+    "bots", "granja de trolls", "troll farm", "coordinado inauténtico",
+    "coordinated inauthentic", "inauténtico", "deepfake", "hackeo",
+    "ciberataque", "cyberattack", "pucherazo", "fraude electoral",
+    "election interference", "foreign interference",
+]
+
+
+def _senal_terms():
+    """Léxico de 'interferencia' (2º nivel) desde config; fallback al default."""
+    try:
+        c = yaml.safe_load(open(ROOT / "config.yaml"))
+        s = c.get("temas", {}).get("elecciones", {}).get("senal")
+        if s:
+            return list(s)
+    except Exception:
+        pass
+    return DEFAULT_SENAL
+
+
 def cargar_registro(path=None):
     p = Path(path) if path else REGISTRO
     try:
@@ -159,6 +186,7 @@ def detectar(dias=90, registro_path=None, conn=None):
     ahora = int(conn.execute("SELECT strftime('%s','now')").fetchone()[0])
     desde = ahora - dias * 86400
     bands = _bands()
+    senal_pre = _prep_vocab(_senal_terms())
 
     prep = []
     for f in cargar_registro(registro_path):
@@ -195,7 +223,8 @@ def detectar(dias=90, registro_path=None, conn=None):
         if r["url"]:
             sig_url[(a, r["url"])] = r["cluster_id"]
         sig_ts[(a, r["ts"])] = r["cluster_id"]
-    # Top clusters del tema `elecciones` (detección real de coordinación electoral).
+    # Top clusters del tema `elecciones` (detección real de coordinación electoral)
+    # clasificados en 2º nivel: "interferencia" (señal) vs "cobertura" (ruido).
     elec_top = []
     for cid, info in clusters.items():
         if info["tema"] != "elecciones":
@@ -203,13 +232,28 @@ def detectar(dias=90, registro_path=None, conn=None):
         agg = conn.execute(
             "SELECT COUNT(*) n, COUNT(DISTINCT author) a, COUNT(DISTINCT url) u"
             " FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()
-        ev = conn.execute("SELECT title, text FROM cluster_events WHERE cluster_id=?"
-                          " LIMIT 1", (cid,)).fetchone()
-        hl = ((ev["title"] or ev["text"] or "") if ev else "").strip()[:130]
+        evs = conn.execute("SELECT title, text FROM cluster_events WHERE cluster_id=?",
+                           (cid,)).fetchall()
+        hl, textos = "", []
+        for ev in evs:
+            t = ((ev["title"] or ev["text"] or "") if ev else "").strip()
+            if t:
+                textos.append(t)
+            if not hl and t:
+                hl = t[:130]
+        todo = _norm(" ".join(textos))
+        hits = _match_vocab(todo, _tokens_norm(todo), senal_pre)
         elec_top.append({"label": info["label"], "score": info["score"],
                          "banda": info["banda"], "cuentas": agg["a"],
-                         "ev": agg["n"], "urls": agg["u"], "headline": hl})
-    elec_top.sort(key=lambda z: -z["score"])
+                         "ev": agg["n"], "urls": agg["u"], "headline": hl,
+                         "tipo": "interferencia" if hits else "cobertura",
+                         "senal_hits": hits[:3]})
+    # Señal (interferencia) primero; dentro de cada grupo, por score.
+    elec_top.sort(key=lambda z: (0 if z["tipo"] == "interferencia" else 1,
+                                 -z["score"]))
+    _n_int = sum(1 for c in elec_top if c["tipo"] == "interferencia")
+    elec_resumen = {"n": len(elec_top), "interferencia": _n_int,
+                    "cobertura": len(elec_top) - _n_int}
     if cerrar:
         conn.close()
 
@@ -264,7 +308,7 @@ def detectar(dias=90, registro_path=None, conn=None):
     salida.sort(key=lambda x: (x["fase"]["dias"] is None,
                                abs(x["fase"]["dias"] or 9e9)))
     return {"dias": dias, "n_eventos": len(eventos), "elecciones": salida,
-            "elec_top": elec_top[:8]}
+            "elec_top": elec_top[:8], "elec_resumen": elec_resumen}
 
 
 def _timeline_svg(els, ancho=1000, alto=132):
@@ -387,26 +431,50 @@ def _html(res):
     top_rows = ""
     for c in res.get("elec_top", []):
         bc = _BAND_COL.get(c["banda"], "#64748b")
+        interf = c.get("tipo") == "interferencia"
+        chip = ("<span style='font-size:.68rem;font-weight:700;color:#b91c1c;"
+                "background:#fef2f2;border:1px solid #fecaca;border-radius:999px;"
+                "padding:1px 8px'>⚠ interferencia</span>" if interf else
+                "<span style='font-size:.68rem;font-weight:700;color:#475569;"
+                "background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;"
+                "padding:1px 8px'>○ cobertura</span>")
+        hits = " · ".join(c.get("senal_hits", []))
+        extra = (f"<div style='font-size:.7rem;color:#b91c1c;margin-top:2px'>"
+                 f"señal: {hits}</div>") if (interf and hits) else ""
         top_rows += (
             f"<div style='margin:6px 0;padding:8px 11px;border:1px solid #e2e8f0;"
             f"border-left:4px solid {bc};border-radius:8px'>"
             f"<div style='display:flex;justify-content:space-between;gap:8px;"
-            f"flex-wrap:wrap'>"
+            f"flex-wrap:wrap;align-items:baseline'>"
             f"<b style='font-size:.84rem;color:#1e293b'>{c['label']}</b>"
+            f"<span style='display:flex;gap:6px;align-items:center'>{chip}"
             f"<span style='font-size:.78rem;font-weight:700;color:{bc}'>"
-            f"{c['score']:.0f}/100 {c['banda']}</span></div>"
+            f"{c['score']:.0f}/100 {c['banda']}</span></span></div>"
             f"<div style='font-size:.74rem;color:#64748b;margin-top:2px'>"
             f"{c['cuentas']} cuentas · {c['ev']} eventos · {c['urls']} URLs</div>"
             f"<div style='font-size:.74rem;color:#94a3b8;font-style:italic'>"
-            f"{c['headline']}…</div></div>")
+            f"{c['headline']}…</div>{extra}</div>")
     if not top_rows:
         top_rows = ("<p class='caption'>Aún no hay clusters del tema "
                     "<code>elecciones</code> (se generan en el ciclo del cron; piloto).</p>")
+    rs = res.get("elec_resumen") or {}
+    resumen_txt = ""
+    if rs:
+        resumen_txt = (
+            f"<div style='margin:0 0 6px'><span style='font-size:.78rem;"
+            f"color:#334155;background:#fff7ed;border:1px solid #fed7aa;"
+            f"border-radius:7px;padding:2px 9px'>de <b>{rs.get('n', 0)}</b> clusters: "
+            f"<b>{rs.get('interferencia', 0)}</b> con señal de interferencia · "
+            f"<b>{rs.get('cobertura', 0)}</b> cobertura electoral (se listan los "
+            f"principales, señal primero)</span></div>")
     det = ("<h4 style='margin:14px 0 4px;font-size:.9rem;color:#c2410c'>"
            "Detección: clusters electorales (tema <code>elecciones</code>)</h4>"
            "<p class='caption' style='margin:0 0 6px'>Coordinación detectada en el "
            "contenido electoral (no en el sumidero general). Score/banda = amplificación "
-           "coordinada.</p>" + top_rows)
+           "coordinada. <b>2º nivel</b>: cada cluster se marca como "
+           "<b>interferencia</b> (texto con términos de desinformación/injerencia) o "
+           "<b>cobertura electoral</b> (ruido esperable de campaña).</p>"
+           + resumen_txt + top_rows)
     return (
         f"<div class='card' id='elecciones'><h3>Election Threat Landscape "
         f"(calendario electoral)</h3>"

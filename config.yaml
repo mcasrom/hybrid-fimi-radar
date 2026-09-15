@@ -628,6 +628,45 @@ temas:
     - election interference
     - sondeos
     - votantes
+    # Segundo nivel (CLASIFICACIÓN, no captura): un cluster del tema se marca
+    # como "interferencia" (señal) si su texto contiene >=1 término de esta
+    # lista; si no, "cobertura electoral" (ruido esperable). Separa señal de
+    # ruido sin recortar la captura del tema. Léxico ES/EN.
+    senal:
+    - desinformación
+    - disinformation
+    - misinformation
+    - manipulación
+    - manipular
+    - interferencia
+    - interference
+    - injerencia
+    - propaganda
+    - operación de influencia
+    - influence operation
+    - noticias falsas
+    - fake news
+    - fake
+    - bulo
+    - bulos
+    - hoax
+    - troll
+    - trolls
+    - bot
+    - bots
+    - granja de trolls
+    - troll farm
+    - coordinado inauténtico
+    - coordinated inauthentic
+    - inauténtico
+    - deepfake
+    - hackeo
+    - ciberataque
+    - cyberattack
+    - pucherazo
+    - fraude electoral
+    - election interference
+    - foreign interference
 keywords:
 - palabra: Ceuta
   plataformas:

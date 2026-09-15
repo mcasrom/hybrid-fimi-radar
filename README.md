@@ -161,6 +161,15 @@ coordinación por elección cuenta **solo** los clusters de ese tema. Verificado
 real (00:44 UTC): **17 clusters**, top **76/100 HIGH** (Riksdag Suecia; interferencia
 electoral EEUU).
 
+**Segundo nivel (15/09/2026)**: el bloque de detección clasifica cada cluster en
+**interferencia** (señal; texto con términos de `temas.elecciones.senal`: desinformación,
+injerencia, bots/trolls, fraude, coordinación inauténtica…) o **cobertura electoral**
+(ruido esperable de campaña), y lista **señal primero**. Separa lo que el analista veía
+mezclado: un cluster de eco de "los socialdemócratas ganan Suecia" deja de encabezar la
+detección (marcado *cobertura*), mientras la interferencia real (p. ej. `election
+interference`, `fraude electoral`, `pucherazo`) se resalta. Resumen visible: *"de N
+clusters: X con señal · Y cobertura"*. Es **clasificación, no captura**: no recorta el tema.
+
 ## Ciclo de vida y gobernanza
 
 El radar **no decide**: observa, sugiere y avisa; toda transición de estado la toma una
