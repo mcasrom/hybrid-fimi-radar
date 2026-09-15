@@ -520,6 +520,51 @@ feeds:
   transparency: medium
   note: Diario sueco (centro-der). Equilibrio en cobertura electoral SE.
   analytical_relevance: media
+# === Fuentes de esfera (O2): medios estatales para vigilar narrativas rusa/china ===
+- nombre: TASS (EN)
+  url: https://tass.com/rss/v2.xml
+  tipo: media
+  pais: RU
+  idioma: en
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: 'Agencia estatal rusa (sucesora de la TASS soviética). Narrativa oficial rusa;
+    vigilar como fuente de narrativas FIMI, no como verdad.'
+  analytical_relevance: alta
+- nombre: RIA Novosti (RU)
+  url: https://ria.ru/export/rss2/archive/index.xml
+  tipo: media
+  pais: RU
+  idioma: ru
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: 'Agencia estatal rusa (RIA Novosti, grupo Rossiya Segodnya). Narrativa oficial;
+    vigilar como fuente FIMI. Contenido en ruso (sin etiquetado temático ES/EN).'
+  analytical_relevance: alta
+- nombre: CGTN (EN)
+  url: https://www.cgtn.com/subscribe/rss/section/world.xml
+  tipo: media
+  pais: CN
+  idioma: en
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: 'Cadena estatal china (grupo CCTV). Narrativa oficial china en inglés; vigilar
+    como fuente FIMI.'
+  analytical_relevance: alta
+- nombre: Global Times (EN)
+  url: https://www.globaltimes.cn/rss/outbrain.xml
+  tipo: media
+  pais: CN
+  idioma: en
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: 'Tabloide estatal chino (grupo Renmin Ribao). Línea nacionalista oficial;
+    vigilar como fuente FIMI.'
+  analytical_relevance: alta
 temas:
   frontera_sur:
     estado: produccion
