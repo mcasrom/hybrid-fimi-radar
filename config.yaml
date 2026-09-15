@@ -613,6 +613,18 @@ temas:
   elecciones:
     estado: piloto
     nombre: Elecciones e interferencia electoral
+    # Ventanas de validación/cierre para un tema de CICLO LARGO (electoral): la
+    # promoción exige 30 días (no 72 h) y el cierre no se sugiere con elecciones
+    # registradas a ±120 días (evita cerrar el tema en un valle entre procesos).
+    # Si el bloque falta, se usan los defaults globales (env FIMI_*).
+    ventanas:
+      promocion_h: 720
+      promocion_ciclos: 96
+      cierre_ventana_dias: 90
+      cierre_findings_por_dia: 1.0
+      cierre_min_dias: 30
+      cierre_piloto_dias: 365
+      cierre_calendario_dias: 120
     # Gate: un evento solo conserva el tema si su texto contiene >=1 término
     # electoral real (evita que "afd" del boletín meteorológico "Area Forecast
     # Discussion", o menciones tangenciales, lo etiqueten como electoral).

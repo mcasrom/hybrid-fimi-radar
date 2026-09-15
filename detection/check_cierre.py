@@ -6,7 +6,7 @@ tema activado (produccion | piloto) muestra señal débil de forma sostenida.
 Si cumple criterios, avisa al dueño por Telegram y registra una 'sugerencia'
 en la bitácora (origen='sistema'). NO cambia estado ni toca config.yaml.
 
-Criterios (ventana 21 días, configurables — ver Config):
+Criterios (por defecto: ventana 21 días, configurables por tema — ver Config):
   1. Volumen bajo: promedio de hallazgos/día < FINDINGS_POR_DIA en la ventana.
      Solo se evalúa a partir de MIN_DIAS_OPERACION días de operación real
      (evita marcar un tema recién activado). Volumen desde BD (findings con
@@ -14,8 +14,11 @@ Criterios (ventana 21 días, configurables — ver Config):
   2. Sin narrativas sostenidas: 0 títulos persistidos en >= 3 días distintos
      dentro de la ventana (mismo criterio que detectar_sostenidas).
   3. Piloto estancado (extra si el tema es 'piloto'): > PILOTO_DIAS desde el
-     inicio sin haber superado la ventana de promoción (data/promocion_*.json
+     inicio sin haber superado la ventana de promoción (data/promocion_<tema>.json
      con ready=true) y sin señal clara (último cluster >= UMBRAL_SENAL).
+  4. Calendario (opcional por tema, `cierre_calendario_dias`): si hay una
+     elección del registro (`data/elecciones.yaml`) dentro de ±N días, NO se
+     sugiere cerrar — el tema puede estar dormido entre procesos, no muerto.
 
 Robustez (patrón check_promocion):
   - Estado de máquina por tema en data/cierre_<tema>.json (gitignored):
@@ -23,13 +26,17 @@ Robustez (patrón check_promocion):
     rearma para un futuro episodio.
   - Al registrar el cierre manualmente (bitacora.py --nuevo-estado cerrado),
     el check deja de considerarlo activo (config.yaml estado).
-Config por env (opcional):
-  FIMI_CIERRE_VENTANA_DIAS=21      ventana de observación (días)
-  FIMI_CIERRE_FINDINGS_POR_DIA=2.0 umbral de volumen (hallazgos/día)
-  FIMI_CIERRE_MIN_DIAS=14          días mínimos de operación antes de evaluar
-  FIMI_CIERRE_PILOTO_DIAS=90       piloto estancado (días sin promocionar)
-  FIMI_CIERRE_SENAL=60             último cluster >= este score = hay señal
-  FIMI_CIERRE_CHAT=47652516        chat_id de Telegram del dueño
+
+Config por tema (opcional, en config.yaml → temas.<tema>.ventanas):
+  promocion_h / promocion_ciclos            (los lee check_promocion.py)
+  cierre_ventana_dias     ventana de observación (días)
+  cierre_findings_por_dia umbral de volumen (hallazgos/día)
+  cierre_min_dias         días mínimos de operación antes de evaluar
+  cierre_piloto_dias      piloto estancado (días sin promocionar)
+  cierre_senal            último cluster >= este score = hay señal
+  cierre_calendario_dias  si >0, no cerrar con una elección a ±N días
+
+Los mismos nombres siguen disponibles por env (FIMI_CIERRE_*) como default.
 """
 import hashlib
 import json
@@ -76,6 +83,56 @@ def cargar_config():
         return {}
 
 
+# --- Parámetros de ventana por tema (config) con defaults globales (env) ------
+_VENT_DEF = {
+    "cierre_ventana_dias": VENTANA_DIAS,
+    "cierre_findings_por_dia": FINDINGS_POR_DIA,
+    "cierre_min_dias": MIN_DIAS_OPERACION,
+    "cierre_piloto_dias": PILOTO_DIAS,
+    "cierre_senal": UMBRAL_SENAL,
+    "cierre_calendario_dias": 0,
+}
+
+
+def ventanas_tema(cfg, tema):
+    """Parámetros de cierre del tema (config → env defaults)."""
+    v = dict(_VENT_DEF)
+    conf = (((cfg or {}).get("temas") or {}).get(tema) or {}).get("ventanas") or {}
+    for k in list(v):
+        if k in conf and conf[k] is not None:
+            v[k] = conf[k]
+    return v
+
+
+def eleccion_cercana(dias):
+    """True si hay una elección registrada dentro de ±`dias` (fase de calendario)."""
+    import datetime
+    import yaml
+    p = ROOT / "data" / "elecciones.yaml"
+    if not p.exists():
+        return False
+    try:
+        data = yaml.safe_load(open(p)) or []
+    except Exception:
+        return False
+    if isinstance(data, dict):
+        data = data.get("elecciones") or []
+    hoy = datetime.datetime.now(datetime.timezone.utc).date()
+    for e in data:
+        if not isinstance(e, dict) or e.get("estado") == "cerrado":
+            continue
+        f = e.get("fecha")
+        if not f:
+            continue
+        try:
+            d = datetime.datetime.strptime(str(f)[:10], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        if abs((d - hoy).days) <= dias:
+            return True
+    return False
+
+
 def inicio_ingesta(conn, tema):
     """Primer hallazgo persistido del tema (findings)."""
     try:
@@ -86,25 +143,25 @@ def inicio_ingesta(conn, tema):
         return None
 
 
-def volumen_ventana(conn, tema, inicio):
+def volumen_ventana(conn, tema, inicio, ventana_dias, min_dias):
     """Hallazgos del tema dentro de la ventana y días efectivos de operación."""
-    ventana_inicio = time.time() - VENTANA_DIAS * 86400
+    ventana_inicio = time.time() - ventana_dias * 86400
     try:
         n = conn.execute(
             "SELECT COUNT(*) FROM findings WHERE tema_id=? AND fecha>=?",
             (tema, int(ventana_inicio))).fetchone()[0] or 0
     except Exception:
         n = 0
-    # días efectivos: máx(MIN_DIAS_OPERACION, MIN(ventana, edad del tema))
-    dias_op = max(MIN_DIAS_OPERACION, min(VENTANA_DIAS, (time.time() - inicio) / 86400.0)) if inicio else VENTANA_DIAS
+    # días efectivos: máx(min_dias, MIN(ventana, edad del tema))
+    dias_op = max(min_dias, min(ventana_dias, (time.time() - inicio) / 86400.0)) if inicio else ventana_dias
     return n, n / dias_op
 
 
-def sostenidas_ventana(conn, tema, min_dias=3):
+def sostenidas_ventana(conn, tema, ventana_dias, min_dias=3):
     """Títulos persistidos en >= min_dias días distintos dentro de la ventana
     (mismo normalizado que detectar_sostenidas)."""
     import re
-    ventana_inicio = time.time() - VENTANA_DIAS * 86400
+    ventana_inicio = time.time() - ventana_dias * 86400
     try:
         rows = conn.execute(
             "SELECT DISTINCT date(fecha,'unixepoch') as d, substr(titulo,1,60) as t"
@@ -133,9 +190,13 @@ def ultimo_cluster_score(conn, tema):
         return None
 
 
-def promocion_ready():
-    """True si politica_nacional ya ha superado la ventana de promoción."""
-    p = ROOT / "data" / "promocion_politica_nacional.json"
+def promocion_ready(tema):
+    """True si el tema ya superó su ventana de promoción (data/promocion_<tema>.json).
+
+    BUG corregido 15/09/2026: antes leía SIEMPRE el JSON de politica_nacional,
+    de modo que con ready=true anulaba los motivos de cierre de TODOS los pilotos.
+    """
+    p = ROOT / "data" / f"promocion_{tema}.json"
     try:
         s = json.loads(p.read_text())
         return bool(s.get("ready", False))
@@ -165,26 +226,37 @@ def evaluar_tema(conn, cfg, temas_cfg):
         est = (temas_cfg.get(tema, {}) or {}).get("estado", "produccion")
         if est not in ("produccion", "piloto"):
             continue  # candidato_a_cierre/cerrado no se reevalúan
+        v = ventanas_tema(cfg, tema)
+        ventana = int(v["cierre_ventana_dias"])
+        min_dias = int(v["cierre_min_dias"])
+        fpd = float(v["cierre_findings_por_dia"])
+        piloto_dias = int(v["cierre_piloto_dias"])
+        senal = float(v["cierre_senal"])
+        cal_dias = int(v["cierre_calendario_dias"])
+        # (B) fase de calendario electoral: no sugerir cierre si hay elección cerca
+        if cal_dias > 0 and eleccion_cercana(cal_dias):
+            print(f"[cierre] {tema}: en fase de calendario (elección a ±{cal_dias}d) — no se evalúa")
+            continue
         inicio = inicio_ingesta(conn, tema)
-        if inicio is None or (time.time() - inicio) / 86400.0 < MIN_DIAS_OPERACION:
+        if inicio is None or (time.time() - inicio) / 86400.0 < min_dias:
             continue  # demasiado joven para "débil sostenido"
-        total, por_dia = volumen_ventana(conn, tema, inicio)
-        sost = sostenidas_ventana(conn, tema)
+        total, por_dia = volumen_ventana(conn, tema, inicio, ventana, min_dias)
+        sost = sostenidas_ventana(conn, tema, ventana)
         motivos = []
-        if por_dia < FINDINGS_POR_DIA:
+        if por_dia < fpd:
             motivos.append(
                 f"volumen bajo sostenido ({por_dia:.1f} hallazgos/día,"
-                f" umbral {FINDINGS_POR_DIA:.1f} en {VENTANA_DIAS}d, total {total})")
+                f" umbral {fpd:.1f} en {ventana}d, total {total})")
         if not sost:
-            motivos.append(f"0 narrativas sostenidas (≥3d) en los últimos {VENTANA_DIAS}d")
+            motivos.append(f"0 narrativas sostenidas (≥3d) en los últimos {ventana}d")
         if est == "piloto":
-            if promocion_ready():
+            if promocion_ready(tema):
                 motivos = []  # ya validado para promoción; no es candidato
-            elif (time.time() - inicio) / 86400.0 > PILOTO_DIAS:
+            elif (time.time() - inicio) / 86400.0 > piloto_dias:
                 motivos.append(
-                    f"piloto con >{PILOTO_DIAS}d sin superar la ventana de promoción")
+                    f"piloto con >{piloto_dias}d sin superar la ventana de promoción")
             score = ultimo_cluster_score(conn, tema)
-            if score is not None and score >= UMBRAL_SENAL:
+            if score is not None and score >= senal:
                 motivos = []  # hay señal clara real; no es candidato
         if motivos:
             evaluados.append({

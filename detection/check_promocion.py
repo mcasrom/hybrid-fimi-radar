@@ -70,6 +70,16 @@ def load_env(filepath: Path):
         pass
 
 
+def _ventanas_cfg(tema):
+    """Overrides de ventana del tema (config.yaml → temas.<tema>.ventanas)."""
+    import yaml
+    try:
+        cfg = yaml.safe_load(open(ROOT / "config.yaml")) or {}
+        return ((((cfg.get("temas") or {}).get(tema)) or {}).get("ventanas")) or {}
+    except Exception:
+        return {}
+
+
 def _parsear_secciones():
     """Parsea logs/fimi.log → lista de secciones [tema, ts_epoch, traceback].
 
@@ -178,7 +188,7 @@ def send(token, text):
 
 
 def main():
-    global TEMA
+    global TEMA, VENTANA_H, MIN_CICLOS
     ap = argparse.ArgumentParser()
     ap.add_argument("--tema", default="politica_nacional",
                     help="slug del tema piloto a validar (default: politica_nacional)")
@@ -187,6 +197,10 @@ def main():
     args = ap.parse_args()
     TEMA = args.tema
     STATE = _state_path(TEMA)
+    # Overrides por tema (config.yaml); si no hay, se mantienen los env/default.
+    _v = _ventanas_cfg(TEMA)
+    VENTANA_H = float(_v.get("promocion_h", VENTANA_H))
+    MIN_CICLOS = int(_v.get("promocion_ciclos", MIN_CICLOS))
 
     load_env(ROOT / ".env")
     token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "")
