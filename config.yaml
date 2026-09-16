@@ -562,7 +562,8 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad, Taiwan como asunto interno. Vigilar como fuente FIMI."
+  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad,
+    Taiwan como asunto interno. Vigilar como fuente FIMI."
   analytical_relevance: alta
 
 - nombre: TechCrunch AI
@@ -573,7 +574,8 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos; útil para detectar narrativas emergentes de IA."
+  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos;
+    útil para detectar narrativas emergentes de IA."
   analytical_relevance: alta
 
 - nombre: Ars Technica
@@ -584,7 +586,8 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena fuente para deepfakes, modelos, regulación."
+  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena
+    fuente para deepfakes, modelos, regulación."
   analytical_relevance: alta
 
 - nombre: MIT Technology Review
@@ -595,7 +598,8 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad académica."
+  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad
+    académica."
   analytical_relevance: alta
 
 - nombre: AI News
@@ -606,7 +610,8 @@ feeds:
   bias: center
   reliability: mixed
   transparency: medium
-  note: "Portal especializado en IA. Noticias de industria, investigación y regulación; volumen medio, verificabilidad variable."
+  note: "Portal especializado en IA. Noticias de industria, investigación y regulación;
+    volumen medio, verificabilidad variable."
   analytical_relevance: media
 
 - nombre: Numerama
@@ -617,7 +622,8 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés; contrapeso anglosajón."
+  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés;
+    contrapeso anglosajón."
   analytical_relevance: media
 
 - nombre: ActuIA
@@ -628,9 +634,33 @@ feeds:
   bias: center
   reliability: mixed
   transparency: medium
-  note: "Portal francófono especializado en IA. Noticias de investigación, empresas y aplicaciones; volumen bajo, útil para perspectiva FR."
+  note: "Portal francófono especializado en IA. Noticias de investigación, empresas
+    y aplicaciones; volumen bajo, útil para perspectiva FR."
   analytical_relevance: media
 
+- nombre: Xataka
+  url: https://feeds.weblogssl.com/xataka2
+  tipo: media
+  pais: ES
+  idioma: es
+  bias: center
+  reliability: high
+  transparency: medium
+  note: Medio tecnologico espanol (Weblogs SL). Cobertura de IA, gadgets y 
+    ciencia; narrativa IA en castellano.
+  analytical_relevance: media
+- nombre: El Pais Tecnologia
+  url: 
+    https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/tecnologia/portada
+  tipo: media
+  pais: ES
+  idioma: es
+  bias: center-left
+  reliability: high
+  transparency: high
+  note: Seccion de Tecnologia de El Pais. Cobertura de IA, regulacion y 
+    privacidad en espanol.
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion
@@ -818,6 +848,19 @@ temas:
     - fraude electoral
     - election interference
     - foreign interference
+  inteligencia_artificial:
+    estado: piloto
+    nombre: Inteligencia artificial
+    filtro:
+    - inteligencia artificial
+    - artificial intelligence
+    - OpenAI
+    - ChatGPT
+    - Gemini
+    - Claude
+    - Anthropic
+    - deepfake
+    - Nvidia
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -1116,6 +1159,41 @@ keywords:
 - palabra: valrörelse
   plataformas: *id004
   tema: elecciones
+- palabra: inteligencia artificial
+  plataformas: &id005
+  - bluesky
+  - google-news
+  tema: inteligencia_artificial
+- palabra: artificial intelligence
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: OpenAI
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: ChatGPT
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: Gemini
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: Claude
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: Anthropic
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: deepfake
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: Nvidia
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: robot
+  plataformas: *id005
+  tema: inteligencia_artificial
+- palabra: algoritmo
+  plataformas: *id005
+  tema: inteligencia_artificial
 telegram_canales:
 - elfarodeceuta
 - maldita_es
