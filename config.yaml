@@ -655,6 +655,20 @@ temas:
     - hidrógeno
     - carbón
     - precio de la luz
+    # Tuning por tema (piloto): en `energia` la señal discriminante es la anomalía
+    # (cuentas automatizadas repitiendo titulares de petróleo). El eco mainstream de
+    # una noticia real (p.ej. "Trump EPA elimina los límites de emisiones") tiene
+    # sync/infra/densidad altos con anomalía ~0 y NO debe encabezar el tema. Se sube
+    # el peso de la anomalía para que ese eco caiga a WATCH y solo la amplificación
+    # inauténtica quede arriba.
+    scoring:
+      weights:
+        synchronization: 0.15
+        content_similarity: 0.15
+        amplification: 0.10
+        infrastructure: 0.10
+        network_density: 0.10
+        anomaly: 0.40
   elecciones:
     estado: piloto
     nombre: Elecciones e interferencia electoral
