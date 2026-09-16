@@ -13,7 +13,7 @@ Criterios automáticos (idempotente, sin spam):
   2. Ventana de observación >= VENTANA_H (72h) y >= MIN_CICLOS ciclos de
      snapshot completos (clusters del tema con created_at dentro de la ventana).
 
-Al cumplirse, avisa por Telegram al dueño con el resumen y el paso a ejecutar
+Al cumplirse, avisa por Telegram al administrador con el resumen y el paso a ejecutar
 (cambiar 1 línea de config.yaml). Un error nuevo reinicia la ventana y avisa.
 El aviso final se manda una sola vez.
 
@@ -33,7 +33,7 @@ Robustez:
 Config por env (opcional):
   FIMI_PROMOCION_H=72            horas de observación
   FIMI_PROMOCION_MIN_CICLOS=8    ciclos de snapshot mínimos
-  FIMI_PROMOCION_CHAT=47652516   chat_id de Telegram del dueño
+  FIMI_PROMOCION_CHAT=47652516   chat_id de Telegram del administrador
 """
 import json
 import os

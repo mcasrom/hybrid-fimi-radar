@@ -5,7 +5,7 @@ El radar captura por keywords del catálogo + feeds RSS. Los feeds RSS no
 llevan tema y su evento cae en el default frontera_sur. Muchos de esos
 eventos hablan de asuntos que NINGUNA keyword del catálogo matchea (p.ej.
 Oriente Medio, política nacional de terceros países). Ese volumen es "tema
-emergente no cubierto": señal para el dueño, que decide si añade keyword o
+emergente no cubierto": señal para el administrador, que decide si añade keyword o
 tema. El sistema NO añade nada automáticamente.
 
 Definición (conservadora, para no ensuciar con el default frontera_sur):
@@ -283,7 +283,7 @@ def _html(res):
             f"default). El delta compara los últimos {dd}d con los {dd}d anteriores: ▲ subiendo · "
             f"▼ bajando · 🆕 nuevo. Las variantes del mismo actor (israel/israeli, marruecos/maroc) se "
             f"fusionan en una sola fila. No son conclusión, son candidatos a revisar. El sistema no "
-            f"añade nada: el catálogo lo decide el dueño.</p>"
+            f"añade nada: el catálogo lo decide el administrador.</p>"
             f"{rows}"
             f"<p class='caption' style='margin-top:6px'>Lectura: si un término sube y mantiene "
             f"volumen y fuentes, puede merecer una keyword o un tema nuevo en "

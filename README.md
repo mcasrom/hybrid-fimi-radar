@@ -456,7 +456,7 @@ requieren `x-admin-secret`.
 
 ## Panel de administración y gestión de temas
 
-El panel del dueño vive en **`/admin.html`** (estático en `/var/www/fimi/`, `noindex`;
+El panel del administrador vive en **`/admin.html`** (estático en `/var/www/fimi/`, `noindex`;
 no está en el repo) y se autentica con `x-admin-secret` (`FIMI_ADMIN_SECRET`). Muestra
 votos por tema, sugerencias, suscriptores por proyecto y **Gestión de temas**.
 
@@ -467,7 +467,7 @@ dominio** (bloque más pesado, ~15 s). Reutiliza los módulos de Fase A/C; **lig
 defecto** y el bloque de migraciones se carga bajo demanda desde el panel.
 
 La gestión de temas refleja el principio *"el sistema no decide"*: los controles solo se
-activan cuando el propio radar ya marcó la señal, y la acción la ejecuta el dueño.
+activan cuando el propio radar ya marcó la señal, y la acción la ejecuta el administrador.
 
 | Acción | Cuándo aparece | Endpoint (auth `x-admin-secret`) | Efecto |
 |---|---|---|---|
@@ -614,7 +614,7 @@ con permisos 600, validación de `cluster_label` en `/api/export` (solo
 
 El sistema se auto-chequea frente a fallos silenciosos (config válida + 0 errores pero un
 tema que no ve su ruido real — el patrón que dejó ciego a `oriente_medio` hasta 2026-09-09).
-Tres capas, todas avisando por Telegram al dueño solo ante cambios (sin spam):
+Tres capas, todas avisando por Telegram al administrador solo ante cambios (sin spam):
 
 - **`salud_keywords.py`** (card *Salud de keywords*): compara el material del corpus que
   matchea las keywords de cada tema contra lo realmente etiquetado. Alerta si hay un hueco

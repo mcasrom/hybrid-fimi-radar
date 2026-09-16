@@ -3,7 +3,7 @@
 
 El dashboard regenera cada 6h (cron :30). Si la captura más reciente
 (MAX(events.timestamp)) supera un umbral (> UMBRAL_H, ~1 ciclo y margen),
-el pipeline probablemente ha fallado: avisa al dueño por Telegram UNA vez
+el pipeline probablemente ha fallado: avisa al administrador por Telegram UNA vez
 por episodio (state en data/ingesta_estado.json), sin spam.
 
 Complementa el indicador rojo "cron saltado" del dashboard: ese es pasivo

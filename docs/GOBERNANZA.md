@@ -7,7 +7,7 @@ ejecuta cada acción.
 
 ## Principio rector
 
-> El sistema propone; el dueño decide. Ninguna promoción ni cierre ocurre de forma
+> El sistema propone; el administrador decide. Ninguna promoción ni cierre ocurre de forma
 > automática. El radar solo marca cuándo se cumplen unos criterios medibles y avisa.
 
 Esto evita dos riesgos: (1) que un tema "ruidoso" pase a producción sin validación, y
@@ -43,7 +43,7 @@ cada tema en estado `piloto`.
 3. **Sin errores nuevos** de pipeline durante la ventana. Un error nuevo **reinicia** la
    ventana (y avisa).
 
-**Cómo avisa:** al cumplirse, envía **un mensaje por Telegram** al dueño (chat
+**Cómo avisa:** al cumplirse, envía **un mensaje por Telegram** al administrador (chat
 `FIMI_PROMOCION_CHAT`, por defecto `47652516`) con el resumen (ciclos, horas, clusters
 actuales) y el paso a ejecutar. El aviso es **único** por episodio (no re-notifica).
 
@@ -75,7 +75,7 @@ python detection/temas_cli.py --estado <tema> produccion
 - **Señal clara**: el último cluster del tema tiene score ≥ **60** (`FIMI_CIERRE_SENAL`).
 - El tema está **`ready`** para promoción.
 
-**Cómo avisa:** **Telegram** al dueño (chat `FIMI_CIERRE_CHAT`, por defecto `47652516`) +
+**Cómo avisa:** **Telegram** al administrador (chat `FIMI_CIERRE_CHAT`, por defecto `47652516`) +
 una **sugerencia** en la bitácora (origen `sistema`). Aviso **único** por episodio; se
 rearma si el tema se recupera.
 
@@ -111,13 +111,13 @@ python detection/temas_cli.py --estado <tema> piloto --nota "reactivar por seña
 |---|---|---|
 | `FIMI_PROMOCION_H` | 72 | Horas de observación antes de promocionar |
 | `FIMI_PROMOCION_MIN_CICLOS` | 8 | Ciclos de snapshot mínimos |
-| `FIMI_PROMOCION_CHAT` | 47652516 | Chat de Telegram del dueño (promoción) |
+| `FIMI_PROMOCION_CHAT` | 47652516 | Chat de Telegram del administrador (promoción) |
 | `FIMI_CIERRE_VENTANA_DIAS` | 21 | Ventana de evaluación de cierre |
 | `FIMI_CIERRE_FINDINGS_POR_DIA` | 2.0 | Umbral de volumen (hallazgos/día) |
 | `FIMI_CIERRE_MIN_DIAS` | 14 | Días mínimos de operación antes de evaluar |
 | `FIMI_CIERRE_PILOTO_DIAS` | 90 | Días de piloto sin promocionar |
 | `FIMI_CIERRE_SENAL` | 60 | Score que anula la candidatura a cierre |
-| `FIMI_CIERRE_CHAT` | 47652516 | Chat de Telegram del dueño (cierre) |
+| `FIMI_CIERRE_CHAT` | 47652516 | Chat de Telegram del administrador (cierre) |
 
 ## Ficheros y trazabilidad
 

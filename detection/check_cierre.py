@@ -3,7 +3,7 @@
 
 Hermano de check_promocion.py: supervisa en cada ciclo del cron (6h) si algún
 tema activado (produccion | piloto) muestra señal débil de forma sostenida.
-Si cumple criterios, avisa al dueño por Telegram y registra una 'sugerencia'
+Si cumple criterios, avisa al administrador por Telegram y registra una 'sugerencia'
 en la bitácora (origen='sistema'). NO cambia estado ni toca config.yaml.
 
 Criterios (por defecto: ventana 21 días, configurables por tema — ver Config):

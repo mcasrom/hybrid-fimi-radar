@@ -16,7 +16,7 @@ Interpretación de la escala (0-100):
   - 70-100 Salud alta: volumen adecuado, narrativas sostenidas y/o señal clara.
 
 El sistema NUNCA decide: este score es informativo y el cierre lo decide el
-dueño (bitacora.py --nuevo-estado cerrado). Solo visibiliza lo que el
+administrador (bitacora.py --nuevo-estado cerrado). Solo visibiliza lo que el
 check_cierre ya juzgaba de forma binaria, de forma continua y comparable.
 
 Uso:

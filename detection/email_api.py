@@ -14,13 +14,13 @@ Endpoints:
                                   Voto ligero "¿Te resulta útil este tema?". Rate-limit por IP.
   POST /api/sugerir           -> body JSON {"texto": "..."}
                                   Sugerencia de tema nuevo (web). Rate-limit por IP + reenvío
-                                  al dueño por Telegram (chan FIMI_OWNER_CHAT).
+                                  al administrador por Telegram (chan FIMI_OWNER_CHAT).
   GET  /api/admin/feedback    -> resumen de votos y sugerencias. Header `x-admin-secret`
-                                  (env/.env FIMI_ADMIN_SECRET). SOLO visible para el dueño:
+                                  (env/.env FIMI_ADMIN_SECRET). SOLO visible para el administrador:
                                   sin cómputo público (un radar FIMI no debe ser manipulable).
   GET  /api/admin/tendencias  -> tendencias y temas hot (momentum + candidatos a tema nuevo +
                                   ejes transversales; ?full=1 añade migración de dominio).
-                                  Header `x-admin-secret`. Solo el dueño.
+                                  Header `x-admin-secret`. Solo el administrador.
 
   --- API pública v1 (read-only, S4; datos ya públicos, CORS *) ---
   GET  /api/v1                -> índice de endpoints + meta/aviso
@@ -162,7 +162,7 @@ def temas_estado():
     El sistema NO decide: solo expone si un tema ya cumplió la ventana de
     promoción (data/promocion_<tema>.json → ready) o si check_cierre lo marcó
     como candidato (data/cierre_<tema>.json → candidato). La acción la toma el
-    dueño desde el panel admin.
+    administrador desde el panel admin.
     """
     import yaml
     try:
@@ -278,7 +278,7 @@ def _cargar_modulo(nombre):
 
 
 def _api_admin_tendencias(full=False):
-    """Tendencias y temas hot para el panel admin (read-only, solo el dueño).
+    """Tendencias y temas hot para el panel admin (read-only, solo el administrador).
 
     Ligero por defecto: temas hot (momentum) + candidatos a tema nuevo (fuera de
     catálogo) + ejes transversales. Con full=1 añade la migración de dominio
@@ -822,13 +822,13 @@ class H(BaseHTTPRequestHandler):
             conn.close()
             return self._send(200, {"ok": True, "suscriptores": data, "conteo": conteo, "proyecto": proyecto or "todos"})
         if path == "/api/admin/temas":
-            # Estado de temas + señales de promoción/cierre. Solo el dueño.
+            # Estado de temas + señales de promoción/cierre. Solo el administrador.
             if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             return self._send(200, {"ok": True, "temas": temas_estado()})
         if path == "/api/admin/tendencias":
             # Tendencias / temas hot (read-only). Ligero por defecto; full=1
-            # añade el análisis de migración de dominio. Solo el dueño.
+            # añade el análisis de migración de dominio. Solo el administrador.
             if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             full = (q.get("full") or ["0"])[0].lower() in ("1", "true", "yes")
@@ -907,8 +907,8 @@ class H(BaseHTTPRequestHandler):
         except Exception:
             return self._send(400, {"error": "json invalido"})
         if parsed.path in admin_paths:
-            # Acciones de estado de temas: SOLO el dueño (x-admin-secret). El
-            # sistema no decide; aquí solo se ejecuta lo que el dueño pulsa.
+            # Acciones de estado de temas: SOLO el administrador (x-admin-secret). El
+            # sistema no decide; aquí solo se ejecuta lo que el administrador pulsa.
             if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             tema = str(data.get("tema") or "").strip()
@@ -1016,7 +1016,7 @@ class H(BaseHTTPRequestHandler):
         send_email(email, subj, html)
 
     def _avisar_dueno(self, texto, canal="web"):
-        """Reenvía una sugerencia de tema al dueño (Telegram + email info-fimi)."""
+        """Reenvía una sugerencia de tema al administrador (Telegram + email info-fimi)."""
         token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "") or (load_env(ENV_RADAR) or {}).get("FIMI_TELEGRAM_BOT_TOKEN", "")
         if ":" in token:
             chat = os.environ.get("FIMI_OWNER_CHAT", "") or (load_env(ENV_RADAR) or {}).get("FIMI_OWNER_CHAT", "47652516")

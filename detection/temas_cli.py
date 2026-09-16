@@ -243,7 +243,7 @@ def cmd_cerrar(args):
     _guardar(cfg)
     conn = _bitacora_conn()
     bitacora_registrar(conn, args.tema, "cierre", actual, "cerrado",
-                       args.nota or "cerrado por el dueño (temas_cli)")
+                       args.nota or "cerrado por el administrador (temas_cli)")
     conn.commit()
     conn.close()
     print(f"[temas] '{args.tema}' marcado cerrado en config.yaml + bitácora")

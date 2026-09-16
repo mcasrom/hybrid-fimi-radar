@@ -2,7 +2,7 @@
 """export_evidencia.py — Exporta la evidencia (cluster_events) de un cluster.
 
 Reutiliza `exportar_cluster` de email_api (misma lógica que el endpoint
-web /api/export), pero desde CLI para el dueño: permite auditar o compartir
+web /api/export), pero desde CLI para el administrador: permite auditar o compartir
 los textos/fuentes/URLs de un cluster de la vista activa sin pasar por web.
 
 Uso:

@@ -3,7 +3,7 @@
 
 Ciclo de vida de cada tema monitorizado (inicio de ingesta, cambios de estado,
 cierre) con motivos en lenguaje metodológico. La decisión de cambiar estado la
-toma SIEMPRE el dueño (editando config.yaml); la bitácora documenta el historial
+toma SIEMPRE el administrador (editando config.yaml); la bitácora documenta el historial
 de cómo se llegó al estado vigente (que vive en config.yaml). Idempotente.
 """
 import sqlite3

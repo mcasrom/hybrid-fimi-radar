@@ -3,7 +3,7 @@
 
 Documenta (en la tabla SQLite `bitacora` de radar.db) las decisiones sobre cada
 tema monitorizado: inicio de ingesta, cambios de estado, cierre y notas.
-La decisión de cambiar estado es SIEMPRE del dueño — este comando solo registra
+La decisión de cambiar estado es SIEMPRE del administrador — este comando solo registra
 el historial; el estado vigente se lee de config.yaml.
 
 Uso:

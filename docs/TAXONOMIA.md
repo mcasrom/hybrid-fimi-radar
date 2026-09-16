@@ -10,7 +10,7 @@ de la matriz de temas).
 > El radar no decide qué es verdad. Observa **comportamiento informativo**.
 
 El sistema no añade ni cierra temas solo. La taxonomía es estable; el catálogo
-vivo (`config.yaml → temas`) la implementa y lo decide el dueño.
+vivo (`config.yaml → temas`) la implementa y lo decide el administrador.
 
 ## Tres niveles de estructura
 

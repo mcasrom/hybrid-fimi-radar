@@ -6,7 +6,7 @@ Bot dedicado (no comparte polling con nearme_status_bot). Comandos:
   /radar         -> teclado inline multi-selección de temas (elige los que quieras)
   /mis           -> ver sus temas y frecuencia acutales
   /baja          -> borra la suscripción de Telegram de este chat
-  /sugerir TEXTO -> guarda una sugerencia de tema nuevo y la reenvía al dueño
+  /sugerir TEXTO -> guarda una sugerencia de tema nuevo y la reenvía al administrador
 
 Alta: tras /radar, el usuario marca los temas y pulsa "Confirmar". La fila
 se guarda en la tabla `suscripciones` (canal='telegram', destino=chat_id).
@@ -141,7 +141,7 @@ def my_subs(destino):
 
 
 def _guardar_sugerencia(chat, texto):
-    """Guarda la sugerencia (tabla sugerencias, canal telegram) y avisa al dueño."""
+    """Guarda la sugerencia (tabla sugerencias, canal telegram) y avisa al administrador."""
     conn = _init_feedback()
     conn.execute("INSERT INTO sugerencias (texto, canal, ip) VALUES (?,?,?)",
                  (texto[:500], "telegram", str(chat)))

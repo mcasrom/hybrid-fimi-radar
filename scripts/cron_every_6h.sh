@@ -21,7 +21,7 @@ done
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
 #    Sin FIMI_TELEGRAM_BOT_TOKEN no envía nada; idempotente, sin spam.
 .venv/bin/python detection/notify_subs_telegram.py >> logs/fimi.log 2>&1
-# 4b) Alerta proactiva de salud de fuentes: avisa al dueño SOLO cuando una fuente
+# 4b) Alerta proactiva de salud de fuentes: avisa al administrador SOLO cuando una fuente
 #    empeora (activa->baja/inactiva). Estado guardado => sin repeticiones.
 .venv/bin/python detection/notify_fuentes.py >> logs/fimi.log 2>&1
 # Politica de retencion: conservar solo los ultimos 30 dias de raw JSON
@@ -47,11 +47,11 @@ done
 
 # 7) Candidatos a cierre (solo avisa, NO decide): si un tema activo lleva señal
 #    débil sostenida (volumen bajo + 0 narrativas sostenidas, o piloto >90d),
-#    notifica al dueño por Telegram y registra una sugerencia en la bitácora.
+#    notifica al administrador por Telegram y registra una sugerencia en la bitácora.
 .venv/bin/python detection/check_cierre.py >> logs/cierre.log 2>&1
 
 # 8) Alerta de ingesta: si la captura lleva >7.5h sin actualizar (se saltó un
-#    ciclo del cron cada 6h), avisa al dueño por Telegram una vez por episodio.
+#    ciclo del cron cada 6h), avisa al administrador por Telegram una vez por episodio.
 .venv/bin/python detection/check_ingesta.py >> logs/ingesta.log 2>&1
 
 # 9) Salud de keywords por tema: detecta el patrón "tema ciego" (keywords de

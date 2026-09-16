@@ -1196,7 +1196,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       <li><b>Etiquetado multi-tema</b> por contenido (un evento puede pertenecer a varios temas).</li>
       <li><b>Análisis de coordinación:</b> centroides TF-IDF (sparse) por cuenta → grafo → clustering
         → puntuación por componentes.</li>
-      <li><b>Decisión editorial, no automática:</b> el sistema sugiere; el dueño decide
+      <li><b>Decisión editorial, no automática:</b> el sistema sugiere; el administrador decide
         (alta/cierre/promoción vía <code>temas_cli.py</code> y bitácora).</li>
     </ol>
     <p>Pesos de la puntuación (globales; cada tema puede calibrar su override en
@@ -2760,7 +2760,7 @@ def main():
         _st_score = _st_t.get('score') or 0
         _st_color = _SALUD_COLOR.get(_st_nivel, '#94a3b8')
 
-        # ---- Anclaje a la línea base del tema (opción elegida por el dueño) ----
+        # ---- Anclaje a la línea base del tema (opción elegida por el administrador) ----
         # La aguja apunta a una métrica CONTINUA real: el score top del tema hoy
         # (clusters activos exclusivos). La zona verde sombreada = rango p25-p75
         # de los picos diarios (findings.intensidad); la muesca roja = umbral de
@@ -2987,8 +2987,8 @@ def main():
         "<div id='nlMsg' style='font-size:.8rem;color:#16a34a;margin-top:8px;min-height:1.2em'></div>"
         "</div>")
     # --- SUGERIR TEMA (vista resumen): textarea + envío a /api/sugerir (rate-limit por IP) ---
-    # Las sugerencias van a la tabla `sugerencias` (radar.db) y se reenvían al dueño
-    # por Telegram. NO hay votación pública: son un canal privado dueño-usuario.
+    # Las sugerencias van a la tabla `sugerencias` (radar.db) y se reenvían al administrador
+    # por Telegram. NO hay votación pública: son un canal privado administrador-usuario.
     sugerir_form = (
         "<div style='margin-top:14px;padding:18px 20px;border:1px solid #e2e8f0;"
         "border-radius:14px;background:#fff'>"
@@ -3336,7 +3336,7 @@ def main():
     # --- Salud de los temas (score continuo, mismo criterio que check_cierre) ---
     # 0-100 por tema: volumen de hallazgos/día, narrativas sostenidas, señal del
     # último cluster y madurez/calibración. Solo informativo; el cierre lo decide
-    # el dueño (bitacora.py). Ya computado arriba (_salud_temas, en la vista
+    # el administrador (bitacora.py). Ya computado arriba (_salud_temas, en la vista
     # resumen) para pintar el chip de cada dial; aquí se construye la card.
     try:
         if not _salud_temas:
@@ -3344,7 +3344,7 @@ def main():
         _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
                              "<p class='caption'>Score continuo 0-100 por tema (volumen de hallazgos/día, "
                              "narrativas sostenidas, señal del último cluster y madurez). Mismo criterio que el "
-                             "check de cierre, sin decidir nada: orienta la revisión de mantenimiento del dueño.</p>"
+                             "check de cierre, sin decidir nada: orienta la revisión de mantenimiento del administrador.</p>"
                              "<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse;"
                              "font-size:.82rem'>"
                              "<tr><th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Tema</th>"
@@ -3385,7 +3385,7 @@ def main():
     # --- Volumen fuera de catálogo (posible tema emergente, pieza #4) ---
     # Eventos que solo llevan el default frontera_sur y cuyo texto NO matchea
     # ninguna keyword del catálogo: ese volumen no lo cubre ningún tema. Se
-    # agrupa por términos recurrentes como CANDIDATOS a revisar (el dueño
+    # agrupa por términos recurrentes como CANDIDATOS a revisar (el administrador
     # decide si añade keyword/tema). detection/temas_emergentes.py.
     try:
         import importlib.util as _ilu_em
@@ -3500,7 +3500,7 @@ def main():
                          f"background:#fff7ed;border-radius:8px;font-size:.8rem;color:#9a3412'>"
                          f"<b>🗓 Sugerencia del sistema</b> ({_fmt_d(_cand['fecha'])}): "
                          f"{_cand['motivo'] or ''}<br>"
-                         f"<span style='color:#64748b'>La decisión la toma el dueño "
+                         f"<span style='color:#64748b'>La decisión la toma el administrador "
                          f"(<code>detection/bitacora.py --nuevo-estado cerrado</code>).</span></div>")
         _tl = ""
         for _e in _bit_by_tema.get(_t, []):
@@ -4118,7 +4118,7 @@ if ('serviceWorker' in navigator) {{
 
   // Pre-cargar el formulario de sugerencia con un término emergente (AJUSTE 4).
   // Vuelve a la vista resumen (el formulario vive ahí), rellena el textarea y
-  // hace scroll + foco para que el dueño solo tenga que pulsar enviar.
+  // hace scroll + foco para que el administrador solo tenga que pulsar enviar.
   window.precargarSugerencia = function(termino){{
     var R=document.getElementById('vistaResumen');
     var D=document.getElementById('vistaDetalle');
@@ -4169,7 +4169,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Feedback ligero por tema (vista resumen): POST /api/feedback (rate-limit por IP).
-  // Visible solo para el dueño; sin cómputo público de votos.
+  // Visible solo para el administrador; sin cómputo público de votos.
   window.feedbackClick = function(tema, voto, btn){{
     var msg=document.getElementById('fbMsg_'+tema);
     if(!msg){{ return; }}

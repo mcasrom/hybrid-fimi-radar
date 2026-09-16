@@ -2,7 +2,7 @@
 """notify_fuentes.py — Alerta proactiva de salud de fuentes por Telegram.
 
 Se lanza tras cada ciclo del cron (6h). Calcula la salud de las fuentes
-(detection/health_fuentes.analizar) y avisa al dueño SOLO cuando una fuente
+(detection/health_fuentes.analizar) y avisa al administrador SOLO cuando una fuente
 EMPEORA (activa -> baja/inactiva, o baja -> inactiva). Sin cambios => silencio.
 
 Motivo: una fuente que se cae en silencio (feed roto, 403, deja de publicar)
