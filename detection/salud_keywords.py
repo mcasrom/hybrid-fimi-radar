@@ -48,6 +48,9 @@ DIAS_DEFECTO = 14
 # Umbral: si hay este nº de eventos del ámbito del tema sin etiquetar, se marca
 # "posible keyword ciega / captura incompleta".
 RUIDO_MIN_ALERTA = 50
+# A partir de este nº de matches una keyword se considera "casi muerta": se
+# muestra en la card aunque no llegue a 0 (p. ej. `Medgaz` con 2).
+LOW_MAX = 3
 # Palabras de registro metodológico (FIMI): una keyword compuesta casi solo de
 # estas suele no matchear titulares reales (registro temático, no metodológico).
 _METODOLOGICAS = {
@@ -203,12 +206,120 @@ def analizar(dias=None):
             "sin_etiquetar": n_faltan,
             "cobertura": round(cobertura, 3),
             "keywords_muertas": n_muertas,
+            "casi_muertas": sum(1 for k in kw_stats if 0 < k["matches"] <= LOW_MAX),
+            "keywords_revisar": [{"palabra": k["palabra"], "matches": k["matches"]}
+                                 for k in kw_stats if k["matches"] <= LOW_MAX],
             "n_keywords": n_kw,
             "alerta": alerta,
             "motivo_alerta": motivo,
             "keywords": kw_stats,
         }
     con.close()
+    return resultado
+
+
+def _corpus_norm(con, t0):
+    """Corpus (>=t0) pre-normalizado: lista de (id, texto_norm, tokens)."""
+    from normalizer.clasificar import normalizar, STOP
+    out = []
+    for e in con.execute("SELECT id, text, title FROM events WHERE timestamp>?", (t0,)):
+        txt = ((e["title"] or "") + " " + (e["text"] or "")).strip()
+        if not txt:
+            continue
+        nt = normalizar(txt)
+        ntok = {t for t in nt.split() if len(t) > 2 and t not in STOP}
+        out.append((e["id"], nt, ntok))
+    return out
+
+
+def _subfrases(toks):
+    """Todas las subfrases contiguas (listas de tokens) de una keyword."""
+    n = len(toks)
+    out = []
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            out.append(toks[i:j])
+    return out
+
+
+# Palabras funcionales que `_matches` no filtra (STOP de clasificar.py es corto).
+_STOP_SUG = {"des", "les", "une", "the", "and", "del", "los", "las", "por",
+             "para", "con", "una", "und", "der", "die", "das", "of", "to",
+             "from", "que", "sur", "auch", "mais", "e", "o", "y", "en"}
+# Por encima de este nº de matches el término es demasiado genérico (p. ej.
+# "estados", "sahel") y sustituir una keyword muerta por él añadiría ruido.
+REC_MAX = 120
+
+
+def _elegir(cands):
+    """Candidata: la sub-frase MÁS LARGA con matches en [3, REC_MAX], sin
+    palabras funcionales; evita recomendar términos genéricos o stopwords."""
+    def valido(c):
+        return (3 <= c["matches"] <= REC_MAX
+                and not any(t in _STOP_SUG for t in c["frase"].split()))
+    pool = [c for c in cands if valido(c)]
+    if not pool:
+        pool = [c for c in cands if c["matches"] <= REC_MAX
+                and not any(t in _STOP_SUG for t in c["frase"].split())]
+    if not pool:
+        return None
+    pool = sorted(pool, key=lambda x: (x["tokens"], x["matches"]), reverse=True)
+    return pool[0]["frase"]
+
+
+def sugerir(dias=None, tema=None, max_matches=None):
+    """Variantes data-driven para keywords muertas/casi muertas.
+
+    Para cada keyword con pocos matches propone las **sub-frases contiguas que
+    SÍ matchean** en el corpus (14d, mismo `_matches` que capture) y los
+    **tokens que no aparecen**. No altera config; `--save` persiste en
+    data/keywords_sugerencias.json para que la card muestre las variantes.
+    """
+    import sys as _s
+    _s.path.insert(0, str(ROOT))
+    from normalizer.clasificar import normalizar, _tokens, _matches
+
+    dias = dias or DIAS_DEFECTO
+    umbral = LOW_MAX if max_matches is None else max_matches
+    por_tema, _ = _cargar_config()
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    t0 = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - dias * 86400
+    corpus = _corpus_norm(con, t0)
+    con.close()
+
+    resultado = {}
+    for t, pals in por_tema.items():
+        if tema and t != tema:
+            continue
+        items = []
+        for p in pals:
+            p = (p or "").strip()
+            if not p:
+                continue
+            ktok = _tokens(p)
+            if not ktok:
+                continue
+            full = sum(1 for _, nt, ntok in corpus if _matches(normalizar(p), ktok, nt, ntok))
+            if full > umbral:
+                continue
+            dead_toks = [tk for tk in ktok
+                         if not any(tk in ntok for _, _, ntok in corpus)]
+            cand = {}
+            for sub in _subfrases(ktok):
+                if sub == ktok:
+                    continue
+                key = " ".join(sub)
+                c = sum(1 for _, nt, ntok in corpus if _matches(key, sub, nt, ntok))
+                if c > 0:
+                    cand[key] = max(cand.get(key, 0), c)
+            cands = sorted(({"frase": k, "tokens": len(k.split()), "matches": v}
+                            for k, v in cand.items()),
+                           key=lambda x: (x["matches"], x["tokens"]), reverse=True)[:6]
+            items.append({"palabra": p, "matches": full, "tokens_muertos": dead_toks,
+                          "candidatos": cands, "recomendada": _elegir(cands)})
+        if items:
+            resultado[t] = items
     return resultado
 
 
@@ -264,15 +375,44 @@ def medir_cobertura_keywords(palabras, dias=None, etiquetado=False):
     }
 
 
+def _load_sugerencias():
+    p = ROOT / "data" / "keywords_sugerencias.json"
+    try:
+        return (json.loads(p.read_text(encoding="utf-8")) or {}).get("temas", {})
+    except Exception:
+        return {}
+
+
 def to_html(resultado):
     """Snippet HTML de la card 'Salud de keywords' (estilo del dashboard)."""
+    sug = _load_sugerencias()
     cards = ""
     for tema, s in resultado.items():
         color = "#dc2626" if s["alerta"] else "#16a34a"
         lbl = "POSIBLE KEYWORD CIEGA" if s["alerta"] else "cobertura ok"
-        muertas = [k for k in s["keywords"] if k["matches"] == 0]
-        muertas_txt = (f" · <span style='color:#dc2626'>{len(muertas)} keyword(s) sin matches</span>"
-                       if muertas else "")
+        revisar = [k for k in s["keywords"] if k["matches"] <= LOW_MAX]
+        n_muertas = sum(1 for k in revisar if k["matches"] == 0)
+        n_casi = len(revisar) - n_muertas
+        rev_txt = ""
+        if n_muertas:
+            rev_txt += f" · <span style='color:#dc2626'>{n_muertas} sin matches</span>"
+        if n_casi:
+            rev_txt += f" · <span style='color:#d97706'>{n_casi} casi muertas (≤{LOW_MAX})</span>"
+        sug_tema = {x["palabra"]: x for x in sug.get(tema, [])}
+        rows = ""
+        for k in sorted(revisar, key=lambda x: x["matches"]):
+            info = sug_tema.get(k["palabra"]) or {}
+            extra = ""
+            if info.get("recomendada"):
+                extra += f" → <b style='color:#15803d'>sugerido: {info['recomendada']}</b>"
+            if info.get("tokens_muertos"):
+                extra += (f" <span style='color:#94a3b8'>· tokens muertos: "
+                          f"{', '.join(info['tokens_muertos'])}</span>")
+            rows += (f"<div style='font-size:.75rem;color:#334155;margin-top:2px'>"
+                     f"<code>{k['palabra']}</code> ({k['matches']}){extra}</div>")
+        det = (f"<details style='margin-top:6px'><summary style='cursor:pointer;font-size:.76rem;"
+               f"color:#64748b'>🔍 Keywords a revisar ({len(revisar)})</summary>{rows}</details>"
+               if revisar else "")
         cards += (f"<div style='border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;"
                   f"margin:8px 0'>"
                   f"<div style='display:flex;justify-content:space-between;align-items:center;"
@@ -284,9 +424,10 @@ def to_html(resultado):
                   f"Ámbito en corpus ({s['dias']}d): <b>{s['ruido_potencial']}</b> eventos · "
                   f"capturados al tema: <b>{s['etiquetados_del_ruido']}</b> · "
                   f"sin etiquetar: <b>{s['sin_etiquetar']}</b> · "
-                  f"cobertura: <b>{s['cobertura']*100:.0f}%</b>{muertas_txt}</div>"
+                  f"cobertura: <b>{s['cobertura']*100:.0f}%</b>{rev_txt}</div>"
                   + (f"<div style='font-size:.76rem;color:#b91c1c;margin-top:3px'>⚠ {s['motivo_alerta']}</div>"
                      if s["alerta"] else "")
+                  + det
                   + "</div>")
     if not cards:
         cards = "<p class='caption'>Sin datos de keywords.</p>"
@@ -294,8 +435,10 @@ def to_html(resultado):
             f"<p class='caption'>¿Captura cada tema el ruido real de su ámbito? Se compara el "
             f"material del corpus (14d) que matchea las keywords del tema contra los eventos "
             f"realmente etiquetados. Un hueco grande (material del ámbito sin etiquetar) detecta "
-            f"el patrón \"tema ciego\": keywords de registro metodológico que los titulares reales "
-            f"no usan, o keywords recién añadidas cuya clasificación aún no ha corrido. "
+            f"el patrón \"tema ciego\". Además se listan las <b>keywords a revisar</b> (sin "
+            f"matches o con ≤{LOW_MAX}) y, si hay caché de sugerencias "
+            f"(<code>salud_keywords.py --sugerir --save</code>), la <b>variante que sí matchea</b> "
+            f"en el corpus y los <b>tokens muertos</b>. "
             f"<b>Solo informa: no decide ni altera config.</b></p>"
             f"{cards}</div>")
 
@@ -389,7 +532,22 @@ def main():
     ap.add_argument("--notify", action="store_true",
                     help="avisar por Telegram cuando un tema entra en alerta (patrón notify_fuentes)")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--sugerir", action="store_true",
+                    help="proponer variantes data-driven para keywords muertas/casi muertas")
     args = ap.parse_args()
+    if args.sugerir:
+        sug = sugerir(args.dias, tema=args.tema)
+        if args.save:
+            from datetime import datetime as _dt, timezone as _tz
+            estado = {"generado": _dt.now(_tz.utc).isoformat(), "dias": args.dias, "temas": sug}
+            (ROOT / "data").mkdir(parents=True, exist_ok=True)
+            (ROOT / "data" / "keywords_sugerencias.json").write_text(
+                json.dumps(estado, ensure_ascii=False, indent=1), encoding="utf-8")
+            n = sum(len(v) for v in sug.values())
+            print(f"keywords_sugerencias.json escrito · {n} keywords a revisar")
+        if args.json or not args.save:
+            print(json.dumps(sug, ensure_ascii=False, indent=1))
+        return
     res = analizar(args.dias)
     if args.tema:
         res = {args.tema: res.get(args.tema, {})} if args.tema in res else {}
