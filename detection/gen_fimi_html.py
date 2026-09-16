@@ -363,6 +363,108 @@ def _organico_chip(coordination_score=None, anomaly_score=None, infrastructure_s
     return ""
 
 
+# O1+O3 — "Cómo leer el radar": guía rápida (5 pasos) + marco FIMI (5Ds, fases)
+# + fuentes primarias de la UE (enlaces al EEAS). Contenido estático (no cambia
+# por ciclo). Responde al "mucho dato y no se interpreta": da el marco y el modo
+# de lectura ANTES de los datos. Solo informa; no toca scoring/BD.
+_GUIA_HTML = """
+<div class="card" id="como-leerlo">
+<h3 style="margin-bottom:6px">Cómo leer este radar (guía rápida)</h3>
+<ol style="font-size:.84rem;color:#334155;padding-left:20px;line-height:1.7;margin:6px 0">
+  <li><b>Qué es.</b> El radar <b>observa coordinación</b> en fuentes públicas (quién amplifica qué,
+      cómo y cuándo). No es un agregador de noticias ni un detector de mentiras.</li>
+  <li><b>Qué mide.</b> Cada <b>cluster</b> agrupa cuentas que amplifican lo mismo. Su
+      <b>score 0–100</b> combina 6 señales —coordinación, contenido similar, amplificación,
+      infraestructura, densidad de red y anomalía— y se traduce a una banda:
+      NORMAL · WATCH · ANOMALOUS · HIGH · CRITICAL.</li>
+  <li><b>Cómo se lee cada tarjeta.</b> Trae una <b>lectura en lenguaje llano</b> (qué tipo de señal
+      es: eco de una pieza, amplificación inauténtica, difusión coordinada…) y una
+      <b>cadena de evidencia</b> para comprobarlo tú mismo, con descarga en CSV/JSON.</li>
+  <li><b>Qué NO dice.</b> El radar <b>no atribuye</b> a ningún actor sin pruebas:
+      <b>UNKNOWN es un resultado válido</b>. Una señal alta <b>no</b> es una campaña probada, y
+      mucho volumen <b>no</b> equivale a alerta.</li>
+  <li><b>Qué hacer con ello.</b> Trátalo como <b>pista para investigar</b>, no como sentencia:
+      contrasta con las fuentes y revisa la evidencia del cluster.</li>
+</ol>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Marco de referencia (FIMI · UE)</h3>
+<p class="caption" style="font-size:.84rem;color:#334155;line-height:1.6">
+El marco conceptual lo definen los informes anuales de <b>FIMI</b> (<i>Foreign Information
+Manipulation and Interference</i>) del Servicio Europeo de Acción Exterior (EEAS). Dos conceptos
+básicos:
+</p>
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #0ea5e9;border-radius:6px;padding:8px 12px;margin:6px 0;font-size:.82rem;color:#334155;line-height:1.6">
+  <b>5Ds</b> (objetivos de una operación): <b>Dismiss</b> descartar la crítica ·
+  <b>Distort</b> tergiversar · <b>Distract</b> desviar · <b>Dismay</b> intimidar ·
+  <b>Divide</b> dividir.
+</div>
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #0ea5e9;border-radius:6px;padding:8px 12px;margin:6px 0;font-size:.82rem;color:#334155;line-height:1.6">
+  <b>Fases del ciclo electoral</b> (modelo EEAS): meses antes (se construye infraestructura y
+  audiencia) → <b>mes electoral</b> (contenido fabricado, typosquatting) → <b>últimas 72 h</b>
+  (desincentivo de voto, DDoS, hack-and-leak) → <b>post-electoral</b> (alegaciones de fraude,
+  escalada).
+</div>
+<h3 style="font-size:.9rem;margin:14px 0 4px">Fuentes primarias (UE)</h3>
+<p class="caption" style="font-size:.82rem;color:#334155;line-height:1.6">
+La teoría y los casos documentados están en los informes oficiales del EEAS (enlace a la fuente
+original; material © Unión Europea):
+<a href="https://www.eeas.europa.eu/eeas/tackling-disinformation-foreign-information-manipulation-interference_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">EEAS — Integridad de la información y FIMI</a> ·
+<a href="https://www.eeas.europa.eu/eeas/2nd-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">2º informe (2024)</a> ·
+<a href="https://www.eeas.europa.eu/eeas/3rd-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">3º informe (2025)</a> ·
+<a href="https://www.eeas.europa.eu/eeas/4th-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">4º informe (2026)</a>.
+</p>
+</div>
+"""
+
+
+# O2 — lectura en lenguaje llano: traduce los componentes (coordinación,
+# anomalía, infraestructura, densidad) + el nº de cuentas/URLs/eventos a UNA
+# frase que el visitante entiende sin conocer el scoring. Responde al "mucho
+# dato, no se interpreta". Solo lectura: no toca scoring ni BD.
+def _lectura_cluster(comps, n_cuentas=None, diver=None, ruido=False):
+    def _g(k):
+        try:
+            return float((comps or {}).get(k) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    coord, anom, infra = _g("coordination_score"), _g("anomaly_score"), _g("infrastructure_score")
+    dens = _g("network_density")
+    n_ev = (diver or {}).get("n_ev", 0) or 0
+    n_urls = (diver or {}).get("n_urls", 0) or 0
+    nc = n_cuentas or 0
+    # 1) eco de una sola pieza
+    if n_urls <= 1 and n_ev >= 2:
+        return ("📄 <b>Eco de una sola pieza</b>: varias cuentas comparten el mismo enlace. "
+                "Suele ser interés real por una noticia puntual, no una campaña sostenida.")
+    # 2) pocas cuentas + anomalía alta: distinguir repetir el MISMO enlace de publicar mucho
+    if anom >= 40 and 0 < nc <= 5:
+        if n_ev and n_urls <= max(1, n_ev // 3):
+            return ("🤖 <b>Amplificación inauténtica (posible)</b>: pocas cuentas repiten el "
+                    "mismo contenido en poco tiempo. Revisa la evidencia: puede ser un bot o un "
+                    "par coordinado.")
+        return ("🤖 <b>Pocas cuentas, mucho contenido distinto</b>: un par de cuentas publican "
+                "mucho y muy seguido (patrón de cuenta automatizada o agregador). No implica "
+                "campaña por sí solo; revisa la evidencia.")
+    # 3) difusión amplia con anomalía muy baja (eco legítimo probable)
+    if anom < 15 and nc >= 8 and (coord >= 60 or infra >= 80):
+        return ("🌐 <b>Difusión amplia con anomalía baja</b>: mucha gente o medios comparten lo "
+                "mismo con un patrón normal. Probablemente eco legítimo o cobertura, no "
+                "coordinación inauténtica.")
+    # 4) coordinación alta + anomalía baja
+    if coord >= 60 and anom < 20:
+        return ("🌐 <b>Difusión coordinada con patrón normal</b>: probablemente actividad "
+                "legítima (medios, activistas), no una operación externa.")
+    # 5) red amplia y sostenida
+    if infra >= 80 and nc >= 10 and n_urls >= 5:
+        return ("🕸️ <b>Red amplia y sostenida</b>: muchas cuentas y fuentes diversas a lo largo "
+                "del tiempo. Mira de qué habla y la cadena de evidencia.")
+    # 6) débil / moderada
+    if ruido or max(coord, anom, infra, dens) < 30:
+        return ("❔ <b>Señal débil</b>: con estos datos no conviene extraer conclusiones. El radar "
+                "la muestra por transparencia, no como alerta.")
+    return ("🔎 <b>Difusión con coordinación moderada</b>: revisa de qué habla y la evidencia "
+            "antes de interpretar; no implica atribución a ningún actor.")
+
+
 # S5 — matriz de evidencia del cluster: las dimensiones del modelo (sección 5
 # del análisis) resumidas en una sola tabla para que el lector vea de un vistazo
 # qué dimensiones soportan señal y cuáles están en "no concluyente". Es lectura
@@ -490,6 +592,12 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{_sostenido_chip(diver)}'
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
+
+    # O2 — lectura en lenguaje llano: qué significa este cluster (sin jerga).
+    _lectura_html = (
+        f'<div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;'
+        f'padding:7px 11px;margin:2px 0 6px;font-size:.8rem;color:#334155;line-height:1.5">'
+        f'{_lectura_cluster(comps, n_cuentas, diver, ruido)}</div>')
 
     # S1 — SEÑAL, NO ATRIBUCIÓN: cabecera fija que aclara cómo leer el cluster
     # ANTES de ver peso/bandas. Cuando la atribución es UNKNOWN/NO_ATTRIBUTION
@@ -700,7 +808,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'{_extra}'
                 f'</div></details>')
 
-    return (h + _senal_html + content_html + _dom_html + _ev_html
+    return (h + _lectura_html + _senal_html + content_html + _dom_html + _ev_html
             + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
             + attr + hyp_html)
 
@@ -3700,6 +3808,8 @@ externa ni afiliación institucional.
 </p>
 </div>
 
+{_GUIA_HTML}
+
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
 <p class="caption">Inventario real de config.yaml: qué se vigila y con qué palabras.
@@ -3870,7 +3980,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -4137,7 +4247,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','elecciones','transparencia'];
+  var _transAnchors=['que-es-fimi','como-leerlo','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','elecciones','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
