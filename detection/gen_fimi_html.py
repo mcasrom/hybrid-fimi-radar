@@ -293,6 +293,62 @@ def render_component_legend():
             f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
+def render_radar_componentes(mean, top, n=0, top_label="", top_score=0):
+    """Araña (radar) de los 4 componentes del tema: media de sus clusters +
+    el cluster de mayor score. SVG inline sin librerías. Solo lectura: usa el
+    assessment ya cargado (no añade dato ni toca el scoring). Una por tema,
+    centrada, bajo la leyenda 'Cómo leer los componentes'. Lienzo ancho (360)
+    para que las etiquetas de los ejes laterales (Anomalía/Densidad) no se
+    recorten ni pisen la leyenda."""
+    import math as _m
+    comps = [("coordination_score", "Coordinación"),
+             ("anomaly_score", "Anomalía"),
+             ("infrastructure_score", "Infraestructura"),
+             ("network_density", "Densidad")]
+    W, H = 360, 260
+    cx, cy = W / 2.0, H / 2.0
+    R = H / 2.0 - 48.0
+    ang = [-90.0, 0.0, 90.0, 180.0]
+
+    def _pt(i, v):
+        a = _m.radians(ang[i])
+        r = R * max(0.0, min(100.0, float(v or 0))) / 100.0
+        return (cx + r * _m.cos(a), cy + r * _m.sin(a))
+
+    parts = ['<svg viewBox="0 0 %d %d" width="%d" height="%d" role="img" aria-label="Radar de componentes del tema">'
+             % (W, H, W, H)]
+    for frac in (0.25, 0.5, 0.75, 1.0):
+        pts = " ".join("%.1f,%.1f" % _pt(i, frac * 100) for i in range(4))
+        parts.append('<polygon points="%s" fill="none" stroke="#e2e8f0" stroke-width="1"/>' % pts)
+    for i in range(4):
+        x, y = _pt(i, 100)
+        parts.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="#cbd5e1" stroke-width="1"/>'
+                     % (cx, cy, x, y))
+    tp = " ".join("%.1f,%.1f" % _pt(i, top.get(k, 0)) for i, (k, _) in enumerate(comps))
+    parts.append('<polygon points="%s" fill="rgba(14,165,233,0.12)" stroke="#0ea5e9" '
+                 'stroke-width="1.6" stroke-dasharray="4 3"/>' % tp)
+    mp = " ".join("%.1f,%.1f" % _pt(i, mean.get(k, 0)) for i, (k, _) in enumerate(comps))
+    parts.append('<polygon points="%s" fill="rgba(194,65,12,0.18)" stroke="#c2410c" stroke-width="2"/>' % mp)
+    anchors = {0: "middle", 1: "start", 2: "middle", 3: "end"}
+    dys = {0: -6.0, 1: 0.0, 2: 6.0, 3: 0.0}
+    for i, (k, lab) in enumerate(comps):
+        x, y = _pt(i, 114)
+        parts.append('<text x="%.1f" y="%.1f" font-size="10" fill="#334155" text-anchor="%s" '
+                     'dominant-baseline="middle">%s %.0f</text>' % (x, y + dys[i], anchors[i], lab, mean.get(k, 0)))
+    parts.append('</svg>')
+    svg = "".join(parts)
+    return ('<div class="card" style="padding:14px 16px;background:#f8fafc;text-align:center">'
+            '<div style="font-size:.88rem;font-weight:700;color:#475569">Araña de componentes del tema</div>'
+            '<div style="display:flex;justify-content:center;margin-top:6px">' + svg + '</div>'
+            '<div style="font-size:.76rem;color:#475569;line-height:1.8;margin-top:12px">'
+            '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
+            'background:rgba(194,65,12,.25);border:2px solid #c2410c;vertical-align:middle;margin-right:6px"></span>'
+            'media del tema (' + str(n) + ' clusters)</div>'
+            '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
+            'background:rgba(14,165,233,.2);border:2px dashed #0ea5e9;vertical-align:middle;margin-right:6px"></span>'
+            'cluster top: ' + str(top_label) + ' ' + ("%.0f" % (top_score or 0)) + '/100</div>'
+            '<div style="color:#64748b;margin-top:4px">Cada eje 0-100. Vértice grande = ese componente pesa en el tema.</div>'
+            '</div></div>')
 def _cluster_comps(c, a):
     """Componentes 0-100 de un cluster: preferir el assessment (ya normalizado,
     ej. coordination_score del assessment = synchronization=coord*12 cap 100);
@@ -2433,7 +2489,12 @@ def main():
                 _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
-            _cl_txt = render_component_legend() + render_cluster_cards(
+            _rc = [_cluster_comps(_cc, _asm_by_cid_t.get(_cc["id"])) for _cc in _tema_cl]
+            _rm = {k: sum(float(x[k] or 0) for x in _rc) / len(_rc) for k in _rc[0]} if _rc else {}
+            _tcc = max(_tema_cl, key=lambda x: x["overall_score"] or 0)
+            _rt = _cluster_comps(_tcc, _asm_by_cid_t.get(_tcc["id"]))
+            _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"], _tcc["overall_score"] or 0)
+            _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
                 disp_map=disp_label_map)

@@ -542,6 +542,19 @@ señal (todo solo lectura; no altera el scoring):
   masa a banda WATCH muestran el motivo, para que los 39/100 repetidos no parezcan el mismo
   hallazgo clonado.
 
+## Araña de componentes por tema (radar)
+
+En el **detalle de cada tema**, bajo la leyenda "Cómo leer los componentes (0-100)", se
+muestra una **araña (radar) de 4 ejes** con los componentes del tema a escala 0-100:
+**Coordinación · Anomalía · Infraestructura · Densidad**. Dos polígonos:
+
+- **media del tema** (naranja): promedio de los componentes de sus clusters;
+- **cluster top** (azul discontinuo): los componentes del cluster de mayor score.
+
+Solo lectura: se calcula del `assessment` ya cargado (cero dato nuevo, cero scoring). Da
+una lectura de un vistazo del **perfil del tema** (qué componente pesa). Generado por
+`render_radar_componentes()` (SVG inline, sin librerías).
+
 ## Atribución (separada del detector)
 
 Taxonomía neutra: UNKNOWN / DOMESTIC / FOREIGN_STATE / FOREIGN_NON_STATE /
