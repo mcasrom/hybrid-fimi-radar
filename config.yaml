@@ -555,16 +555,82 @@ feeds:
     como fuente FIMI.'
   analytical_relevance: alta
 - nombre: Global Times (EN)
-  url: https://www.globaltimes.cn/rss/outbrain.xml
+  url: https://globaltimes.cn/rss/outbrain.xml
   tipo: media
   pais: CN
   idioma: en
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Tabloide estatal chino (grupo Renmin Ribao). Línea nacionalista oficial;
-    vigilar como fuente FIMI.'
+  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad, Taiwan como asunto interno. Vigilar como fuente FIMI."
   analytical_relevance: alta
+
+- nombre: TechCrunch AI
+  url: https://techcrunch.com/category/artificial-intelligence/feed/
+  tipo: media
+  pais: US
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: medium
+  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos; útil para detectar narrativas emergentes de IA."
+  analytical_relevance: alta
+
+- nombre: Ars Technica
+  url: https://feeds.arstechnica.com/arstechnica/index
+  tipo: media
+  pais: US
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: medium
+  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena fuente para deepfakes, modelos, regulación."
+  analytical_relevance: alta
+
+- nombre: MIT Technology Review
+  url: https://www.technologyreview.com/feed/
+  tipo: media
+  pais: US
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: medium
+  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad académica."
+  analytical_relevance: alta
+
+- nombre: AI News
+  url: https://www.artificialintelligence-news.com/feed/
+  tipo: media
+  pais: GB
+  idioma: en
+  bias: center
+  reliability: mixed
+  transparency: medium
+  note: "Portal especializado en IA. Noticias de industria, investigación y regulación; volumen medio, verificabilidad variable."
+  analytical_relevance: media
+
+- nombre: Numerama
+  url: https://www.numerama.com/feed/
+  tipo: media
+  pais: FR
+  idioma: fr
+  bias: center
+  reliability: high
+  transparency: medium
+  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés; contrapeso anglosajón."
+  analytical_relevance: media
+
+- nombre: ActuIA
+  url: https://www.actuia.com/feed/
+  tipo: media
+  pais: FR
+  idioma: fr
+  bias: center
+  reliability: mixed
+  transparency: medium
+  note: "Portal francófono especializado en IA. Noticias de investigación, empresas y aplicaciones; volumen bajo, útil para perspectiva FR."
+  analytical_relevance: media
+
 temas:
   frontera_sur:
     estado: produccion
