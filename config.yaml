@@ -661,6 +661,39 @@ feeds:
   note: Seccion de Tecnologia de El Pais. Cobertura de IA, regulacion y 
     privacidad en espanol.
   analytical_relevance: media
+- nombre: The Verge AI
+  url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+  tipo: media
+  pais: US
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: medium
+  note: Seccion de IA de The Verge (Atom). Cobertura de producto, agentes,
+    regulacion y cultura IA; buen volumen y deteccion temprana de narrativas.
+  analytical_relevance: alta
+- nombre: The Decoder
+  url: https://the-decoder.com/feed/
+  tipo: media
+  pais: DE
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: medium
+  note: Medio aleman especializado en IA (en ingles). Cobertura de modelos,
+    laboratorios y regulacion; analisis tecnico, perspectiva no anglosajona.
+  analytical_relevance: alta
+- nombre: Wired AI
+  url: https://www.wired.com/feed/tag/ai/latest/rss
+  tipo: media
+  pais: US
+  idioma: en
+  bias: center-left
+  reliability: high
+  transparency: medium
+  note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y
+    regulacion; reportaje con perspectiva critica.
+  analytical_relevance: alta
 temas:
   frontera_sur:
     estado: produccion
