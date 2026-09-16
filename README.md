@@ -14,7 +14,7 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas monitorizados**:
 
 | Tema | Estado |
 |---|---|
@@ -23,11 +23,16 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
 | Política nacional | Producción |
 | Política y desinformación EEUU | Producción |
 | Oriente Medio (Israel-Irán-Gaza) | Producción |
-| Sahel (África Occidental) | Piloto (en calibración) |
+| Sahel (África Occidental) | Producción |
 | Energía (petróleo/gas/precios) | Piloto (en calibración) |
+| Elecciones e interferencia electoral | Piloto (en calibración) |
+| Inteligencia artificial | Piloto (en calibración) |
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
+- **Catálogo de fuentes**: **55 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
+  + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
+  `analytical_relevance` y nota. El corpus activo ronda los **~54.800 eventos** (ventana 90 d).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
@@ -70,8 +75,8 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **7 temas monitor
   muestran además la frase *"piloto en calibración — lectura con cautela"* en una caja
   naranja destacada y un aviso de riesgo de sesgo en su panel. La animación respeta
   `prefers-reduced-motion`.
-- **Rendimiento y robustez**: `frontera_sur` procesa el corpus completo (hoy ~43.000 eventos,
-  ~9.600 cuentas). El **pico de memoria** (llegó a ~3,18 GB, con poco margen al OOM en el
+- **Rendimiento y robustez**: `frontera_sur` procesa el corpus completo (hoy ~54.800 eventos,
+  ~12.300 cuentas). El **pico de memoria** (llegó a ~3,18 GB, con poco margen al OOM en el
   server de 3,7 GB) bajó a **~1,1 GB** y el run de **580 s → 221 s** con dos fixes: (1) los
   centroides TF-IDF de la coordinación se calculan **en sparse**; (2) el ratio de
   *near-duplicates* (`features/content.py`) se computa **por bloques y con umbral al
@@ -129,7 +134,10 @@ contenido mezclado (Ceuta + OPEP). Fix en dos capas:
    (medición de cobertura/ámbito) también aplican el gate, para ser consistentes con la captura.
 2. **Vista** (`gen_fimi_html.py` → `view_tema`): al reasignar un cluster por contenido se
    exige (a) que pase el `filtro` del tema y (b) **cobertura ≥50%** de sus eventos, para no
-   atribuir a un tema un cluster de bot con contenido mezclado.
+   atribuir a un tema un cluster de bot con contenido mezclado. La cobertura se mide con la
+   **intersección `keywords ∩ filtro`** del tema (si está vacía, las keywords): así un cluster
+   de Ceuta que menciona "Irán"/"Gaza" de pasada no se reasigna a `oriente_medio`, y un
+   `filtro` más ancho que las keywords (energia) no dispara falsos positivos.
 
 Resultado real: `energia` pasó de 705 a **606 eventos** y de 11 a **6 clusters**, todos
 energéticos (OPEP/Brent/gas/Ormuz); el cluster mezclado volvió a su tema real (frontera_sur).
@@ -156,6 +164,22 @@ RT en Español y las agencias del Sahel). **Nota honesta**: al ser **RSS**, esta
 entran al grafo de coordinación** → aportan **cobertura y catalogación de dominio/esfera**, no
 señal de coordinación por sí solas (su contenido actual, además, es general —BRICS, ciencia,
 deportes—, no electoral).
+
+### Piloto IA — tema Inteligencia artificial (16/09/2026)
+
+`inteligencia_artificial` (piloto) monitoriza narrativas de IA (modelos, agentes,
+regulación, deepfakes) con `filtro` de 9 términos + 11 keywords. Se dota de **8 feeds
+específicos** — TechCrunch AI, Ars Technica, MIT Technology Review, AI News, Numerama,
+ActuIA, Xataka, El País Tecnología — **+3 añadidos el 16/09** (The Verge AI, The Decoder,
+Wired AI, los tres verificados HTTP 200 con contenido IA claro). **Catálogo 52 → 55 feeds**.
+
+- **Nota honesta**: los feeds tech generales (Xataka/Ars/Numerama/El País Tec) rinden poco
+  para el tema (~4-8% de sus eventos pasan el filtro, frente a 28-40% de los específicos)
+  porque su contenido no es siempre de IA y el `filtro` no incluye "AI". Se **descartó**
+  añadir "AI" como keyword: capturaría ~+31% de eventos pero con falsos positivos (italiano
+  "ai", portugués "aí") y conflicto con mención incidental.
+- **Fase B medida**: `run_fimi --tema frontera_sur` con el corpus ampliado → pico **1,6 GB**
+  (margen OOM ~3,4 GB intacto), exit 0.
 
 ### Capítulo Election Threat Landscape (opción B, registro)
 
