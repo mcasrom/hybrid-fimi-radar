@@ -713,6 +713,13 @@ temas:
         infrastructure: 0.10
         network_density: 0.10
         anomaly: 0.40
+    filtro:
+    - Gaza Israel
+    - Hezbollah
+    - Hamas
+    - Houthi
+    - Hutíes
+    - Cisjordania
   sahel:
     estado: produccion
     nombre: Sahel (África Occidental)

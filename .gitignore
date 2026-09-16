@@ -32,6 +32,7 @@ data/ingesta_estado.json
 data/euvsdisinfo_base.csv
 data/salud_keywords.json
 data/keywords_estado.json
+data/keywords_sugerencias.json
 data/sistema_estado.json
 
 # artefactos de tests (pytest/coverage)

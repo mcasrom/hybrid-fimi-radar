@@ -1527,6 +1527,23 @@ def main():
                 if _fl:
                     _filtros_cfg[_tf] = [_norm(x) for x in _fl if _norm(x)]
 
+            # Cobertura por tema: si el tema declara `filtro`, la cobertura de
+            # vista se mide con la INTERSECCIÓN keywords ∩ filtro (identidad del
+            # tema capturada). Así un cluster de Ceuta que menciona 'Iran'/'Gaza'
+            # de pasada no se reasigna a oriente_medio por keywords amplios, y un
+            # filtro más ancho que las keywords (energia) no dispara falsos
+            # positivos. Si la intersección queda vacía se usan las keywords.
+            _tema_kw_match = {}
+            for _th in _kws_all:
+                _fl = (temas_cfg.get(_th, {}) or {}).get("filtro") if isinstance(temas_cfg, dict) else None
+                _kws_th = _tema_kw.get(_th, [])
+                if _fl:
+                    _fl_n = {_norm(x) for x in _fl}
+                    _inter = [k for k in _kws_th if _norm(k.get("palabra", "")) in _fl_n]
+                    _tema_kw_match[_th] = _inter if _inter else _kws_th
+                else:
+                    _tema_kw_match[_th] = _kws_th
+
             def _passa_filtro(_agg_n, _th):
                 _fs = _filtros_cfg.get(_th)
                 if not _fs:
@@ -1549,7 +1566,7 @@ def main():
                     for _th in _kws_all:
                         if not _ok.get(_th):
                             continue
-                        for _k0 in _tema_kw.get(_th, []):
+                        for _k0 in _tema_kw_match.get(_th, []):
                             if _kw_matches(_t0, _k0):
                                 _cnt[_th] = _cnt.get(_th, 0) + 1
                                 _hit.add(_th)

@@ -58,7 +58,7 @@ def backup_bd(keep: int = BACKUP_ROTACION) -> str:
     dst = BASE_BACKUP / fname
     with open(DB, "rb") as src, gzip.open(dst, "wb") as out:
         shutil.copyfileobj(src, out, length=1024 * 1024)
-    copias = sorted(BASE_BACKUP.glob("radar-*.db.gz"))
+    copias = sorted(BASE_BACKUP.glob("radar-20*.db.gz"))
     for viejo in copias[:-keep]:
         viejo.unlink()
     _info(f"backup -> {dst.name} ({round(dst.stat().st_size/1024)} KB); copias: {len(copias)} (max {keep}) en {BASE_BACKUP}")
