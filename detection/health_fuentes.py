@@ -60,28 +60,48 @@ def _cargar_config():
 
 
 def _corroboration_scores(con):
-    """Calcula corroboration score por fuente: % de eventos con al menos 1 evento
-    de OTRO source dentro de +/-CORROB_WINDOW_S segundos."""
+    """Corroboration score por fuente: % de eventos con >=1 evento de OTRO source
+    dentro de +/-CORROB_WINDOW_S segundos.
+
+    Implementación de VENTANA DESLIZANTE en UNA pasada (O(N log N)). La versión
+    anterior hacía un self-JOIN de `events` por CADA fuente (O(fuentes x N^2),
+    `ABS()` sin índice) y era el cuello del dashboard: ~15-20 min por regen.
+    """
     try:
         now = datetime.datetime.now().timestamp()
         cut = int(now - 90 * 86400)
         rows = con.execute(
-            "SELECT source, COUNT(*) total FROM events WHERE timestamp >= ? GROUP BY source",
+            "SELECT source, timestamp FROM events WHERE timestamp >= ? ORDER BY timestamp",
             (cut,)).fetchall()
-        stats = {r[0]: r[1] for r in rows}
-        corrob = {}
-        for src in stats:
-            row = con.execute(
-                "SELECT COUNT(DISTINCT e1.id) FROM events e1 "
-                "JOIN events e2 ON e1.id != e2.id "
-                "AND ABS(e1.timestamp - e2.timestamp) <= ? "
-                "AND e1.source != e2.source "
-                "WHERE e1.source = ? AND e1.timestamp >= ?",
-                (CORROB_WINDOW_S, src, cut)).fetchone()
-            n_corro = row[0] if row else 0
-            total = stats.get(src, 1)
-            corrob[src] = round(100.0 * n_corro / total, 1) if total else 0.0
-        return corrob
+        n = len(rows)
+        if not n:
+            return {}
+        total = {}
+        corro = {}
+        count = {}       # source -> nº de eventos dentro de la ventana actual
+        distintos = 0    # nº de fuentes distintas en la ventana
+        l = 0            # borde izquierdo (incluido): ts >= t - W
+        r = 0            # borde derecho (excluido): ts <= t + W
+        for i in range(n):
+            t = rows[i][1]
+            s = rows[i][0]
+            while rows[l][1] < t - CORROB_WINDOW_S:
+                sl = rows[l][0]
+                count[sl] = count.get(sl, 0) - 1
+                if count[sl] == 0:
+                    distintos -= 1
+                l += 1
+            while r < n and rows[r][1] <= t + CORROB_WINDOW_S:
+                sr = rows[r][0]
+                if count.get(sr, 0) == 0:
+                    distintos += 1
+                count[sr] = count.get(sr, 0) + 1
+                r += 1
+            total[s] = total.get(s, 0) + 1
+            # corroborado si, quitando su propia fuente, queda alguna otra en la ventana
+            if distintos - (1 if count.get(s, 0) > 0 else 0) > 0:
+                corro[s] = corro.get(s, 0) + 1
+        return {s: round(100.0 * corro.get(s, 0) / total[s], 1) for s in total}
     except Exception:
         return {}
 
