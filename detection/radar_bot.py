@@ -18,6 +18,7 @@ atiende los comandos (long-poll) para no duplicar lógica.
 Token: se lee de FIMI_TELEGRAM_BOT_TOKEN (env/PM2) o de .env
 (/home/deploy/hybrid-fimi-radar/.env). NO hardcodeado.
 """
+import csv
 import hashlib
 import json
 import os
@@ -152,6 +153,93 @@ def _guardar_sugerencia(chat, texto):
                 f"Canal: telegram\n\n{texto}")
 
 
+def _owner():
+    try:
+        return int(os.environ.get("FIMI_OWNER_CHAT", "47652516"))
+    except Exception:
+        return 47652516
+
+
+# ---------- validación curada (etiquetado por Telegram, 2 toques) ----------
+VAL_DIR = ROOT / "data" / "validacion"
+
+
+def _muestra_actual():
+    """Última muestra de validación (muestra_*.csv) y sus filas."""
+    if not VAL_DIR.exists():
+        return None, []
+    muestras = sorted(VAL_DIR.glob("muestra_*.csv"))
+    if not muestras:
+        return None, []
+    path = muestras[-1]
+    return path, list(csv.DictReader(open(path, encoding="utf-8")))
+
+
+def _siguiente_pendiente(rows, desde=0):
+    for i in range(desde, len(rows)):
+        if not (rows[i].get("label") or "").strip():
+            return i
+    return None
+
+
+def _texto_cluster(rows, i):
+    r = rows[i]
+    n_lab = sum(1 for x in rows if (x.get("label") or "").strip())
+    tit = [t.strip() for t in (r.get("top_titulares") or "").split("||") if t.strip()][:3]
+    tit_txt = "\n".join("• " + t[:110] for t in tit)
+    return (
+        f"🔬 <b>Validación curada</b> — {n_lab}/{len(rows)}\n\n"
+        f"<b>{r.get('banda')}</b> · score {r.get('score')} · {r.get('tema')}\n"
+        f"<code>{r.get('cluster_label')}</code>\n"
+        f"{r.get('n_eventos')} ev · {r.get('n_cuentas')} cuentas · "
+        f"{r.get('n_urls')} urls · {r.get('span_h')}h\n"
+        f"Dominios: {r.get('top_dominios')}\n\n{tit_txt}"
+    )
+
+
+def _kb_validar(i):
+    return {"inline_keyboard": [[
+        {"text": "✅ coordinado", "callback_data": f"val:coordinado:{i}"},
+        {"text": "❌ no", "callback_data": f"val:no_coordinado:{i}"},
+    ], [
+        {"text": "❓ dudoso", "callback_data": f"val:dudoso:{i}"},
+        {"text": "⏭️ saltar", "callback_data": f"val:saltar:{i}"},
+    ]]}
+
+
+def _enviar_cluster(chat, path, rows, i):
+    if i is None:
+        _enviar_resumen(chat, path, rows)
+    else:
+        send(chat, _texto_cluster(rows, i), _kb_validar(i))
+
+
+def _guardar_label(path, rows, i, label):
+    rows[i]["label"] = label
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def _enviar_resumen(chat, path, rows):
+    from collections import defaultdict
+    by = defaultdict(lambda: defaultdict(int))
+    for r in rows:
+        lab = (r.get("label") or "").strip().lower()
+        if lab:
+            by[r.get("banda")][lab] += 1
+    lineas = ["✅ <b>Validación curada completada</b>", f"<code>{path.name}</code>", ""]
+    for b in ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH"]:
+        d = by.get(b)
+        if not d:
+            continue
+        co, no, du = d["coordinado"], d["no_coordinado"], d["dudoso"]
+        p = round(100 * co / (co + no), 1) if (co + no) else 0.0
+        lineas.append(f"<b>{b}</b>: {co} coord · {no} no · {du} dud → precisión {p}%")
+    send(chat, "\n".join(lineas))
+
+
 def main():
     if not TOKEN or ":" not in TOKEN:
         print("[bot] FIMI_TELEGRAM_BOT_TOKEN no configurado en env/.env — saliendo.")
@@ -189,6 +277,16 @@ def main():
                 elif data == "can":
                     del sel[chat_id]
                     send(chat_id, "Cancelado. Nadie borrado.")
+                elif data.startswith("val:"):
+                    if chat_id != _owner():
+                        continue
+                    _, lab, idx = data.split(":", 2)
+                    path, rows = _muestra_actual()
+                    i = int(idx)
+                    if path and 0 <= i < len(rows):
+                        if lab != "saltar":
+                            _guardar_label(path, rows, i, lab)
+                        _enviar_cluster(chat_id, path, rows, _siguiente_pendiente(rows, i + 1))
                 continue
             chat = msg.get("chat", {}).get("id")
             if not chat:
@@ -197,7 +295,7 @@ def main():
             if txt.startswith("/start") or txt.startswith("/help"):
                 send(chat, "📡 <b>Radar FIMI</b> — alertas de los diales por tema.\n\n"
                            "/radar — elegir temas\n/mis — tus temas\n/baja — darte de baja\n"
-                           "/sugerir — proponer un tema nuevo\n\n"
+                           "/sugerir — proponer un tema nuevo\n/validar — etiquetar la validación (solo admin)\n\n"
                            "Te aviso SOLO cuando un tema cambia de estado (Subiendo/Bajando/Estable).")
             elif txt.startswith("/radar"):
                 sel[chat] = set()
@@ -216,6 +314,16 @@ def main():
                 else:
                     _guardar_sugerencia(chat, sugerencia)
                     send(chat, "📥 Gracias, ¡tu sugerencia ha llegado al radar!")
+            elif txt.startswith("/validar"):
+                if chat != _owner():
+                    send(chat, "Solo el administrador puede etiquetar la validación.")
+                else:
+                    path, rows = _muestra_actual()
+                    if not path:
+                        send(chat, "No hay muestras de validación. Genera una con "
+                                   "<code>tests/export_validacion.py</code>.")
+                    else:
+                        _enviar_cluster(chat, path, rows, _siguiente_pendiente(rows))
         time.sleep(1)
 
 
