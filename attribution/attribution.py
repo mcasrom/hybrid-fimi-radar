@@ -32,34 +32,44 @@ HYPOTHESES = [
 
 
 def classify_hypotheses(cluster):
-    """Ranking de hipótesis H1-H6 según señales del cluster.
+    """Ranking de hipótesis H1-H6 a partir de los COMPONENTES (0-100) del cluster.
 
-    cluster: dict con coordination_score, amplification_score, anomaly_score,
-    infrastructure_score, network_density, accounts, diversity.
+    cluster: dict con synchronization, content_similarity, amplification,
+    anomaly, infrastructure, network_density (escala 0-100) + accounts, n_urls.
+
+    FIX (17/09/2026): antes se le pasaba el dict de `cluster_summary` (con
+    coordination_score/anomaly_score en otra escala y SIN amplification,
+    infrastructure, network_density ni content_diversity) -> los pesos caían a
+    sus valores por defecto y las hipótesis salían casi constantes (H4=0,45
+    fijo, H6≈0,94). Ahora se le pasan los componentes reales del run.
     Devuelve lista ordenada [(Hx, label, score0-1, razon)].
     """
     c = cluster or {}
-    coord = c.get("coordination_score", 0) / 100
-    amp = c.get("amplification_score", 0) / 100
-    anom = c.get("anomaly_score", 0) / 100
-    infra = c.get("infrastructure_score", 0) / 100
-    net = c.get("network_density", 0)
+    sync = c.get("synchronization", 0) / 100
+    content = c.get("content_similarity", 0) / 100
+    amp = c.get("amplification", 0) / 100
+    anom = c.get("anomaly", 0) / 100
+    infra = c.get("infrastructure", 0) / 100
+    net = c.get("network_density", 0) / 100
     accounts = c.get("accounts", 0)
-    diversity = c.get("content_diversity", 0.5)  # 0=mismo contenido, 1=muy variado
+    n_urls = c.get("n_urls", 0)
+    masa = min(1.0, accounts / 20)   # masa de red (satura a 20 cuentas)
+    div = min(1.0, n_urls / 10)      # diversidad de contenido (satura a 10 urls)
 
     scores = {}
-    # H1 orgánico: alta diversidad, bajo net, pocas aristas fuertes
-    scores["H1"] = diversity * 0.6 + (1 - net) * 0.2 + (1 - coord) * 0.2
-    # H2 doméstica: coordinación alta pero infra baja
-    scores["H2"] = coord * 0.4 + amp * 0.3 + (1 - infra) * 0.3
-    # H3 extranjera: coordinación + infra + transversalidad
-    scores["H3"] = coord * 0.35 + infra * 0.4 + net * 0.25
-    # H4 mediática: amplificación alta, diversidad media, pocas cuentas anónimas
-    scores["H4"] = amp * 0.4 + (1 - anom) * 0.3 + diversity * 0.3
-    # H5 política: coordinación + contexto temporal electoral (proxy: coord+amp)
-    scores["H5"] = coord * 0.4 + amp * 0.3 + net * 0.3
-    # H6 desconocido: todas bajas (no hay señal fuerte)
-    scores["H6"] = (1 - max(coord, amp, infra)) * 0.8 + 0.2
+    # H1 orgánico viral: contenido diverso, anomalía e infraestructura bajas
+    scores["H1"] = div * 0.30 + (1 - anom) * 0.25 + (1 - infra) * 0.25 + masa * 0.20
+    # H2 campaña doméstica: sincronía alta, infraestructura/anomalía bajas
+    scores["H2"] = sync * 0.45 + (1 - infra) * 0.30 + (1 - anom) * 0.25
+    # H3 operación extranjera: requiere infraestructura + red + anomalía altas
+    # a la vez (sin eso no hay base para atribuir actor externo).
+    scores["H3"] = min(infra, net, anom) * 0.9 + sync * 0.1
+    # H4 amplificación mediática: amplificación global alta, anomalía/infra bajas
+    scores["H4"] = amp * 0.45 + (1 - anom) * 0.30 + (1 - infra) * 0.25
+    # H5 campaña política: sincronía + diversidad, sin infraestructura
+    scores["H5"] = sync * 0.40 + div * 0.35 + (1 - infra) * 0.25
+    # H6 desconocido: ninguna señal fuerte
+    scores["H6"] = (1 - max(sync, content, amp, anom, infra, net)) * 0.8 + 0.2
 
     ranked = sorted(scores.items(), key=lambda kv: -kv[1])
     out = []
@@ -71,37 +81,30 @@ def classify_hypotheses(cluster):
 
 
 def attribution(hypotheses, infra_shared=False, cross_country=False):
-    """Hipótesis de actor con nivel de confianza, SOLO si hay señal.
+    """Hipótesis de actor con nivel de confianza, SOLO si hay señal + evidencia.
 
-    Devuelve dict: actor, confidence, evidence, missing_evidence.
-    La ausencia de atribución es resultado válido.
+    POLÍTICA CONSERVADORA (17/09/2026): el radar NO tiene dato de país/idioma por
+    cuenta, así que NO atribuye actor doméstico (H2/H5 son mecanismos, no actor).
+    Solo se atribuye actor EXTERNO cuando H3 (operación extranjera) gana Y hay
+    infraestructura compartida. En el resto, UNKNOWN — la ausencia de atribución
+    es un resultado válido.
     """
-    top = hypotheses[0] if hypotheses else {"label": "Unknown"}
-    # Si la señal más fuerte no pasa de un umbral, NO hay atribución.
-    if not hypotheses or hypotheses[0]["score"] < 0.5:
-        return {
-            "actor": "UNKNOWN",
-            "confidence": "NO_ATTRIBUTION",
-            "evidence": "No hay señales suficientes para formular hipótesis de actor.",
-            "missing_evidence": "coordinación confirmada; infraestructura compartida; enlace organizativo",
-        }
-
-    if top["hypothesis"] == "H3" and infra_shared:
+    top = hypotheses[0] if hypotheses else {"label": "Unknown", "score": 0.0}
+    h = top.get("hypothesis")
+    if h == "H3" and infra_shared and top["score"] >= 0.6:
         conf = "HIGH" if cross_country else "MEDIUM"
         actor = "FOREIGN_STATE_OR_PROXY" if cross_country else "PROXY"
-    elif top["hypothesis"] == "H3":
-        conf, actor = "LOW", "FOREIGN_NON_STATE"
-    elif top["hypothesis"] in ("H2", "H5"):
-        conf, actor = "MEDIUM" if top["score"] > 0.6 else "LOW", "DOMESTIC"
-    elif top["hypothesis"] == "H4":
-        conf, actor = "MEDIUM", "DOMESTIC_INSTITUTIONAL"  # medios
-    else:
-        conf, actor = "NO_ATTRIBUTION", "UNKNOWN"
-
+        return {
+            "actor": actor,
+            "confidence": conf,
+            "evidence": f"Hipótesis principal {top['label']} (score {top['score']}) "
+                        f"con infraestructura compartida.",
+            "missing_evidence": "vínculo organizativo verificado; vínculo financiero; atribución directa",
+        }
     return {
-        "actor": actor,
-        "confidence": conf,
-        "evidence": f"Hipótesis principal {top['label']} (score {top['score']}). "
-                    f"Infraestructura compartida: {'sí' if infra_shared else 'no'}.",
-        "missing_evidence": "vínculo organizativo verificado; vínculo financiero; atribución directa",
+        "actor": "UNKNOWN",
+        "confidence": "NO_ATTRIBUTION",
+        "evidence": "Sin evidencia de actor: el radar mide coordinación, no autoría "
+                    "(y no tiene dato de país/idioma por cuenta).",
+        "missing_evidence": "coordinación confirmada; infraestructura compartida; enlace organizativo",
     }
