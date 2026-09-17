@@ -76,17 +76,21 @@ def main():
     if sin_etiquetar:
         print("  (rellena la columna 'label' con: coordinado | no_coordinado | dudoso)")
     print()
-    print(f"{'BANDA':10s} {'n':>3s} {'coord':>5s} {'no':>4s} {'dud':>4s} {'precisión':>10s}")
+    print(f"{'BANDA':10s} {'n':>3s} {'coord':>5s} {'no':>4s} {'dud':>4s} {'prec':>7s} {'prec*':>7s}")
     for b in ORDEN:
         v = res["bandas"].get(b)
         if not v:
             continue
         p = f"{v['precision']}%" if v["precision"] is not None else "—"
-        print(f"{b:10s} {v['n']:3d} {v['coordinado']:5d} {v['no_coordinado']:4d} {v['dudoso']:4d} {p:>10s}")
+        pc = _pct(v["coordinado"], v["coordinado"] + v["no_coordinado"] + v["dudoso"])
+        pcs = f"{pc}%" if pc is not None else "—"
+        print(f"{b:10s} {v['n']:3d} {v['coordinado']:5d} {v['no_coordinado']:4d} {v['dudoso']:4d} {p:>7s} {pcs:>7s}")
     tot_c = sum(v["coordinado"] for v in res["bandas"].values())
     tot_n = sum(v["coordinado"] + v["no_coordinado"] for v in res["bandas"].values())
+    tot_all = sum(v["n"] for v in res["bandas"].values())
     print()
-    print(f"Precisión global (excl. dudoso): {_pct(tot_c, tot_n)}%  ({tot_c}/{tot_n})")
+    print(f"Precisión global (excl. dudoso):      {_pct(tot_c, tot_n)}%  ({tot_c}/{tot_n})")
+    print(f"Precisión global (dudoso=negativo):   {_pct(tot_c, tot_all)}%  ({tot_c}/{tot_all})")
 
 
 if __name__ == "__main__":
