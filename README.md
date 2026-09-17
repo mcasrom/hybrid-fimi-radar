@@ -14,12 +14,11 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitorizados**:
 
 | Tema | Estado |
 |---|---|
 | Frontera Sur (España-Marruecos) | Producción |
-| Geopolítica UE-Marruecos | Producción |
 | Política nacional | Producción |
 | Política y desinformación EEUU | Producción |
 | Oriente Medio (Israel-Irán-Gaza) | Producción |
@@ -340,7 +339,7 @@ funciona está en la validación sintética (ARI 1.000) + este cruce de dominios
 
 ## CTA cruzado con el blog (analisis.pruebapublica.com)
 
-Las tarjetas de los temas Frontera Sur, Geopolítica UE-Marruecos, Política nacional y
+Las tarjetas de los temas Frontera Sur, Política nacional y
 Política EEUU enlazan al análisis editorial correspondiente del blog (y viceversa: los posts
 del blog llevan un bloque "Este tema, en vivo: Radar FIMI" con deep-link al tema por hash
 `#<tema>`). Generado en `detection/gen_fimi_html.py`.

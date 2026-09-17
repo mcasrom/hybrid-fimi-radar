@@ -699,7 +699,7 @@ temas:
     estado: produccion
     nombre: Frontera Sur (España-Marruecos)
   geopolitica_ue_marruecos:
-    estado: produccion
+    estado: cerrado
     nombre: Geopolítica UE-Marruecos
   politica_nacional:
     estado: produccion

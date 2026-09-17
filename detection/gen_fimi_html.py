@@ -1381,8 +1381,14 @@ def main():
         temas_cfg = cfg.get("temas", {})
     except Exception:
         feeds, keywords, telegram, subreddits, temas_cfg = [], [], [], [], {}
-    # temas activos (catálogo config.yaml); frontera_sur siempre existe
-    temas = list(temas_cfg.keys()) or ["frontera_sur"]
+    # temas activos (catálogo config.yaml, excluye estado 'cerrado'); frontera_sur siempre existe.
+    # Los temas cerrados no se renderizan en el radar activo, pero sí se conservan
+    # en la tarjeta Bitácora (trazabilidad) vía _temas_todos.
+    _temas_todos = list(temas_cfg.keys()) if isinstance(temas_cfg, dict) else []
+    temas = [t for t in _temas_todos
+             if (temas_cfg.get(t) or {}).get("estado", "produccion") in ("produccion", "piloto")]
+    if not temas:
+        temas = _temas_todos or ["frontera_sur"]
     if "frontera_sur" not in temas:
         temas.insert(0, "frontera_sur")
 
@@ -3542,7 +3548,7 @@ def main():
         bitacora_rows = _bcon.execute(
             "SELECT tema, tipo, fecha, estado_anterior, estado_nuevo, motivo, origen"
             " FROM bitacora ORDER BY tema, fecha").fetchall()
-        for _t in temas:
+        for _t in (_temas_todos or temas):
             _v = _bcon.execute(
                 "SELECT MIN(fecha) FROM findings WHERE tema_id=?", (_t,)).fetchone()
             _inicio_findings[_t] = _v[0] if _v and _v[0] else None
@@ -3552,7 +3558,7 @@ def main():
     for _br in bitacora_rows:
         _bit_by_tema.setdefault(_br["tema"], []).append(_br)
     bitacora_cards = ""
-    for _t in temas:
+    for _t in (_temas_todos or temas):
         _tcfg = temas_cfg.get(_t, {}) or {}
         _estado = _tcfg.get("estado", "produccion")
         _nombre = _tcfg.get("nombre", _t)
