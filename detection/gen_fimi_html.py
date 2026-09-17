@@ -3782,6 +3782,7 @@ a{{color:#c2410c}}
   <a class="transp" href="/research.html" title="Investigación y validación del modelo">Research</a>
   <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
   <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
+  <a class="transp" href="/sobre.html" title="Qué es el Radar FIMI">Sobre</a>
   <a class="transp" href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
   <div class="chips">
     <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
