@@ -843,6 +843,16 @@ temas:
     - wahlkampf
     - wahlen
     - wähler
+    # Términos electorales NATIVOS de los procesos de alto valor registrados en
+    # data/elecciones.yaml (Rusia/LV/BS/SR/PT/BG, 17-sep-2026): sin ellos el
+    # discurso doméstico de esos países no pasa el gate del tema.
+    - выборы
+    - госдума
+    - vēlēšanas
+    - saeima
+    - izbori
+    - eleições
+    - избори
     - riksdag
     - riksdagsval
     - valet
@@ -1197,6 +1207,27 @@ keywords:
   plataformas: *id004
   tema: elecciones
 - palabra: valrörelse
+  plataformas: *id004
+  tema: elecciones
+- palabra: выборы
+  plataformas: *id004
+  tema: elecciones
+- palabra: госдума
+  plataformas: *id004
+  tema: elecciones
+- palabra: vēlēšanas
+  plataformas: *id004
+  tema: elecciones
+- palabra: saeima
+  plataformas: *id004
+  tema: elecciones
+- palabra: izbori
+  plataformas: *id004
+  tema: elecciones
+- palabra: eleições
+  plataformas: *id004
+  tema: elecciones
+- palabra: избори
   plataformas: *id004
   tema: elecciones
 - palabra: inteligencia artificial

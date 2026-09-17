@@ -36,4 +36,74 @@
   fecha: 2026-11-03
   idioma: en
   estado: activo
-  keywords: [midterm, midterms, elecciones medio mandato, ballot, us election, congressional]
+  keywords: [midterm, midterms, elecciones medio mandato, ballot, us election, 
+      congressional]
+- pais: Rusia
+  nombre: Legislativas (Duma)
+  fecha: '2026-09-18'
+  idioma: ru
+  estado: activo
+  keywords:
+  - rusia
+  - russia
+  - duma
+  - elecciones rusia
+  - выборы
+  - госдума
+- pais: Letonia
+  nombre: Parlamentarias (Saeima)
+  fecha: '2026-10-03'
+  idioma: lv
+  estado: activo
+  keywords:
+  - letonia
+  - latvia
+  - saeima
+  - elecciones letonia
+  - vēlēšanas
+  - vēlētāji
+- pais: Bosnia y Herzegovina
+  nombre: Generales
+  fecha: '2026-10-04'
+  idioma: bs
+  estado: activo
+  keywords:
+  - bosnia
+  - izbori
+  - glasanje
+  - elecciones bosnia
+  - generales bosnia
+- pais: Brasil
+  nombre: Generales (presidenciales)
+  fecha: '2026-10-04'
+  idioma: pt
+  estado: activo
+  keywords:
+  - brasil
+  - brazil
+  - eleições
+  - eleitores
+  - votação
+  - urnas
+- pais: Bulgaria
+  nombre: Presidenciales
+  fecha: '2026-10-25'
+  idioma: bg
+  estado: activo
+  keywords:
+  - bulgaria
+  - избори
+  - гласуване
+  - elecciones bulgaria
+  - presidenciales bulgaria
+- pais: Serbia
+  nombre: Parlamentarias anticipadas
+  fecha: '2026-10-25'
+  idioma: sr
+  estado: activo
+  keywords:
+  - serbia
+  - izbori
+  - glasanje
+  - elecciones serbia
+  - parlamentarias serbia
