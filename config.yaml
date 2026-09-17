@@ -768,6 +768,14 @@ temas:
     - Houthi
     - Hutíes
     - Cisjordania
+    # Términos nativos FR (17/09): el catálogo tiene feeds en francés (Le Monde,
+    # France24) cuya cobertura del conflicto no matcheaba el filtro ES/EN.
+    # Solo al filtro (no crea queries de captura). +~965 ev medidos.
+    - Liban
+    - Cisjordanie
+    - Yémen
+    - bande de Gaza
+    - Beyrouth
   sahel:
     estado: produccion
     nombre: Sahel (África Occidental)
