@@ -311,42 +311,69 @@ def detectar(dias=90, registro_path=None, conn=None):
             "elec_top": elec_top[:8], "elec_resumen": elec_resumen}
 
 
-def _timeline_svg(els, ancho=1000, alto=132):
+def _timeline_svg(els, ancho=1000, alto=170):
     pts = [e for e in els if e["fase"]["dias"] is not None]
     if not pts:
         return ""
-    dias = [e["fase"]["dias"] for e in pts]
-    lo = min(dias + [0]) - 30
-    hi = max(dias + [0]) + 30
-    L, R = 90, 70
+    # Agrupar por fecha exacta (mismo offset en días): los procesos que caen el
+    # mismo día (p. ej. Bosnia + Brasil el 04-oct, Bulgaria + Serbia el 25-oct)
+    # comparten marcador para no solapar etiquetas.
+    grupos = {}
+    for e in pts:
+        grupos.setdefault(round(e["fase"]["dias"], 3), []).append(e)
+    ds = sorted(grupos.keys())
+    lo = min(ds + [0]) - 30
+    hi = max(ds + [0]) + 30
+    L, R = 84, 84
     W, H = ancho, alto
-    y0 = H - 30
+    y0 = H - 22
+
     def x(d):
         return L + (d - lo) / (hi - lo) * (W - L - R)
+
+    def _corto(p, n=16):
+        p = str(p)
+        return p if len(p) <= n else p[:n - 1].rstrip() + "…"
+
     s = [f'<svg viewBox="0 0 {W} {H}" width="100%" style="display:block" '
          f'font-family="system-ui,sans-serif">']
     s.append(f'<line x1="{x(lo):.0f}" y1="{y0}" x2="{x(hi):.0f}" y2="{y0}" '
              f'stroke="#cbd5e1" stroke-width="2"/>')
-    s.append(f'<line x1="{x(0):.0f}" y1="14" x2="{x(0):.0f}" y2="{y0+7}" '
+    s.append(f'<line x1="{x(0):.0f}" y1="10" x2="{x(0):.0f}" y2="{y0+6}" '
              f'stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>')
-    s.append(f'<text x="{x(0):.0f}" y="11" font-size="11" fill="#dc2626" '
+    s.append(f'<text x="{x(0):.0f}" y="8" font-size="10" fill="#dc2626" '
              f'text-anchor="middle" font-weight="700">hoy</text>')
-    for i, e in enumerate(sorted(pts, key=lambda z: z["fase"]["dias"])):
-        d = e["fase"]["dias"]
-        col = e["fase"]["color"]
+
+    FS = 11.0
+    CH = FS * 0.58          # ancho medio de carácter (estimación para el layout)
+    ROW = 30                # alto de fila
+    placed = []             # (fila, x1, x2) ya colocadas, para evitar solapes
+    for d in ds:
+        g = sorted(grupos[d], key=lambda z: str(z["pais"]))
         cx = x(d)
-        arriba = (i % 2 == 0)
-        ly = 34 if arriba else y0 - 12
+        paises = " · ".join(_corto(e["pais"]) for e in g)
+        fecha = str(g[0]["fecha"])
+        wl = max(len(paises), len(fecha)) * CH + 10
+        x1, x2 = cx - wl / 2, cx + wl / 2
+        fila = 0
+        while any(r == fila and not (x2 < px1 - 4 or x1 > px2 + 4)
+                  for r, px1, px2 in placed):
+            fila += 1
+        placed.append((fila, x1, x2))
+        col = g[0]["fase"]["color"]
+        ly = y0 - 18 - fila * ROW
+        full = " · ".join(
+            f'{e["pais"]}: {e["nombre"]} ({e["fecha"]}, {e["fase"]["nombre"]})'
+            for e in g)
         s.append(f'<circle cx="{cx:.0f}" cy="{y0}" r="7" fill="{col}" '
                  f'stroke="#fff" stroke-width="2"/>')
-        s.append(f'<line x1="{cx:.0f}" y1="{y0-7 if arriba else y0+7}" '
-                 f'x2="{cx:.0f}" y2="{ly+4 if arriba else ly-11}" stroke="{col}" '
-                 f'stroke-width="1"/>')
-        lbl = f'{e["pais"]} · {e["nombre"][:20]}'
-        s.append(f'<text x="{cx:.0f}" y="{ly}" font-size="11" fill="#334155" '
-                 f'text-anchor="middle" font-weight="700">{lbl}</text>')
-        s.append(f'<text x="{cx:.0f}" y="{ly+12}" font-size="10" fill="#94a3b8" '
-                 f'text-anchor="middle">{e["fecha"]}</text>')
+        s.append(f'<line x1="{cx:.0f}" y1="{y0-7}" x2="{cx:.0f}" y2="{ly+3}" '
+                 f'stroke="{col}" stroke-width="1"/>')
+        s.append(f'<text x="{cx:.0f}" y="{ly}" font-size="{FS}" fill="#334155" '
+                 f'text-anchor="middle" font-weight="700"><title>{full}</title>'
+                 f'{paises}</text>')
+        s.append(f'<text x="{cx:.0f}" y="{ly-12}" font-size="9.5" fill="#94a3b8" '
+                 f'text-anchor="middle">{fecha}</text>')
     s.append('</svg>')
     return "".join(s)
 
