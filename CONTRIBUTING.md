@@ -58,3 +58,20 @@ system only *suggests*; humans decide. Changes of state are recorded in the audi
 ## Contact
 
 Questions? Write to **info-fimi@viajeinteligencia.com**.
+
+## Bus factor y continuidad
+
+El mantenimiento de FIMI depende de un único desarrollador activo. Para mitigar
+este riesgo:
+
+- **Backup offsite semanal**:  (cron domingo 03:00)
+  copia  y  a  (rotación 4 copias).
+  Cualquier contribuidor puede restaurar el radar desde estos ficheros.
+- **Configuración documentada**:  y  describen cada
+  fuente, su bias y su relevancia analítica. Añadir una fuente nueva requiere
+  documentar estos tres campos.
+- **Bitácora pública**: toda decisión de estado (piloto→producción→cerrado) queda
+  registrada en  con fecha, motivo y responsable.
+- **Runbook básico**:  es el único script orquestador.
+  Su contenido es auto-documentado con comentarios por paso.
+

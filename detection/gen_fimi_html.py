@@ -3892,6 +3892,39 @@ El código es abierto (GitHub), las fuentes y su fiabilidad están documentadas 
 real, y el proyecto no hace seguimiento de sus visitantes. Es un proyecto personal, sin financiación
 externa ni afiliación institucional.
 </p>
+
+<div class="card" id="que-no-vemos">
+<h3>Qué no vemos (limitaciones del radar)</h3>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El radar monitoriza <b>fuentes públicas rastreables</b> (RSS, Bluesky, Google News, Telegram público, Reddit).
+Hay una parte del espacio informativo que <b>no puede observar</b> por diseño o por falta de acceso:
+</p>
+<div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
+  <div style="flex:1;min-width:200px">
+    <b style="font-size:.85rem;color:#94a3b8">Plataformas sin acceso</b>
+    <ul style="font-size:.8rem;color:#64748b;padding-left:16px;line-height:1.8">
+      <li>🐦 <b>X / Twitter</b> — la plataforma principal de coordinación política en español; requiere API de pago o scraping no fiable</li>
+      <li>💬 <b>WhatsApp / Telegram cifrado</b> — canales privados y grupos sellados; solo se ven mensajes públicos de canales abiertos</li>
+      <li>📹 <b>TikTok / YouTube</b> — video-prime para desinformación juvenil; sin acceso programático estable</li>
+    </ul>
+  </div>
+  <div style="flex:1;min-width:200px">
+    <b style="font-size:.85rem;color:#94a3b8">Espacios geográficos no cubiertos</b>
+    <ul style="font-size:.8rem;color:#64748b;padding-left:16px;line-height:1.8">
+      <li>🇷🇺 <b>VK</b> (ruso) — red social dominante en Rusia y países rusófonos</li>
+      <li>🇨🇳 <b>Weibo / Baidu</b> (chino) — microblogging y búsqueda china</li>
+      <li>🇧🇷 <b>Plataformas brasileñas</b> — alcance local fuera del radar de captura</li>
+      <li>🌐 <b>Blogs personales y foros</b> — sin RSS ni API estructurada</li>
+    </ul>
+  </div>
+</div>
+<p class="caption" style="font-size:.78rem;color:#94a3b8;margin-top:6px">
+<b>⚖️ Esto es transparencia, no una disculpa.</b> Cada plataforma que falta es un punto ciego documentado.
+Si un patrón coordinado existe solo en X o en un grupo de WhatsApp, este radar <b>no lo detectará</b>.
+Las conclusiones deben leerse siempre con esta limitación presente.
+</p>
+</div>
+
 </div>
 
 {_GUIA_HTML}
