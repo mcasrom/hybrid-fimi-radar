@@ -3788,6 +3788,7 @@ a{{color:#c2410c}}
     <a class="chip" href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" title="Licencia AGPL-3.0 del proyecto" style="text-decoration:none"><span class="dot" style="background:#0284c7"></span>Open Source</a>
     <span class="chip prod"><span class="dot"></span>En producción</span>
   </div>
+  <a class="gh-link" href="/suscribirse.html" title="Newsletter semanal del radar">📬 Suscribirse</a>
   <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
 </div>
 </header>
