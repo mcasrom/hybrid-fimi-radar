@@ -50,6 +50,11 @@ URL_DASH = "https://fimi.viajeinteligencia.com"
 CAPTURA_MAX_H = 7.5
 # ventana para considerar "el run del tema corrió en el último ciclo"
 CICLO_H = 7.0
+# crecimiento del corpus: la memoria de frontera_sur escala ~7,5 KB/evento
+# (medido 2026-09-17: 57.510 ev -> 1,6 GB; 115.020 ev -> 2,03 GB) y el OOM
+# (~3,4 GB) se alcanzaría a ~298.000 events. Avisar antes de acercarse.
+CORPUS_WARN = 250_000
+CORPUS_BAD = 290_000
 
 
 def _cargar_config():
@@ -146,6 +151,22 @@ def chequea():
                    "msg": f"{n_trace} tracebacks históricos en log (los nuevos se ven en logs/fimi.log)"})
     except Exception as e:
         issues.append({"check": "errores_ciclo", "nivel": "warn", "msg": f"error leyendo log: {e}"})
+
+    # 6) crecimiento del corpus (riesgo OOM del run pesado `frontera_sur`)
+    try:
+        n_ev = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        if n_ev >= CORPUS_BAD:
+            issues.append({"check": "corpus", "nivel": "bad",
+                           "msg": f"corpus {n_ev:,} events — cerca del límite OOM estimado (~298k). "
+                                  f"Optimizar la memoria de frontera_sur o acortar la retención."})
+        elif n_ev >= CORPUS_WARN:
+            issues.append({"check": "corpus", "nivel": "warn",
+                           "msg": f"corpus {n_ev:,} events — vigilar (OOM estimado ~298k)."})
+        else:
+            ok.append({"check": "corpus",
+                       "msg": f"corpus {n_ev:,} events (margen al OOM estimado ~298k)"})
+    except Exception as e:
+        issues.append({"check": "corpus", "nivel": "warn", "msg": f"error corpus: {e}"})
 
     con.close()
     nivel = "bad" if any(i["nivel"] == "bad" for i in issues) else (
