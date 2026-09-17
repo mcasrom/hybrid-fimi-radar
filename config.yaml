@@ -670,7 +670,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: Seccion de IA de The Verge (Atom). Cobertura de producto, agentes,
+  note: Seccion de IA de The Verge (Atom). Cobertura de producto, agentes, 
     regulacion y cultura IA; buen volumen y deteccion temprana de narrativas.
   analytical_relevance: alta
 - nombre: The Decoder
@@ -681,7 +681,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: Medio aleman especializado en IA (en ingles). Cobertura de modelos,
+  note: Medio aleman especializado en IA (en ingles). Cobertura de modelos, 
     laboratorios y regulacion; analisis tecnico, perspectiva no anglosajona.
   analytical_relevance: alta
 - nombre: Wired AI
@@ -692,7 +692,7 @@ feeds:
   bias: center-left
   reliability: high
   transparency: medium
-  note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y
+  note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y 
     regulacion; reportaje con perspectiva critica.
   analytical_relevance: alta
 - nombre: Sputnik Mundo
@@ -703,10 +703,10 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: Agencia rusa en español. Cubre geopolítica, conflicto Ucrania-Rusia
-    y narrativa estatal. Es la única fuente estatal rusa en español accesible
-    por RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la
-    sancionó en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
+  note: Agencia rusa en español. Cubre geopolítica, conflicto Ucrania-Rusia y 
+    narrativa estatal. Es la única fuente estatal rusa en español accesible por 
+    RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la sancionó 
+    en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
   analytical_relevance: alta
 
 temas:
@@ -780,7 +780,7 @@ temas:
     estado: produccion
     nombre: Sahel (África Occidental)
   energia:
-    estado: piloto
+    estado: produccion
     nombre: Energía (petróleo/gas/precios)
     filtro:
     - petróleo
