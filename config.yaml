@@ -555,7 +555,7 @@ feeds:
     como fuente FIMI.'
   analytical_relevance: alta
 - nombre: Global Times (EN)
-  url: https://globaltimes.cn/rss/outbrain.xml
+  url: "https://news.google.com/rss/search?q=site:globaltimes.cn&hl=en-US&gl=US&ceid=US:en"
   tipo: media
   pais: CN
   idioma: en
@@ -563,7 +563,8 @@ feeds:
   reliability: mixed
   transparency: low
   note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad,
-    Taiwan como asunto interno. Vigilar como fuente FIMI."
+    Taiwan como asunto interno. Vigilar como fuente FIMI. Vía Google News (site-scoped):
+    el feed nativo (outbrain.xml) está estancado desde ago-2026."
   analytical_relevance: alta
 
 - nombre: TechCrunch AI

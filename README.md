@@ -178,7 +178,16 @@ Se amplió el catálogo con dos fuentes relevantes para la cobertura transversal
   árabe genuina (`<language>ar</language>`). `idioma: ar`, complementa
   la cobertura del norte de África y el mundo árabe.
 
-**Catálogo: 55 → 56 feeds**.
+**Global Times (EN) — feed migrado (17/09/2026)**: el feed nativo
+(`globaltimes.cn/rss/outbrain.xml`) solo actualizaba hasta **ago-2026** (el
+`lastBuildDate` sí era de hoy, pero los ítems no) y sus sub-feeds
+(`/rss/china.xml`, `/rss/world.xml`, `/rss/opinion.xml`, `/rss/business.xml`…)
+devuelven **404**. Se sustituye por **Google News site-scoped**
+(`news.google.com/rss/search?q=site:globaltimes.cn`), verificado con 100 ítems y
+último del mismo día (antes: 0/1 eventos y 25 d sin actualizar). Mismos metadatos
+(`bias: state`, `reliability: mixed`, `pais: CN`, nota "vigilar como fuente FIMI").
+
+**Catálogo: 55 → 56 feeds** (Global Times migrado, no añadido).
 
 ### Piloto IA — tema Inteligencia artificial (16/09/2026)
 
