@@ -211,6 +211,15 @@ coordinación por elección cuenta **solo** los clusters de ese tema. Verificado
 real (00:44 UTC): **17 clusters**, top **76/100 HIGH** (Riksdag Suecia; interferencia
 electoral EEUU).
 
+**Procesos de alto valor (17/09/2026)**: el registro se amplió a **10 procesos** con los de
+mayor interés para injerencia/FIMI (calendario OSCE): **Rusia** (legislativas 18-20 sep),
+**Letonia** (parlamentarias 3 oct), **Bosnia y Herzegovina** (generales 4 oct), **Brasil**
+(generales 4 oct), **Bulgaria** (presidenciales 25 oct) y **Serbia** (parlamentarias 25 oct)
+—además de Alemania×2, Suecia y EEUU—. Para que su **discurso doméstico** pase el gate, se
+añadieron **7 términos nativos** al `filtro` y a las keywords del tema (`выборы`, `госдума`,
+`vēlēšanas`, `saeima`, `izbori`, `eleições`, `избори`); filtro 23→30, keywords 24→31.
+Backfill +9 eventos (90 d), gate 0 fallos, `run_fimi` 60→65 clusters.
+
 **Segundo nivel (15/09/2026)**: el bloque de detección clasifica cada cluster como
 **«menciona interferencia»** (su texto contiene términos de `temas.elecciones.senal`:
 desinformación, injerencia, bots/trolls, fraude, coordinación inauténtica…) o
