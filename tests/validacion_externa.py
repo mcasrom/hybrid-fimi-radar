@@ -118,15 +118,23 @@ def run(args):
     con = sqlite3.connect(args.db)
     cur = con.cursor()
 
-    # vista activa: último snapshot de clusters
+    # vista activa: último snapshot POR TEMA. Cada tema se procesa por separado
+    # (run_fimi hace DELETE+INSERT por tema) y `created_at` se escribe por cluster,
+    # así que un MAX(created_at) global solo captura el último tema/segundo y deja
+    # fuera a los demás (bug: daba 0 señales). Se usa el máximo por tema con una
+    # tolerancia que cubre la ventana de inserción del run.
+    TOL = 3600
     q = "SELECT MAX(created_at) FROM clusters"
     (mx,) = cur.execute(q).fetchone()
 
     # ---- PRECISIÓN: clusters activos >= min_score, ¿amplifican dominios documentados? ----
     rows = cur.execute(
         "SELECT c.id, c.cluster_label, c.overall_score, c.tema_id FROM clusters c "
-        "WHERE c.created_at=? AND c.overall_score>=? ORDER BY c.overall_score DESC",
-        (mx, args.min_score),
+        "JOIN (SELECT tema_id, MAX(created_at) mx FROM clusters GROUP BY tema_id) t "
+        "  ON t.tema_id=c.tema_id "
+        "WHERE c.created_at>=t.mx-? AND c.overall_score>=? "
+        "ORDER BY c.overall_score DESC",
+        (TOL, args.min_score),
     ).fetchall()
     precision_rows = []
     n_señales = 0
@@ -177,8 +185,10 @@ def run(args):
         en_narrativa = src_in_narrativa.get(src, 0)
         en_cluster = cur.execute(
             "SELECT COUNT(*) FROM cluster_events WHERE source=? AND ts>=? AND cluster_id IN "
-            "(SELECT id FROM clusters WHERE created_at=?)",
-            (src, mx - args.window_days * 86400, mx),
+            "(SELECT c.id FROM clusters c "
+            " JOIN (SELECT tema_id, MAX(created_at) mx FROM clusters GROUP BY tema_id) t "
+            "   ON t.tema_id=c.tema_id WHERE c.created_at>=t.mx-?)",
+            (src, mx - args.window_days * 86400, TOL),
         ).fetchone()[0]
         recall_rows.append(
             {
