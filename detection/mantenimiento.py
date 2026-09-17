@@ -13,7 +13,7 @@ Reglas:
       (DELETE+re-INSERT por tema en run_fimi) -> retención implícita.
   raw JSON (data/raw)  : 30 días (lo gestiona cron_every_6h.sh)
   logs                : rotación 5 MB (la gestiona cron_every_6h.sh)
-  VACUUM               : tras cada purga para compactar la DB
+  VACUUM               : solo si hubo purgas/limpiezas (evita compactar en balde)
   backup BD            : gzip a {BASE_BACKUP}/radar-YYYYMMDD.db.gz, rotar a N=4
   suscripciones / daily_reports : NO se tocan (datos de usuario/config)
 
@@ -61,7 +61,8 @@ def backup_bd(keep: int = BACKUP_ROTACION) -> str:
     copias = sorted(BASE_BACKUP.glob("radar-20*.db.gz"))
     for viejo in copias[:-keep]:
         viejo.unlink()
-    _info(f"backup -> {dst.name} ({round(dst.stat().st_size/1024)} KB); copias: {len(copias)} (max {keep}) en {BASE_BACKUP}")
+    restantes = min(len(copias), keep)
+    _info(f"backup -> {dst.name} ({round(dst.stat().st_size/1024)} KB); copias: {restantes} (max {keep}) en {BASE_BACKUP}")
     return str(dst)
 
 
@@ -97,27 +98,33 @@ def main():
     conn.execute("PRAGMA journal_mode=WAL")
 
     # eventos antiguos: recoger ids que se van a borrar para quitar event_temas
-    _purge_table(conn, args.dry, "events", "timestamp", cutoff, "events>90d")
+    n_purgados = _purge_table(conn, args.dry, "events", "timestamp", cutoff, "events>90d")
     # event_temas huérfanos del purge de events
     cur = conn.execute(
         "DELETE FROM event_temas WHERE event_id NOT IN (SELECT id FROM events)")
+    n_temas = cur.rowcount
     if not args.dry:
-        _info(f"limpieza event_temas huérfanos: {cur.rowcount}")
+        _info(f"limpieza event_temas huérfanos: {n_temas}")
+    n_purgados += n_temas
     # findings antiguos
-    _purge_table(conn, args.dry, "findings", "fecha", cutoff, "findings>90d")
+    n_purgados += _purge_table(conn, args.dry, "findings", "fecha", cutoff, "findings>90d")
 
     # eventos huérfanos de cluster_events (ya no referenciados) - no son daño pero dejarlo limpio
     cur = conn.execute(
         "DELETE FROM cluster_events WHERE cluster_id NOT IN (SELECT id FROM clusters)")
+    n_purgados += cur.rowcount
 
     if not args.dry:
         # primero eliminamos event_temas de los events borrados (hecho arriba por NOT IN)
         conn.commit()
-        _info("VACUUM...")
-        vac = _now()
-        conn.execute("PRAGMA incremental_vacuum")
-        conn.execute("VACUUM")
-        _info(f"VACUUM en {round(_now()-vac)}s — DB ahora {round(DB.stat().st_size/1024)} KB")
+        if n_purgados:
+            _info(f"VACUUM... ({n_purgados} filas purgadas)")
+            vac = _now()
+            conn.execute("PRAGMA incremental_vacuum")
+            conn.execute("VACUUM")
+            _info(f"VACUUM en {round(_now()-vac)}s — DB ahora {round(DB.stat().st_size/1024)} KB")
+        else:
+            _info("VACUUM omitido (0 filas purgadas este ciclo)")
     conn.close()
 
     _info("mantenimiento OK")
