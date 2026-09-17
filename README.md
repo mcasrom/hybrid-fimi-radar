@@ -769,6 +769,20 @@ Tres capas, todas avisando por Telegram al administrador solo ante cambios (sin 
   congelamiento de `frontera_sur` por OOM (2026-09-11): la captura estaba fresca pero el
   tema llevaba 30 h sin regenerar su snapshot.
 
+## Páginas públicas
+
+| Página | Contenido |
+|---|---|
+| [`/`](https://fimi.viajeinteligencia.com/) | Dashboard: centro de situación por tema |
+| [`/sobre.html`](https://fimi.viajeinteligencia.com/sobre.html) | Qué es, qué no, validación, límites y CTAs (one-pager) |
+| [`/suscribirse.html`](https://fimi.viajeinteligencia.com/suscribirse.html) | Newsletter semanal (temas dinámicos, doble opt-in) |
+| [`/research.html`](https://fimi.viajeinteligencia.com/research.html) | Investigación y validación del modelo |
+| [`/api.html`](https://fimi.viajeinteligencia.com/api.html) | Documentación de la API pública v1 |
+| [`/operativa.html`](https://fimi.viajeinteligencia.com/operativa.html) | Manual de operación (usuario + admin) |
+
+`/sobre.html`, `/suscribirse.html`, `/api.html` y `/operativa.html` son estáticas y viven en
+`/var/www/fimi/` (fuera del repo). El `sitemap.xml` las indexa.
+
 ## Licencia
 
 Este proyecto se publica bajo la **GNU Affero General Public License v3.0 (AGPL-3.0)**
