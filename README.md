@@ -679,6 +679,8 @@ H4 amplificación mediática · H5 campaña política · H6 desconocido.
   una fuente requiere documentar estos campos.
 - **Bitácora pública**: toda decisión de estado queda registrada en
   `data/bitacora.db` (fecha, motivo, responsable).
+- **Runbook**: `docs/RUNBOOK.md` — operación, despliegue, recuperación y
+  troubleshooting paso a paso (pensado para retomar el proyecto sin contexto previo).
 - **Orquestación**: `scripts/cron_every_6h.sh` es el único script
   orquestador del pipeline; su contenido es auto-documentado con
   comentarios por paso.

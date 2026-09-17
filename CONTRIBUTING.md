@@ -64,14 +64,16 @@ Questions? Write to **info-fimi@viajeinteligencia.com**.
 El mantenimiento de FIMI depende de un único desarrollador activo. Para mitigar
 este riesgo:
 
-- **Backup offsite semanal**:  (cron domingo 03:00)
-  copia  y  a  (rotación 4 copias).
+- **Runbook**: `docs/RUNBOOK.md` — operación, despliegue, recuperación y
+  troubleshooting paso a paso.
+- **Backup offsite semanal** (`scripts/backup_offsite.sh`, cron domingo 03:00):
+  copia `config.yaml` y `data/bitacora.db` a `backups/offsite/` (rotación 4 copias).
   Cualquier contribuidor puede restaurar el radar desde estos ficheros.
-- **Configuración documentada**:  y  describen cada
+- **Configuración documentada**: `config.yaml` y `docs/FUENTES.md` describen cada
   fuente, su bias y su relevancia analítica. Añadir una fuente nueva requiere
-  documentar estos tres campos.
+  documentar estos campos.
 - **Bitácora pública**: toda decisión de estado (piloto→producción→cerrado) queda
-  registrada en  con fecha, motivo y responsable.
-- **Runbook básico**:  es el único script orquestador.
-  Su contenido es auto-documentado con comentarios por paso.
+  registrada en `data/bitacora.db` con fecha, motivo y responsable.
+- **Orquestación**: `scripts/cron_every_6h.sh` es el único script orquestador;
+  auto-documentado con comentarios por paso.
 
