@@ -189,6 +189,12 @@ devuelven **404**. Se sustituye por **Google News site-scoped**
 
 **Catálogo: 55 → 56 feeds** (Global Times migrado, no añadido).
 
+**Filtro multi-idioma de `oriente_medio` (17/09/2026)**: el `filtro` tenía solo términos ES/EN,
+así que el contenido del conflicto en **francés** (Le Monde, France24) se descartaba del tema.
+Se añadieron 5 términos FR precisos (`Liban`, `Cisjordanie`, `Yémen`, `bande de Gaza`,
+`Beyrouth`) **solo al filtro** (sin nuevas queries de captura) → **+356 eventos** etiquetados
+sin crecimiento del corpus.
+
 ### Piloto IA — tema Inteligencia artificial (16/09/2026)
 
 `inteligencia_artificial` (piloto) monitoriza narrativas de IA (modelos, agentes,
@@ -359,6 +365,21 @@ Además, EUvsDisinfo es histórico (2015-2023, foco Ucrania/Rusia), no cubre los
 del radar (Ceuta/Marruecos/España/EEUU/Oriente Medio), por lo que el benchmark valida la
 **mecánica** del cruce, no la ausencia de campañas. La evidencia real de que el detector
 funciona está en la validación sintética (ARI 1.000) + este cruce de dominios.
+
+## Validación curada (ground truth propio)
+
+La sintética prueba la **mecánica** y la externa el **solape**; la curada prueba el **orden**
+del score. `tests/export_validacion.py` genera una **muestra estratificada** (8 clusters por
+banda) con la evidencia de cada uno; el analista la etiqueta (`coordinado` / `no_coordinado` /
+`dudoso`) —desde el CSV o desde el bot con **`/validar`** (2 toques por cluster, solo admin)—
+y `tests/validacion_curada.py` calcula la **precisión por banda** (variante conservadora con
+`dudoso=negativo`).
+
+Resultado (2 muestras, 17/09/2026): **CRITICAL 100% · HIGH 50-100% · ANOMALOUS 20-40% · WATCH 0%**
+→ la precisión **sube con la banda** (el score ordena bien) y **WATCH (2 cuentas) es ruido**,
+justo el corte del `scale_floor`. El **historial** (`data/validacion/historial.csv`) acumula la
+serie; `detection/validacion_curada_auto.py` genera muestras nuevas y avisa (cron mensual). La
+card **«Validación del modelo»** del dashboard resume las **3 capas** y se recalcula cada ciclo.
 
 ## Pruebas y CI
 
@@ -633,10 +654,19 @@ Confianza: NO_ATTRIBUTION / LOW / MEDIUM / HIGH. La ausencia de atribución es
 **un resultado válido**. Nunca se usa ideología como indicador de amenaza.
 Límites y reglas de lectura en `docs/ATRIBUCION-LIMITACIONES.md`.
 
+**Política conservadora (17/09/2026)**: el radar **no tiene dato de país/idioma por cuenta**,
+así que **no atribuye actor doméstico** (H2/H5 son *mecanismos*, no actor). Solo atribuye actor
+**externo** cuando gana H3 **y** hay infraestructura compartida → en la práctica, **UNKNOWN por
+defecto** (755/758 UNKNOWN en el último ciclo).
+
 ## Hipótesis alternativas (anti sesgo de confirmación)
 
 H1 orgánico viral · H2 campaña doméstica · H3 operación extranjera ·
 H4 amplificación mediática · H5 campaña política · H6 desconocido.
+
+Se calculan a partir de los **componentes reales** del cluster (sincronía, contenido,
+amplificación, infraestructura, densidad de red, anomalía) más el nº de cuentas y URLs.
+Reparto real (755 clusters, 17/09/2026): **H2 364 · H4 152 · H5 140 · H6 94 · H3 3 · H1 2**.
 
 ## Honestidad metodológica
 
