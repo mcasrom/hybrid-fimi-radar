@@ -29,7 +29,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
-- **Catálogo de fuentes**: **55 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
+- **Catálogo de fuentes**: **56 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
   + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
   `analytical_relevance` y nota. El corpus activo ronda los **~54.800 eventos** (ventana 90 d).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
@@ -163,6 +163,22 @@ RT en Español y las agencias del Sahel). **Nota honesta**: al ser **RSS**, esta
 entran al grafo de coordinación** → aportan **cobertura y catalogación de dominio/esfera**, no
 señal de coordinación por sí solas (su contenido actual, además, es general —BRICS, ciencia,
 deportes—, no electoral).
+
+### Fuentes adicionales (17/09/2026)
+
+Se amplió el catálogo con dos fuentes relevantes para la cobertura transversal:
+
+- **Sputnik Mundo** (`noticiaslatam.lat/export/rss2/archive/index.xml`):
+  agencia rusa en español. `bias: state`, `idioma: es`, `pais: RU`,
+  `analytical_relevance: alta`. Única fuente estatal rusa en español
+  accesible por RSS; cubre geopolítica, conflicto Ucrania-Rusia y
+  narrativa estatal. Sancionada por la UE en 2022 — vigilar como
+  narrativa FIMI, no usar como verdad absoluta.
+- **Hespress** (`hespress.com/feed/ar/`): medio marroquí con versión
+  árabe genuina (`<language>ar</language>`). `idioma: ar`, complementa
+  la cobertura del norte de África y el mundo árabe.
+
+**Catálogo: 55 → 56 feeds**.
 
 ### Piloto IA — tema Inteligencia artificial (16/09/2026)
 
@@ -628,6 +644,23 @@ H4 amplificación mediática · H5 campaña política · H6 desconocido.
 - **Salvaguardas**: no atribuye sin evidencia, «UNKNOWN» es válido y hay contacto para
   rectificaciones. Visible en el dashboard (Transparencia → *Gobernanza de datos y salvaguardas*).
 
+
+## Bus factor, backup offsite y continuidad
+
+**Bus factor 1** (desarrollador único activo). Para mitigar:
+
+- **Backup offsite semanal** (`scripts/backup_offsite.sh`, cron domingo
+  03:00): copia `config.yaml` y `data/bitacora.db` a `backups/offsite/`
+  (rotación 4 copias). Cualquier colaborador puede restaurar el radar
+  desde estos ficheros sin necesidad de acceso al server original.
+- **Configuración documentada**: `config.yaml` y `docs/FUENTES.md`
+  describen cada feed, su `bias`, `reliability` e `idioma`. Añadir
+  una fuente requiere documentar estos campos.
+- **Bitácora pública**: toda decisión de estado queda registrada en
+  `data/bitacora.db` (fecha, motivo, responsable).
+- **Orquestación**: `scripts/cron_every_6h.sh` es el único script
+  orquestador del pipeline; su contenido es auto-documentado con
+  comentarios por paso.
 
 ## Seguridad del despliegue
 

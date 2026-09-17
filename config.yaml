@@ -314,7 +314,7 @@ feeds:
   note: 'Investigación. Incidente de fabricación 2016. MBFC: Left, Mostly Factual.'
   analytical_relevance: alta
 - nombre: Hespress (AR)
-  url: https://www.hespress.com/feed/
+  url: https://www.hespress.com/feed/ar/
   tipo: media
   idioma: ar
   pais: MA
@@ -694,6 +694,20 @@ feeds:
   note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y
     regulacion; reportaje con perspectiva critica.
   analytical_relevance: alta
+- nombre: Sputnik Mundo
+  url: https://noticiaslatam.lat/export/rss2/archive/index.xml
+  tipo: media
+  pais: RU
+  idioma: es
+  bias: state
+  reliability: mixed
+  transparency: low
+  note: Agencia rusa en español. Cubre geopolítica, conflicto Ucrania-Rusia
+    y narrativa estatal. Es la única fuente estatal rusa en español accesible
+    por RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la
+    sancionó en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
+  analytical_relevance: alta
+
 temas:
   frontera_sur:
     estado: produccion
@@ -953,6 +967,11 @@ keywords:
 - palabra: inmigración irregular
   plataformas:
   - google-news
+# === Keyword FAS (desinformacion militar; plegada 17-sep-2026, SIN tema propio) ===
+- palabra: soldados fantasma
+  plataformas:
+  - bluesky
+  - google-news
 # === Keywords geopolitica_ue_marruecos (tema nuevo, solapa con frontera_sur) ===
 - palabra: relaciones España Marruecos diplomacia
   tema: geopolitica_ue_marruecos
@@ -996,6 +1015,23 @@ keywords:
 - palabra: crisis de gobierno
   tema: politica_nacional
   plataformas:
+  - google-news
+# === Keywords FAS / defensa (plegadas 17-sep-2026; SIN tema propio, ver AGENTS) ===
+# Criterio: terminos institucionales, sin nombres propios (no sesgar con lideres).
+- palabra: fuerzas armadas
+  tema: politica_nacional
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: JEMAD
+  tema: politica_nacional
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: Ministerio de Defensa
+  tema: politica_nacional
+  plataformas:
+  - bluesky
   - google-news
 - palabra: elecciones medio mandato EEUU 2026
   plataformas: &id001
