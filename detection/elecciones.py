@@ -57,6 +57,9 @@ CINCO_D = {
 _BAND_COL = {"CRITICAL": "#dc2626", "HIGH": "#ea580c", "ANOMALOUS": "#d97706",
              "WATCH": "#0e7490", "NORMAL": "#64748b"}
 
+_GREEN = "22c55e"
+_GREY = "94a3b8"
+
 
 def _norm(s):
     s = unicodedata.normalize("NFD", str(s).lower())
@@ -365,8 +368,12 @@ def _timeline_svg(els, ancho=1000, alto=170):
         full = " · ".join(
             f'{e["pais"]}: {e["nombre"]} ({e["fecha"]}, {e["fase"]["nombre"]})'
             for e in g)
+        _has_cl = e.get("n_cluster", 0) > 0
+        _cl_color = "#22c55e" if _has_cl else "#94a3b8"
         s.append(f'<circle cx="{cx:.0f}" cy="{y0}" r="7" fill="{col}" '
                  f'stroke="#fff" stroke-width="2"/>')
+        s.append(f'<circle cx="{cx:.0f}" cy="{y0}" r="3" fill="{_cl_color}" '
+                 f'stroke="#fff" stroke-width="1"/>')
         s.append(f'<line x1="{cx:.0f}" y1="{y0-7}" x2="{cx:.0f}" y2="{ly+3}" '
                  f'stroke="{col}" stroke-width="1"/>')
         s.append(f'<text x="{cx:.0f}" y="{ly}" font-size="{FS}" fill="#334155" '
@@ -415,6 +422,26 @@ def _html(res):
                 "(<code>data/elecciones.yaml</code>). Añade una con "
                 "<code>elecciones_cli.py alta</code>.</p></div>")
     max_ev = max((e["n_ev"] for e in els), default=1) or 1
+    # Plain-language executive summary
+    _n_with_cl = sum(1 for e in els if e.get("n_cluster", 0) > 0)
+    _n_cov = len(els) - _n_with_cl
+    _n_clusters_total = sum(e.get("n_cluster", 0) for e in els)
+    _n_detect = len(res.get("elec_top", []))
+    exec_txt = (
+        f"<div style='margin:0 0 10px;padding:10px 13px;background:#f8fafc;"
+        f"border:1px solid #e2e8f0;border-left:5px solid #64748b;border-radius:9px'>"
+        f"<b style='color:#1e293b'>Resumen ejecutivo</b> · "
+        f"<span style='color:#475569'>"
+        f"De <b>{len(els)}</b> procesos en el calendario, "
+        f"<b>{_n_with_cl}</b> muestran coordinación detectada en su contenido "
+        f"({_n_clusters_total} eventos en clusters) y <b>{_n_cov}</b> tienen "
+        f"cobertura editorial sin señal de coordinación. "
+        f"El radar detectó <b>{_n_detect}</b> clusters asociados a estas "
+        f"elecciones. "
+        f'<span style="color:#b91c1c;font-weight:600">'
+        f"⚠ 'menciona interferencia' = el texto contiene términos de "
+        f"desinformación (es mención, no prueba de operación).</span></span>"
+        f"</div>")
     filas = ""
     for e in els:
         f = e["fase"]
@@ -495,32 +522,37 @@ def _html(res):
             f"<b>{rs.get('cobertura', 0)}</b> cobertura electoral (se listan los "
             f"principales, señal primero)</span></div>")
     det = ("<h4 style='margin:14px 0 4px;font-size:.9rem;color:#c2410c'>"
-           "Detección: clusters electorales (tema <code>elecciones</code>)</h4>"
-           "<p class='caption' style='margin:0 0 6px'>Coordinación detectada en el "
+           "Coordinación detectada (clusters del tema <code>elecciones</code>)</h4>"
+           "<p class='caption' style='margin:0 0 6px'>Coordinación observada en el "
            "contenido electoral (no en el sumidero general). Score/banda = amplificación "
-           "coordinada. <b>2º nivel (léxico)</b>: cada cluster se marca como "
-           "<b>menciona interferencia</b> (su texto contiene términos de "
+           "coordinada. <b style='color:#b91c1c'>⚠ 2º nivel (léxico)</b>: cada cluster "
+           "se marca como <b>menciona interferencia</b> (su texto contiene términos de "
            "desinformación/injerencia — es <b>mención</b>, no prueba de operación) o "
-           "<b>cobertura electoral</b> (ruido esperable de campaña).</p>"
+           "<b>cobertura electoral</b> (ruido esperable de campaña). "
+           "Un score alto no atribuye: el radar detecta patrones, no actores.</p>"
            + resumen_txt + top_rows)
     return (
         f"<div class='card' id='elecciones'><h3>Election Threat Landscape "
         f"(calendario electoral)</h3>"
         f"<p class='caption'>Registro de procesos electorales "
         f"(<code>data/elecciones.yaml</code>). <b>Línea de tiempo</b> por fecha "
-        f"(punto = elección, color = fase; línea roja = hoy). Por elección: "
-        f"<b>fase</b> (modelo EEAS: meses antes / mes electoral / 72 h / post), "
+        f"(punto = elección, color = fase; línea roja = hoy). Cada punto lleva "
+        f"un indicador: <b style='color:#22c55e'>verde</b> = coordinación detectada, "
+        f"<b style='color:#94a3b8'>gris</b> = solo cobertura editorial. "
+        f"Por elección: <b>fase</b> (modelo EEAS: meses antes / mes electoral / 72 h / post), "
         f"<b>cobertura</b> (barra = eventos, color = alta/media/baja) y la señal clave: "
         f"<b>coordinación</b> — cuántos de sus eventos forman parte de un <b>cluster "
-        f"detectado</b> (amplificación coordinada) y el score top. Además, <b>actor</b> "
-        f"(rusófono/China/EEUU) y <b>5D</b> por señal léxica, y temas de aterrizaje. "
+        f"detectado</b> y el score top. Además, <b>actor</b> (rusófono/China/EEUU) y "
+        f"<b>5D</b> por señal léxica, y temas de aterrizaje. "
         f"<b>Descriptivo, sin atribución</b>: cuenta y clasifica por palabras, no afirma "
         f"autoría. Cobertura baja = faltan feeds de ese país, no ausencia de campaña. "
         f"Ventana: últimos {res.get('dias', 90)} días.</p>"
+        f"{exec_txt}"
         f"{_timeline_svg(els)}{det}{filas}"
         f"<p class='caption' style='margin-top:6px'>Añadir una elección: "
         f"<code>elecciones_cli.py alta --pais … --nombre … --fecha AAAA-MM-DD "
         f"--keywords \"…\"</code>.</p></div>")
+
 
 
 def main():
