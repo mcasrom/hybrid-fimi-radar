@@ -330,14 +330,26 @@ idioma con **`--lang spanish`** (más comparable para un radar de contenido en c
 (`mundo.sputniknews.com`, `sputniknews.lat`) y RT en Español (`actualidad.rt.com`) — narrativa
 Ucrania/Rusia. El radar **sí captura RT en Español** (360 eventos) pero no Sputnik Mundo.
 
-Resultados reales sobre la vista activa (90 d, últimos 5 temas):
+Resultados reales sobre la vista activa (último snapshot **por tema**, 90 d):
 
-- **Precision 0.0%**: los 14 clusters con score ≥ 60 no amplifican ningún dominio
-  documentado (amplifican prensa mainstream: eldiario.es, elpais.com, publico.es). No es un
-  falso positivo: significa que las señales altas actuales se basan en eco mainstream no
-  documentado.
-- **Recall 0.0%**: la única fuente del catálogo con dominio documentado (RT en Español,
-  `actualidad.rt.com`, 152 eventos capturados) no produce ninguna narrativa ni cluster.
+- **Precision 8.5%**: de los **199 clusters con score ≥ 60**, **17** amplifican al menos un
+  dominio documentado (`actualidad-rt.com`, `breitbart.com`, `counterpunch.org`, `freitag.de`,
+  `aa.com.tr`…). El resto amplifica prensa mainstream no documentada.
+- **Recall 0.0%**: hay **4 fuentes documentadas capturadas** (RIA Novosti, RT en Español,
+  SVT Nyheter, TASS; 400/567/143/267 eventos) y **ninguna** entra en una señal (narrativa o
+  cluster).
+
+> **Corrección (17/09/2026)**: hasta esta fecha la precisión se reportaba como **0.0%**. Era un
+> **bug**: la «vista activa» usaba `created_at = MAX(global)`, pero cada tema se procesa por
+> separado y `created_at` se escribe por cluster → solo capturaba el último tema/segundo. Ahora
+> se toma el **último snapshot por tema** (tolerancia 1 h). Con la vista correcta la precisión
+> real es **8.5%** (global) y **3.0%** con `--lang spanish`.
+
+**Ejecución automática (sin intervención, sin claves):** `detection/validacion_auto.py`
+refresca el dataset si está viejo (>30 d), corre la validación en global y en castellano, guarda
+el informe en `data/validacion/auto_*.json` y avisa por Telegram **solo si cambia** el resultado
+(patrón on_change). Es un *tripwire*: vigila que el cruce siga corriendo y que ninguna fuente o
+dominio documentado aparezca en las señales.
 
 **Interpretación (según el docstring del script):** el recall 0 es un resultado correcto,
 no un fallo — los feeds RSS no participan en el grafo de coordinación (por diseño, solo
