@@ -711,6 +711,13 @@ con permisos 600, validación de `cluster_label` en `/api/export` (solo
 `[a-z0-9_]+(_cluster_[0-9]{3})?`, previene path traversal/SQLi), endpoints de admin con
 `x-admin-secret`.
 
+## Privacidad y tratamiento de datos
+
+El radar solo trata **contenido público** (handles y posts abiertos): sin perfilado
+individual, con retención de 90 días y atribución conservadora (UNKNOWN por defecto).
+La evaluación interna —**EIPD/DPIA ligera + encaje con el AI Act**— está en
+[`docs/EIPD-DPIA.md`](docs/EIPD-DPIA.md). Derechos: `info-fimi@viajeinteligencia.com`.
+
 ## Auto-auditoría y salud del sistema
 
 El sistema se auto-chequea frente a fallos silenciosos (config válida + 0 errores pero un
