@@ -776,6 +776,13 @@ temas:
     - Yémen
     - bande de Gaza
     - Beyrouth
+    # Términos ampliados (18/09): cubrir titulares ME (Israel/West Bank/Líbano/
+    # Gaza) que no matcheaban el filtro y caían en `frontera_sur`. Solo al filtro
+    # (no crea queries). Medir backfill + contaminación de Ceuta.
+    - Gaza
+    - West Bank
+    - Líbano
+    - Lebanon
   sahel:
     estado: produccion
     nombre: Sahel (África Occidental)
