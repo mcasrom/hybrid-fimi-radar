@@ -1,5 +1,174 @@
 # AGENTS.md — Contexto persistente de trabajo
 
+## ⏭️ PRÓXIMO SPRINT (anotado 2026-09-17)
+**Estado de partida**: validación en **3 capas** (sintética ARI 1.000 · curada monótona · externa 8.5%), atribución recalibrada y **conservadora**, card de validación **dinámica**, **runbook + EIPD/DPIA**, filtro **FR** de `oriente_medio`. Corpus ~62.5k ev (margen OOM ~298k).
+
+**Alta prioridad (credibilidad/funcional)**
+1. **Etiquetado ciego** de la validación curada: 2ª muestra etiquetada **sin sugerencias del asistente** (elimina el caveat «no independiente»). El tooling ya lo permite (`/validar`). **Muestra lista**: `muestra_20260917_2031.csv` (32 clusters) → pendiente de etiquetar.
+2. **Re-etiquetar la ronda 1** (`muestra_20260917_1740.csv`) con la rúbrica con umbral, para que ambas rondas sean comparables.
+3. **Feeds de energía** (desbloquear `argelia_energia`) y **de defensa** (reevaluar tema FAS ~2-4 semanas). Medir pico con `/usr/bin/time -v` antes (crecimiento del corpus).
+4. **Feeds para "España — Amenazas híbridas"**: ✅ HECHO (18/Sep) — 7 feeds añadidos (Meduza, The Insider, Politico EU, The Cyberwire, Recorded Future, Threatpost, IntelNews; EUobserver ya existía), 56→63 feeds totales, HTTP verificados 200/200.
+5. **Tema `espana_amenazas_hibridas` creado** como PILOTO (18/Sep, commit `0a764dd`): keywords estrictas (8 términos), `filtro` con 13 términos estrictos, scoring override (anomaly=0.45). **Pendiente**: ciclo 00:30/06:30 del 19/Sep para validar cobertura con nuevos feeds y solapamiento <10%.
+6. **Evaluar `politica_nacional`**: decidir cerrar (100% solapamiento con frontera_sur, señal difusa) o restringir alcance.
+
+**Media prioridad (técnica)**
+4. **Optimizar los bucles por-cuenta** de `features.build_features` (~63 s) y coordinación+cascadas (~111 s) — rendimiento, no memoria.
+5. **Filtro multi-idioma en otros temas**: revisar `energia`/`inteligencia_artificial` por si descartan su discurso doméstico (patrón aplicado a `oriente_medio`).
+6. **Hueco de keywords tras B1**: `frontera_sur` aún absorbe titulares de Oriente Medio que **no matchean** las keywords de `oriente_medio` (ni de `eeuu_politica`). Revisar/ampliar esas keywords (con `salud_keywords`/`temas_emergentes`) para que el tema correcto los reclame y B1 los excluya del sumidero. Medir con `gate_tema_contenido --dry` antes.
+   - **HECHO 2026-09-18 (commit `573623f`)**: la clave NO eran las keywords sino el **`filtro`** (gate de entrada). Añadidos **`Gaza`, `West Bank`, `Líbano`, `Lebanon`** al `filtro` de `oriente_medio` (15 términos; **solo al filtro**, sin crear queries de captura). Medido: **4100 ev pasan**, contaminación de Ceuta **19 ev (0,5%)**. Backfill **+3292 ev** etiquetados → `run_fimi oriente_medio` (123 cl) + `run_fimi frontera_sur` (B1) → **`frontera_sur` 288→261 clusters (−26 ME)**; `oriente_medio` 128 cl / 27 en alerta. **Residual no capturable**: `frontera_sur_cluster_001/000` (Israel settlers / Guardian-AlJazeera) son clusters **basados en URL** (sin texto) → ningún keyword los alcanza; se quedan en `frontera_sur` (aceptado). Backup `config.yaml.bak-om-filtro2-20260918`, BD `/tmp/radar_before_om6.db`. Regen + purge CF OK.
+   - **NOTA metodológica**: `view_tema` usa la **intersección `keywords ∩ filtro`** (no todas las keywords) → ampliar el filtro **también habilita la reasignación en la vista**. El intento previo de bajar el gate de cobertura 50%→30% **no sirvió** (el bloqueo era la intersección); revertido.
+5. **Filtro multi-idioma en otros temas** (`energia`/`inteligencia_artificial`):
+    - **`energia` (produccion)**: filtro 31 términos, bastante bilingüe (petróleo, gas, energía, solar, eólico, nuclear, etc.) → **sin acción necesaria** (cobertura ES ~84%+).
+    - **`inteligencia_artificial` (piloto)**: filtro era casi todo EN (`inteligencia artificial`, `OpenAI`, `ChatGPT`, `Gemini`, `Claude`, `Anthropic`, `deepfake`, `Nvidia`) → **hueco de la abreviatura ES "ia"** (463 eventos genuinos de IA en español no pasaban el filtro). **HECHO 2026-09-18 (commit `8b90ef8`)**: añadido `ia` al `filtro` de `inteligencia_artificial` (10→11 términos, solo al filtro, sin queries de captura). Gate: 4002 etiquetas pasan el filtro. El re-run produjo 5 clusters IA (2 en alerta/HIGH con anomaly 83-87 → señal genuina de coordinación IA en español, no ruido de Ceuta). Dashboard regenerado (68.359 ev, 637 clusters). Backup `config.yaml.bak-ia-filtro-20260918`.
+    - **Conclusión**: el patrón de `oriente_medio` se confirmó en IA — la clave era el **`filtro`** (gate de entrada), no las keywords. `energia` no necesita cambios (filtro ya bilingüe).
+6b. **Residual ME de `frontera_sur` (causa raíz verificada)**: `cluster_001`/`000` matchean **OM 6/5 > FS 4/3** pero siguen en `frontera_sur`. `view_tema` ya reasigna por keywords, pero lo **bloquea el gate de cobertura ≥50%** (OM debe explicar la mitad de los 676 eventos; un cluster mixto no llega). Opciones: **bajar el gate (~30%)** o **ampliar keywords de `oriente_medio`** (para que B1 los excluya). **Medir antes/después** (riesgo: reasignar clusters de Ceuta con mención de paso).
+7. **CSP sin `unsafe-inline`** (extraer CSS/JS del dashboard a ficheros externos) → Observatory A+ (caro).
+8. **«Alerta quirúrgica» S2 (motor)**: evaluar que la banda **CRITICAL exija `anomaly ≥ umbral`** (p. ej. 30) → que «CRITICAL» signifique *anómalo*, no *grande*. Hoy los 19 CRITICAL de `frontera_sur` tienen anomalía 10-31. **Medir antes/después** (como A). Distinto de A: no es normalizar, es **condicionar la banda**.
+8b. **Chip «anomalía sostenida» (UI)**: junto al badge, «CRITICAL sostenido **N días** sin variación» (dato ya en `findings` históricos). Barato y honesto; conecta la antigüedad con la lectura del score actual.
+
+**Seguimiento (calendario)**
+9. **Midterms EEUU** — revisar cobertura en **octubre** (el tema `eeuu_politica` ya existe).
+10. **Corpus**: vigilar crecimiento; `check_sistema` avisa a 250k/290k (OOM estimado ~298k).
+11. **NLnet / financiación** — deadline **2026-11-03 12:00 CET**.
+
+**Limpieza**
+12. `app.py` (Streamlit legacy) y `email_api.py TEMAS_VALIDOS` (código muerto) → borrar.
+
+## 2026-09-18 (25) — FIMI ítem 6: filtro de `oriente_medio` ampliado (Gaza/West Bank/Líbano/Lebanon) → −26 clusters ME en `frontera_sur`: HECHO (commit `573623f`, pusheado)
+- **Contexto**: el ítem 6 del sprint (hueco de keywords tras B1). El intento previo (6b) de bajar el gate de cobertura 50%→30% **no sirvió** (el bloqueo real era la **intersección `keywords ∩ filtro`**, no el gate) → revertido.
+- **Causa raíz**: las keywords `West Bank`/`Cisjordania` ya existían, pero el evento debe **pasar el `filtro`** (gate de entrada) para etiquetarse. El filtro tenía solo 11 términos → los titulares ME (Israel/Gaza/Líbano) no pasaban → caían al sumidero `frontera_sur`.
+- **Cambio**: +4 términos **solo al `filtro`** (no a keywords → sin nuevas queries de captura): `Gaza`, `West Bank`, `Líbano`, `Lebanon`. Filtro 11→**15**.
+- **Medición (antes/después)**: pasan el filtro **4100 ev**; contaminación de Ceuta **19 ev (0,5%)**. Backfill **+3292 ev** etiquetados → `run_fimi oriente_medio` (123 cl) + `run_fimi frontera_sur` (B1). Resultado: **`frontera_sur` 288→261 clusters (−26 ME)**, 99 en banda alta; `oriente_medio` **128 cl / 27 en alerta**.
+- **Residual aceptado**: `frontera_sur_cluster_001/000` (Israel settlers / Guardian-AlJazeera) son clusters **basados en URL** (título = URL, sin texto) → ningún keyword los alcanza; se quedan en `frontera_sur`.
+- Backups: `config.yaml.bak-om-filtro2-20260918`, BD `/tmp/radar_before_om6.db`. Regen 13:32 (693 clusters) + **purge CF OK**.
+
+## 2026-09-18 (24) — FIMI: bloque «Qué está pasando» (resumen llano aditivo) al inicio de cada tema: HECHO (commit `b296eb1`, pusheado)
+- **Motivo**: el volcado (288 clusters con barras) era «infumable»; el usuario tenía que meterlo en una IA para entenderlo. Faltaba **síntesis**, no datos.
+- **Cambio (ADITIVO, reversible)**: al inicio de cada pane, un bloque azul «Qué está pasando» con **N clusters · M cuentas · K en banda alta (≥60)** + **lo dominante (hipótesis)** + **H3 (extranjera)** + **lo más anómalo**. **No sustituye ni borra nada** (el «Resumen del tema» y las 288 tarjetas quedan **igual** debajo).
+- **Verificado**: regen 12:23 (662 clusters) + purge CF; bloque ×9, «Resumen del tema» ×8 y `fimi-pane-` ×8 (intactos); live 200. Backup `gen_fimi_html.py.bak-quepasa-20260918`.
+- **Descartado (por riesgo)**: **S2** (condicionar CRITICAL a la anomalía) — **ocultaría la señal real** de Ceuta (anomalía baja por diseño). **No se toca el motor.**
+- **Separador visual** (commit `124db41`): entre «Qué está pasando» y «Resumen del tema» se añadió una línea sutil (`margin:16px 0 20px`) → descanso visual entre ambos bloques. Regen + purge CF.
+- **8b (chip «banda sostenida»)** — commit `5262741`: el bloque «Qué está pasando» añade «Banda CRITICAL sostenida **N días**» (días consecutivos con máx diario ≥80, desde `findings`). En `frontera_sur` = **13 días** → conecta la antigüedad con la lectura del score (el «sin cambios en 18 días» deja de ser una queja: ahora se declara). Regen + purge CF.
+
+## 2026-09-18 (23) — FIMI: «alerta quirúrgica» — S1 (chip) + S3 (hipótesis dominante en el resumen): HECHO (commit `2283ea3`, pusheado)
+- **Contexto** (análisis externo verificado con datos): el tema es **doméstico** (H5/H1 dominan, H3 bajo) y los **19 CRITICAL** de `frontera_sur` tienen **anomalía 10-31** (baja) → el «CRITICAL» lo sostiene la **masa** (coordinación/infra/densidad), no la anomalía → **sobre-alarma / desensibilización** («si todo es CRITICAL, nadie creerá el aviso»).
+- **S1 (UI)** — chip «Coordinación alta · anomalía baja» cuando la banda es HIGH/CRITICAL y `anomaly<20` (**49 clusters**). Separa coordinación (masa) de alerta (anomalía).
+- **S3 (UI)** — el resumen del tema añade «Hipótesis dominante: Hx … (N de M clusters) — lectura doméstica/externa (H3 en K)». En `frontera_sur` sale **H4 amplificación mediática** (146/288), H3 en 4 → coherente con el diagnóstico (tema dominado por eco mediático, no por operación externa).
+- **S2 (motor, pendiente de medición)** — evaluar que la banda **CRITICAL exija `anomaly ≥ umbral`** (anotado en el sprint). Distinto de A (que era *normalizar* y se descartó).
+- Regen 11:55 + purge CF.
+
+## 2026-09-18 (22) — FIMI: verificación del volcado + fix del «Resumen del tema» (usaba componentes crudos): HECHO (commit `aef4f41`, pusheado)
+- **Verificado el volcado**: counts **correctos** (288 clusters, 66.133 ev, 64 fuentes, 112 ≥60 = 39%, 267 narrativas sostenidas). La UI nueva (chip de hipótesis + aviso H3 + aviso de saturación) funciona.
+- **BUG encontrado y corregido**: el «Resumen del tema» decía «sin sincronía temporal marcada» cuando el componente **Coordinación=100**. Causa: leía `coordination_score` de la tabla `clusters` (**crudo**, grado ponderado ~10) en vez del componente **normalizado** del `assessment` (100). Fix: usar los componentes del assessment. Regen 08:03 + purge CF; ahora dice «patrón compatible con red coordinada con infraestructura compartida».
+- **Residual (ya anotado en sprint)**: `cluster_001/000/002` siguen con contenido ME (Israel/Guardian/Aljazeera) → hueco de keywords de `oriente_medio` (no es bug de B1).
+
+## 2026-09-18 (21) — FIMI: B1 desplegado (frontera_sur sin contaminación) + A medida y descartado + aviso de saturación: HECHO (commits `b588dae` + `c51f653`, pusheados)
+- **B1 desplegado** (`b588dae`): `load_sqlite(excluir_otros=True)` para `frontera_sur` → el tema por defecto **no absorbe** eventos ya reclamados por otro tema. Efecto: `frontera_sur` **441→288 clusters** (−35%); eventos del top compartidos con otro tema **32-60%→9%**. Regen + purge CF. **Residual**: eventos ME que **no matchean** las keywords de `oriente_medio` (hueco de keywords, no de B1).
+- **A (saturación) MEDIDO y DESCARTADO**: el «top uniforme» **no es un bug de normalización** — los clusters top son **genuinamente similares** (redes grandes). El barrido de **A2c** (saturación suave `100·x/(x+k)`) da el mismo **spread del top (~3-6 pts)** que la normalización actual y solo **desplaza las bandas** (CRITICAL 41→0/8/35 según k). **A1 (percentiles)** también descartado (rompe comparabilidad temporal y explicabilidad). Decisión: **no tocar el motor**.
+- **Aviso de saturación (UI)** (`c51f653`): cuando los 3 componentes de masa (coordinación/infraestructura/densidad) están al máximo, la tarjeta muestra «Componentes de masa saturados (decide la anomalía)» (**29 clusters**). Barato y honesto.
+
+## 2026-09-18 (20) — FIMI: revisión del análisis externo (4 preocupaciones) — D1 + C1/C2 hechos: HECHO (commits `71567e2` + `4d418ed`, pusheados)
+- **Análisis externo VERIFICADO con datos** (correcto en lo esencial): (1) top-10 con `sync/infra/net=100` y `amp=41` **constantes** → solo varía la anomalía (25-41); (2) `frontera_sur` **absorbe otros temas** (`cluster_001`=Trump/Kash Patel, `007`=Irán, `008`=AfD alemán); (3) **H5/H1 dominan y H3 es el más bajo (0,40)** → el badge «CRITICAL» sobre-alarma; (4) + **bug nuevo**: las `cascada` tenían `intensidad` hasta **14400**.
+- **D1 (bug cascadas)** — `71567e2`: `speed_accounts_hour = accounts / max(tspan/3600, 1e-6)` explotaba con ventanas de ~1 s (4×3600=14400). Fix: **ventana mínima 1 h** (sin extrapolar). Backfill de **100 findings** (`intensidad=n_sources`); máx ahora ≤80.
+- **C1/C2 (UI)** — `4d418ed`: en la cabecera de cada tarjeta, **chip de la hipótesis dominante** (`H5 · Campaña política`) + **aviso** «Coordinación observada, no operación extranjera (H3 bajo)» cuando la banda es HIGH/CRITICAL y H3<0,5 (**140 clusters** lo muestran). Regen 07:04 (**815 clusters**) + purge CF.
+- **Pendiente (opciones A/B, motor)**: (A) **saturación** de sync/infra/net → normalizar por percentiles del tema (A1) o compresión log/sqrt (A2); (B) **contaminación** de `frontera_sur` → que no absorba eventos ya asignados a otro tema (B1) + cobertura mínima del filtro (B2). Requieren **medición antes/después**.
+
+## 2026-09-18 (19) — FIMI: newsletter unificada — tarjeta-CTA en el dashboard → `/suscribirse.html`: HECHO (commit `7ea240e`, pusheado)
+- **Motivo**: había **2 formularios** (dashboard con `temas[:6]` = solo 6/8 temas + `/suscribirse.html` completo). El usuario eligió la **opción B**: una **fuente canónica única**.
+- **Cambio**: el form inline del dashboard → **tarjeta-CTA** («📬 Newsletter semanal · Configurar mi suscripción →») que enlaza a `/suscribirse.html` (8 temas dinámicos, doble opt-in, beneficios). Eliminado el **JS muerto** (`newsletterClick`/`newsletterBox`/`nlEmail`).
+- **Verificado**: regen (64.506 ev / 793 clusters) + **purge CF**; CTA ×1, form inline ×0; live 200. El form del dashboard mostraba 6/8 temas → ahora no puede quedar desactualizado.
+
+## 2026-09-17 (18) — FIMI: página pública `/sobre.html` (one-pager) + enlace en brandbar: HECHO (commit `c006440`, pusheado)
+- **`/var/www/fimi/sobre.html`** (estática, fuera de repo): versión pública del one-pager — qué es, qué hace distinto, validación 3 capas, cómo se usa, **límites declarados**, para quién + **CTAs** (suscribirse / ver radar / GitHub). SEO (title/description/canonical/og/JSON-LD). Añadida al **sitemap** (0.8).
+- **Enlace «Sobre»** en la brandbar del dashboard (junto a Research/API/Operativa). Regen + **purge CF**; live 200 (`/sobre.html`, `/suscribirse.html`, `/`).
+- **Páginas públicas de FIMI**: `/` (dashboard) · `/sobre.html` · `/suscribirse.html` · `/research.html` · `/api.html` · `/operativa.html` (las 4 últimas + `sobre`/`suscribirse` fuera de repo, como admin).
+
+## 2026-09-17 (17) — FIMI: one-pager de presentación + plan de captación: HECHO (commit `dcf9250`, pusheado)
+- **`docs/ONE-PAGER.md`** (nuevo): dossier de presentación — qué es, qué hace distinto (**señal, no atribución**), validación 3 capas, cómo se usa (dashboard/API/newsletter/bot), **límites declarados** (ceguera de plataformas, bus factor) y contacto.
+- **`demo/fimi_plan_captacion_20260917.md`** (nuevo): plan de captación — públicos (prensa/OSINT/academia/instituciones), canales (comunidades OSINT, Show HN, prensa especializada, EDMO/EU DisinfoLab, preprint), mensajes (y lo que **NO** decir: over-claim), cadencia 8 semanas, **KPIs (2→50+ suscriptores)**, riesgos y prerequisitos (etiquetado ciego, página `/sobre`).
+
+## 2026-09-17 (16) — FIMI: digest enviado + página de suscripción (`/suscribirse.html`) + CTA en brandbar: HECHO (commit `7458552`, pusheado)
+- **Digest FIMI enviado** (`detection/email_digest.py`, real): **2/2 suscriptores** confirmados OK (`mcasrom@gmail.com`, `mcasrom.family@gmail.com`).
+- **Página de suscripción** `/var/www/fimi/suscribirse.html` (estática, **fuera de repo**, como api/operativa): intro + checkboxes de tema **dinámicos** (fetch a `/api/v1/temas`) + doble opt-in; SEO (title/description/canonical/og/JSON-LD). Añadida al **sitemap** (priority 0.9). Enlace **📬 Suscribirse** en la brandbar del dashboard (clase `gh-link`, naranja). Regen + **purge CF**; live 200.
+- **SEO/CTR/CTA (estado real)**: FIMI tiene **SEO técnico** (title/description dinámica/H1/JSON-LD WebSite+Dataset/canonical/sitemap/robots) y **CTA** (newsletter, sugerir, feedback, compartir X/Bluesky, API, GitHub); **sin datos propios de CTR** (pocas impresiones; el blog sí tiene GSC). Canal de newsletter **operativo pero con audiencia ~2** → el trabajo pendiente es captación, no ingeniería.
+
+## 2026-09-17 (15) — FIMI: `energia` promovida a producción + muestra ciega de validación generada: HECHO (commit `ec5e2dd`, pusheado)
+- **`energia` piloto→produccion** (`temas_cli.py estado energia produccion --nota`; ventana **72h/8 ciclos, 0 errores**; sin `disclaimer`). Backup `config.yaml.bak-promo-energia-20260917`; entrada en bitácora. Dashboard regen 20:34 (**758 clusters**, pane `energia`) + **purge CF** (`success:true`); live 200. **Temas: 6 producción · 2 piloto** (`elecciones` 73/720h, `inteligencia_artificial` 5/8 ciclos).
+- **Muestra ciega de validación** generada (`data/validacion/muestra_20260917_2031.csv`, 32 clusters **sin etiquetar** y **sin sugerencias del asistente**) → **pendiente de etiquetado por el admin vía `/validar`** (elimina el caveat «no independiente» de las 2 rondas anteriores). Copia en `demo/validacion_muestra_20260917_2031.csv`.
+
+## 2026-09-17 (14) — FIMI: filtro multi-idioma de `oriente_medio` (términos nativos FR): HECHO (commit `d5a9a74`, pusheado)
+- **Problema**: el `filtro` de `oriente_medio` tenía solo **6 términos ES/EN** → el contenido del conflicto en **francés** (Le Monde, France24, ya en el catálogo) se descartaba del tema.
+- **Medición** (matcher real del proyecto): con FR **precisos** (`Liban`, `Cisjordanie`, `Yémen`, `bande de Gaza`, `Beyrouth`) → **+965 ev (+14%)**; el **árabe no aportaba** (1 ev) y «Gaza» suelto inflaba (descartado). Se añadió **solo al `filtro`** (no a keywords → **sin nuevas queries de captura** ni crecimiento del corpus).
+- **Aplicado**: filtro **6→11** términos; `gate_tema_contenido --dry` **0 fallos**; backfill **+356 eventos**; `run_fimi oriente_medio` **81→84 clusters**; dashboard regen 20:23 (**758 clusters**) + **purge CF** (`success:true`); live 200. Backup `config.yaml.bak-om-fr-20260917`.
+- **Nota**: el XSS en `gen_fimi_html.py` (pendiente anotado) **ya estaba resuelto** (19 llamadas a `escape()`); el pendiente estaba desactualizado.
+
+## 2026-09-17 (13) — FIMI: EIPD/DPIA ligera + encaje AI Act: HECHO (commit `c082bd3`, pusheado)
+- **`docs/EIPD-DPIA.md`** (nuevo): evaluación interna del tratamiento — datos (solo contenido **público**: handles/texto/url/fecha), finalidad (detección de coordinación, **no** perfilado individual), base jurídica (interés legítimo 6.1.f + datos manifiestamente públicos 9.2.e), minimización y retención (90 d), destinatarios (Hetzner/Cloudflare/Resend; sin cesión), derechos (`info-fimi@viajeinteligencia.com`), seguridad (600, HSTS, rate-limit), tabla de riesgos/mitigaciones y **encaje con el AI Act** (estadística clásica, no alto riesgo, sin decisiones sobre personas).
+- **README**: nueva sección «Privacidad y tratamiento de datos» con el enlace.
+- **Commit `c082bd3`** pusheado.
+
+## 2026-09-17 (12) — FIMI: runbook de operación/despliegue/recuperación (bus factor): HECHO (commit `d41ec78`, pusheado)
+- **`docs/RUNBOOK.md`** (nuevo): dónde vive todo (server/repo/BD/dashboard/nginx/backups/zona CF), el pipeline de 6 h paso a paso (los 10 pasos de `cron_every_6h.sh`), crons auxiliares, tareas frecuentes (alta de tema, feed, regen + purge CF, `/validar`), observabilidad (`check_sistema`, PM2, logs, API), recuperación (restore-test, restaurar backup, reconstruir desde offsite), incidencias conocidas (OOM, nginx+hostname, Cloudflare UA, `cluster_label` inestable) y continuidad (bus factor 1).
+- **Enlaces**: README («Bus factor, backup offsite y continuidad») y CONTRIBUTING («Bus factor y continuidad»). De paso se **repararon referencias rotas** en CONTRIBUTING (backticks vacíos por un heredoc antiguo).
+- **Commit `d41ec78`** pusheado; working tree limpio salvo `fix_elec_v4.py`/`medir_deriva.py` (untracked, no se commitean).
+
+## 2026-09-17 (11) — FIMI: card de validación del dashboard dinámica (3 capas): HECHO (commit `d58dd2b`, pusheado)
+- **Problema**: la card «Validación del modelo» (`detection/validacion_card.py`) tenía números **estáticos y obsoletos** (EUvsDisinfo «0%/0%», «0 de 17 ES») y no incluía la validación curada.
+- **Fix**: reescrita como `render_validacion_html()` que lee los resultados reales y se recalcula en cada ciclo:
+  - **Sintética** (ARI 1,000, gate de CI).
+  - **Curada** (`data/validacion/historial.csv`): precisión por banda de la última muestra (hoy CRITICAL 100 · HIGH 100 · ANOMALOUS 20 · WATCH 0).
+  - **Externa** (`data/validacion/auto_ultimo.json`): precision/recall EUvsDisinfo (hoy prec **8.2%**, recall 0% por diseño; ES 3.4%).
+  - Se mantiene la variable `_validacion_html` (mismo import en `gen_fimi_html`), así que **no hubo que tocar el generador**.
+- **Bug propio corregido en el camino**: `_pct` recibía la fracción (0,0854) y la imprimía como `0%` → separado en `_pct` (fracción) y `_pct100` (escala 0-100).
+- **Verificado**: regen 20:06 (62.559 ev / 64 fuentes / 755 clusters) + **purge CF** (`success:true`); card en el HTML (`id="validacion"` ×1, `prec 8.2%`).
+
+## 2026-09-17 (10) — FIMI: recalibración de `attribution.py` (bug: hipótesis H1-H6 constantes) + atribución conservadora: HECHO (commit `9283823`, pusheado)
+- **BUG encontrado**: `classify_hypotheses` recibía el dict de `cluster_summary` (`s`) en vez de los componentes del run (`comp`) → faltaban `amplification`, `infrastructure`, `network_density`, `content_diversity` y `coordination_score` venía en otra escala → los pesos caían a sus defaults y las hipótesis salían **casi constantes** (H4=0,449 fijo; H6≈0,94; H1≈0,686; H3≈0,025). Lo que AGENTS daba por «conservador por diseño» era en realidad un bug de claves.
+- **Fix** (`detection/run_fimi.py` 2 puntos de llamada + `attribution/attribution.py`): pasar `comp` (+ `accounts`, `n_urls`) y reescribir las fórmulas con los componentes reales (0-100). Backfill de los 755 assessments.
+- **Resultado**: hipótesis **discriminativas** — top: H2 364 · H4 152 · H5 140 · H6 94 · H3 3 · H1 2. Medias ahora: H1 0,44 · H2 0,60 · H3 0,22 · H4 0,52 · H5 0,48 · H6 0,41 (antes H1 0,69 · H4 0,45 · H6 0,94).
+- **Atribución conservadora (decisión del usuario, opción b)**: el radar **no tiene dato de país/idioma por cuenta**, así que **NO atribuye actor doméstico** (H2/H5 son mecanismos, no actor); `attribution()` devuelve **UNKNOWN salvo H3 + infraestructura compartida** → **UNKNOWN 752 · PROXY 3**. Mantiene la identidad «señal, no atribución».
+- **Verificado**: backfill 755/755; dashboard regen 19:57 (62.559 ev / 64 fuentes / 755 clusters) + **purge CF** (`success:true`); live 200. Backups `attribution.py.bak-attrib-20260917` + `run_fimi.py.bak-attrib-20260917`.
+
+## 2026-09-17 (9) — FIMI: validación curada periódica (job mensual) + etiquetado por Telegram (`/validar`): HECHO (commit `287cbbf`, pusheado)
+Continuación de (8): convertir la validación curada en una **serie temporal** con **mínima intervención**.
+- **Job periódico** (`detection/validacion_curada_auto.py`): si la última muestra está **completa** (todas etiquetadas) o tiene >30 d, genera una nueva (`tests/export_validacion.py`); mantiene el **historial** `data/validacion/historial.csv` (precisión por banda de cada muestra etiquetada, dedupe por fichero); avisa por Telegram (on_change). **Cron mensual `0 8 1 * *`**.
+- **Etiquetado por Telegram** (`detection/radar_bot.py`, nuevo `/validar`): envía cada cluster pendiente con su evidencia y **botones inline** (`✅ coordinado · ❌ no · ❓ dudoso · ⏭️ saltar`); guarda la etiqueta en el CSV y pasa al siguiente; al terminar envía el resumen (precisión por banda). **Solo el admin** (`FIMI_OWNER_CHAT`). 2 toques por cluster desde el móvil.
+- **Verificado**: el job generó `muestra_20260917_1805.csv` (nueva, pendiente) e historial con la muestra etiquetada (`muestra_20260917_1740.csv`: CRITICAL 100 · HIGH 50 · ANOMALOUS 40 · WATCH 0). Bot online (PM2 `radar-fimi-bot`, 0 unstable; los `getUpdates read timed out` son el long-poll normal). `py_compile` OK.
+- **Ronda 2 (etiquetada vía `/validar`) + re-etiquetado con rúbrica con umbral**: el 1er etiquetado salió 100% (0 `no_coordinado`) → **contradecía la ronda 1** (WATCH 0%). Se **re-etiquetó** con umbral explícito (`coordinado` = ≥3 cuentas con contenido no-mainstream o patrón sostenido; `no_coordinado` = 2 cuentas / 1 URL / eco de medios; `dudoso` = mixto). Resultado ronda 2: **CRITICAL 100 · HIGH 100 · ANOMALOUS 20 · WATCH 0 → global 40%** (excl. dudoso) / 25% (dudoso=neg). **Las 2 rondas ya son consistentes** (WATCH 0% en ambas, global 36,8%→40%) y **monótonas** → el `scale_floor` (2 cuentas) es exactamente el corte correcto. `historial.csv` reconstruido con ambas muestras. **Caveat**: la rúbrica es interpretativa y las etiquetas las propone el asistente; el tooling permite re-etiquetar (CSV o `/validar`).
+- **Nota**: el bot lista 9 temas (incluye el cerrado `geopolitica_ue_marruecos`) → `radar_trend._cargar_temas_activos()` no filtra cerrados (posible mejora futura).
+
+## 2026-09-17 (8) — FIMI validación: C (curada) + bug de la vista activa (precision 0%→8.5%) + job automático: HECHO (commits `01bb1f7` + `be15234` + `1f71782`, pusheados)
+Petición: validar el radar contra un dataset EU, **en modo automático con mínima intervención del admin** (sin claves de Google).
+- **C — validación curada** (`tests/export_validacion.py` + `tests/validacion_curada.py`, commit `01bb1f7`): muestra **estratificada** de 8 clusters/banda (CRITICAL/HIGH/ANOMALOUS/WATCH) con evidencia (n cuentas/eventos/urls, dominios, titulares) → CSV congelado que el analista etiqueta (`coordinado|no_coordinado|dudoso`); el script calcula **precisión por banda** (+ variante conservadora con `dudoso=negativo`, commit `2ddef23`). `data/validacion/` gitignored. Muestra: `data/validacion/muestra_20260917_1740.csv` (32 clusters) + copia `demo/validacion_muestra_20260917.csv`. **Etiquetado HECHO (32/32)**; resultados: **CRITICAL 100% (4/4, 4 dud) · HIGH 50% (1/2) · ANOMALOUS 40% (2/5) · WATCH 0% (0/8)** → **global 36,8% (7/19)**; con `dudoso=negativo` **21,9% (7/32)**. Lectura: **la precisión es monótona con la banda** (el score ordena bien) y WATCH (2 cuentas) es ruido → el `scale_floor` funciona. **Caveat**: etiquetas propuestas por el asistente y **confirmadas** por el usuario (no es un etiquetado ciego independiente).
+- **B — descartado como se planteó**: verificado que **EDMO** («Access To Data» = política de acceso a datos de plataformas, NO dataset) y **EU DisinfoLab** (investigación/reportes) **no publican datasets machine-readable** de dominios; el **DSA Transparency DB** existe pero es enorme y de semántica distinta (decisiones de moderación). El único ground-truth EU estructurado sigue siendo **EUvsDisinfo** (ya usado). El usuario descartó la vía con clave de Google (Fact Check API).
+- **BUG real encontrado y corregido** (`tests/validacion_externa.py`, commit `be15234`): la «vista activa» usaba `created_at = MAX(global)`, pero cada tema se procesa por separado y `created_at` se escribe **por cluster** → solo capturaba el último tema/segundo. Efecto: **precision reportada 0.0% cuando la real es 8.5%**. Fix: último snapshot **por tema** (tolerancia 1 h). Resultados corregidos (global): **199 señales ≥60 · 17 con dominio documentado → precision 8.54%**; `--lang spanish` **3.0%**; recall **0%** (por diseño: 4 fuentes doc capturadas —RIA/RT/SVT/TASS—, 0 en señal).
+- **Job automático** (`detection/validacion_auto.py`, commit `be15234`): refresca el dataset (Zenodo, sin claves) si >30 d, corre global+spanish, guarda `data/validacion/auto_*.json` y avisa por **Telegram solo si cambia** (on_change). **Cron semanal** `15 7 * * 1` (backup crontab `/tmp/cron_bak_validacion_20260917.txt`). **Cero intervención del admin.**
+- **README** actualizado (cifras corregidas + nota del bug + job automático), commit `1f71782`.
+
+## 2026-09-17 (7) — FIMI: verificación de 8 fuentes + Global Times migrado a Google News site-scoped: HECHO (commit `377d15b`, pusheado)
+A petición del usuario, verificación en vivo (desde el server) de las fuentes del card «Salud y fiabilidad».
+- **Verificadas OK**: The Decoder (200, 10 ítems, hoy) · Bellingcat (200, 10, ayer) · Wired AI (200, 10, ayer) · ActuIA (200, 15, hace 7d → **baja real**) · EUvsDisinfo (200, 10, hace 27d → **baja real**) · telegram:burkinamaliniger (último post 29-ago → **baja real**). Los metadatos (bias/fiabilidad/relevancia) coinciden con `config.yaml`.
+- **Sputnik Mundo** (`noticiaslatam.lat`): feed **VIVO** (200, 100 ítems, hoy) pero el radar lo da «inactiva/sin eventos» porque se **añadió hoy 13:55** (commit `aecefea`) y el último ciclo de captura fue 12:30 → se poblará en el ciclo **18:30**. **No es fallo.**
+- **Global Times (EN)**: feed nativo `globaltimes.cn/rss/outbrain.xml` **estancado** (solo ítems hasta 23-ago; el `lastBuildDate` era de hoy pero los ítems no; sub-feeds `/rss/china|world|opinion|business.xml` → **404**). Migrado a **Google News site-scoped** (`news.google.com/rss/search?q=site:globaltimes.cn`): verificado 100 ítems, último del mismo día; `grab_rss_feed` captura 40. Mismos metadatos (`bias: state`, `reliability: mixed`, `pais: CN`). Backup `config.yaml.bak-gtfeed-20260917`. **Nota**: la migración sustituye el URL, así que el fix del `301` (www) queda subsumido (el URL nuevo no redirige).
+- **README** actualizado (sección «Fuentes adicionales»). **Commit `377d15b`** pusheado (`366163c..377d15b`); working tree limpio salvo `fix_elec_v4.py`/`medir_deriva.py` (untracked, no se commitean).
+
+## 2026-09-17 (6) — Blog: post «La corrupción como vector geopolítico (España, CPI 2025)» publicado + redes: HECHO (commit `ae18db7`, pusheado)
+Borrador del usuario evaluado contra la línea editorial (análisis con tesis) → **no publicable tal cual**; reescrito con hechos verificados, fuentes enlazadas, hecho/opinión separados e interlinks.
+- **Hechos verificados (TI CPI 2025, Comisión, OCDE, GRECO, BOE)**: media global **42/100** (mín. >1 década), **122/182** bajo 50; top Dinamarca 89 · Finlandia 88 · Singapur 84; Europa media 66→64. España **55/100**, **puesto 49/182** (−1 pt, −3 puestos), 17.ª UE, empate a 55 con Chipre y Fiji; por debajo de Portugal 56/Eslovenia 58/Francia 66, por encima de Italia/Polonia 53 y Grecia 50. GRECO (ago-2025): **16/19 parciales, 3 sin implementar** (aforamientos y lobbies pendientes; nuevo informe 30-jun-2026). Comisión (RoL 2025): estrategia exigida por Ley 2/2023 (sept-2024) sin empezar; sin estrategia unificada. OCDE 2026: **Plan Estatal ago-2025** (1ª estrategia a nivel Gobierno) **sin plan de acción**; anteproyecto Ley Orgánica aprobado 17-feb-2026; lobby **40% regulación / 0% práctica**. AIPI: RD 1101/2024, presidente abr-2025, puesta en marcha 1-sep-2025, prórrogas BOE de servicios del Ministerio hasta **31-mar-2026**.
+- **Correcciones al draft**: **OLAF fuera** como «alarma» (no verificable como advertencia a España); cita «OCDE diluye responsabilidades» **reatribuida a la Comisión**; **CTBG** sin cifras no verificadas (solo «independencia reforzada, potestad sancionadora pendiente» según GRECO); **AIPI** con datos BOE reales (no «dependencia hasta nov-2025»); «mínimo histórico» → **serie comparable 2012–2025**; typo «sobería»→«soberanía»; tesis fuertes marcadas como *Opinión* + contrapesos. Sin CTA FIMI (la corrupción era test hipotético, no hay tema monitorizado).
+- **Imagen** (`demo/corrupcion_espana_cpi_2025.png`, 4156×1754): **gráfico verificado correcto** punto por punto contra TI (España 65→55, 2012–2025; comparativa europea 50–89, incl. Alemania 77). Preparadas `corrupcion-espana-cpi-2025.webp` (cuerpo, 2200×928, 63 KB) + `corrupcion-espana-cpi-2025-og.jpg` (OG, 1200×630, 73 KB); pie de fuente TI + nota «mide percepción, 0=muy corrupto».
+- **Publicado**: https://analisis.pruebapublica.com/posts/corrupcion-espana-2026/ (**200** text/html; og 200 image/jpeg; webp 200). Frontmatter de la casa + **firma `@pruebapublica`** + nota de elaboración. **Interlinks cruzados**: gasto-defensa, dereliction II y IV, qué-es-la-geopolítica. Build OK (17 posts), PM2 `analisis-pub` reiniciado, **IndexNow 9 hosts/9.723 URLs** + **purge CF** (`success:true`).
+- **Redes**: **Mastodon** `https://mastodon.social/status/117287489053106930` + **Bluesky** `https://bsky.app/profile/did:plc:5rlrbcezqpp5veypjutqi6kp/post/3mvq5jd26hf23` (con imagen). **X manual** (texto 127/140 con enlace=23). Draft `.posted` + commit en `social-poster`.
+- **⚠️ Incidencia propia**: `publish_mastodon.py --help` **publica el texto tal cual** (no tiene argparse) → toot «--help» creado y **borrado al instante** (200). Lección: ese script no admite flags; pasar solo `<texto> [img_url]`.
+- **Commit HECHO**: `ae18db7` (`feat(post): La corrupción como vector geopolítico (España, CPI 2025)`) pusheado a `main`; copia del post en `demo/corrupcion-espana-2026.md`.
+
+## 2026-09-17 (5) — FIMI: fix VACUUM condicional + `validacion_card.py` faltante en HEAD + card `elecciones` (resumen + indicador): HECHO (commits `79ee12c` + `fdb8966` + `366163c`, pusheados)
+- **Estatus Hetzner (verificado en vivo, 16:51 UTC)**: todo OK — up 2d 13h, load 0.25, disco **56%** (20G/38G, 16G libres), RAM 2.4Gi disp, swap 891Mi/2.0Gi, **0 unidades failed**, nginx active, docker 3/3 healthy (wg-easy/uptime-kuma/myip-server), PM2 20/20 online, kernel 6.8.0-139, sin reboot requerido.
+- **VACUUM** (`detection/mantenimiento.py`, paso 5 de `cron_every_6h.sh:33`): corría **incondicional** cada 6 h aunque la purga fuese 0 filas (NO es bucle: ~1 s por ciclo, DB ~51 MB). Fix: **condicional** (solo si purgas/limpiezas > 0) + conteo de copias de backup corregido (`copias: 4 (max 4)` — antes decía 5). Verificado en ejecución real: `VACUUM omitido (0 filas purgadas este ciclo)`. Backup `detection/mantenimiento.py.bak-vacuumfix-20260917`.
+- **Repo roto en HEAD (detectado y arreglado)**: `gen_fimi_html.py` L3529 (commit `08705a1`) importaba `detection.validacion_card`, pero el fichero **no estaba en HEAD** → un clon fresco reventaría al generar el dashboard. Fix: commiteado el fichero faltante.
+- **Card `elecciones`** (`detection/elecciones.py`, +41/−9): timeline con **indicador verde/gris** por elección (verde = coordinación detectada, gris = solo cobertura) + bloque **«Resumen ejecutivo»** en lenguaje llano (procesos con coordinación vs cobertura editorial; aviso rojo «menciona interferencia = mención, no prueba de operación»).
+- **Commits (separados, convención del proyecto)**: `79ee12c` (validacion_card) + `fdb8966` (VACUUM) + `366163c` (elecciones); push `08705a1..366163c`, `main` = `origin/main`. Working tree limpio salvo `fix_elec_v4.py` y `medir_deriva.py` (untracked, no se commitean).
+
 ## 2026-09-17 (4) — Decisión: NO crear tema de Fuerzas Armadas; plegadas 4 keywords en `politica_nacional`/`frontera_sur`: HECHO
 Consulta del usuario sobre un tema piloto de «Fuerzas Armadas Españolas (valoración/percepción)». Análisis con datos (corpus 30d = 58.542 ev) → **NO crear tema propio**:
 - **FIMI ≠ sentimiento**: el radar detecta coordinación/amplificación/inautenticidad; «valoración/percepción» (encuestas) no genera señal. Solo encajaría como «narrativas coordinadas sobre las FAS» (5D *Divide*).
@@ -1985,3 +2154,39 @@ Post 15º del blog: https://analisis.pruebapublica.com/posts/geopolitica-fronter
 - **Estructura**: banner serie → 3 escenarios de frontera → 6 sub-secciones de brechas (verificadas) → patrones comunes → Ceuta 2026 matizada → caja práctica de 3 indicadores → cierre. **Referencias reales** (8): CIA WMF 2017, Wikipedia lista brechas PPA, FMI WEO 2024 vía Visual Capitalist, Dallas Fed Gerber 2014, PNUD 2022, Freedom House 2022-23, El País CENIF, Ministerio del Interior.
 - **Despliegue**: build 15 posts OK, CTA FIMI `frontera_sur` en `fimiPostMap` (ya 4 posts → frontera_sur), HTTP 200 en vivo, IndexNow 8 hosts 9630 URLs, purge cache Cloudflare OK (home ya muestra el post). PM2 `analisis-pub` online.
 - NOTA: la petición "las correcciones se hacen una vez publicado" (patrón de parte 1) aplica también aquí si el usuario encuentra algo.
+
+## Sprint 2026-09-18 — Nuevo tema piloto "España — Amenazas híbridas y FIMI": feeds añadidos, medición de cobertura hecha: HECHO (anotado 18/Sep, pendiente de crear tema)
+
+**Propuesta del usuario**: tema "España — Amenazas híbridas y FIMI" con 12 subdimensiones (Rusia/espacio informativo ruso, Ucrania, OTAN/EE.UU., sanciones/energía, migración/seguridad, polarización política, instituciones españolas, UE/Bruselas, ciberataques, infraestructuras críticas, elecciones/procesos democráticos, narrativas antioccidentales).
+
+**Análisis con datos reales**:
+- **Corpus 90d**: 68,358 eventos totales. Solo **341 (0.5%)** matchean términos genéricos de amenaza híbrida (sanción, desinformación, injerencia, ciberataque…). La cobertura por keywords es baja; los **feeds serán la fuente principal** de contenido nuevo.
+- **Solapamiento con temas existentes**: 194 eventos con términos hibricos caen en `frontera_sur` (default). **0** en `politica_nacional` y **0** en `eeuu_politica`. El solapamiento específico con eeuu_politica es nulo para los términos hibricos.
+- **56 feeds existentes** → **NINGUNO** cubre Rusia, UE, ciberseguridad o defensa específicamente.
+- **Feeds nuevos añadidos** (8 feeds verificados HTTP 200, commit por hacer):
+  - 🇷🇺 **Meduza EN** (`meduza.io/rss/en/all`) — Russia info space
+  - 🇷🇺 **The Insider** (`theins.ru/feed/`) — Russia investigative
+  - 🇪🇺 **Politico EU** (`politico.eu/feed/`) — EU/Brussels policy
+  - 🇪🇺 **EUobserver** (`euobserver.com/rss/`) — EU news
+  - 🔐 **The Cyberwire** (`feeds.feedburner.com/TheCyberWire`) — cybersecurity daily
+  - 🔐 **Recorded Future** (`recordedfuture.com/feed/`) — threat intelligence
+  - 🔐 **Threatpost** (`threatpost.com/feed/`) — cybersecurity news
+  - 🔐 **IntelNews** (`intelnews.org/feed/`) — intelligence/security
+  - **Total feeds**: 56 → **64**
+- **Feeds descartados** (403/404): Dark Reading (403 Cloudflare), Defense News (404), SecurityWeek (403), Bleeping Computer (403)
+- **Backup config**: `/tmp/config_before_hybrid-threats-20260918`
+
+**Evaluación de viabilidad**:
+- ✅ **Metodología excelente**: `UNKNOWN` como defecto, Rusia como hipótesis (no conclusión), `EVIDENCE: LOW/MEDIUM/HIGH` — perfectamente alineado con "señal, no atribución"
+- ✅ **Llena huecos reales**: Rusia, ciberataques, infraestructura crítica, UE/Bruselas como espacio analítico → 0 cobertura actual
+- ⚠️ **Riesgo de sumidero**: 12 subdimensiones es muy ambicioso → podría absorber contenido de eeuu_politica (OTAN), frontera_sur (migración), politica_nacional (polarización)
+- ⚠️ **Filtro debe ser estricto**: el `filtro` debe contener términos de **amenaza híbrida** (desinformación, propaganda, injerencia, espionaje, ciberataque, sabotaje, manipulación informativa) → NO términos genéricos (OTAN, sanción, UE, Bruselas, elecciones, migración)
+
+**Recomendación**: Crear como **PILOTO con 3 subdimensiones iniciales** (manipulación informativa, ciberataques, espionaje/infraestructura digital). Añadir feeds específicos. Validar solapamiento <10% con temas existentes. Después de 14-30d, valorar si cerrar `politica_nacional` o ampliar el nuevo tema.
+
+**Estado**: feeds añadidos y verificados (64 total). Tema NO creado aún — esperando validación de cobertura con los nuevos feeds (ciclo 00:30 o 06:30 del 19/Sep). Backup config en `/tmp/config_before_hybrid-threats-20260918`.
+
+## Sprint 2026-09-16 (36) — Dashboard FIMI: nuevo diseño responsive + documentación: HECHO
+- **Cierre de Sprint 2026-09-16**: `fimi.viajeinteligencia.com` responsive verificado (Playwright: 375px, 560px, 768px, 1024px, 1280px, 1440px, 1920px). `gen_fimi_html.py` con breakpoints `@media(max-width:768px)` y `@media(max-width:560px)`. `main` max-width: 1200px, `.fimi-hero .sub` full-width, `.caption` 82ch. Dashboard sirve `index.html` (200 text/html) + research.html. Público con UA de navegador → HTTP 200; purge Cloudflare OK.
+- **Nota**: el diseño responsive es consistente con el blog analisis.pruebapublica.com (mismo patrón).
+- **AGENTS.md** actualizado con la nota de diseño responsive.
