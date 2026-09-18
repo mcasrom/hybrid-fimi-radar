@@ -206,7 +206,7 @@ sin crecimiento del corpus.
 ### Piloto IA — tema Inteligencia artificial (16/09/2026)
 
 `inteligencia_artificial` (piloto) monitoriza narrativas de IA (modelos, agentes,
-regulación, deepfakes) con `filtro` de 9 términos + 11 keywords. Se dota de **8 feeds
+regulación, deepfakes) con `filtro` de 10 términos (incluye "ia") + 11 keywords. Se dota de **8 feeds
 específicos** — TechCrunch AI, Ars Technica, MIT Technology Review, AI News, Numerama,
 ActuIA, Xataka, El País Tecnología — **+3 añadidos el 16/09** (The Verge AI, The Decoder,
 Wired AI, los tres verificados HTTP 200 con contenido IA claro). **Catálogo 52 → 55 feeds**.
