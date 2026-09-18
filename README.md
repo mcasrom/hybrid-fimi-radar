@@ -57,6 +57,14 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
   que no pertenecen al tema) y la **leyenda de componentes** quedan en `<details>` cerrados
   por defecto. Evita paneles de decenas de miles de píxeles cuando un tema tiene muchas
   señales en alerta (frontera_sur: ~61.500 px → ~6.000 px).
+- **Síntesis al inicio de cada tema — «Qué está pasando»**: bloque **aditivo** (azul) que resume en
+  lenguaje llano **N clusters · cuentas · en banda alta (≥60)**, la **hipótesis dominante** y **lo
+  más anómalo**, seguido del «Resumen del tema» con un **separador visual**. No sustituye nada:
+  da contexto para no tener que interpretar las tarjetas una a una.
+- **«Alerta quirúrgica» en la cabecera de cada tarjeta**: **chip de la hipótesis dominante**
+  (`H5 · Campaña política`), **aviso** «Coordinación observada, no operación extranjera (H3 bajo)»
+  cuando la banda es alta pero H3 no domina, y **chip** «Coordinación alta · anomalía baja» /
+  «Componentes de masa saturados» para distinguir **coordinación (masa)** de **alerta (anomalía)**.
 - **Hipótesis por cluster (H1–H6)**: cada tarjeta de cluster muestra, bajo la explicación más
   probable, las **6 hipótesis como barras** (orgánico, doméstico, **extranjero**, mediático,
   político, desconocido) con su % — reutiliza `hypotheses_json` de `attribution/attribution.py`
