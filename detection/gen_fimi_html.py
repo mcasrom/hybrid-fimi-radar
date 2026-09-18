@@ -638,11 +638,34 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                   f'border-radius:999px;padding:1px 10px;font-weight:600;background:#f9fafb">'
                   f'Posible ruido de bajo volumen</span>' if ruido else "")
 
+    # C1/C2 — hipótesis dominante junto a la banda (que "CRITICAL" no se lea
+    # como "injerencia"): chip con la hipótesis top + aviso si la banda es alta
+    # pero H3 (operación extranjera) NO domina. Solo lectura.
+    _hyp_chip = ""
+    _h3_warn = ""
+    try:
+        _hyps = json.loads(a["hypotheses_json"]) if (a and a["hypotheses_json"]) else []
+    except Exception:
+        _hyps = []
+    if _hyps:
+        _top = _hyps[0]
+        _es = HYPOTHESIS_ES.get(_top["hypothesis"], {})
+        _hyp_chip = (f'<span title="{_es.get("d","")}" style="font-size:.74rem;color:#334155;'
+                     f'background:#f1f5f9;border:1px solid #cbd5e1;border-radius:999px;'
+                     f'padding:1px 9px;font-weight:600">{_top["hypothesis"]} · {_es.get("t","")}</span>')
+        _h3 = next((h for h in _hyps if h["hypothesis"] == "H3"), None)
+        if band in ("HIGH", "CRITICAL") and _h3 and _h3["score"] < 0.5:
+            _h3_warn = ('<span style="display:inline-block;font-size:.72rem;color:#7c2d12;'
+                        'border:1px dashed #fdba74;background:#fff7ed;border-radius:999px;'
+                        'padding:1px 10px;font-weight:600">Coordinación observada, no operación '
+                        'extranjera (H3 bajo)</span>')
+
     h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
          f'<b style="font-size:1.02rem">{_disp_label(c, disp_map)}</b>'
          f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
+         f'{_hyp_chip}{_h3_warn}'
          f'{ruido_html}'
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
