@@ -2336,11 +2336,12 @@ def main():
                             if _np_best else "")
                 _que_pasa_html[_t_r] = (
                     "<div style='background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0284c7;'"
-                    "border-radius:10px;padding:10px 14px;margin:0 0 10px'>"
+                    "border-radius:10px;padding:10px 14px;margin:0 0 8px'>"
                     "<div style='font-weight:700;color:#0c4a6e;margin-bottom:3px'>Qué está pasando</div>"
                     "<div style='font-size:.85rem;color:#334155;line-height:1.5'>"
                     f"<b>{_np_cl}</b> clusters · <b>{_np_cue}</b> cuentas · <b>{_np_alta}</b> en banda alta (≥60). "
-                    f"{_np_dom}{_np_anom}</div></div>")
+                    f"{_np_dom}{_np_anom}</div></div>"
+                    + "<div style='height:1px;background:#e2e8f0;margin:16px 0 20px'></div>")
             except Exception:
                 _que_pasa_html[_t_r] = ""
 
