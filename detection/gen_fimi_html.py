@@ -2332,6 +2332,23 @@ def main():
                     _aa = _asm_by_cid_r.get(_c["id"])
                     if _aa is not None and (_np_best is None or (_aa["anomaly_score"] or 0) > _np_best[1]):
                         _np_best = (_c["cluster_label"], _aa["anomaly_score"] or 0)
+                # 8b: días consecutivos con banda CRITICAL (max diario >=80) —
+                # el dato sale de findings (histórico); conecta la antigüedad con
+                # la lectura del score actual ('sostenido, no un pico de ayer').
+                _np_sost = 0
+                try:
+                    _dfr = _rcon.execute(
+                        "SELECT date(fecha,'unixepoch') d, MAX(intensidad) mx FROM findings "
+                        "WHERE tipo='cluster' AND tema_id=? GROUP BY d ORDER BY d DESC", (_t_r,)).fetchall()
+                    for _rw in _dfr:
+                        if (_rw[1] or 0) >= 80:
+                            _np_sost += 1
+                        else:
+                            break
+                except Exception:
+                    _np_sost = 0
+                _np_sost_txt = (f" Banda CRITICAL sostenida <b>{_np_sost} días</b>."
+                                if _np_sost >= 2 else "")
                 _np_anom = (f" Lo más anómalo: <code>{_np_best[0]}</code> (anomalía {_np_best[1]:.0f})."
                             if _np_best else "")
                 _que_pasa_html[_t_r] = (
@@ -2340,7 +2357,7 @@ def main():
                     "<div style='font-weight:700;color:#0c4a6e;margin-bottom:3px'>Qué está pasando</div>"
                     "<div style='font-size:.85rem;color:#334155;line-height:1.5'>"
                     f"<b>{_np_cl}</b> clusters · <b>{_np_cue}</b> cuentas · <b>{_np_alta}</b> en banda alta (≥60). "
-                    f"{_np_dom}{_np_anom}</div></div>"
+                    f"{_np_dom}{_np_sost_txt}{_np_anom}</div></div>"
                     + "<div style='height:1px;background:#e2e8f0;margin:16px 0 20px'></div>")
             except Exception:
                 _que_pasa_html[_t_r] = ""
