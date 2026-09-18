@@ -2250,6 +2250,14 @@ def main():
                 _mm_r = re.search(r"(\d+)\s+cuentas?", str(_aa_r["assessment"] or "")
                                   if _aa_r is not None else "")
                 _top_r = dict(_cc_r)
+                # FIX: usar los COMPONENTES NORMALIZADOS del assessment (0-100),
+                # no los crudos de la tabla clusters (coordination_score allí es el
+                # grado ponderado crudo ~10 -> el resumen decía "sin sincronía" con
+                # el componente real a 100).
+                if _aa_r is not None:
+                    for _kk in ("coordination_score", "anomaly_score",
+                                "infrastructure_score", "network_density"):
+                        _top_r[_kk] = _aa_r[_kk] or 0
                 _top_r["cuentas"] = int(_mm_r.group(1)) if _mm_r else 0
                 _top_r["banda"] = band_of(_cc_r["overall_score"] or 0)
             # filas de bitácora del tema
