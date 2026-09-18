@@ -26,12 +26,13 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
 | Energía (petróleo/gas/precios) | Piloto (en calibración) |
 | Elecciones e interferencia electoral | Piloto (en calibración) |
 | Inteligencia artificial | Piloto (en calibración) |
+| España — Amenazas híbridas y FIMI | Piloto (en calibración) |
 
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
-- **Catálogo de fuentes**: **56 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
+- **Catálogo de fuentes**: **64 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
   + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
-  `analytical_relevance` y nota. El corpus activo ronda los **~54.800 eventos** (ventana 90 d).
+  `analytical_relevance` y nota. El corpus activo ronda los **~68.359 eventos** (ventana 90 d).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
@@ -82,7 +83,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
   muestran además la frase *"piloto en calibración — lectura con cautela"* en una caja
   naranja destacada y un aviso de riesgo de sesgo en su panel. La animación respeta
   `prefers-reduced-motion`.
-- **Rendimiento y robustez**: `frontera_sur` procesa el corpus completo (hoy ~54.800 eventos,
+- **Rendimiento y robustez**: `frontera_sur` procesa el corpus completo (hoy ~68.359 eventos,
   ~12.300 cuentas). El **pico de memoria** (llegó a ~3,18 GB, con poco margen al OOM en el
   server de 3,7 GB) bajó a **~1,1 GB** y el run de **580 s → 221 s** con dos fixes: (1) los
   centroides TF-IDF de la coordinación se calculan **en sparse**; (2) el ratio de
@@ -274,6 +275,47 @@ coordinación real** (top 74/100 HIGH con **7 cuentas**; otros 4 cuentas) y **no
 reparto del 2º nivel: **13 mencionan interferencia / 23 cobertura**). **No atribuye**:
 todos los top dan **H6 «sin evidencia concluyente» (0,91-0,96)** → coherente con 0/36
 concluyentes.
+
+### Amenazas híbridas y FIMI — España (18/09/2026)
+
+Se creó el tema piloto **** para monitorizar la
+**amenaza híbrida contra España**: manipulación informativa, propaganda,
+injerencia, espionaje, ciberataques, sabotaje, desestabilización y narrativas
+antioccidentales dirigidas al ecosistema español.
+
+**8 keywords** estrictas (no genéricas): desinformación, propaganda, injerencia,
+espionaje, ciberataque, sabotaje, guerra híbrida y amenaza híbrida.
+
+** de 13 términos estrictos** (gate de entrada): desinformación,
+propaganda, injerencia, espionaje, ciberataque, sabotaje, guerra híbrida,
+amenaza híbrida, manipulación informativa, influencia extranjera, desestabilización.
+El  es el **gate** (no keywords de captura) → evita falsos positivos de
+términos amplios (OTAN, UE, sanción, elecciones).
+
+**Scoring override**:  (el estándar global).
+
+**Feeds añadidos** (7 nuevos, todos HTTP 200 verificados; total 64):
+
+| Feed | Idioma | Sesgo | Utilidad |
+|---|---|---|---|
+| Meduza EN (`meduza.io/rss/en/all`) | EN | — | Espacio informativo ruso |
+| The Insider (`theins.ru/feed/) | EN/FR | Center | Investigación rusa |
+| Politico EU (`politico.eu/feed/`) | EN/FR | Center | Política UE |
+| EUobserver (`euobserver.com/rss/) | EN | — | Noticias UE |
+| The Cyberwire (`feeds.feedburner.com/TheCyberWire`) | EN | — | Ciberseguridad diaria |
+| Recorded Future (`recordedfuture.com/feed/`) | EN | — | Threat intelligence |
+| Threatpost (`threatpost.com/feed/) | EN | — | Ciberseguridad |
+| IntelNews (`intelnews.org/feed/`) | EN | — | Inteligencia/seguridad |
+
+**Descartados** (403/404): Dark Reading, Defense News, SecurityWeek, Bleeping Computer.
+
+**Cobertura seca medida**: 144 eventos/14d matchean las keywords; **0 asignaciones**
+a  en el último ciclo (el cron del 19/Sep validará
+el  con los feeds nuevos y asignará clusters reales). **Solapamiento** con
+: ~341 eventos de ámbito híbrido caen en el sumidero por defecto —
+el objetivo es que el nuevo tema los reclame con su  estricto.
+
+### Fuentes de esfera (rusa/china) — 15/09/2026 (actualizado)
 
 ## Ciclo de vida y gobernanza
 
