@@ -147,8 +147,7 @@ feeds:
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/bbc-news/
-  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés
-    de BBC Europa por error).'
+  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés de BBC Europa por error).'
   idioma: es
   analytical_relevance: media
 - nombre: Al Jazeera
@@ -270,8 +269,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   factcheck_url: https://mediabiasfactcheck.com/eu-vs-disinformation-bias/
-  note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo 
-    anti-derecha.
+  note: Proyecto EEAS-UE. Contrarrelato antidesinformación rusa. Sesgo anti-derecha.
   analytical_relevance: alta
 - nombre: Bellingcat
   url: https://www.bellingcat.com/feed/
@@ -321,10 +319,7 @@ feeds:
   bias: center
   reliability: mixed
   transparency: low
-  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye
-    a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí
-    líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con
-    Yabiladi/TSA Algerie.'
+  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con Yabiladi/TSA Algerie.'
 # === Sondeo 2026-09-05: fuentes rusas/árabes ===
 # RT en Español: único medio estatal ruso accesible en español (TASS=EN,
 # RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
@@ -339,8 +334,7 @@ feeds:
   reliability: mixed
   transparency: low
   factcheck_url: https://mediabiasfactcheck.com/russia-today/
-  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela
-    máx.'
+  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela máx.'
 # === Catálogo de temas activos ===
 # estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
   analytical_relevance: baja
@@ -411,8 +405,7 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Narrativa pro-AES de línea soberanista. Contenidos vinculados al ecosistema
-    African Initiative (Rusia). Vigilar como fuente de narrativas FIMI, no fiable.'
+  note: 'Narrativa pro-AES de línea soberanista. Contenidos vinculados al ecosistema African Initiative (Rusia). Vigilar como fuente de narrativas FIMI, no fiable.'
   analytical_relevance: alta
 - nombre: La Nouvelle Tribune
   url: https://lanouvelletribune.info/feed/
@@ -432,8 +425,7 @@ feeds:
   bias: center
   reliability: mostly-factual
   transparency: medium
-  note: Portal especializado en energía (petróleo/gas). Mercados globales y 
-    chokepoints.
+  note: Portal especializado en energía (petróleo/gas). Mercados globales y chokepoints.
   analytical_relevance: media
 - nombre: El Periódico de la Energía (ES)
   url: https://elperiodicodelaenergia.com/feed/
@@ -487,8 +479,7 @@ feeds:
   bias: center-right
   reliability: mostly-factual
   transparency: high
-  note: Frankfurter Allgemeine, sección política. Equilibrio centro-der en 
-    cobertura DE.
+  note: Frankfurter Allgemeine, sección política. Equilibrio centro-der en cobertura DE.
   analytical_relevance: media
 - nombre: SVT Nyheter (SV)
   url: https://www.svt.se/rss.xml
@@ -529,8 +520,7 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Agencia estatal rusa (sucesora de la TASS soviética). Narrativa oficial rusa;
-    vigilar como fuente de narrativas FIMI, no como verdad.'
+  note: 'Agencia estatal rusa (sucesora de la TASS soviética). Narrativa oficial rusa; vigilar como fuente de narrativas FIMI, no como verdad.'
   analytical_relevance: alta
 - nombre: RIA Novosti (RU)
   url: https://ria.ru/export/rss2/archive/index.xml
@@ -540,8 +530,7 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Agencia estatal rusa (RIA Novosti, grupo Rossiya Segodnya). Narrativa oficial;
-    vigilar como fuente FIMI. Contenido en ruso (sin etiquetado temático ES/EN).'
+  note: 'Agencia estatal rusa (RIA Novosti, grupo Rossiya Segodnya). Narrativa oficial; vigilar como fuente FIMI. Contenido en ruso (sin etiquetado temático ES/EN).'
   analytical_relevance: alta
 - nombre: CGTN (EN)
   url: https://www.cgtn.com/subscribe/rss/section/world.xml
@@ -551,8 +540,7 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Cadena estatal china (grupo CCTV). Narrativa oficial china en inglés; vigilar
-    como fuente FIMI.'
+  note: 'Cadena estatal china (grupo CCTV). Narrativa oficial china en inglés; vigilar como fuente FIMI.'
   analytical_relevance: alta
 - nombre: Global Times (EN)
   url: "https://news.google.com/rss/search?q=site:globaltimes.cn&hl=en-US&gl=US&ceid=US:en"
@@ -562,9 +550,7 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad,
-    Taiwan como asunto interno. Vigilar como fuente FIMI. Vía Google News (site-scoped):
-    el feed nativo (outbrain.xml) está estancado desde ago-2026."
+  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad, Taiwan como asunto interno. Vigilar como fuente FIMI. Vía Google News (site-scoped): el feed nativo (outbrain.xml) está estancado desde ago-2026."
   analytical_relevance: alta
 
 - nombre: TechCrunch AI
@@ -575,8 +561,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos;
-    útil para detectar narrativas emergentes de IA."
+  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos; útil para detectar narrativas emergentes de IA."
   analytical_relevance: alta
 
 - nombre: Ars Technica
@@ -587,8 +572,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena
-    fuente para deepfakes, modelos, regulación."
+  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena fuente para deepfakes, modelos, regulación."
   analytical_relevance: alta
 
 - nombre: MIT Technology Review
@@ -599,8 +583,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad
-    académica."
+  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad académica."
   analytical_relevance: alta
 
 - nombre: AI News
@@ -611,8 +594,7 @@ feeds:
   bias: center
   reliability: mixed
   transparency: medium
-  note: "Portal especializado en IA. Noticias de industria, investigación y regulación;
-    volumen medio, verificabilidad variable."
+  note: "Portal especializado en IA. Noticias de industria, investigación y regulación; volumen medio, verificabilidad variable."
   analytical_relevance: media
 
 - nombre: Numerama
@@ -623,8 +605,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés;
-    contrapeso anglosajón."
+  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés; contrapeso anglosajón."
   analytical_relevance: media
 
 - nombre: ActuIA
@@ -635,8 +616,7 @@ feeds:
   bias: center
   reliability: mixed
   transparency: medium
-  note: "Portal francófono especializado en IA. Noticias de investigación, empresas
-    y aplicaciones; volumen bajo, útil para perspectiva FR."
+  note: "Portal francófono especializado en IA. Noticias de investigación, empresas y aplicaciones; volumen bajo, útil para perspectiva FR."
   analytical_relevance: media
 
 - nombre: Xataka
@@ -647,20 +627,17 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: Medio tecnologico espanol (Weblogs SL). Cobertura de IA, gadgets y 
-    ciencia; narrativa IA en castellano.
+  note: Medio tecnologico espanol (Weblogs SL). Cobertura de IA, gadgets y ciencia; narrativa IA en castellano.
   analytical_relevance: media
 - nombre: El Pais Tecnologia
-  url: 
-    https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/tecnologia/portada
+  url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/tecnologia/portada
   tipo: media
   pais: ES
   idioma: es
   bias: center-left
   reliability: high
   transparency: high
-  note: Seccion de Tecnologia de El Pais. Cobertura de IA, regulacion y 
-    privacidad en espanol.
+  note: Seccion de Tecnologia de El Pais. Cobertura de IA, regulacion y privacidad en espanol.
   analytical_relevance: media
 - nombre: The Verge AI
   url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
@@ -670,8 +647,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: Seccion de IA de The Verge (Atom). Cobertura de producto, agentes, 
-    regulacion y cultura IA; buen volumen y deteccion temprana de narrativas.
+  note: Seccion de IA de The Verge (Atom). Cobertura de producto, agentes, regulacion y cultura IA; buen volumen y deteccion temprana de narrativas.
   analytical_relevance: alta
 - nombre: The Decoder
   url: https://the-decoder.com/feed/
@@ -681,8 +657,7 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: Medio aleman especializado en IA (en ingles). Cobertura de modelos, 
-    laboratorios y regulacion; analisis tecnico, perspectiva no anglosajona.
+  note: Medio aleman especializado en IA (en ingles). Cobertura de modelos, laboratorios y regulacion; analisis tecnico, perspectiva no anglosajona.
   analytical_relevance: alta
 - nombre: Wired AI
   url: https://www.wired.com/feed/tag/ai/latest/rss
@@ -692,8 +667,7 @@ feeds:
   bias: center-left
   reliability: high
   transparency: medium
-  note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y 
-    regulacion; reportaje con perspectiva critica.
+  note: Seccion de IA de Wired. Cobertura de industria, etica, deepfakes y regulacion; reportaje con perspectiva critica.
   analytical_relevance: alta
 - nombre: Sputnik Mundo
   url: https://noticiaslatam.lat/export/rss2/archive/index.xml
@@ -703,12 +677,79 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: Agencia rusa en español. Cubre geopolítica, conflicto Ucrania-Rusia y 
-    narrativa estatal. Es la única fuente estatal rusa en español accesible por 
-    RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la sancionó 
-    en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
+  note: Agencia rusa en español. Cubre geopolítica, conflicto Ucrania-Rusia y narrativa estatal. Es la única fuente estatal rusa en español accesible por RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la sancionó en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
   analytical_relevance: alta
 
+- nombre: Meduza EN
+  url: https://meduza.io/rss/en/all
+  tipo: rss
+  idioma: en
+  bias: state
+  reliability: mixed
+  transparency: low
+  pais: RU
+  analytical_relevance: alta
+  note: Russia info space — vigilar como fuente FIMI
+- nombre: The Insider
+  url: https://theins.ru/feed/
+  tipo: rss
+  idioma: en
+  bias: state
+  reliability: mixed
+  transparency: low
+  pais: RU
+  analytical_relevance: alta
+  note: Russia investigative — vigilar como fuente FIMI
+- nombre: Politico EU
+  url: https://www.politico.eu/feed/
+  tipo: rss
+  idioma: en
+  bias: center-left
+  reliability: mixed
+  transparency: medium
+  pais: EU
+  analytical_relevance: alta
+  note: EU/Brussels policy
+- nombre: The Cyberwire
+  url: https://feeds.feedburner.com/TheCyberWire
+  tipo: rss
+  idioma: en
+  bias: center
+  reliability: mixed
+  transparency: medium
+  pais: US
+  analytical_relevance: alta
+  note: cybersecurity daily
+- nombre: Recorded Future
+  url: https://www.recordedfuture.com/feed/
+  tipo: rss
+  idioma: en
+  bias: center
+  reliability: mixed
+  transparency: medium
+  pais: US
+  analytical_relevance: alta
+  note: threat intelligence
+- nombre: Threatpost
+  url: https://threatpost.com/feed/
+  tipo: rss
+  idioma: en
+  bias: center
+  reliability: mixed
+  transparency: medium
+  pais: US
+  analytical_relevance: alta
+  note: cybersecurity news
+- nombre: IntelNews
+  url: https://www.intelnews.org/feed/
+  tipo: rss
+  idioma: en
+  bias: center
+  reliability: mixed
+  transparency: medium
+  pais: US
+  analytical_relevance: alta
+  note: intelligence/security
 temas:
   frontera_sur:
     estado: produccion
@@ -942,6 +983,31 @@ temas:
     - deepfake
     - Nvidia
     - ia
+  espana_amenazas_hibridas:
+    estado: piloto
+    nombre: España — Amenazas híbridas y FIMI
+    filtro:
+    - desinformación
+    - propaganda
+    - injerencia
+    - espionaje
+    - ciberataque
+    - sabotaje
+    - guerra híbrida
+    - amenaza híbrida
+    - manipulación informativa
+    - influencia extranjera
+    - desestabilización
+    - subversión
+    - inteligencia extranjera
+    scoring:
+      weights:
+        anomaly: 0.45
+        sync: 0.15
+        content: 0.15
+        amp: 0.05
+        infra: 0.1
+        density: 0.1
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -1318,6 +1384,32 @@ keywords:
 - palabra: algoritmo
   plataformas: *id005
   tema: inteligencia_artificial
+- palabra: desinformación
+  plataformas: &id006
+  - bluesky
+  - google-news
+  tema: espana_amenazas_hibridas
+- palabra: propaganda
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: injerencia
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: espionaje
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ciberataque
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: sabotaje
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: guerra híbrida
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: amenaza híbrida
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
 telegram_canales:
 - elfarodeceuta
 - maldita_es
