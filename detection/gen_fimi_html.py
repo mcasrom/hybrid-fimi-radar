@@ -660,12 +660,26 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                         'padding:1px 10px;font-weight:600">Coordinación observada, no operación '
                         'extranjera (H3 bajo)</span>')
 
+    # Aviso de SATURACIÓN: si los 3 componentes de MASA (coordinación,
+    # infraestructura, densidad) están al máximo, no discriminan entre
+    # clusters y el orden lo decide la anomalía. Solo lectura (no toca motor).
+    _sat_n = sum(1 for k in ("coordination_score", "infrastructure_score", "network_density")
+                 if (comps.get(k) or 0) >= 99.5)
+    _sat_warn = ""
+    if _sat_n >= 3:
+        _sat_warn = ('<span title="Coordinación, infraestructura y densidad en su máximo: '
+                     'no distinguen entre clusters; el orden lo decide la anomalía." '
+                     'style="display:inline-block;font-size:.72rem;color:#334155;border:1px dashed #cbd5e1;'
+                     'background:#f8fafc;border-radius:999px;padding:1px 10px;font-weight:600">'
+                     'Componentes de masa saturados (decide la anomalía)</span>')
+
     h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
          f'<b style="font-size:1.02rem">{_disp_label(c, disp_map)}</b>'
          f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
          f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{_hyp_chip}{_h3_warn}'
+         f'{_sat_warn}'
          f'{ruido_html}'
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
