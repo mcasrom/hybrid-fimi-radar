@@ -853,6 +853,11 @@ temas:
     - West Bank
     - Líbano
     - Lebanon
+    # Ampliado 18/09 (gate sumidero): Iran/Hormuz ya eran keywords; añadidos
+    # SOLO al filtro para habilitar la reasignación en la vista (keywords∩filtro)
+    # y que el contenido Irán/Hormuz caiga en oriente_medio, no en el sumidero.
+    - Iran
+    - Hormuz
   sahel:
     estado: produccion
     nombre: Sahel (África Occidental)

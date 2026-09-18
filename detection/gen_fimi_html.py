@@ -1565,12 +1565,17 @@ def main():
         _fs_ids = [c["id"] for c in clusters if c["tema_id"] == "frontera_sur"]
         if _fs_ids:
             _acc_txt = {}
+            # 18/09: la reasignacion usa title+text (no solo text). Antes un
+            # cluster cuyo unico match estaba en el titulo (p.ej. ME via
+            # titulares) no se reasignaba y caia al sumidero frontera_sur.
             _ce_rows = con.execute(
-                "SELECT cluster_id, text FROM cluster_events"
-                " WHERE cluster_id IN (%s) AND text IS NOT NULL AND text != ''"
+                "SELECT cluster_id, title, text FROM cluster_events"
+                " WHERE cluster_id IN (%s)"
                 % ",".join("?" * len(_fs_ids)), _fs_ids).fetchall()
             for r in _ce_rows:
-                _acc_txt.setdefault(r["cluster_id"], []).append(r["text"])
+                _part = (str(r["title"] or "") + " " + str(r["text"] or "")).strip()
+                if _part:
+                    _acc_txt.setdefault(r["cluster_id"], []).append(_part)
             _kws_all = [k for k in _tema_kw.keys() if k != "frontera_sur"]
             # Gate de vista: un tema con `filtro` (config) solo reclama un cluster
             # si su texto agregado contiene algún término del filtro. Evita que
@@ -1638,6 +1643,44 @@ def main():
                         view_tema[_cid] = _top
     except Exception:
         view_tema = {}
+
+    # --- Gate de relevancia (anti-fraude del sumidero) ---
+    # Un cluster solo se muestra en su tema de vista si su texto/titular/URL
+    # contiene algun termino del tema. Los que no casan con NINGUN tema se
+    # marcan 'sin relacion' (bucket interno) y NO se muestran. Solo vista:
+    # no toca captura, scoring ni BD.
+    _rel_terms = {}
+    for _th in temas:
+        _fl = (temas_cfg.get(_th, {}) or {}).get("filtro") if isinstance(temas_cfg, dict) else None
+        _kws_th = _tema_kw.get(_th, [])
+        if _fl:
+            _fl_n = {_norm(x) for x in _fl}
+            _inter = [k for k in _kws_th if _norm(k.get("palabra", "")) in _fl_n]
+            _rel_terms[_th] = _inter if _inter else _kws_th
+        else:
+            _rel_terms[_th] = _kws_th
+    _blob_map = {}
+    try:
+        for _r in con.execute("SELECT cluster_id, title, text, url FROM cluster_events").fetchall():
+            _blob_map.setdefault(_r["cluster_id"], []).append(
+                _norm(str(_r["title"] or "") + " " + str(_r["text"] or "") + " " + str(_r["url"] or "")))
+    except Exception:
+        _blob_map = {}
+
+    def _tiene_relacion(_c):
+        _t = view_tema.get(_c["id"], _c["tema_id"])
+        _ms = _rel_terms.get(_t)
+        if not _ms:
+            return True
+        _blob = " ".join(_blob_map.get(_c["id"], []))
+        if not _blob:
+            return False
+        return any(_kw_matches(_blob, _k) for _k in _ms)
+
+    _sin_relacion = [c["id"] for c in clusters if not _tiene_relacion(c)]
+    if _sin_relacion:
+        _srs = set(_sin_relacion)
+        clusters = [c for c in clusters if c["id"] not in _srs]
 
     def _vt(_c):
         return view_tema.get(_c["id"], _c["tema_id"])
@@ -2497,6 +2540,11 @@ def main():
                 "url": "https://analisis.pruebapublica.com/posts/dereliction-of-duty-lealtad-bunkeriza-moncloa",
             },
             "eeuu_politica": [
+                {
+                    "title": "Análisis: la geopolítica de los aranceles",
+                    "desc": "Comercio, coerción e interdependencia en la era de la rivalidad estratégica.",
+                    "url": "https://analisis.pruebapublica.com/posts/geopolitica-aranceles-2026",
+                },
                 {
                     "title": "Análisis: Donroe, la nueva Doctrina Monroe",
                     "desc": "Lectura geopolítica de la política exterior estadounidense.",

@@ -150,6 +150,19 @@ contenido mezclado (Ceuta + OPEP). Fix en dos capas:
 Resultado real: `energia` pasó de 705 a **606 eventos** y de 11 a **6 clusters**, todos
 energéticos (OPEP/Brent/gas/Ormuz); el cluster mezclado volvió a su tema real (frontera_sur).
 
+**Gate de relevancia del sumidero (18/09/2026).** `frontera_sur` es el tema por defecto
+(todo evento RSS/social sin otro tema cae aquí), así que podía mostrar clusters ajenos
+(p. ej. uno de **Globo/Brasil** o de **Irán/Hormuz**). Fix en la **vista**
+(`gen_fimi_html.py`): (1) `view_tema` reasigna usando **`title+text`** (no solo `text`),
+de modo que un cluster cuyo match está en el titular cae en su tema real; (2) un **gate de
+relevancia** exige que cada cluster contenga algún término de su tema (`keywords ∩ filtro`,
+o sus keywords si no hay filtro) en `title+text+url`; los que no casan con **ningún** tema se
+marcan `_sin_relacion` y **no se muestran** en ninguna pestaña. Además se amplió el `filtro`
+de `oriente_medio` con `Iran`/`Hormuz` (ya eran keywords → sin nuevas queries de captura).
+Resultado: `frontera_sur` **265→80 clusters** (0 rastros de Brasil/Irán) y `oriente_medio`
+**122→155** (el contenido de Oriente Medio cae en su tema). Solo vista: no toca captura,
+scoring ni BD.
+
 ### Cobertura electoral — Alemania y Suecia (14/09/2026)
 
 Para el capítulo **Election Threat Landscape** (elecciones de Alemania —Länder, sep-2026— y
