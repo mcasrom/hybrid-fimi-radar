@@ -110,8 +110,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
 
 La detección se organiza por **temas**. Cada tema define su catálogo de keywords,
 plataformas de captura, estado (`produccion` / `piloto` / `cerrado`) y, opcionalmente, un
-scoring propio que sobreescribe los pesos globales (p. ej. `politica_nacional` da más peso
-a la anomalía para no marcar coordinación partidista legítima como red inorgánica).
+scoring propio que sobreescribe los pesos globales (p. ej. `politica_nacional` usa anomaly 0.40 vs 0.45 global para no marcar coordinación partidista legítima como red inorgánica).
 
 Gestión por CLI (`detection/temas_cli.py`): `alta`, `cerrar`, `estado`, `list`. El cierre
 exporta la evidencia a `data/export/`, marca el tema como cerrado (el pipeline lo salta) y

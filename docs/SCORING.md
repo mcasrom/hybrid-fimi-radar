@@ -1,4 +1,4 @@
-# Scoring del radar FIMI: fórmula y ajuste por escala (05/Sep)
+# Scoring del radar FIMI: fórmula y ajuste por escala (18/Sep)
 
 Documento de referencia del score 0-100 y de la corrección "por escala" aplicada
 el 05/Sep (resultado del análisis externo contrastado con datos reales).
@@ -6,7 +6,7 @@ Complementa TRAZABILIDAD.md.
 
 ## Fórmula base (config.yaml -> scoring)
 
-overall = sync*0.25 + content*0.20 + amp*0.20 + infra*0.15 + density*0.10 + anomaly*0.10
+overall = sync*0.15 + content*0.15 + amp*0.05 + infra*0.10 + density*0.10 + anomaly*0.45
 
 Componentes 0-100 por cluster:
 - synchronization = coordination_score * 12  (cap 100)
@@ -18,9 +18,9 @@ Componentes 0-100 por cluster:
 
 Bandas: 0-19 NORMAL · 20-39 WATCH · 40-59 ANOMALOUS · 60-79 HIGH · 80-100 CRITICAL.
 
-Los pesos son configurables por tema (temas.<tema>.scoring.weights): politica_nacional
-(piloto) usa anomaly 0.40 / sync 0.15 / content 0.15 / amp·infra·density 0.10 para no
-marcar como ANOMALOUS la coordinación partidista legítima.
+Los pesos son configurables por tema (temas.<tema>.scoring.weights): politica_nacional y eeuu_politica
+(piloto) usan anomaly 0.40 (vs 0.45 global) y amplification 0.10 (vs 0.05 global)
+para no marcar como ANOMALOUS la coordinación partidista legítima.
 
 ## Escala (05/Sep): el orden invertido detectado
 
