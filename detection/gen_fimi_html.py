@@ -660,6 +660,17 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                         'padding:1px 10px;font-weight:600">Coordinación observada, no operación '
                         'extranjera (H3 bajo)</span>')
 
+    # S1 — alerta quirúrgica: si la banda es alta pero la ANOMALÍA es baja, el
+    # "CRITICAL" lo sostiene la MASA (coordinación), no una desviación inusual.
+    _anom_v = comps.get("anomaly_score") or 0
+    _alerta_chip = ""
+    if band in ("HIGH", "CRITICAL") and _anom_v < 20:
+        _alerta_chip = ('<span title="La banda la sostiene la masa (coordinación/infraestructura); '
+                        'la anomalía es baja: es coordinación observada, no necesariamente una '
+                        'desviación inusual." style="display:inline-block;font-size:.72rem;color:#1e3a8a;'
+                        'border:1px dashed #93c5fd;background:#eff6ff;border-radius:999px;'
+                        'padding:1px 10px;font-weight:600">Coordinación alta · anomalía baja</span>')
+
     # Aviso de SATURACIÓN: si los 3 componentes de MASA (coordinación,
     # infraestructura, densidad) están al máximo, no discriminan entre
     # clusters y el orden lo decide la anomalía. Solo lectura (no toca motor).
@@ -680,6 +691,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{_hyp_chip}{_h3_warn}'
          f'{_sat_warn}'
+         f'{_alerta_chip}'
          f'{ruido_html}'
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
@@ -2260,6 +2272,27 @@ def main():
                         _top_r[_kk] = _aa_r[_kk] or 0
                 _top_r["cuentas"] = int(_mm_r.group(1)) if _mm_r else 0
                 _top_r["banda"] = band_of(_cc_r["overall_score"] or 0)
+            # S3: hipótesis dominante del tema (carácter doméstico/externo)
+            _hyp_dom_r = None
+            try:
+                from collections import Counter as _Cnt_r
+                _cnt_r = _Cnt_r()
+                _h3n_r = 0
+                for _c_r in _cl_r:
+                    _a_r = _asm_by_cid_r.get(_c_r["id"])
+                    if _a_r is None or not _a_r["hypotheses_json"]:
+                        continue
+                    _hs_r = json.loads(_a_r["hypotheses_json"])
+                    if _hs_r:
+                        _cnt_r[_hs_r[0]["hypothesis"]] += 1
+                        if any(h["hypothesis"] == "H3" and h["score"] >= 0.5 for h in _hs_r):
+                            _h3n_r += 1
+                if _cnt_r:
+                    _th_r, _nh_r = _cnt_r.most_common(1)[0]
+                    _hyp_dom_r = {"top": _th_r, "n": _nh_r, "total": sum(_cnt_r.values()), "h3": _h3n_r}
+            except Exception:
+                _hyp_dom_r = None
+
             # filas de bitácora del tema
             _brows_r = [dict(x) for x in _rcon.execute(
                 "SELECT fecha, tipo, motivo FROM bitacora WHERE tema=?"
@@ -2271,6 +2304,7 @@ def main():
                 sostenidas_tema=_ds_sost(_rcon, min_dias=3, tema=_t_r),
                 grupos_na=_grupos_na,
                 bitacora_filas=_brows_r,
+                dominante=_hyp_dom_r,
             )
             # render de la caja destacada (resumen visualmente distinguido)
             import re as _re_r

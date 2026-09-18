@@ -77,7 +77,7 @@ def _fmt_dias_operacion(dias):
 
 
 def generar_resumen_tema(tema_id, nombre, salud, cluster_top, sostenidas_tema,
-                         grupos_na, bitacora_filas):
+                         grupos_na, bitacora_filas, dominante=None):
     """Devuelve una lista de strings (una por línea/párrafo) que sintetiza el
     estado del tema. Todos los argumentos ya vienen calculados por el caller.
 
@@ -120,6 +120,24 @@ def generar_resumen_tema(tema_id, nombre, salud, cluster_top, sostenidas_tema,
             f"{'s' if n_sost != 1 else ''} (≥3 días): {detalle}{rest}.")
     else:
         lineas.append("Sin narrativas sostenidas (≥3 días) en la ventana actual.")
+
+    # 3b) S3 — carácter DOMÉSTICO vs externo (hipótesis dominante del tema).
+    if dominante:
+        _h = dominante.get("top") or "?"
+        _n = dominante.get("n") or 0
+        _tot = dominante.get("total") or 0
+        _h3 = dominante.get("h3") or 0
+        _lab = {"H1": "viralización orgánica", "H2": "campaña coordinada doméstica",
+                "H3": "operación de influencia extranjera", "H4": "amplificación mediática",
+                "H5": "campaña política", "H6": "sin evidencia concluyente"}.get(_h, _h)
+        if _h in ("H1", "H2", "H5") or _h3 == 0:
+            lineas.append(
+                f"Hipótesis dominante: **{_h} {_lab}** ({_n} de {_tot} clusters) — "
+                f"lectura **doméstica**, no externa (H3 solo en {_h3}).")
+        else:
+            lineas.append(
+                f"Hipótesis dominante: **{_h} {_lab}** ({_n} de {_tot} clusters); "
+                f"H3 (operación extranjera) en {_h3}.")
 
     # 4) narrativas alineadas cross-topic (solo si el tema aparece en algún grupo)
     if grupos_na:
