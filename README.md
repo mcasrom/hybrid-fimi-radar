@@ -28,6 +28,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitor
 | Inteligencia artificial | Piloto (en calibración) |
 | España — Amenazas híbridas y FIMI | Piloto (en calibración) |
 
+- **Keywords**: derivadas del filtro (mismo bloque). Si el tema es ciego (0 keywords), salud_keywords no verifica cobertura -> añadir las palabras del filtro como keywords. Visto en espana_amenazas_hibridas (18/Sep, commit 77c9bf9).
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
 - **Catálogo de fuentes**: **64 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
