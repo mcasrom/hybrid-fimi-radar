@@ -2231,6 +2231,7 @@ def main():
     # sostenidas del tema, narrativas alineadas cross-topic y bitácora.
     # Se computa aquí (con conexión propia a BD) porque `con` se cerró arriba.
     _resumen_tema_html = {}
+    _que_pasa_html = {}
     try:
         import sqlite3 as _r_sql
         import sys as _r_sys
@@ -2306,6 +2307,43 @@ def main():
                 bitacora_filas=_brows_r,
                 dominante=_hyp_dom_r,
             )
+            # "Qué está pasando": bloque resumen en lenguaje llano (ADITIVO;
+            # no sustituye nada, solo añade contexto arriba del pane).
+            try:
+                _np_cl = len(_cl_r)
+                _np_alta = sum(1 for _c in _cl_r if (_c["overall_score"] or 0) >= 60)
+                _np_cue = _rcon.execute(
+                    "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce "
+                    "JOIN clusters cl ON cl.id=ce.cluster_id WHERE cl.tema_id=?", (_t_r,)).fetchone()[0]
+                _np_dom = ""
+                if _hyp_dom_r:
+                    _hh = _hyp_dom_r.get("top")
+                    _hlab = {"H1": "viralización orgánica", "H2": "campaña coordinada doméstica",
+                             "H3": "operación de influencia extranjera", "H4": "amplificación mediática",
+                             "H5": "campaña política", "H6": "sin evidencia concluyente"}.get(_hh, _hh)
+                    _h3n = _hyp_dom_r.get("h3") or 0
+                    _np_dom = f"Lo dominante es <b>{_hlab}</b> ({_hh}); "
+                    if _h3n == 0:
+                        _np_dom += "<b>sin señal de operación extranjera</b> (H3 no aparece)."
+                    else:
+                        _np_dom += f"H3 (extranjera) aparece en {_h3n}."
+                _np_best = None
+                for _c in _cl_r:
+                    _aa = _asm_by_cid_r.get(_c["id"])
+                    if _aa is not None and (_np_best is None or (_aa["anomaly_score"] or 0) > _np_best[1]):
+                        _np_best = (_c["cluster_label"], _aa["anomaly_score"] or 0)
+                _np_anom = (f" Lo más anómalo: <code>{_np_best[0]}</code> (anomalía {_np_best[1]:.0f})."
+                            if _np_best else "")
+                _que_pasa_html[_t_r] = (
+                    "<div style='background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0284c7;'"
+                    "border-radius:10px;padding:10px 14px;margin:0 0 10px'>"
+                    "<div style='font-weight:700;color:#0c4a6e;margin-bottom:3px'>Qué está pasando</div>"
+                    "<div style='font-size:.85rem;color:#334155;line-height:1.5'>"
+                    f"<b>{_np_cl}</b> clusters · <b>{_np_cue}</b> cuentas · <b>{_np_alta}</b> en banda alta (≥60). "
+                    f"{_np_dom}{_np_anom}</div></div>")
+            except Exception:
+                _que_pasa_html[_t_r] = ""
+
             # render de la caja destacada (resumen visualmente distinguido)
             import re as _re_r
             _conv = lambda _s: _re_r.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _s)
@@ -2669,6 +2707,7 @@ def main():
                           f'cualquier alerta como hipótesis, no como veredicto.</div>')
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
+                       f"{_que_pasa_html.get(_t, '')}"
                        f"{_resumen_tema_html.get(_t, '')}"
                        f"{_esfera_html.get(_t, '')}"
                        f"{_elec_tema_html.get(_t, '')}"
