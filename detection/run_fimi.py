@@ -55,7 +55,7 @@ def main():
     _ts = time.time()
     print(f"[1/7] Ingest {args.input} (tema={tema})")
     if str(args.input).endswith(".db"):
-        df = load_sqlite(args.input, tema=tema)
+        df = load_sqlite(args.input, tema=tema, excluir_otros=(tema == "frontera_sur"))
     else:
         raw = load(args.input)
         df = normalize(raw)

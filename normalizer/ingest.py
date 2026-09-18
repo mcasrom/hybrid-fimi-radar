@@ -84,7 +84,7 @@ def normalize(df):
     return df
 
 
-def load_sqlite(db_path, tema=None):
+def load_sqlite(db_path, tema=None, excluir_otros=False):
     """Lee la tabla events de la BD del radar y la normaliza a formato Event.
 
     El author se lee de la columna author si existe; si no, se deriva de source.
@@ -106,6 +106,12 @@ def load_sqlite(db_path, tema=None):
         if has_et:
             tema_ids = [r[0] for r in con.execute(
                 "SELECT event_id FROM event_temas WHERE tema_id=?", (tema,))]
+            if excluir_otros:
+                # B1: el tema NO ve eventos ya reclamados por OTRO tema (evita
+                # que el sumidero por defecto absorba clusters ajenos).
+                _otros = {r[0] for r in con.execute(
+                    "SELECT DISTINCT event_id FROM event_temas WHERE tema_id!=?", (tema,))}
+                tema_ids = [i for i in tema_ids if i not in _otros]
         elif "tema_id" in cols:
             tema_ids = [r[0] for r in con.execute(
                 "SELECT id FROM events WHERE tema_id=?", (tema,))]
