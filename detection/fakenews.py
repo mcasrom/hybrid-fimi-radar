@@ -105,7 +105,9 @@ def detect_cascades(df, config):
         n_events = len(sub)
         tspan = sub["ts"].max() - sub["ts"].min()
         # velocidad solo si hay ventana temporal real (evita división por cero)
-        speed = (accounts / max(tspan / 3600, 1e-6)) if tspan > 0 else 0.0
+        # velocidad ACOTADA: si la ventana es < 1 h no se extrapola (evita
+        # picos absurdos: p. ej. 4 cuentas en 1 s daban 14400 "cuentas/h").
+        speed = (accounts / max(tspan / 3600, 1.0)) if tspan > 0 else 0.0
         seed = sub["text"].iloc[0]
         # UNA CASCADA DE AMPLIFICACIÓN EXIGE VARIAS CUENTAS DISTINTAS:
         # una sola cuenta repitiendo su propio texto no es una cascada.
