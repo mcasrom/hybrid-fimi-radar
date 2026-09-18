@@ -3054,36 +3054,18 @@ def main():
         f"<a href='https://t.me/Sieg_politica_bot' target='_blank' rel='noopener noreferrer' style='color:#fff;background:#229ed9;border-radius:8px;padding:9px 16px;text-decoration:none;font-size:.85rem;font-weight:700'>Recibir avisos en Telegram</a>"
         f"</div>")
 
-    # --- FORMULARIO NEWSLETTER POR EMAIL (vista resumen) ---
-    # checkboxes de tema + email + envío a /api/subscribe (doble opt-in).
-    def _nombre_tema_clean(_t):
-        _m = temas_cfg.get(_t, {}) if isinstance(temas_cfg, dict) else {}
-        return re.sub(r"\s*\(.*\)\s*", "", _m.get("nombre", _t)).strip().title()
-
-    _email_checks = []
-    for _t in temas[:6]:
-        _email_checks.append(
-            f"<label style='display:inline-flex;align-items:center;gap:6px;"
-            f"font-size:.82rem;color:#334155;margin:2px 12px 2px 0;cursor:pointer'>"
-            f"<input type='checkbox' value='{_t}'> {_nombre_tema_clean(_t)}</label>")
+    # --- NEWSLETTER: tarjeta-CTA a la página dedicada /suscribirse.html ---
+    # (fuente canónica única: el formulario completo vive en /suscribirse.html)
     newsletter_form = (
-        "<div id='newsletterBox' style='margin-top:20px;padding:18px 20px;border:1px solid #e2e8f0;"
-        "border-radius:14px;background:#fff'>"
+        "<div style='margin-top:20px;padding:18px 20px;border:1px solid #fed7aa;"
+        "border-radius:14px;background:#fff7ed'>"
         "<div style='font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:2px'>"
-        "📬 Newsletter por email</div>"
-        "<div style='font-size:.78rem;color:#64748b;margin-bottom:10px'>Resumen semanal (cada lunes) "
-        "con el estado de los diales de los temas que elijas. Doble opt-in: confirmarás por email "
-        "antes de recibir nada. Baja en un clic desde cada correo.</div>"
-        f"<div style='margin-bottom:8px'>{''.join(_email_checks)}</div>"
-        "<div style='display:flex;gap:8px;flex-wrap:wrap;max-width:380px'>"
-        "<input id='nlEmail' type='email' placeholder='tu@email.com' "
-        "style='flex:1;min-width:200px;padding:9px 12px;border:1px solid #d0d5dd;border-radius:8px;"
-        "font-size:.85rem;font-family:inherit'>"
-        "<button id='nlBtn' type='button' onclick='newsletterClick()' "
-        "style='cursor:pointer;border:none;background:#c2410c;color:#fff;border-radius:8px;"
-        "padding:9px 16px;font-weight:700;font-size:.85rem;font-family:inherit'>Suscribirme</button>"
-        "</div>"
-        "<div id='nlMsg' style='font-size:.8rem;color:#16a34a;margin-top:8px;min-height:1.2em'></div>"
+        "📬 Newsletter semanal</div>"
+        "<div style='font-size:.82rem;color:#7c2d12;margin-bottom:10px'>Resumen cada lunes del "
+        "estado de los temas que elijas (todos disponibles). Doble opt-in; baja en un clic.</div>"
+        "<a href='/suscribirse.html' style='display:inline-block;background:#c2410c;color:#fff;"
+        "border-radius:8px;padding:9px 16px;font-weight:700;font-size:.85rem;text-decoration:none'>"
+        "Configurar mi suscripción →</a>"
         "</div>")
     # --- SUGERIR TEMA (vista resumen): textarea + envío a /api/sugerir (rate-limit por IP) ---
     # Las sugerencias van a la tabla `sugerencias` (radar.db) y se reenvían al administrador
@@ -4258,38 +4240,6 @@ if ('serviceWorker' in navigator) {{
       txt.focus();
       txt.scrollIntoView({{behavior:'smooth', block:'center'}});
     }}
-  }};
-
-  // Newsletter por email (vista resumen): POST /api/subscribe (doble opt-in).
-  window.newsletterClick = function(){{
-    var box=document.getElementById('newsletterBox');
-    var email=(document.getElementById('nlEmail').value||'').trim().toLowerCase();
-    var msg=document.getElementById('nlMsg');
-    var btn=document.getElementById('nlBtn');
-    if(!msg){{ return; }}
-    msg.style.color='#16a34a';
-    if(!email){{ msg.textContent='Escribe un email válido.'; msg.style.color='#dc2626'; return; }}
-    var temas=[];
-    var cbs=document.querySelectorAll('#newsletterBox input[type=checkbox]');
-    for(var i=0;i<cbs.length;i++){{ if(cbs[i].checked){{ temas.push(cbs[i].value); }} }}
-    if(temas.length===0){{ msg.textContent='Marca al menos un tema.'; msg.style.color='#dc2626'; return; }}
-    btn.disabled=true; msg.textContent='Enviando…';
-    fetch('/api/subscribe',{{
-      method:'POST',
-      headers:{{'Content-Type':'application/json'}},
-      body:JSON.stringify({{email:email, temas:temas}})
-    }}).then(function(r){{ return r.json(); }}).then(function(d){{
-      btn.disabled=false;
-      if(d && d.ok){{
-        msg.textContent='✅ Revisa tu email y confirma la suscripción (doble opt-in).';
-      }}else{{
-        msg.textContent='No se pudo suscribir: '+(d&&d.error?d.error:'inténtalo más tarde.');
-        msg.style.color='#dc2626';
-      }}
-    }}).catch(function(){{
-      btn.disabled=false;
-      msg.textContent='Error de red. Inténtalo de nuevo.'; msg.style.color='#dc2626';
-    }});
   }};
 
   // Feedback ligero por tema (vista resumen): POST /api/feedback (rate-limit por IP).
