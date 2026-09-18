@@ -16,12 +16,12 @@ scoring:
     - 80
     - 100
   weights:
-    synchronization: 0.25
-    content_similarity: 0.2
-    amplification: 0.2
-    infrastructure: 0.15
-    network_density: 0.1
-    anomaly: 0.1
+    synchronization: 0.15
+    content_similarity: 0.15
+    amplification: 0.05
+    infrastructure: 0.10
+    network_density: 0.10
+    anomaly: 0.45
   # Límite por escala (nº de cuentas): un cluster pequeño (2-3 cuentas) puede
   # llegar a HIGH pero NO a CRITICAL — la señal de red orquestada a gran escala
   # debe alarmar más que una pareja de cuentas sincronizadas. Configurable por
@@ -729,7 +729,7 @@ temas:
         content_similarity: 0.15
         amplification: 0.10
         infrastructure: 0.10
-        network_density: 0.10
+        network_density: 0.100
         anomaly: 0.40
   eeuu_politica:
     estado: produccion
@@ -745,7 +745,7 @@ temas:
         content_similarity: 0.15
         amplification: 0.10
         infrastructure: 0.10
-        network_density: 0.10
+        network_density: 0.100
         anomaly: 0.40
   oriente_medio:
     estado: produccion
@@ -759,7 +759,7 @@ temas:
         content_similarity: 0.15
         amplification: 0.10
         infrastructure: 0.10
-        network_density: 0.10
+        network_density: 0.100
         anomaly: 0.40
     filtro:
     - Gaza Israel
@@ -833,7 +833,7 @@ temas:
         content_similarity: 0.15
         amplification: 0.10
         infrastructure: 0.10
-        network_density: 0.10
+        network_density: 0.100
         anomaly: 0.40
   elecciones:
     estado: piloto
