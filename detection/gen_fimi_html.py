@@ -3636,7 +3636,7 @@ def main():
             "<span style='color:#d97706;font-weight:700'>" + ("⚠ UMBRAL ALCANZADO" if _alert else "✓ Dentro de umbral") + "</span> "
             "(umbral " + str(int(_umbral*100)) + "%, crecimiento >" + str(int(_crece*100)) + "pp).</p>"
             "<div style='margin:6px 0'><div style='height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden'>"
-            "<div style='width:" + str(_bar) + "%;background:#16a34a;height:100%;border-radius:4px;</div></div>"
+            "<div style='width:" + str(_bar) + "%;background:" + ("#dc2626" if _alert else "#16a34a") + ";height:100%;border-radius:4px;'></div></div>"
             "<div style='font-size:.72rem;color:#64748b;margin-top:2px'>ratio " + str(int(_ratio*100)) + "%</div></div>"
             "<div style='margin-top:6px'><a href='" + _descarga + "' class='gh-link' style='font-size:.8rem'>"
             "📥 Descargar eventos sin tema (CSV, últimos 50)</a></div>"
