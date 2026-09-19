@@ -293,7 +293,7 @@ def render_component_legend():
             f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
-def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None, amp=None, lectura=None, share_url=None):
+def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None, amp=None, lectura=None, share_url=None, top_attr=None, top_conf=None):
     """Araña (radar) de los 4 componentes del tema: media de sus clusters +
     el cluster de mayor score. SVG inline sin librerías. Solo lectura: usa el
     assessment ya cargado (no añade dato ni toca el scoring). Una por tema,
@@ -381,9 +381,20 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
                           + str(_pct) + '%</span></div>')
             _nota = ("Hipótesis NO concluyente (señal de comportamiento, no atribución)."
                      if _h3p < 50 else "H3 destacada.")
+            _ac = str(top_conf or "").upper()
+            if _ac in ("", "NO_ATTRIBUTION", "UNKNOWN"):
+                _attr_chip = ('<span style="display:inline-block;font-size:.68rem;color:#475569;'
+                              'border:1px dashed #cbd5e1;border-radius:999px;padding:1px 8px;margin-left:6px" '
+                              'title="El radar observa coordinación; no atribuye actor sin pruebas (UNKNOWN es un resultado válido)">'
+                              '⚖️ atribución: sin determinar</span>')
+            else:
+                _attr_chip = ('<span style="display:inline-block;font-size:.68rem;color:#7c2d12;background:#fff7ed;'
+                              'border:1px solid #fed7aa;border-radius:999px;padding:1px 8px;margin-left:6px" '
+                              'title="Hipótesis de atribución, no conclusión">'
+                              '⚖️ ' + str(top_attr or "") + ' · confianza ' + _ac + '</span>')
             hyp_col = ('<div style="min-width:250px;flex:1;max-width:520px">'
                        '<div style="font-size:.82rem;font-weight:700;color:#475569">Hipótesis evaluadas — '
-                       + str(top_label) + '</div>'
+                       + str(top_label) + _attr_chip + '</div>'
                        '<div style="font-size:.72rem;color:#64748b;margin:2px 0 6px">'
                        'H3 (influencia extranjera) en ' + str(_h3p) + '%. ' + _nota + '</div>'
                        + _rows + '</div>')
@@ -431,7 +442,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
 
 
 def render_radar_share_svg(nombre, mean, top, n=0, top_label="", top_score=0, top_hyps=None,
-                           stats="", amp=None):
+                           stats="", amp=None, top_attr=None, top_conf=None):
     """SVG autónomo (tema oscuro, formato presentación) con el radar de componentes
     + las hipótesis H1-H6 del cluster top, para exportar a PNG (rsvg-convert) y
     compartir. Solo lectura: reusa los datos ya calculados; no toca scoring."""
@@ -485,8 +496,11 @@ def render_radar_share_svg(nombre, mean, top, n=0, top_label="", top_score=0, to
         h3 = next((x for x in hyps if x.get("hypothesis") == "H3"), None)
         h3p = int(round((h3.get("score") or 0) * 100)) if h3 else 0
         p.append('<text x="560" y="116" font-size="17" font-weight="700" fill="#e2e8f0">Hipótesis evaluadas — %s</text>' % _esc(top_label))
-        p.append('<text x="560" y="138" font-size="13" fill="#94a3b8">H3 (extranjera) en %d%%: %s</text>'
-                 % (h3p, "NO concluyente" if h3p < 50 else "destacada"))
+        _act = str(top_conf or "").upper()
+        _atxt = ("atribución sin determinar" if _act in ("", "NO_ATTRIBUTION", "UNKNOWN")
+                 else ("atribución " + str(top_attr or "") + " (confianza " + _act + ")"))
+        p.append('<text x="560" y="138" font-size="13" fill="#94a3b8">H3 (extranjera) en %d%%: %s · %s</text>'
+                 % (h3p, "NO concluyente" if h3p < 50 else "destacada", _atxt))
         y0 = 176
         for idx, x in enumerate(hyps):
             code = x.get("hypothesis", "?")
@@ -2953,7 +2967,9 @@ def main():
             try:
                 import subprocess as _sp
                 _svg = render_radar_share_svg(_nombre, _rm, _rt, len(_tema_cl), _tcc["cluster_label"],
-                                              _tcc["overall_score"] or 0, _top_hyps, _sal_txt, _amp_tema)
+                                              _tcc["overall_score"] or 0, _top_hyps, _sal_txt, _amp_tema,
+                                              (_asm_top["attribution"] if _asm_top is not None else None),
+                                              (_asm_top["attribution_confidence"] if _asm_top is not None else None))
                 _svgp = "/var/www/fimi/radar-%s.svg" % _t
                 _pngp = "/var/www/fimi/radar-%s.png" % _t
                 with open(_svgp, "w", encoding="utf-8") as _f:
@@ -2966,7 +2982,9 @@ def main():
                 _share_url = ""
             _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"],
                                               _tcc["overall_score"] or 0, top_hyps=_top_hyps, stats=_sal_txt,
-                                              amp=_amp_tema, lectura=_lect_tema, share_url=_share_url)
+                                              amp=_amp_tema, lectura=_lect_tema, share_url=_share_url,
+                                              top_attr=(_asm_top["attribution"] if _asm_top is not None else None),
+                                              top_conf=(_asm_top["attribution_confidence"] if _asm_top is not None else None))
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
