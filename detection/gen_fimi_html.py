@@ -389,11 +389,11 @@ def _sostenido_chip(diver):
     if n_urls <= 1 and n_ev >= 2:
         return ('<span style="display:inline-block;font-size:.72rem;color:#7c3aed;'
                 'border:1px dashed #a78bfa;border-radius:999px;padding:1px 10px;'
-                'font-weight:600;background:#f5f3ff">ecos de 1 pieza</span>')
+                'font-weight:600;background:#f5f3ff;cursor:help" title="Eco de 1 pieza: varias cuentas comparten la MISMA pieza noticiosa (1 URL). Viralidad, no coordinacion cruzada entre redes.">ecos de 1 pieza</span>')
     if n_ev >= 10 and horas >= 24 and n_urls >= 3:
         return ('<span style="display:inline-block;font-size:.72rem;color:#b45309;'
                 'border:1px solid #f59e0b;border-radius:999px;padding:1px 10px;'
-                'font-weight:600;background:#fffbeb">coordinación sostenida</span>')
+                'font-weight:600;background:#fffbeb;cursor:help" title="Coordinacion sostenida: una misma red (3+ cuentas) vertiendo muchas piezas (10+) durante 24+h. Coordinacion real y sostenida.">coordinación sostenida</span>')
     return ""
 
 
