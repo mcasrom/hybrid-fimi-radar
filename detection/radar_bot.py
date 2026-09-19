@@ -165,12 +165,20 @@ VAL_DIR = ROOT / "data" / "validacion"
 
 
 def _muestra_actual():
-    """Última muestra de validación (muestra_*.csv) y sus filas."""
+    """Muestra de validación a etiquetar: la más ANTIGUA sin completar.
+    Si todas están completas, la más reciente (para mostrar el resumen)."""
     if not VAL_DIR.exists():
         return None, []
     muestras = sorted(VAL_DIR.glob("muestra_*.csv"))
     if not muestras:
         return None, []
+    for path in muestras:
+        try:
+            rows = list(csv.DictReader(open(path, encoding="utf-8")))
+        except Exception:
+            continue
+        if rows and any(not (r.get("label") or "").strip() for r in rows):
+            return path, rows
     path = muestras[-1]
     return path, list(csv.DictReader(open(path, encoding="utf-8")))
 
