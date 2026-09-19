@@ -293,7 +293,7 @@ def render_component_legend():
             f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
-def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None, amp=None):
+def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None, amp=None, lectura=None, share_url=None):
     """Araña (radar) de los 4 componentes del tema: media de sus clusters +
     el cluster de mayor score. SVG inline sin librerías. Solo lectura: usa el
     assessment ya cargado (no añade dato ni toca el scoring). Una por tema,
@@ -416,11 +416,93 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
     else:
         body = ('<div style="display:flex;justify-content:center">' + svg + '</div>' + leyenda)
 
+    _lect_html = ('<div style="font-size:.82rem;color:#334155;margin-top:8px;text-align:center;'
+                  'line-height:1.6;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;'
+                  'padding:7px 12px">' + str(lectura) + '</div>') if lectura else ""
+    _share_html = ('<div style="text-align:center;margin-top:10px">'
+                   '<a href="' + str(share_url) + '" download class="gh-link" style="font-size:.8rem">'
+                   '📥 Descargar PNG</a></div>') if share_url else ""
     return ('<div class="card" style="padding:14px 16px;background:#f8fafc">'
             '<div style="font-size:.88rem;font-weight:700;color:#475569;text-align:center">'
             'Radar de componentes del tema</div>'
-            '<div style="margin-top:8px">' + body + '</div>'
-            + _extra + stats_html + '</div>')
+            + _lect_html
+            + '<div style="margin-top:8px">' + body + '</div>'
+            + _extra + stats_html + _share_html + '</div>')
+
+
+def render_radar_share_svg(nombre, mean, top, n=0, top_label="", top_score=0, top_hyps=None,
+                           stats="", amp=None):
+    """SVG autónomo (tema oscuro, formato presentación) con el radar de componentes
+    + las hipótesis H1-H6 del cluster top, para exportar a PNG (rsvg-convert) y
+    compartir. Solo lectura: reusa los datos ya calculados; no toca scoring."""
+    import math as _m
+
+    def _esc(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+    comps = [("coordination_score", "Coordinación"),
+             ("anomaly_score", "Anomalía"),
+             ("infrastructure_score", "Infraestructura"),
+             ("network_density", "Densidad")]
+    W, H = 1120, 620
+    cx, cy, R = 250.0, 320.0, 165.0
+    ang = [-90.0, 0.0, 90.0, 180.0]
+
+    def _pt(i, v, rr=R):
+        a = _m.radians(ang[i])
+        r = rr * max(0.0, min(100.0, float(v or 0))) / 100.0
+        return (cx + r * _m.cos(a), cy + r * _m.sin(a))
+
+    p = []
+    p.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" '
+             'font-family="Liberation Sans, DejaVu Sans, sans-serif">' % (W, H, W, H))
+    p.append('<rect width="%d" height="%d" fill="#0f172a"/>' % (W, H))
+    p.append('<text x="40" y="50" font-size="26" font-weight="700" fill="#f8fafc">RADAR DE COMPONENTES</text>')
+    p.append('<text x="40" y="74" font-size="13" fill="#94a3b8">Señal de comportamiento coordinado anómalo — no implica actor extranjero</text>')
+    p.append('<text x="1080" y="50" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="end">%s</text>' % _esc(nombre))
+    for frac in (0.25, 0.5, 0.75, 1.0):
+        pts = " ".join("%.1f,%.1f" % _pt(i, frac * 100) for i in range(4))
+        p.append('<polygon points="%s" fill="none" stroke="#1e293b" stroke-width="1"/>' % pts)
+    for i in range(4):
+        x, y = _pt(i, 100)
+        p.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="#334155" stroke-width="1"/>' % (cx, cy, x, y))
+    tp = " ".join("%.1f,%.1f" % _pt(i, top.get(k, 0)) for i, (k, _) in enumerate(comps))
+    p.append('<polygon points="%s" fill="rgba(239,68,68,0.16)" stroke="#ef4444" stroke-width="2"/>' % tp)
+    mp = " ".join("%.1f,%.1f" % _pt(i, mean.get(k, 0)) for i, (k, _) in enumerate(comps))
+    p.append('<polygon points="%s" fill="rgba(45,212,191,0.14)" stroke="#2dd4bf" stroke-width="2"/>' % mp)
+    anchors = {0: "middle", 1: "start", 2: "middle", 3: "end"}
+    for i, (k, lab) in enumerate(comps):
+        x, y = _pt(i, 120)
+        p.append('<text x="%.1f" y="%.1f" font-size="12" fill="#94a3b8" text-anchor="%s" '
+                 'dominant-baseline="middle">%s %.0f</text>' % (x, y, anchors[i], lab, mean.get(k, 0)))
+    p.append('<rect x="60" y="536" width="12" height="12" fill="#ef4444"/>')
+    p.append('<text x="80" y="547" font-size="13" fill="#cbd5e1">cluster top: %s %d/100</text>'
+             % (_esc(top_label), int(round(top_score or 0))))
+    p.append('<rect x="60" y="558" width="12" height="12" fill="#2dd4bf"/>')
+    p.append('<text x="80" y="569" font-size="13" fill="#cbd5e1">media del tema (%d clusters)</text>' % int(n))
+    if top_hyps:
+        hyps = sorted(top_hyps, key=lambda x: -(x.get("score") or 0))
+        h3 = next((x for x in hyps if x.get("hypothesis") == "H3"), None)
+        h3p = int(round((h3.get("score") or 0) * 100)) if h3 else 0
+        p.append('<text x="560" y="116" font-size="17" font-weight="700" fill="#e2e8f0">Hipótesis evaluadas — %s</text>' % _esc(top_label))
+        p.append('<text x="560" y="138" font-size="13" fill="#94a3b8">H3 (extranjera) en %d%%: %s</text>'
+                 % (h3p, "NO concluyente" if h3p < 50 else "destacada"))
+        y0 = 176
+        for idx, x in enumerate(hyps):
+            code = x.get("hypothesis", "?")
+            es = HYPOTHESIS_ES.get(code, {"t": x.get("label", code)})
+            pct = int(round((x.get("score") or 0) * 100))
+            col = "#ef4444" if pct >= 70 else ("#f97316" if pct >= 50 else ("#eab308" if pct >= 35 else "#64748b"))
+            yy = y0 + idx * 44
+            p.append('<text x="560" y="%d" font-size="13" fill="#cbd5e1">%s · %s</text>' % (yy, code, _esc(es["t"])))
+            p.append('<rect x="810" y="%d" width="220" height="14" rx="3" fill="#1e293b"/>' % (yy - 11))
+            p.append('<rect x="810" y="%d" width="%.0f" height="14" rx="3" fill="%s"/>' % (yy - 11, 220.0 * pct / 100.0, col))
+            p.append('<text x="1080" y="%d" font-size="13" font-weight="700" fill="#e2e8f0" text-anchor="end">%d%%</text>' % (yy, pct))
+    p.append('<text x="40" y="602" font-size="12" fill="#64748b">fimi.viajeinteligencia.com · %s</text>' % _esc(stats))
+    p.append('</svg>')
+    return "".join(p)
+
+
 def _cluster_comps(c, a):
     """Componentes 0-100 de un cluster: preferir el assessment (ya normalizado,
     ej. coordination_score del assessment = synchronization=coord*12 cap 100);
@@ -591,6 +673,40 @@ def _lectura_cluster(comps, n_cuentas=None, diver=None, ruido=False):
                 "la muestra por transparencia, no como alerta.")
     return ("🔎 <b>Difusión con coordinación moderada</b>: revisa de qué habla y la evidencia "
             "antes de interpretar; no implica atribución a ningún actor.")
+
+
+# Lectura del TEMA en una frase (patrón _lectura_cluster, pero a nivel de tema):
+# traduce los componentes MEDIOS del tema a lenguaje llano, para interpretar sin
+# abrir cluster a cluster. Solo lectura; no calcula señal ni toca scoring.
+def _lectura_tema(mean, n=0, n_cuentas=0, n_ev=0, n_sost=0):
+    if not n:
+        return "Sin clusters activos en este ciclo."
+    def _g(k):
+        try:
+            return float((mean or {}).get(k) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    coord, anom, infra, dens = (_g("coordination_score"), _g("anomaly_score"),
+                                _g("infrastructure_score"), _g("network_density"))
+    if anom >= 40:
+        _p = ("patrón <b>anómalo</b>: el comportamiento de las cuentas se aparta de lo normal "
+              "en el tema")
+    elif coord >= 60 and anom < 20:
+        _p = ("<b>difusión coordinada con patrón normal</b>: probable actividad legítima "
+              "(medios, activistas), no una operación inauténtica")
+    elif coord >= 60 or infra >= 60:
+        _p = ("<b>coordinación e infraestructura altas</b> (patrón de red); la anomalía decide "
+              "si es actividad legítima o inauténtica")
+    elif max(coord, anom, infra, dens) < 30:
+        _p = "<b>señal débil</b>: no conviene extraer conclusiones"
+    else:
+        _p = "<b>coordinación moderada</b>"
+    _sost = (str(int(n_sost)) + " narrativa" + ("" if int(n_sost) == 1 else "s") + " sostenida" + ("" if int(n_sost) == 1 else "s")) \
+        if n_sost else "sin narrativas sostenidas"
+    _ctx = (str(int(n)) + " clusters · " + str(int(n_cuentas)) + " cuentas"
+            + (" · " + str(int(n_ev)) + " eventos" if n_ev else "")
+            + " · " + _sost)
+    return ("🔎 <b>Lectura del tema:</b> " + _p + ". <span style='color:#94a3b8'>(" + _ctx + ")</span>")
 
 
 # S5 — matriz de evidencia del cluster: las dimensiones del modelo (sección 5
@@ -2820,6 +2936,12 @@ def main():
                     if _m_c:
                         _n_cuentas_t += int(_m_c.group(1))
             _n_ev_t = sum(int((diversidad_map.get(_cc["id"]) or {}).get("n_ev", 0)) for _cc in _tema_cl)
+            _n_sost_t = 0
+            for _cc in _tema_cl:
+                _dv = diversidad_map.get(_cc["id"]) or {}
+                if (_dv.get("n_ev", 0) or 0) >= 10 and (_dv.get("horas", 0) or 0) >= 24 and (_dv.get("n_urls", 0) or 0) >= 3:
+                    _n_sost_t += 1
+            _lect_tema = _lectura_tema(_rm, len(_tema_cl), _n_cuentas_t, _n_ev_t, _n_sost_t)
             _sal_t = _salud_r.get(_t)
             _sal_txt = (str(len(_tema_cl)) + " clusters · " + str(_n_cuentas_t) + " cuentas · "
                         + str(_n_ev_t) + " eventos")
@@ -2827,9 +2949,24 @@ def main():
                 _sal_txt += " · salud " + ("%.0f" % float(_sal_t.get("score"))) + "/100"
             _sal_txt += (" · banda " + band_of(_tcc["overall_score"] or 0)
                          + " (" + ("%.0f" % (_tcc["overall_score"] or 0)) + "/100)")
+            _share_url = ""
+            try:
+                import subprocess as _sp
+                _svg = render_radar_share_svg(_nombre, _rm, _rt, len(_tema_cl), _tcc["cluster_label"],
+                                              _tcc["overall_score"] or 0, _top_hyps, _sal_txt, _amp_tema)
+                _svgp = "/var/www/fimi/radar-%s.svg" % _t
+                _pngp = "/var/www/fimi/radar-%s.png" % _t
+                with open(_svgp, "w", encoding="utf-8") as _f:
+                    _f.write(_svg)
+                _sp.run(["rsvg-convert", "-w", "1120", "-o", _pngp, _svgp],
+                        stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=30)
+                if Path(_pngp).exists():
+                    _share_url = "/radar-%s.png" % _t
+            except Exception:
+                _share_url = ""
             _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"],
                                               _tcc["overall_score"] or 0, top_hyps=_top_hyps, stats=_sal_txt,
-                                              amp=_amp_tema)
+                                              amp=_amp_tema, lectura=_lect_tema, share_url=_share_url)
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
