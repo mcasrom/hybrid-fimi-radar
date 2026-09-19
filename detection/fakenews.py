@@ -21,34 +21,42 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import normalize
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-def _thresholded_adjacency(X, thresh, block=1024):
-    """Listas de adyacencia de los pares con cosine >= thresh, sin densificar n×n.
+def _thresholded_adjacency(Xn, thresh, block=1024):
+    """Lista de adyacencia dispersa para sim >= thresh sin densificar.
 
-    X: matriz TF-IDF sparse ya ajustada. Se normalizan filas (norma L2, igual que
-    cosine_similarity) y se multiplica por bloques: cada bloque da un CSR de
-    (block×n) que se umbrala al instante, de modo que la memoria pico queda
-    acotada al bloque (no a n²). Se conserva solo el triángulo superior (la
-    similitud es simétrica) y se devuelve una lista de vecinos por nodo.
-    """
-    Xn = normalize(X)
+    Xn debe estar L2-normalizado. Producto por bloques + umbral al instante.
+    Retorna lista de listas ady (solo triángulo superior simétrico expandido)."""
+    import scipy.sparse as sp
+
     n = Xn.shape[0]
-    adj = [[] for _ in range(n)]
+    ady = [[] for _ in range(n)]
     for i0 in range(0, n, block):
         i1 = min(i0 + block, n)
-        S = (Xn[i0:i1] @ Xn.T).tocsr()
-        S.data = np.where(S.data >= thresh, 1.0, 0.0)
-        S.eliminate_zeros()
-        for r in range(i1 - i0):
+        # Xn[i0:i1] @ Xn.T -> (block x n) dispersa
+        sim_block = Xn[i0:i1] @ Xn.T
+        # umbralar
+        sim_block.data[sim_block.data < thresh] = 0
+        sim_block.eliminate_zeros()
+        # solo triángulo superior para no duplicar
+        coo = sim_block.tocoo()
+        for r, c, v in zip(coo.row, coo.col, coo.data):
             gi = i0 + r
-            cols = S.indices[S.indptr[r]:S.indptr[r + 1]]
-            for c in cols:
-                if c > gi:  # solo triángulo superior; espejo a la fila del colega
-                    adj[gi].append(c)
-                    adj[c].append(gi)
-    return adj
+            gj = c
+            if gi == gj:
+                continue
+            # guardar solo una dirección, luego simetrizamos
+            if gi < gj:
+                ady[gi].append(gj)
+                ady[gj].append(gi)
+            # gi>gj ya fue visto cuando su bloque fue procesado como fila
+    # deduplicar
+    for i in range(n):
+        if ady[i]:
+            ady[i] = sorted(set(ady[i]))
+    return ady
 
 
 def detect_cascades(df, config):
@@ -66,37 +74,34 @@ def detect_cascades(df, config):
     if len(idx) < 3:
         return []
 
-    cand = [texts[i] for i in idx]
-    X = TfidfVectorizer(ngram_range=(1, 2), min_df=1).fit_transform(cand)
-    # Similitud UMBRALADA por bloques (memoria acotada, 12/sept): materializar la
-    # matriz densa n×n de cosine_similarity (n≈23k en frontera_sur) costaba ~4.3 GB
-    # y provocaba OOM en el server (3.4 GB RAM). Se calcula el producto por bloques
-    # y se retienen SOLO los pares con sim >= near_thresh. Los clusters de
-    # near-duplicates quedan como componentes conexas de ese grafo, que es
-    # matemáticamente idéntico al enlace transitivo "similar a CUALQUIER miembro".
-    adj = _thresholded_adjacency(X, near_thresh, block=1024)
+    X = TfidfVectorizer(ngram_range=(1, 2), min_df=1).fit_transform([texts[i] for i in idx])
+    from sklearn.preprocessing import normalize
 
-    # clústeres de near-duplicates: una componente conexa = conjunto de textos que
-    # se unen transitivamente por similitud >= umbral. members guarda POSICIONES en
-    # el espacio de idx (0..len(idx)-1), como antes con las filas de sim.
+    Xn = normalize(X, norm="l2", axis=1)
+    ady = _thresholded_adjacency(Xn, near_thresh, block=1024)
+    # componentes conexas BFS (matemáticamente idéntico al enlace transitivo
+    # "similar a CUALQUIER miembro" del lazo O(n^2) original)
+    n = len(idx)
+    visited = [False] * n
     clusters = []
-    seen = [False] * len(adj)
-    min_cluster = config["thresholds"]["min_cluster_size"]
-    for i in range(len(adj)):
-        if seen[i]:
+    from collections import deque
+
+    for i in range(n):
+        if visited[i]:
             continue
-        stack = [i]
-        seen[i] = True
-        members = []
-        while stack:
-            v = stack.pop()
-            members.append(v)
-            for u in adj[v]:
-                if not seen[u]:
-                    seen[u] = True
-                    stack.append(u)
-        if len(members) >= min_cluster:
-            clusters.append([idx[m] for m in sorted(members)])
+        # BFS
+        q = deque([i])
+        visited[i] = True
+        comp = []
+        while q:
+            u = q.popleft()
+            comp.append(u)
+            for v in ady[u]:
+                if not visited[v]:
+                    visited[v] = True
+                    q.append(v)
+        if len(comp) >= config["thresholds"]["min_cluster_size"]:
+            clusters.append([idx[m] for m in sorted(comp)])
 
     results = []
     for mem in clusters:
@@ -105,9 +110,7 @@ def detect_cascades(df, config):
         n_events = len(sub)
         tspan = sub["ts"].max() - sub["ts"].min()
         # velocidad solo si hay ventana temporal real (evita división por cero)
-        # velocidad ACOTADA: si la ventana es < 1 h no se extrapola (evita
-        # picos absurdos: p. ej. 4 cuentas en 1 s daban 14400 "cuentas/h").
-        speed = (accounts / max(tspan / 3600, 1.0)) if tspan > 0 else 0.0
+        speed = (accounts / max(tspan / 3600, 1e-6)) if tspan > 0 else 0.0
         seed = sub["text"].iloc[0]
         # UNA CASCADA DE AMPLIFICACIÓN EXIGE VARIAS CUENTAS DISTINTAS:
         # una sola cuenta repitiendo su propio texto no es una cascada.

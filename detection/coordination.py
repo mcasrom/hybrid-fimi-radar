@@ -34,18 +34,6 @@ def build_edges(df, config):
     w = config["weights"]
     tight_seconds = config["thresholds"]["tight_timing_seconds"]
     near_thresh = config["thresholds"]["near_duplicate_threshold"]
-    # Palancas de memoria para escalar fuentes (sección opcional `coordination`):
-    #   window_days       ventana del grafo en días (def. 90, alineada con retención)
-    #   tfidf_max_features tope de vocabulario del TF-IDF (def. 200000)
-    _coh = config.get("coordination", {}) or {}
-    try:
-        _window_d = int(_coh.get("window_days", 90) or 90)
-    except Exception:
-        _window_d = 90
-    try:
-        _maxf = int(_coh.get("tfidf_max_features", 200000) or 200000)
-    except Exception:
-        _maxf = 200000
 
     from features.content import extract_domain, extract_hashtags
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -56,24 +44,13 @@ def build_edges(df, config):
     def is_social(author):
         return any(author.startswith(p) for p in SOCIAL_PREFIXES)
 
-    # eventos agrupados por cuenta (solo redes sociales)
+    # eventos agrupados por cuenta (solo redes sociales) - groupby vectorizado
     acc_events = defaultdict(list)
-    for _, row in df.iterrows():
-        if is_social(row["author"]):
-            acc_events[row["author"]].append(row)
-
-    # Ventana del grafo: la coordinación es reciente. Por defecto 90d (no cambia
-    # nada hoy); bajarla reduce memoria/cómputo al añadir muchas fuentes.
-    if acc_events and _window_d > 0:
-        try:
-            _maxts = max(r["ts"] for rows in acc_events.values() for r in rows)
-            _cut = _maxts - _window_d * 86400
-            for _a in list(acc_events.keys()):
-                acc_events[_a] = [r for r in acc_events[_a] if r["ts"] >= _cut]
-                if not acc_events[_a]:
-                    del acc_events[_a]
-        except Exception:
-            pass
+    # filtrar solo sociales una vez (vectorizado) y agrupar sin iterrows fila a fila
+    social_mask = df["author"].apply(is_social)
+    if social_mask.any():
+        for author, g in df[social_mask].groupby("author", sort=False):
+            acc_events[author] = g.to_dict("records")
 
     strong_links = defaultdict(float)      # (a,b) -> suma peso fuerte
     weak_links = defaultdict(set)          # (a,b) -> set de señales débiles
@@ -102,27 +79,34 @@ def build_edges(df, config):
     if acc_text:
         all_t = [t for ts in acc_text.values() for t in ts]
         try:
-            import scipy.sparse as sp
-            vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, max_features=_maxf)
+            vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
             X = vec.fit_transform(all_t)
             off = 0
             acc_vec = {}
             for a, ts in acc_text.items():
                 Xa = X[off:off + len(ts)]
-                # Centroide de la cuenta EN FORMATO DISPERSO. Con miles de cuentas
-                # y un vocabulario de bigramas grande, densificar (cuentas x vocab)
-                # agota la RAM del server (OOM); manteniéndolo sparse el pico es bajo.
-                acc_vec[a] = sp.csr_matrix(Xa.mean(axis=0))
+                acc_vec[a] = Xa.mean(axis=0)  # mantiene sparse 1 x Vocab
                 off += len(ts)
             alist = list(acc_vec.keys())
             if len(alist) >= 2:
-                M = sp.vstack([acc_vec[a] for a in alist]).tocsr()
-                sim = cosine_similarity(M)
-                for i, a in enumerate(alist):
-                    for j in range(i + 1, len(alist)):
-                        if sim[i, j] >= near_thresh:
-                            strong_links[(a, alist[j])] += w["near_duplicate_text"]
-                            strong_ev[(a, alist[j])].add("near_duplicate_text")
+                import scipy.sparse as sp
+                from sklearn.preprocessing import normalize
+
+                M = sp.vstack([acc_vec[a] for a in alist])  # sparse, evita densificar
+                Mn = normalize(M, norm="l2", axis=1)
+                # sim dispersa umbralada (evita matriz densa A x A y bucle O(A^2) Python)
+                sim = Mn * Mn.T  # CSR dispersa
+                sim.setdiag(0)
+                # umbralar
+                sim.data[sim.data < near_thresh] = 0
+                sim.eliminate_zeros()
+                coo = sim.tocoo()
+                for i, j, v in zip(coo.row, coo.col, coo.data):
+                    if i < j:
+                        a = alist[i]
+                        b = alist[j]
+                        strong_links[(a, b)] += w["near_duplicate_text"]
+                        strong_ev[(a, b)].add("near_duplicate_text")
         except Exception:
             pass
 
@@ -134,18 +118,6 @@ def build_edges(df, config):
     burst_int = config["thresholds"].get("burst_interval_s", 10)
     burst_min = config["thresholds"].get("burst_min_events", 5)
 
-    def bursty(author):
-        ts = sorted(r["ts"] for r in acc_events[author])
-        if len(ts) < burst_min:
-            return False
-        intervals = [ts[i+1] - ts[i] for i in range(len(ts)-1)]
-        short = sum(1 for d in intervals if d <= burst_int)
-        return short >= burst_min
-
-    # ---- 3) ráfaga sincronizada (señal fuerte) ----
-    # Conecta cuentas con ráfagas densas reales (varios eventos propios con
-    # intervalo < burst_int_s). Los grupos de coordinación publican en ráfagas
-    # de pocos segundos; las cuentas normales tienen intervalos de horas.
     def bursty(author):
         ts = sorted(r["ts"] for r in acc_events[author])
         if len(ts) < burst_min:

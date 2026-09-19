@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
 
 _URL_RE = re.compile(r"https?://[^\s]+")
 _TAG_RE = re.compile(r"#(\w+)")
@@ -86,56 +85,76 @@ def near_duplicate_ratio(df, author, config):
 
 
 def near_duplicate_ratio_all(df, config):
-    """Ratios near-dup de TODAS las cuentas en una pasada de TF-IDF SIN densificar.
+    """Versión vectorizada: calcula near_duplicate_ratio para TODAS las cuentas
+    en una sola pasada TF-IDF + producto por bloques sin densificar.
 
-    Para cada texto del corpus se calcula si tiene algún vecino con coseno >=
-    umbral **de otra cuenta** (near-dup externo). El producto X·Xᵀ se hace por
-    bloques y se umbrala al instante (patrón de `detection/fakenews._thresholded_
-    adjacency`), de modo que la memoria pico queda acotada al bloque y NO se
-    materializa la matriz densa m×(N-m).
+    Evita O(A·n) scans + A veces fit_transform + matriz densa mine×rest.
+    Retorna dict author -> ratio."""
+    import scipy.sparse as sp
 
-    BUG corregido 15/09/2026 (profiling de memoria): la versión anterior hacía
-    `sim.toarray()` sobre `X[mine] @ X[rest].T`; con una cuenta de miles de
-    eventos eso era una matriz densa de ~2,5 GB y >5 min → era el pico real del
-    paso [2/7] Features de run_fimi (3,18 GB), no coordinación/cascadas.
-    """
-    from collections import defaultdict
     threshold = config["thresholds"]["near_duplicate_threshold"]
-    texts = df["text"].tolist()
-    authors = df["author"].tolist()
-    keep = [i for i, t in enumerate(texts) if (t or "").strip()]
-    out = {a: 0.0 for a in set(authors)}
-    if len(keep) < 2:
-        return out
-    auth_of = [authors[i] for i in keep]
-    corpus = [texts[i] for i in keep]
+    if df.empty:
+        return {}
+
+    # Agrupar textos no vacíos por autor (una pasada)
+    grouped = {}
+    for author, g in df.groupby("author"):
+        ts = [t for t in g["text"].tolist() if t and t.strip()]
+        if len(ts) >= 2:
+            grouped[author] = ts
+    if not grouped:
+        return {a: 0.0 for a in df["author"].unique()}
+
+    # Corpus único: todos los textos no vacíos con índice por autor
+    all_texts = []
+    author_slices = {}  # author -> (start, end) en all_texts
+    off = 0
+    for author, ts in grouped.items():
+        author_slices[author] = (off, off + len(ts))
+        all_texts.extend(ts)
+        off += len(ts)
+
     try:
         vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, stop_words=None)
-        X = normalize(vec.fit_transform(corpus))
+        X = vec.fit_transform(all_texts)  # N x Vocab, dispersa
     except Exception:
-        return out
-    n = X.shape[0]
-    pos_by_auth = defaultdict(list)
-    for pos, a in enumerate(auth_of):
-        pos_by_auth[a].append(pos)
-    # por bloques de filas: vecinos >= umbral al instante (sin densificar)
-    has_ext = np.zeros(n, dtype=bool)
+        return {a: 0.0 for a in df["author"].unique()}
+
+    # Normalizar filas L2 para que producto = coseno
+    from sklearn.preprocessing import normalize
+
+    Xn = normalize(X, norm="l2", axis=1)
+
+    result = {a: 0.0 for a in df["author"].unique()}
     block = 1024
-    for i0 in range(0, n, block):
-        i1 = min(i0 + block, n)
-        S = (X[i0:i1] @ X.T).tocsr()
-        S.data = np.where(S.data >= threshold, 1.0, 0.0)
-        S.eliminate_zeros()
-        for r in range(i1 - i0):
-            gi = i0 + r
-            a_gi = auth_of[gi]
-            cols = S.indices[S.indptr[r]:S.indptr[r + 1]]
-            for c in cols:
-                if c != gi and auth_of[c] != a_gi:
-                    has_ext[gi] = True
-                    break
-    for a, poss in pos_by_auth.items():
-        m = len(poss)
-        if m >= 2:
-            out[a] = float(has_ext[poss].sum()) / m
-    return out
+    for author, (s, e) in author_slices.items():
+        mine = Xn[s:e]  # m x Vocab
+        m = mine.shape[0]
+        # construir matriz complementaria sin copiar todo si es grande: usar blocos
+        # Índices del resto
+        rest_mask = list(range(0, s)) + list(range(e, Xn.shape[0]))
+        if not rest_mask:
+            result[author] = 0.0
+            continue
+        hits = 0
+        # producto por bloques para evitar densificar m x (N-m)
+        for b0 in range(0, len(rest_mask), block):
+            b1 = min(b0 + block, len(rest_mask))
+            rest_block = Xn[rest_mask[b0:b1]]
+            # mine (m x Voc) @ rest_block.T (Voc x bsize) -> m x bsize dispersa
+            sim_block = mine @ rest_block.T
+            # umbralar y eliminar ceros al instante
+            sim_block.data[sim_block.data < threshold] = 0
+            sim_block.eliminate_zeros()
+            # para cada fila, si tiene algún 1 -> hit
+            # sim_block es CSR
+            hits_block = (sim_block.getnnz(axis=1) > 0)
+            # acumular: fila hit si alguna vez tuvo sim >= thresh
+            if b0 == 0:
+                hit_mask = hits_block
+            else:
+                hit_mask = hit_mask | hits_block
+            if hit_mask.all():
+                break
+        result[author] = float(hit_mask.sum()) / m if m else 0.0
+    return result
