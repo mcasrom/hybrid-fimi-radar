@@ -787,7 +787,7 @@ temas:
     estado: cerrado
     nombre: Geopolítica UE-Marruecos
   politica_nacional:
-    estado: produccion
+    estado: piloto
     nombre: Política nacional
     # Tuning por tema: la coordinación humano/partidista legítima tiene
     # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
@@ -1034,6 +1034,18 @@ temas:
     - desestabilización
     - subversión
     - inteligencia extranjera
+    # Contexto obligatorio (19/09): el tema es 'España'. Sin un término de
+    # contexto español, historias de injerencia/desinformación de OTROS países
+    # (Colombia, Argentina, Países Bajos...) no deben entrar en el tema.
+    contexto:
+    - España
+    - Spain
+    - español
+    - española
+    - Unión Europea
+    - OTAN
+    - Bruselas
+    - Madrid
     scoring:
       weights:
         anomaly: 0.45

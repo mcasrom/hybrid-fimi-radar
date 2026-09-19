@@ -150,18 +150,24 @@ contenido mezclado (Ceuta + OPEP). Fix en dos capas:
 Resultado real: `energia` pasó de 705 a **606 eventos** y de 11 a **6 clusters**, todos
 energéticos (OPEP/Brent/gas/Ormuz); el cluster mezclado volvió a su tema real (frontera_sur).
 
-**Gate de relevancia del sumidero (18/09/2026).** `frontera_sur` es el tema por defecto
-(todo evento RSS/social sin otro tema cae aquí), así que podía mostrar clusters ajenos
-(p. ej. uno de **Globo/Brasil** o de **Irán/Hormuz**). Fix en la **vista**
-(`gen_fimi_html.py`): (1) `view_tema` reasigna usando **`title+text`** (no solo `text`),
-de modo que un cluster cuyo match está en el titular cae en su tema real; (2) un **gate de
-relevancia** exige que cada cluster contenga algún término de su tema (`keywords ∩ filtro`,
-o sus keywords si no hay filtro) en `title+text+url`; los que no casan con **ningún** tema se
-marcan `_sin_relacion` y **no se muestran** en ninguna pestaña. Además se amplió el `filtro`
-de `oriente_medio` con `Iran`/`Hormuz` (ya eran keywords → sin nuevas queries de captura).
-Resultado: `frontera_sur` **265→80 clusters** (0 rastros de Brasil/Irán) y `oriente_medio`
-**122→155** (el contenido de Oriente Medio cae en su tema). Solo vista: no toca captura,
-scoring ni BD.
+**Cajón por defecto ELIMINADO — no más clusters mixtos (19/09/2026).** `frontera_sur`
+era el tema por defecto: **todo evento RSS/social sin keyword caía ahí** (`capture.py`,
+`e.get("tema_id", "frontera_sur")`). Como el grafo de coordinación agrupa cuentas por
+URL/texto/timing (no por tema), un medio multipropósito (p. ej. `diario.red`) generaba
+**clusters mixtos** (Ceuta + Colombia) que aparecían bajo un tema sin relación. Fix en el
+**origen**:
+1. **`collectors/capture.py`**: se elimina el default `frontera_sur`. Un evento solo
+   pertenece a un tema si su texto matchea las **keywords de ese tema** (+ `filtro`). Lo
+   que no matchea **ningún** tema **se descarta** (no se vuelca a `frontera_sur`).
+2. **`detection/recompute_temas.py`**: recomputa `event_temas` del corpus existente con
+   el mismo criterio (una sola vez, tras el cambio).
+3. **Contexto obligatorio por tema** (`temas.<tema>.contexto`): p. ej.
+   `espana_amenazas_hibridas` exige un término español (`España`, `UE`, `OTAN`…) además
+   del de amenaza → no captura injerencia de otros países (Colombia, Argentina…).
+
+Resultado (75.400 eventos): **25.515 (33,8%) sin tema → descartados**; `frontera_sur`
+**265→57 clusters** (0 rastros de Colombia/Irán/Brasil) y el resto de temas quedan
+puros. El gate de vista por dominancia se retiró (ya no hace falta: el origen está limpio).
 
 ### Cobertura electoral — Alemania y Suecia (14/09/2026)
 

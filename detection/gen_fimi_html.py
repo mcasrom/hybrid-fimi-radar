@@ -1645,10 +1645,18 @@ def main():
         view_tema = {}
 
     # --- Gate de relevancia (anti-fraude del sumidero) ---
-    # Un cluster solo se muestra en su tema de vista si su texto/titular/URL
-    # contiene algun termino del tema. Los que no casan con NINGUN tema se
-    # marcan 'sin relacion' (bucket interno) y NO se muestran. Solo vista:
-    # no toca captura, scoring ni BD.
+    # Un cluster solo se muestra en su tema si el tema es DOMINANTE en su
+    # contenido: >=50% de sus eventos contienen algun termino del tema, o el
+    # termino aparece en los 3 textos mas repetidos (lo que se muestra en
+    # 'De que habla'). Los que no casan se marcan 'sin relacion' (bucket
+    # interno) y NO se muestran. Solo vista: no toca captura, scoring ni BD.
+    # frontera_sur usa terminos de relevancia AMPLIOS: sus keywords son frases
+    # estrechas ('Espana Marruecos') que no matchean 'Espana a Marruecos'.
+    _FS_BROAD = ["ceuta", "melilla", "marruecos", "maroc", "marroqui", "morocco",
+                 "migracion", "migrante", "migrant", "inmigracion", "inmigrante",
+                 "frontera", "border", "sahara", "saharaui", "magreb", "maghreb",
+                 "canarias", "tarajal", "nador", "patera", "cayuco", "rabat",
+                 "ceuti", "melillense"]
     _rel_terms = {}
     for _th in temas:
         _fl = (temas_cfg.get(_th, {}) or {}).get("filtro") if isinstance(temas_cfg, dict) else None
@@ -1659,28 +1667,40 @@ def main():
             _rel_terms[_th] = _inter if _inter else _kws_th
         else:
             _rel_terms[_th] = _kws_th
+    _rel_terms["frontera_sur"] = [{"palabra": _x} for _x in _FS_BROAD]
     _blob_map = {}
+    _txt_map = {}
     try:
         for _r in con.execute("SELECT cluster_id, title, text, url FROM cluster_events").fetchall():
-            _blob_map.setdefault(_r["cluster_id"], []).append(
+            _cid = _r["cluster_id"]
+            _blob_map.setdefault(_cid, []).append(
                 _norm(str(_r["title"] or "") + " " + str(_r["text"] or "") + " " + str(_r["url"] or "")))
+            _tx = str(_r["text"] or "").strip()
+            if _tx:
+                _txt_map.setdefault(_cid, []).append(_tx)
     except Exception:
-        _blob_map = {}
+        _blob_map, _txt_map = {}, {}
 
+    from collections import Counter as _Counter
     def _tiene_relacion(_c):
         _t = view_tema.get(_c["id"], _c["tema_id"])
         _ms = _rel_terms.get(_t)
         if not _ms:
             return True
-        _blob = " ".join(_blob_map.get(_c["id"], []))
-        if not _blob:
+        _blobs = _blob_map.get(_c["id"], [])
+        if not _blobs:
             return False
-        return any(_kw_matches(_blob, _k) for _k in _ms)
+        _cov = sum(1 for _b in _blobs if any(_kw_matches(_b, _k) for _k in _ms)) / len(_blobs)
+        if _cov >= 0.5:
+            return True
+        _tops = [t for t, _ in _Counter(_txt_map.get(_c["id"], [])).most_common(3)]
+        return any(_kw_matches(_norm(_t0), _k) for _t0 in _tops for _k in _ms)
 
-    _sin_relacion = [c["id"] for c in clusters if not _tiene_relacion(c)]
-    if _sin_relacion:
-        _srs = set(_sin_relacion)
-        clusters = [c for c in clusters if c["id"] not in _srs]
+    # NOTA (19/09): el cajon por defecto se elimino en capture.py + recompute,
+    # asi que los clusters ya son de un solo tema por construccion. El antiguo
+    # gate de dominancia (que ocultaba clusters) se retira para no ocultar
+    # senal legitima (p.ej. politica_nacional). _tiene_relacion se conserva
+    # solo como utilidad por si se quiere reactivar.
 
     def _vt(_c):
         return view_tema.get(_c["id"], _c["tema_id"])

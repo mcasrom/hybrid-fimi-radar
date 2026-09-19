@@ -173,13 +173,11 @@ def store_sqlite(events):
         "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text, tema_id)"
         " VALUES (?,?,?,?,?,?,?)",
         [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"],
-          e.get("tema_id", "frontera_sur")) for e in events])
+          (e.get("tema_id") or (sorted(e.get("_temas"))[0] if e.get("_temas") else ""))) for e in events])
     con.commit()
     # relacion many-to-many: a cada evento (por url o texto) sus temas
     for e in events:
-        temas = e.get("_temas") or {"frontera_sur"}
-        if not temas:
-            temas = {"frontera_sur"}
+        temas = e.get("_temas") or set()
         row = con.execute(
             "SELECT id FROM events WHERE source=? AND author=? AND timestamp=? AND text=?",
             (e["source"], e.get("author", ""), e["timestamp"], e["text"])).fetchone()
@@ -326,7 +324,7 @@ def main():
     for ch in channels:
         print(f"  telegram/{ch} ...")
         for e in grab_telegram(ch):
-            e["_temas"] = {"frontera_sur"}
+            e["_temas"] = set()
             events.append(e)
     for q, tema in bsky_q:
         print(f"  bluesky/{q} (tema={tema}) ...")
@@ -341,7 +339,7 @@ def main():
     for s in subreddits:
         print(f"  reddit/{s} ...")
         for e in grab_reddit_rss(s):
-            e["_temas"] = {"frontera_sur"}
+            e["_temas"] = set()
             events.append(e)
     for q, tema in masto_q:
         print(f"  mastodon/{q} (tema={tema}) ...")
@@ -352,11 +350,11 @@ def main():
     for s in feeds:
         name = s.get("nombre") or s.get("name") or "feed"
         url = s.get("url", "")
-        tema = s.get("tema", "frontera_sur")
+        tema = s.get("tema")
         if url:
             print(f"  rss/{name} (tema={tema}) ...")
             for e in grab_rss_feed(name, url):
-                e["_temas"] = {tema}
+                e["_temas"] = {tema} if tema else set()
                 events.append(e)
 
     # Ventana temporal: descartar eventos mas antiguos que CAPTURE_WINDOW_DAYS.
@@ -398,7 +396,7 @@ def main():
         for e in uniq:
             extra = temas_por_contenido((e.get("text") or "") + " " + (e.get("title") or ""), keywords)
             if extra:
-                cur = set(e.get("_temas") or {"frontera_sur"})
+                cur = set(e.get("_temas") or set())
                 cur.update(extra)
                 e["_temas"] = sorted(cur)
     except Exception as _exc:
@@ -411,7 +409,9 @@ def main():
     # se descartan (no se vuelcan al default frontera_sur).
     _filtros_cfg = {t: (m or {}).get("filtro") for t, m in _temas_cfg.items()
                     if (m or {}).get("filtro")}
-    if _filtros_cfg:
+    _contextos_cfg = {t: (m or {}).get("contexto") for t, m in _temas_cfg.items()
+                      if (m or {}).get("contexto")}
+    if _filtros_cfg or _contextos_cfg:
         try:
             from normalizer.clasificar import normalizar as _norm, _tokens as _tok, _matches as _mat
             _filtros = {}
@@ -419,16 +419,27 @@ def main():
                 _prep = [(_norm(str(_x)), _tok(str(_x))) for _x in (_terms or []) if _norm(str(_x))]
                 if _prep:
                     _filtros[_t] = _prep
-            if _filtros:
+            _contextos_prep = {}
+            for _t, _terms in _contextos_cfg.items():
+                _prep = [(_norm(str(_x)), _tok(str(_x))) for _x in (_terms or []) if _norm(str(_x))]
+                if _prep:
+                    _contextos_prep[_t] = _prep
+            if _filtros or _contextos_prep:
                 _keep = []
                 for e in uniq:
                     _temas_e = e.get("_temas")
                     if not _temas_e:
-                        _keep.append(e)
                         continue
                     nt = _norm((e.get("text") or "") + " " + (e.get("title") or ""))
                     ntok = [x for x in nt.split() if len(x) > 2]
                     for _t, _prep in _filtros.items():
+                        if _t in _temas_e and not any(_mat(tn, tk, nt, ntok) for tn, tk in _prep):
+                            if isinstance(_temas_e, list):
+                                if _t in _temas_e:
+                                    _temas_e.remove(_t)
+                            else:
+                                _temas_e.discard(_t)
+                    for _t, _prep in _contextos_prep.items():
                         if _t in _temas_e and not any(_mat(tn, tk, nt, ntok) for tn, tk in _prep):
                             if isinstance(_temas_e, list):
                                 if _t in _temas_e:
@@ -443,6 +454,11 @@ def main():
                     print(f"  gate por tema (filtro): descartados {_dropped} eventos sin tema válido")
         except Exception as _exc:
             print(f"  gate por tema error: {_exc}")
+
+    # Cajon por defecto ELIMINADO: un evento solo pertenece a un tema si su
+    # texto matchea las keywords de ese tema. Lo que no matchea NINGUN tema
+    # se descarta (no se vuelca a frontera_sur). Sin clusters mixtos.
+    uniq = [e for e in uniq if e.get("_temas")]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     # _temas es un set (no serializable a JSON): convertir a lista para el dump
