@@ -293,7 +293,7 @@ def render_component_legend():
             f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
-def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None):
+def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None, amp=None):
     """Araña (radar) de los 4 componentes del tema: media de sus clusters +
     el cluster de mayor score. SVG inline sin librerías. Solo lectura: usa el
     assessment ya cargado (no añade dato ni toca el scoring). Una por tema,
@@ -315,7 +315,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
         r = R * max(0.0, min(100.0, float(v or 0))) / 100.0
         return (cx + r * _m.cos(a), cy + r * _m.sin(a))
 
-    parts = ['<svg viewBox="0 0 %d %d" width="%d" height="%d" role="img" aria-label="Radar de componentes del tema">'
+    parts = ['<svg viewBox="0 0 %d %d" width="%d" height="%d" role="img" aria-label="Radar de componentes del tema" style="max-width:100%%;height:auto">'
              % (W, H, W, H)]
     for frac in (0.25, 0.5, 0.75, 1.0):
         pts = " ".join("%.1f,%.1f" % _pt(i, frac * 100) for i in range(4))
@@ -333,8 +333,10 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
     dys = {0: -6.0, 1: 0.0, 2: 6.0, 3: 0.0}
     for i, (k, lab) in enumerate(comps):
         x, y = _pt(i, 114)
+        _desc = COMPONENT_ES.get(k, "")
         parts.append('<text x="%.1f" y="%.1f" font-size="10" fill="#334155" text-anchor="%s" '
-                     'dominant-baseline="middle">%s %.0f</text>' % (x, y + dys[i], anchors[i], lab, mean.get(k, 0)))
+                     'dominant-baseline="middle"><title>%s</title>%s %.0f</text>'
+                     % (x, y + dys[i], anchors[i], _desc, lab, mean.get(k, 0)))
     parts.append('</svg>')
     svg = "".join(parts)
 
@@ -393,6 +395,20 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
         stats_html = ('<div style="font-size:.74rem;color:#64748b;margin-top:12px;text-align:center;'
                       'border-top:1px solid #e2e8f0;padding-top:8px">' + str(stats) + '</div>')
 
+    # Contexto adicional (honesto): la amplificación es un componente GLOBAL del
+    # tema (no por-cluster), así que no va como 5º eje; se muestra como dato aparte.
+    _bits = []
+    if amp is not None:
+        _bits.append("Amplificación (global del tema): <b>" + ("%.0f" % float(amp or 0)) + "</b>/100")
+    _pos = sorted(((float(top.get(k, 0) or 0) - float(mean.get(k, 0) or 0), lab) for k, lab in comps),
+                  reverse=True)
+    _up = [(d, lab) for d, lab in _pos if d >= 5][:2]
+    if _up:
+        _bits.append("el cluster top destaca en " + " y ".join(
+            "%s (+%.0f)" % (lab, d) for d, lab in _up) + " vs la media del tema")
+    _extra = ('<div style="font-size:.72rem;color:#64748b;margin-top:10px;text-align:center;line-height:1.7">'
+              + " · ".join(_bits) + '</div>') if _bits else ""
+
     if hyp_col:
         body = ('<div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-start">'
                 '<div style="text-align:center">' + svg + leyenda + '</div>'
@@ -404,7 +420,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
             '<div style="font-size:.88rem;font-weight:700;color:#475569;text-align:center">'
             'Radar de componentes del tema</div>'
             '<div style="margin-top:8px">' + body + '</div>'
-            + stats_html + '</div>')
+            + _extra + stats_html + '</div>')
 def _cluster_comps(c, a):
     """Componentes 0-100 de un cluster: preferir el assessment (ya normalizado,
     ej. coordination_score del assessment = synchronization=coord*12 cap 100);
@@ -2808,11 +2824,12 @@ def main():
             _sal_txt = (str(len(_tema_cl)) + " clusters · " + str(_n_cuentas_t) + " cuentas · "
                         + str(_n_ev_t) + " eventos")
             if isinstance(_sal_t, dict) and _sal_t.get("score") is not None:
-                _sal_txt += " · salud " + str(_sal_t.get("score")) + "/100"
+                _sal_txt += " · salud " + ("%.0f" % float(_sal_t.get("score"))) + "/100"
             _sal_txt += (" · banda " + band_of(_tcc["overall_score"] or 0)
                          + " (" + ("%.0f" % (_tcc["overall_score"] or 0)) + "/100)")
             _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"],
-                                              _tcc["overall_score"] or 0, top_hyps=_top_hyps, stats=_sal_txt)
+                                              _tcc["overall_score"] or 0, top_hyps=_top_hyps, stats=_sal_txt,
+                                              amp=_amp_tema)
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
