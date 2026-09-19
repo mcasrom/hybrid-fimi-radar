@@ -701,18 +701,39 @@ señal (todo solo lectura; no altera el scoring):
   masa a banda WATCH muestran el motivo, para que los 39/100 repetidos no parezcan el mismo
   hallazgo clonado.
 
-## Araña de componentes por tema (radar)
+## Radar de componentes por tema (tarjeta combinada)
 
-En el **detalle de cada tema**, bajo la leyenda "Cómo leer los componentes (0-100)", se
-muestra una **araña (radar) de 4 ejes** con los componentes del tema a escala 0-100:
-**Coordinación · Anomalía · Infraestructura · Densidad**. Dos polígonos:
+En el **detalle de cada tema**, bajo la leyenda "Cómo leer los componentes (0-100)", hay una
+**tarjeta combinada** con:
 
-- **media del tema** (naranja): promedio de los componentes de sus clusters;
-- **cluster top** (azul discontinuo): los componentes del cluster de mayor score.
+- **Araña (radar) de 4 ejes** con los componentes del tema a escala 0-100 —
+  **Coordinación · Anomalía · Infraestructura · Densidad** — y **dos polígonos**:
+  **media del tema** (naranja) y **cluster top** (azul discontinuo). Los ejes llevan **tooltip**
+  con la definición de cada componente.
+- **Barras de hipótesis H1-H6** del **cluster top** (color por score; H3 «operación de influencia
+  extranjera» destacada con ⭐) + nota «H3 (extranjera) en X%: NO concluyente/destacada» y el
+  **chip de atribución/confianza** del top («⚖️ atribución: sin determinar» o «⚖️ PROXY · confianza MEDIUM»).
+- **Lectura del tema en una línea** (`_lectura_tema`): traduce los componentes **medios** del tema a
+  lenguaje llano («coordinación e infraestructura altas (patrón de red)…», «señal débil…») con
+  contexto (`N clusters · N cuentas · N eventos · narrativas sostenidas`).
+- **Pie de stats**: `N clusters · N cuentas · N eventos · salud S/100 · banda B (score/100)`.
+- **Comparativa top vs media** y **amplificación global del tema**. La amplificación es un
+  componente **global del run** (mismo valor para todos los clusters), no por-cluster → se muestra
+  **como dato**, **no** como 5.º eje del radar (evita mezclar escalas).
 
-Solo lectura: se calcula del `assessment` ya cargado (cero dato nuevo, cero scoring). Da
-una lectura de un vistazo del **perfil del tema** (qué componente pesa). Generado por
-`render_radar_componentes()` (SVG inline, sin librerías).
+**Descargable (PNG por tema)** — para compartir/capturas: en cada regen se genera un **SVG autónomo**
+(tema oscuro, formato presentación, 1120×620) con el radar + hipótesis + stats →
+`/var/www/fimi/radar-<tema>.svg`, que se convierte a **`/var/www/fimi/radar-<tema>.png`** con
+**`rsvg-convert`**. La tarjeta incluye un enlace **«📥 Descargar PNG»** →
+`https://fimi.viajeinteligencia.com/radar-<tema>.png`.
+
+Solo lectura: se calcula del `assessment` y de `hypotheses_json` ya cargados (cero dato nuevo, cero
+scoring). Generado por `render_radar_componentes()` (tarjeta inline) y `render_radar_share_svg()`
+(SVG autónomo → PNG).
+
+**Límite declarado**: el modelo solo tiene **confianza de atribución** (`attribution_confidence`:
+NO_ATTRIBUTION por defecto, MEDIUM cuando hay atribución como hipótesis). **No** hay una «confianza
+de la señal» por-cluster; el chip no la simula.
 
 ## Atribución (separada del detector)
 
