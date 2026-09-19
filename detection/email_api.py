@@ -850,6 +850,36 @@ class H(BaseHTTPRequestHandler):
             except KeyError:
                 return self._send(404, {"error": f"cluster no encontrado: {cid}"})
             return self._send_download(200, body, ctype, fname)
+        # ---- Export de eventos sin tema (auditoría de descarte) ----
+        if path == "/api/v1/export-sin-tema":
+            n = 50
+            if "n" in q:
+                try:
+                    n = int(q["n"][0])
+                except (ValueError, TypeError):
+                    n = 50
+            n = max(1, min(n, 200))
+            con = sqlite3.connect(DB)
+            con.row_factory = sqlite3.Row
+            rows = con.execute(
+                "SELECT e.id, e.timestamp, e.source, e.author, e.title, "
+                "e.text, e.url, e.tema_id "
+                "FROM events e WHERE NOT EXISTS "
+                "(SELECT 1 FROM event_temas t WHERE t.event_id=e.id) "
+                "ORDER BY e.timestamp DESC LIMIT ?", (n,)).fetchall()
+            con.close()
+            csv_rows = ["id,timestamp_utc,source,author,title,text,url"]
+            for r in rows:
+                def _esc(v):
+                    return str(v).replace(",", " ").replace("\n", " ")[:200] if v else ""
+                csv_rows.append(",".join([
+                    str(r["id"]), str(r["timestamp"]), _esc(r["source"]),
+                    _esc(r["author"]), _esc(r["title"]), _esc(r["text"]),
+                    _esc(r["url"])]))
+            body = "\n".join(csv_rows) + "\n"
+            return self._send(200, body,
+                              extra_headers={"Content-Type": "text/csv",
+                                             "Content-Disposition": 'attachment; filename="eventos_sin_tema.csv"'})
         # ---- API pública v1 (read-only) ----
         if path in ("/api/v1", "/api/v1/"):
             return self._send(200, {

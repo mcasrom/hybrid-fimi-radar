@@ -3602,6 +3602,49 @@ def main():
         salud_kw_html = (f"<div class='card' id='salud-keywords'><h3>Salud de keywords</h3>"
                          f"<p class='caption'>No disponible: {_e_kw}</p></div>")
 
+    # --- Auditoría de descarte (transparencia: qué eventos NO tienen tema) ---
+    # Cada ciclo run_fimi descarta eventos que no matchean ninguna keyword.
+    # Este bloque muestra el ratio y permite descargar los eventos sin tema
+    # para verificar que el filtro no está expulsando señal real.
+    try:
+        import json as _json
+        _state_file = ROOT / "data" / "descarte_estado.json"
+        _d = {}
+        if _state_file.exists():
+            try:
+                _d = _json.loads(_state_file.read_text()) or {}
+            except Exception:
+                _d = {}
+        _n_ev = _d.get("n_ev_total", 0)
+        _n_st = _d.get("n_sin_tema", 0)
+        _ratio = (_n_st / _n_ev) if _n_ev else 0.0
+        _prev = _d.get("ratio", 0.0)
+        _delta = _ratio - _prev
+        _fecha = _d.get("generado", "—")
+        _umbral = 0.40
+        _crece = 0.10
+        _alert = _ratio >= _umbral or _delta >= _crece
+        _cls = "warn" if _alert else "ok"
+        _bar = min(int(_ratio * 100), 100)
+        _descarga = "/api/v1/export-sin-tema"
+        auditoria_html = (
+            "<div class='card' id='auditoria-descarte'>"
+            "<h3>Auditoría de descarte · " + str(_n_st) + " de " + str(_n_ev) + " sin tema (" + str(int(_ratio*100)) + "%)</h3>"
+            "<p class='caption'>Los eventos que no matchean ninguna keyword del catálogo se descartan "
+            "para evitar clusters sin relación con el tema. Si el ratio sube demasiado puede que "
+            "las keywords estén expulsando señal real (cobertura excesiva). "
+            "<span style='color:#d97706;font-weight:700'>" + ("⚠ UMBRAL ALCANZADO" if _alert else "✓ Dentro de umbral") + "</span> "
+            "(umbral " + str(int(_umbral*100)) + "%, crecimiento >" + str(int(_crece*100)) + "pp).</span></p>"
+            "<div style='margin:6px 0'><div style='height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden'>"
+            "<div style='width:" + str(_bar) + "%;background:(" + ("'#dc2626'" if _alert else "'#16a34a'") + ");height:100%;border-radius:4px'></div></div>"
+            "<div style='font-size:.72rem;color:#64748b;margin-top:2px'>ratio " + str(int(_ratio*100)) + "%</div></div>"
+            "<div style='margin-top:6px'><a href='" + _descarga + "' class='gh-link' style='font-size:.8rem'>"
+            "📥 Descargar eventos sin tema (CSV, últimos 50)</a></div>"
+            "</div>")
+    except Exception as _e_ad:
+        auditoria_html = ("<div class='card' id='auditoria-descarte'><h3>Auditoría de descarte</h3>"
+                          "<p class='caption'>No disponible: " + str(_e_ad) + "</p></div>")
+
     # --- Salud del sistema (check médico integral) ---
     # Auto-chequeo estructural del pipeline: frescura de captura, snapshots por
     # tema, integridad BD y coherencia config. Complementa a los checkers
@@ -4249,6 +4292,8 @@ Detalle completo (umbrales y variables configurables):
 
 {salud_kw_html}
 
+{auditoria_html}
+
 {sistema_html}
 
 {_salud_temas_html}
@@ -4525,7 +4570,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','como-leerlo','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
+  var _transAnchors=['que-es-fimi','como-leerlo','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','auditoria-descarte','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
