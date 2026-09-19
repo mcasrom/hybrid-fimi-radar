@@ -16,6 +16,11 @@ print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in (
   echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
   .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" >> logs/fimi.log 2>&1
 done
+# 2b) Bitacora: sembrar la entrada 'inicio' de cada tema con findings (idempotente;
+#     no duplica). Cubre los temas creados editando config.yaml (no via
+#     temas_cli.py alta), que si no se quedan sin registro de inicio en la tarjeta
+#     Bitacora. Va ANTES del dashboard para que este la recoja en el mismo ciclo.
+.venv/bin/python detection/bitacora.py --seed >> logs/bitacora.log 2>&1
 # 3) Dashboard
 .venv/bin/python detection/gen_fimi_html.py >> logs/fimi.log 2>&1
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
