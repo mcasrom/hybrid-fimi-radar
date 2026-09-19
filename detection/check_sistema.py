@@ -152,6 +152,44 @@ def chequea():
     except Exception as e:
         issues.append({"check": "errores_ciclo", "nivel": "warn", "msg": f"error leyendo log: {e}"})
 
+    # 6.5) descarte: eventos sin tema (no matchean ninguna keyword)
+    try:
+        n_ev_total = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        n_sin_tema = con.execute(
+            "SELECT COUNT(*) FROM events e WHERE NOT EXISTS "
+            "(SELECT 1 FROM event_temas t WHERE t.event_id=e.id)").fetchone()[0]
+        ratio = (n_sin_tema / n_ev_total) if n_ev_total else 0.0
+        # estado previo para detectar crecimiento
+        state_file = ROOT / "data" / "descarte_estado.json"
+        prev = {}
+        if state_file.exists():
+            try:
+                prev = json.loads(state_file.read_text()) or {}
+            except Exception:
+                prev = {}
+        ratio_prev = prev.get("ratio", 0.0)
+        delta = ratio - ratio_prev
+        DICARTE_MAX = 0.40   # 40% de descarte como umbral de alerta
+        DICARTE_CRECE = 0.10 # alertar si crece >10pp vs ciclo anterior
+        if ratio >= DICARTE_MAX or delta >= DICARTE_CRECE:
+            motivo = []
+            if ratio >= DICARTE_MAX:
+                motivo.append(f"{n_sin_tema:,}/{n_ev_total:,} eventos sin tema ({ratio*100:.0f}%) — umbral {DICARTE_MAX*100:.0f}%")
+            if delta >= DICARTE_CRECE:
+                motivo.append(f"crecimiento: {ratio_prev*100:.0f}% -> {ratio*100:.0f}% (+{delta*100:.0f}pp)")
+            issues.append({"check": "descarte", "nivel": "warn",
+                           "msg": "; ".join(motivo) +
+                                  ". ¿Keywords demasiado estrechas? Ver salud de keywords."})
+        else:
+            ok.append({"check": "descarte",
+                       "msg": f"{n_sin_tema:,}/{n_ev_total:,} sin tema ({ratio*100:.0f}%) — dentro de umbral"})
+        # persistir estado
+        state_file.write_text(json.dumps({"ratio": ratio, "n_sin_tema": n_sin_tema,
+                                          "n_ev_total": n_ev_total,
+                                          "generado": now.isoformat()}, ensure_ascii=False, indent=2))
+    except Exception as e:
+        issues.append({"check": "descarte", "nivel": "warn", "msg": f"error descarte: {e}"})
+
     # 6) crecimiento del corpus (riesgo OOM del run pesado `frontera_sur`)
     try:
         n_ev = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
@@ -254,12 +292,40 @@ def to_html(res):
             f"individuales (ingesta, fuentes, cierre, salud de keywords).</p></div>")
 
 
+def export_sin_tema(n=50):
+    """Escribe CSV con los N eventos mas recientes SIN tema (no matchean
+    ninguna keyword). Util para auditar si las keywords son demasiado
+    estrechas y estamos tirando señal real."""
+    import csv
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    rows = con.execute(
+        "SELECT e.id, e.timestamp, e.source, e.author, e.title, e.text, e.url "
+        "FROM events e WHERE NOT EXISTS "
+        "(SELECT 1 FROM event_temas t WHERE t.event_id=e.id) "
+        "ORDER BY e.timestamp DESC LIMIT ?", (n,)).fetchall()
+    con.close()
+    out = ROOT / "data" / "eventos_sin_tema.csv"
+    with open(out, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "timestamp", "source", "author", "title", "text", "url"])
+        for r in rows:
+            w.writerow([r["id"], r["timestamp"], r["source"], r["author"],
+                        r["title"], r["text"], r["url"]])
+    print(f"export {len(rows)} eventos sin tema -> {out}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--html", action="store_true")
     ap.add_argument("--notify", action="store_true")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--export-sin-tema", type=int, default=0,
+                    help="exporta los N eventos mas recientes sin tema a CSV")
     args = ap.parse_args()
+    if args.export_sin_tema:
+        export_sin_tema(args.export_sin_tema)
+        return
     res = chequea()
     if args.html:
         print(to_html(res))
