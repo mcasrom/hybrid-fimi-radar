@@ -2190,3 +2190,14 @@ Post 15º del blog: https://analisis.pruebapublica.com/posts/geopolitica-fronter
 - **Cierre de Sprint 2026-09-16**: `fimi.viajeinteligencia.com` responsive verificado (Playwright: 375px, 560px, 768px, 1024px, 1280px, 1440px, 1920px). `gen_fimi_html.py` con breakpoints `@media(max-width:768px)` y `@media(max-width:560px)`. `main` max-width: 1200px, `.fimi-hero .sub` full-width, `.caption` 82ch. Dashboard sirve `index.html` (200 text/html) + research.html. Público con UA de navegador → HTTP 200; purge Cloudflare OK.
 - **Nota**: el diseño responsive es consistente con el blog analisis.pruebapublica.com (mismo patrón).
 - **AGENTS.md** actualizado con la nota de diseño responsive.
+
+## 2026-09-19 (28) — FIMI: check de descarte de eventos sin tema + export: HECHO (commits `4ed2724` + `03986a4`)
+Respuesta a la pregunta "¿qué hacen los eventos que no matchean ninguna keyword?".
+- **Check `descarte` en `check_sistema.py`** (check #7, paso 10 del cron): cuenta eventos sin `event_temas` (no matchean ninguna keyword del catálogo) y el ratio total. Alerta por Telegram si el ratio >40% **o** crece >10pp vs ciclo anterior (indica keywords demasiado estrechas). Estado: 26,157/75,400 (35%) — dentro de umbral, nivel ok.
+- **Export opcional** (`--export-sin-tema N`): escribe CSV con los N eventos más recientes sin tema (texto + source + autor) para auditoría manual de si las keywords están descartando señal real.
+- **`.gitignore`**: añadidos `data/descarte_estado.json` y `data/eventos_sin_tema.csv`.
+- **README.md** actualizado con la descripción del check de descarte.
+- Commits pusheados `origin/main`.
+
+## 2026-09-19 (29) — FIMI: card "Auditoría de descarte" visible + endpoint /api/v1/export-sin-tema: HECHO (commit `2f5d2e4`)
+Transparencia del descarte: ahora el dashboard muestra una card "Auditoría de descarte" en la pestaña Transparencia con el ratio de eventos sin tema (34%: 26,157/75,400), barra de progreso, y si el ratio >40% o crece >10pp vs ciclo anterior muestra "⚠ UMBRAL ALCANZADO". Link "📥 Descargar eventos sin tema (CSV, últimos 50)" → endpoint `/api/v1/export-sin-tema?n=50` en el radar-email-api. Commits pusheados.
