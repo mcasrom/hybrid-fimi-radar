@@ -834,7 +834,7 @@ Tres capas, todas avisando por Telegram al administrador solo ante cambios (sin 
   captura (`MAX(events.timestamp)` vs 7,5 h), snapshot por tema activo
   (`MAX(clusters.created_at)` vs 7 h), integridad BD (event_temas huérfanos) y coherencia
   config (keywords con tema inexistente). Alerta cuando el nivel global empeora
-  (ok → atención → incidencia). Cron paso 10. Fue este check el que detectó el
+  (ok → atención → incidencia). También monitoriza el **descarte de eventos**: si >40% de los eventos no matchean ninguna keyword o el ratio crece >10pp vs ciclo anterior, avisa (posible señal de keywords demasiado estrechas). Cron paso 10. Fue este check el que detectó el
   congelamiento de `frontera_sur` por OOM (2026-09-11): la captura estaba fresca pero el
   tema llevaba 30 h sin regenerar su snapshot.
 
