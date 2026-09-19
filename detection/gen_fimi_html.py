@@ -293,7 +293,7 @@ def render_component_legend():
             f'El score global pondera estos 4 componentes + la amplificación del tema.</p></details>')
 
 
-def render_radar_componentes(mean, top, n=0, top_label="", top_score=0):
+def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps=None, stats=None):
     """Araña (radar) de los 4 componentes del tema: media de sus clusters +
     el cluster de mayor score. SVG inline sin librerías. Solo lectura: usa el
     assessment ya cargado (no añade dato ni toca el scoring). Una por tema,
@@ -337,18 +337,74 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0):
                      'dominant-baseline="middle">%s %.0f</text>' % (x, y + dys[i], anchors[i], lab, mean.get(k, 0)))
     parts.append('</svg>')
     svg = "".join(parts)
-    return ('<div class="card" style="padding:14px 16px;background:#f8fafc;text-align:center">'
-            '<div style="font-size:.88rem;font-weight:700;color:#475569">Araña de componentes del tema</div>'
-            '<div style="display:flex;justify-content:center;margin-top:6px">' + svg + '</div>'
-            '<div style="font-size:.76rem;color:#475569;line-height:1.8;margin-top:12px">'
-            '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
-            'background:rgba(194,65,12,.25);border:2px solid #c2410c;vertical-align:middle;margin-right:6px"></span>'
-            'media del tema (' + str(n) + ' clusters)</div>'
-            '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
-            'background:rgba(14,165,233,.2);border:2px dashed #0ea5e9;vertical-align:middle;margin-right:6px"></span>'
-            'cluster top: ' + str(top_label) + ' ' + ("%.0f" % (top_score or 0)) + '/100</div>'
-            '<div style="color:#64748b;margin-top:4px">Cada eje 0-100. Vértice grande = ese componente pesa en el tema.</div>'
-            '</div></div>')
+
+    leyenda = ('<div style="font-size:.76rem;color:#475569;line-height:1.8;margin-top:10px;text-align:left">'
+               '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
+               'background:rgba(194,65,12,.25);border:2px solid #c2410c;vertical-align:middle;margin-right:6px"></span>'
+               'media del tema (' + str(n) + ' clusters)</div>'
+               '<div><span style="display:inline-block;width:11px;height:11px;border-radius:3px;'
+               'background:rgba(14,165,233,.2);border:2px dashed #0ea5e9;vertical-align:middle;margin-right:6px"></span>'
+               'cluster top: ' + str(top_label) + ' ' + ("%.0f" % (top_score or 0)) + '/100</div>'
+               '<div style="color:#64748b;margin-top:4px">Cada eje 0-100. Vértice grande = ese componente pesa en el tema.</div>'
+               '</div>')
+
+    # Columna derecha: hipótesis H1-H6 del cluster top (si se pasan). Reusa
+    # hypotheses_json (attribution.py); no añade dato ni toca el scoring.
+    hyp_col = ""
+    if top_hyps:
+        try:
+            _hyps = sorted(top_hyps, key=lambda x: -(x.get("score") or 0))
+            _h3 = next((x for x in _hyps if x.get("hypothesis") == "H3"), None)
+            _h3p = int(round((_h3.get("score") or 0) * 100)) if _h3 else 0
+            _rows = ""
+            for _x in _hyps:
+                _code = _x.get("hypothesis", "?")
+                _es = HYPOTHESIS_ES.get(_code, {"t": _x.get("label", _code), "d": ""})
+                _pct = int(round((_x.get("score") or 0) * 100))
+                if _pct >= 70:
+                    _col = "#dc2626"
+                elif _pct >= 50:
+                    _col = "#ea580c"
+                elif _pct >= 35:
+                    _col = "#f59e0b"
+                else:
+                    _col = "#94a3b8"
+                _star = " ⭐" if _code == "H3" else ""
+                _rows += ('<div style="display:flex;align-items:center;gap:8px;margin:3px 0">'
+                          '<span style="width:172px;font-size:.72rem;color:#475569" title="' + _es["d"] + '">'
+                          '<b>' + _code + '</b> · ' + _es["t"] + _star + '</span>'
+                          '<div style="flex:1;background:#f1f5f9;border-radius:4px;height:10px;min-width:40px;overflow:hidden">'
+                          '<div style="width:' + str(_pct) + '%;height:100%;background:' + _col + '"></div></div>'
+                          '<span style="width:36px;text-align:right;font-size:.72rem;font-weight:700;color:#334155">'
+                          + str(_pct) + '%</span></div>')
+            _nota = ("Hipótesis NO concluyente (señal de comportamiento, no atribución)."
+                     if _h3p < 50 else "H3 destacada.")
+            hyp_col = ('<div style="min-width:250px;flex:1;max-width:520px">'
+                       '<div style="font-size:.82rem;font-weight:700;color:#475569">Hipótesis evaluadas — '
+                       + str(top_label) + '</div>'
+                       '<div style="font-size:.72rem;color:#64748b;margin:2px 0 6px">'
+                       'H3 (influencia extranjera) en ' + str(_h3p) + '%. ' + _nota + '</div>'
+                       + _rows + '</div>')
+        except Exception:
+            hyp_col = ""
+
+    stats_html = ""
+    if stats:
+        stats_html = ('<div style="font-size:.74rem;color:#64748b;margin-top:12px;text-align:center;'
+                      'border-top:1px solid #e2e8f0;padding-top:8px">' + str(stats) + '</div>')
+
+    if hyp_col:
+        body = ('<div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-start">'
+                '<div style="text-align:center">' + svg + leyenda + '</div>'
+                + hyp_col + '</div>')
+    else:
+        body = ('<div style="display:flex;justify-content:center">' + svg + '</div>' + leyenda)
+
+    return ('<div class="card" style="padding:14px 16px;background:#f8fafc">'
+            '<div style="font-size:.88rem;font-weight:700;color:#475569;text-align:center">'
+            'Radar de componentes del tema</div>'
+            '<div style="margin-top:8px">' + body + '</div>'
+            + stats_html + '</div>')
 def _cluster_comps(c, a):
     """Componentes 0-100 de un cluster: preferir el assessment (ya normalizado,
     ej. coordination_score del assessment = synchronization=coord*12 cap 100);
@@ -2733,7 +2789,30 @@ def main():
             _rm = {k: sum(float(x[k] or 0) for x in _rc) / len(_rc) for k in _rc[0]} if _rc else {}
             _tcc = max(_tema_cl, key=lambda x: x["overall_score"] or 0)
             _rt = _cluster_comps(_tcc, _asm_by_cid_t.get(_tcc["id"]))
-            _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"], _tcc["overall_score"] or 0)
+            _asm_top = _asm_by_cid_t.get(_tcc["id"])
+            _top_hyps = None
+            if _asm_top is not None:
+                try:
+                    _top_hyps = json.loads(_asm_top["hypotheses_json"]) if _asm_top["hypotheses_json"] else None
+                except Exception:
+                    _top_hyps = None
+            _n_cuentas_t = 0
+            for _cc in _tema_cl:
+                _a_cc = _asm_by_cid_t.get(_cc["id"])
+                if _a_cc is not None:
+                    _m_c = re.search(r"(\d+)\s+cuentas?", str(_a_cc["assessment"] or ""))
+                    if _m_c:
+                        _n_cuentas_t += int(_m_c.group(1))
+            _n_ev_t = sum(int((diversidad_map.get(_cc["id"]) or {}).get("n_ev", 0)) for _cc in _tema_cl)
+            _sal_t = _salud_r.get(_t)
+            _sal_txt = (str(len(_tema_cl)) + " clusters · " + str(_n_cuentas_t) + " cuentas · "
+                        + str(_n_ev_t) + " eventos")
+            if isinstance(_sal_t, dict) and _sal_t.get("score") is not None:
+                _sal_txt += " · salud " + str(_sal_t.get("score")) + "/100"
+            _sal_txt += (" · banda " + band_of(_tcc["overall_score"] or 0)
+                         + " (" + ("%.0f" % (_tcc["overall_score"] or 0)) + "/100)")
+            _radar = render_radar_componentes(_rm, _rt, len(_tema_cl), _tcc["cluster_label"],
+                                              _tcc["overall_score"] or 0, top_hyps=_top_hyps, stats=_sal_txt)
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
