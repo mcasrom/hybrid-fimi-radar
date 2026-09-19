@@ -1018,7 +1018,7 @@ temas:
     - Nvidia
     - ia
   espana_amenazas_hibridas:
-    estado: piloto
+    estado: produccion
     nombre: España — Amenazas híbridas y FIMI
     filtro:
     - desinformación
