@@ -787,7 +787,7 @@ temas:
     estado: cerrado
     nombre: Geopolítica UE-Marruecos
   politica_nacional:
-    estado: piloto
+    estado: cerrado
     nombre: Política nacional
     # Tuning por tema: la coordinación humano/partidista legítima tiene
     # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
@@ -1004,7 +1004,7 @@ temas:
     - election interference
     - foreign interference
   inteligencia_artificial:
-    estado: piloto
+    estado: produccion
     nombre: Inteligencia artificial
     filtro:
     - inteligencia artificial
