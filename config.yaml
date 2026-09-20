@@ -29,6 +29,16 @@ scoring:
   scale_min_accounts:
     HIGH: 2
     CRITICAL: 10
+  # Gate de banda (S3, 20/Sep): una banda alta exige, además del score, un
+  # minimo de ANOMALIA y de CUENTAS. Evita que el eco de medios (masa sin
+  # anomalia) o las parejas (2 cuentas) griten HIGH/CRITICAL.
+  band_gate:
+    HIGH:
+      min_accounts: 3
+      min_anomaly: 20
+    CRITICAL:
+      min_accounts: 10
+      min_anomaly: 40
   # Bonus por escala (05/Sep): a igualdad de componentes, más cuentas puntúan
   # más. Corrige el orden invertido (cluster de 2 cuentas >= cluster de 49).
   # bonus = min(cap, cuentas*per_account), acotado para no desbordar.

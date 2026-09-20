@@ -27,7 +27,7 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale
+from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate
 from attribution.attribution import classify_hypotheses, attribution
 
 
@@ -160,6 +160,7 @@ def main():
         overall, floored, es_eco = solve_scale(
             overall, s.get("accounts", 0), ev_counts.get(label, 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=url_counts.get(label, 0))
+        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
         band = band_for(overall, bands)
         s["ruido_volumen"] = floored
         s["n_events"] = ev_counts.get(label, 0)
@@ -302,6 +303,7 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
         overall, _, es_eco = solve_scale(
             overall, s.get("accounts", 0), s.get("n_events", 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=s.get("n_urls", 0))
+        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
                                    "n_urls": s.get("n_urls", 0)})
         att = attribution(hyp, infra_shared=comp["infrastructure"] > 30)

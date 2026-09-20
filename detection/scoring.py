@@ -203,3 +203,30 @@ def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls
     overall = scale_cap(overall, accounts, config, tema)
     overall, es_eco = origen_unico_cap(overall, n_urls, events, config, tema)
     return overall, floored, es_eco
+
+def band_gate(overall, accounts, anomaly, config=None, tema=None):
+    """Gate de banda (S3, 'alerta quirúrgica'): una banda alta exige, además
+    del score, un mínimo de ANOMALÍA y de CUENTAS. Evita que el eco de medios
+    (masa sin anomalía) o las parejas (2 cuentas) griten HIGH/CRITICAL.
+
+    Config: scoring.band_gate = {
+      'HIGH': {'min_accounts': 3, 'min_anomaly': 20},
+      'CRITICAL': {'min_accounts': 10, 'min_anomaly': 40}}
+    Sin config usa esos valores por defecto."""
+    gate = {"HIGH": {"min_accounts": 3, "min_anomaly": 20},
+            "CRITICAL": {"min_accounts": 10, "min_anomaly": 40}}
+    if config:
+        gate.update((config.get("scoring", {}) or {}).get("band_gate", {}) or {})
+    bands = load_bands(config)
+    order = ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]
+    cur = band_for(overall, bands)
+    allowed = "ANOMALOUS"
+    for b in ("HIGH", "CRITICAL"):
+        req = gate.get(b, {}) or {}
+        if accounts >= req.get("min_accounts", 0) and anomaly >= req.get("min_anomaly", 0):
+            allowed = b
+        else:
+            break
+    if order.index(cur) > order.index(allowed):
+        return float(bands[allowed][1])
+    return overall
