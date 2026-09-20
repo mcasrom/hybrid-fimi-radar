@@ -16,6 +16,7 @@ from pathlib import Path
 import unicodedata
 
 ROOT = Path("/home/deploy/hybrid-fimi-radar")
+sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes (se corre como script)
 DB = ROOT / "data" / "radar.db"
 OUT = Path("/var/www/fimi/index.html")
 
@@ -2111,7 +2112,8 @@ def main():
     try:
         from detection import lineage as _lineage_mod
         lineage_map = _lineage_mod.load_map(con)
-    except Exception:
+    except Exception as _e:
+        print("lineage_map error (no bloquea):", _e, flush=True)
         lineage_map = {}
     # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
     # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
