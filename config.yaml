@@ -1098,6 +1098,17 @@ temas:
     - desestabilización
     - subversión
     - inteligencia extranjera
+    # Plurales (20/09): el matcher usa límites de palabra y NO reconoce el
+    # plural en -s de estas formas (ciberataques != ciberataque). Se añaden
+    # explícitamente para no perder material real.
+    - desinformaciones
+    - propagandas
+    - injerencias
+    - espionajes
+    - ciberataques
+    - sabotajes
+    - guerras híbridas
+    - amenazas híbridas
     # Contexto obligatorio (19/09): el tema es 'España'. Sin un término de
     # contexto español, historias de injerencia/desinformación de OTROS países
     # (Colombia, Argentina, Países Bajos...) no deben entrar en el tema.
@@ -1587,6 +1598,30 @@ keywords:
   plataformas: *id006
   tema: espana_amenazas_hibridas
 - palabra: amenaza híbrida
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: desinformaciones
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: propagandas
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: injerencias
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: espionajes
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ciberataques
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: sabotajes
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: guerras híbridas
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: amenazas híbridas
   plataformas: *id006
   tema: espana_amenazas_hibridas
 - palabra: fuerzas armadas
