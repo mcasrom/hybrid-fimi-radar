@@ -14,26 +14,28 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas monitorizados**:
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos** (7 producción + 2 piloto):
 
 | Tema | Estado |
 |---|---|
 | Frontera Sur (España-Marruecos) | Producción |
-| Política nacional | Producción |
 | Política y desinformación EEUU | Producción |
 | Oriente Medio (Israel-Irán-Gaza) | Producción |
 | Sahel (África Occidental) | Producción |
-| Energía (petróleo/gas/precios) | Piloto (en calibración) |
+| Energía (petróleo/gas/precios) | Producción |
+| Inteligencia artificial | Producción |
+| España — Amenazas híbridas y FIMI | Producción |
+| Defensa y Fuerzas Armadas (España) | Piloto (en calibración) |
 | Elecciones e interferencia electoral | Piloto (en calibración) |
-| Inteligencia artificial | Piloto (en calibración) |
-| España — Amenazas híbridas y FIMI | Piloto (en calibración) |
+
+**Temas cerrados** (redundantes con `frontera_sur`): Política nacional, Geopolítica UE-Marruecos.
 
 - **Keywords**: derivadas del filtro (mismo bloque). Si el tema es ciego (0 keywords), salud_keywords no verifica cobertura -> añadir las palabras del filtro como keywords. Visto en espana_amenazas_hibridas (18/Sep, commit 77c9bf9).
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
-- **Catálogo de fuentes**: **64 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
+- **Catálogo de fuentes**: **69 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
   + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
-  `analytical_relevance` y nota. El corpus activo ronda los **~68.359 eventos** (ventana 90 d).
+  `analytical_relevance` y nota. El corpus activo ronda los **~83.083 eventos** (ventana 90 d).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
@@ -554,6 +556,11 @@ El score de coordinación por cluster combina componentes 0-100 (sincronización
 similar, amplificación, infraestructura, densidad de red, anomalía) con una **escala** de
 cuentas (piso de masa, tope por banda y bonus) y es calibrable **por tema**. Todo esto se
 expone en la pestaña *Transparencia* del dashboard y se documenta en `docs/SCORING.md`.
+
+Además, un **gate de banda** (`scoring.band_gate`) exige, para las bandas altas, un mínimo
+de **anomalía** y de **cuentas**: **HIGH** requiere ≥3 cuentas y anomalía ≥20; **CRITICAL**,
+≥10 cuentas y anomalía ≥40. Evita que una **pareja de cuentas** o el **eco de masa** (sin
+anomalía) se lean como HIGH/CRITICAL. Configurable y reversible.
 
 ## Taxonomía, tendencias y ejes transversales (Fase A)
 
