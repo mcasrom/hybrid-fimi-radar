@@ -56,8 +56,6 @@ BASE_URL = "https://fimi.viajeinteligencia.com"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 LIMIT_PER_IP = 10          # subscribe: 10/h
 LIMIT_FEEDBACK_IP = 20     # feedback/sugerir combinados: 20/h
-TEMAS_VALIDOS = {"frontera_sur", "geopolitica_ue_marruecos", "politica_nacional",
-                 "eeuu_politica", "oriente_medio"}
 VOTOS_VALIDOS = {"si", "no", "ns"}
 _hits = {}
 _hits_fb = {}
