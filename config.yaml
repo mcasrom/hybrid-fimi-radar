@@ -463,6 +463,60 @@ feeds:
   transparency: medium
   note: Energía solar/fotovoltaica España. Política energética y precios.
   analytical_relevance: media
+- nombre: EIA Today in Energy (EN)
+  url: https://www.eia.gov/rss/todayinenergy.xml
+  tipo: media
+  idioma: en
+  bias: least-biased
+  reliability: high
+  transparency: high
+  note: 'Energía EE.UU. (organismo oficial): datos y análisis diarios.'
+  analytical_relevance: alta
+- nombre: Energy Monitor (EN)
+  url: https://www.energymonitor.ai/feed/
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Transición energética global.
+  analytical_relevance: media
+- nombre: Carbon Brief (EN)
+  url: https://www.carbonbrief.org/feed
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: high
+  note: Clima y energía con análisis de datos.
+  analytical_relevance: media
+- nombre: Galaxia Militar (ES)
+  url: https://galaxiamilitar.es/feed/
+  tipo: media
+  idioma: es
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Defensa e industria militar (ES). Cobertura de FAS y compras.
+  analytical_relevance: media
+- nombre: Breaking Defense (EN)
+  url: https://breakingdefense.com/feed/
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Defensa EE.UU. (industria y política).
+  analytical_relevance: media
+- nombre: Defense One (EN)
+  url: https://www.defenseone.com/rss/all/
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: Defensa EE.UU. y seguridad nacional.
+  analytical_relevance: media
 # === Feeds capítulo electoral (14-sep-2026): Alemania + Suecia ===
 # Añadidos para la cobertura del capítulo "Election Threat Landscape" (elecciones de
 # Alemania -Länder sep-2026- y Suecia -Riksdag 13-sep-2026). Balance por país:
