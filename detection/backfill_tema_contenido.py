@@ -59,8 +59,13 @@ def main():
     filtros = {t: (m or {}).get("filtro")
                for t, m in (cfg.get("temas") or {}).items()
                if (m or {}).get("filtro")}
+    # Gate de contexto por tema (temas.<tema>.contexto), igual que capture.py.
+    contextos = {t: (m or {}).get("contexto")
+                 for t, m in (cfg.get("temas") or {}).items()
+                 if (m or {}).get("contexto")}
     if args.tema:
         filtros = {k: v for k, v in filtros.items() if k == args.tema}
+        contextos = {k: v for k, v in contextos.items() if k == args.tema}
 
     con = sqlite3.connect(args.db)
     con.row_factory = sqlite3.Row
@@ -80,16 +85,19 @@ def main():
     for tema, kws in temas_con_kw.items():
         prep = [(normalizar(str(x)), _tokens(str(x)))
                 for x in (filtros.get(tema) or []) if normalizar(str(x))]
+        prep_ctx = [(normalizar(str(x)), _tokens(str(x)))
+                    for x in (contextos.get(tema) or []) if normalizar(str(x))]
         añadidos = 0
         for r in rows:
             txt = (r["title"] or "") + " " + (r["text"] or "")
             if tema not in temas_por_contenido(txt, kws):
                 continue
-            if prep:
-                nt = normalizar(txt)
-                ntok = [x for x in nt.split() if len(x) > 2]
-                if not any(_matches(tn, tk, nt, ntok) for tn, tk in prep):
-                    continue  # falla el filtro -> NO etiquetar
+            nt = normalizar(txt)
+            ntok = [x for x in nt.split() if len(x) > 2]
+            if prep and not any(_matches(tn, tk, nt, ntok) for tn, tk in prep):
+                continue  # falla el filtro -> NO etiquetar
+            if prep_ctx and not any(_matches(tn, tk, nt, ntok) for tn, tk in prep_ctx):
+                continue  # falla el contexto -> NO etiquetar
             prev = ya.get(r["id"], set())
             if tema not in prev:
                 añadidos += 1

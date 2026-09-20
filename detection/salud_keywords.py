@@ -96,7 +96,10 @@ def _cargar_config():
     # Gate de contenido por tema (temas.<tema>.filtro), igual que capture.py.
     filtros = {t: ((m or {}).get("filtro") or [])
                for t, m in (cfg.get("temas") or {}).items()}
-    return por_tema, filtros
+    # Gate de contexto por tema (temas.<tema>.contexto), igual que capture.py.
+    contextos = {t: ((m or {}).get("contexto") or [])
+                 for t, m in (cfg.get("temas") or {}).items()}
+    return por_tema, filtros, contextos
 
 
 def analizar(dias=None):
@@ -105,7 +108,7 @@ def analizar(dias=None):
     from normalizer.clasificar import normalizar, _tokens, _matches, STOP
 
     dias = dias or DIAS_DEFECTO
-    por_tema, filtros = _cargar_config()
+    por_tema, filtros, contextos = _cargar_config()
     # Pre-normalizar el gate `filtro` por tema (consistencia con capture.py:
     # un tema con filtro solo cuenta como "ámbito" si el texto pasa el gate).
     filtros_pre = {}
@@ -114,6 +117,13 @@ def analizar(dias=None):
                  for x in _terms if normalizar(str(x))]
         if _prep:
             filtros_pre[_t] = _prep
+    # Pre-normalizar el gate `contexto` por tema (igual que capture.py).
+    contextos_pre = {}
+    for _t, _terms in contextos.items():
+        _prep = [(normalizar(str(x)), _tokens(str(x)))
+                 for x in _terms if normalizar(str(x))]
+        if _prep:
+            contextos_pre[_t] = _prep
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
 
@@ -155,6 +165,10 @@ def analizar(dias=None):
             for _t in list(temas_hit):
                 _prep = filtros_pre.get(_t)
                 if _prep and not any(_matches(tn, tk, nt, ntok) for tn, tk in _prep):
+                    temas_hit.discard(_t)
+                _prep = contextos_pre.get(_t)
+                if _t in temas_hit and _prep and not any(
+                        _matches(tn, tk, nt, ntok) for tn, tk in _prep):
                     temas_hit.discard(_t)
         if temas_hit:
             match_por_evento[e["id"]] = temas_hit
@@ -281,7 +295,7 @@ def sugerir(dias=None, tema=None, max_matches=None):
 
     dias = dias or DIAS_DEFECTO
     umbral = LOW_MAX if max_matches is None else max_matches
-    por_tema, _ = _cargar_config()
+    por_tema, _, _ = _cargar_config()
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     t0 = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - dias * 86400

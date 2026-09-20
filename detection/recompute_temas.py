@@ -18,22 +18,32 @@ activos = {t for t, m in temas_cfg.items()
            if (m or {}).get("estado", "produccion") in ("produccion", "piloto")}
 
 filtros = {}
+contextos = {}
 for t, m in temas_cfg.items():
     fl = (m or {}).get("filtro")
     if fl:
         filtros[t] = [normalizar(str(x)) for x in fl if normalizar(str(x))]
+    ct = (m or {}).get("contexto")
+    if ct:
+        contextos[t] = [normalizar(str(x)) for x in ct if normalizar(str(x))]
 
-def pasa_filtro(tema, nt):
-    fl = filtros.get(tema)
-    if not fl:
-        return True
-    for f in fl:
+def _match(terms, nt):
+    for f in terms:
         if " " in f:
             if f in nt:
                 return True
         elif re.search(r"\b" + re.escape(f) + r"\b", nt):
             return True
     return False
+
+def pasa_gate(tema, nt):
+    fl = filtros.get(tema)
+    if fl and not _match(fl, nt):
+        return False
+    ct = contextos.get(tema)
+    if ct and not _match(ct, nt):
+        return False
+    return True
 
 con = sqlite3.connect(f"{ROOT}/data/radar.db")
 con.row_factory = sqlite3.Row
@@ -48,7 +58,7 @@ for i, r in enumerate(rows):
     txt = (r["text"] or "") + " " + (r["title"] or "")
     temas = temas_por_contenido(txt, kws)
     nt = normalizar(txt)
-    temas = sorted(t for t in temas if t in activos and pasa_filtro(t, nt))
+    temas = sorted(t for t in temas if t in activos and pasa_gate(t, nt))
     if not temas:
         n_sin += 1
         upd.append((r["id"], []))
