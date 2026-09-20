@@ -595,7 +595,31 @@ def _lineage_chip(linaje):
             'font-weight:600;background:#ecfeff;cursor:help" '
             'title="Persistencia entre ciclos: el mismo nucleo de cuentas/URLs '
             f'detectado en ciclos consecutivos (Jaccard). Desde {f}, {n_ciclos} ciclos{j}.">'
-            f'🔁 sostenido desde {f} · {n_ciclos} ciclos</span>')
+             f'🔁 sostenido desde {f} · {n_ciclos} ciclos</span>')
+
+
+def _kcore_chip(a):
+    """Chip descriptivo del k-core del grafo del cluster (nucleo denso).
+
+    a: fila de assessments (con columnas kcore/kcore_size). Un k-core >= 2
+    indica un nucleo de cuentas mutuamente conectadas (coordinacion densa). No
+    entra en el scoring; es contexto para el analista. Tolerante a filas viejas
+    sin las columnas."""
+    if not a:
+        return ""
+    try:
+        k = int(a["kcore"] or 0)
+        s = int(a["kcore_size"] or 0)
+    except Exception:
+        return ""
+    if k < 2 or s < 2:
+        return ""
+    return ('<span style="display:inline-block;font-size:.72rem;color:#4338ca;'
+            'border:1px solid #6366f1;border-radius:999px;padding:1px 10px;'
+            'font-weight:600;background:#eef2ff;cursor:help" '
+            'title="k-core: nucleo de cuentas mutuamente conectadas (grado >= k) '
+            f'en el grafo de coordinacion. Cuanto mayor, mas densa la red.">'
+            f'núcleo k={k} · {s} cuentas</span>')
 
 
 # S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
@@ -931,6 +955,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
          f'{_lineage_chip(linaje)}'
+         f'{_kcore_chip(a)}'
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
@@ -1652,6 +1677,75 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
     RESEARCH_OUT.parent.mkdir(parents=True, exist_ok=True)
     RESEARCH_OUT.write_text(page, encoding="utf-8")
     print(f"OK: {RESEARCH_OUT} — {n_events} eventos, {n_clusters} clusters, ecos {n_ecos}, sostenidas {n_sost}")
+
+
+ALERTS_OUT = Path("/var/www/fimi/alerts.xml")
+
+
+def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligencia.com"):
+    """Feed RSS de alertas: los clusters en banda HIGH/CRITICAL (score>=60) del
+    ultimo ciclo, ordenados por score. Para redacciones e investigadores que
+    quieran seguir las senales sin abrir el dashboard. Solo lectura."""
+    import sqlite3 as _sq
+    import html as _html
+    from datetime import datetime as _dt, timezone as _tz
+    _umbral = 60.0
+    con = _sq.connect(str(db_path))
+    con.row_factory = _sq.Row
+    try:
+        rows = con.execute(
+            "SELECT c.cluster_label, c.tema_id, c.overall_score, c.created_at,"
+            " a.assessment FROM clusters c LEFT JOIN assessments a ON a.cluster_id=c.id"
+            " WHERE c.overall_score >= ? ORDER BY c.overall_score DESC LIMIT 40",
+            (_umbral,)).fetchall()
+    finally:
+        con.close()
+
+    def _band(s):
+        return ("CRITICAL" if s >= 80 else "HIGH" if s >= 60 else
+                "ANOMALOUS" if s >= 40 else "WATCH" if s >= 20 else "NORMAL")
+
+    def _rfc822(ts):
+        try:
+            return _dt.fromtimestamp(int(ts), tz=_tz.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+        except Exception:
+            return _dt.now(_tz.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+    items = []
+    for r in rows:
+        tema = r["tema_id"] or "frontera_sur"
+        tname = (temas_cfg.get(tema) or {}).get("nombre") or tema
+        band = _band(r["overall_score"] or 0)
+        title = f"[{tname}] {band} {(r['overall_score'] or 0):.0f}/100 — {r['cluster_label']}"
+        link = f"{base_url}/#{tema}"
+        desc = str(r["assessment"] or "")[:400]
+        items.append(
+            "    <item>\n"
+            f"      <title>{_html.escape(title)}</title>\n"
+            f"      <link>{_html.escape(link)}</link>\n"
+            f'      <guid isPermaLink="false">{_html.escape(str(r["cluster_label"]))}@{int(r["created_at"] or 0)}</guid>\n'
+            f"      <pubDate>{_rfc822(r['created_at'])}</pubDate>\n"
+            f"      <category>{_html.escape(tname)}</category>\n"
+            f"      <description>{_html.escape(desc)}</description>\n"
+            "    </item>")
+    now = _dt.now(_tz.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    rss = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
+        "  <channel>\n"
+        "    <title>FIMI Radar — Alertas de coordinación</title>\n"
+        f"    <link>{base_url}/</link>\n"
+        f'    <atom:link href="{base_url}/alerts.xml" rel="self" type="application/rss+xml"/>\n'
+        "    <description>Señales de coordinación/amplificación en banda HIGH o CRITICAL (score ≥ 60). "
+        "El radar observa comportamiento, no atribuye actores (UNKNOWN es un resultado válido).</description>\n"
+        "    <language>es</language>\n"
+        f"    <lastBuildDate>{now}</lastBuildDate>\n"
+        + "\n".join(items) + "\n"
+        "  </channel>\n"
+        "</rss>\n")
+    ALERTS_OUT.parent.mkdir(parents=True, exist_ok=True)
+    ALERTS_OUT.write_text(rss, encoding="utf-8")
+    print(f"OK: {ALERTS_OUT} — {len(items)} alertas")
 
 
 def main():
@@ -4207,6 +4301,7 @@ def main():
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
+<link rel="alternate" type="application/rss+xml" title="FIMI Radar — Alertas" href="/alerts.xml">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4897,6 +4992,11 @@ if ('serviceWorker' in navigator) {{
         render_research_html(cfg, feeds, keywords, temas_cfg, temas)
     except Exception as e:
         print(f"research html fallo (no bloquea el dashboard): {e}")
+    # Feed RSS de alertas (clusters HIGH/CRITICAL del último ciclo).
+    try:
+        render_alerts_rss(DB, temas_cfg)
+    except Exception as e:
+        print(f"alerts rss fallo (no bloquea el dashboard): {e}")
 
 
 if __name__ == "__main__":

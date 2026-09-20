@@ -989,6 +989,19 @@ temas:
       cierre_min_dias: 30
       cierre_piloto_dias: 365
       cierre_calendario_dias: 120
+    # Scoring por FASE ELECTORAL (modelo EEAS): si alguna elección del registro
+    # (data/elecciones.yaml) está a <=30 días (o hasta 3 días después), se da
+    # más peso a la anomalía (coordinación inauténtica) durante el periodo
+    # electoral. Sin elecciones en ventana, se usan los pesos normales.
+    fase_scoring:
+      ventana_dias: 30
+      weights:
+        anomaly: 0.30
+        synchronization: 0.18
+        content_similarity: 0.17
+        amplification: 0.15
+        infrastructure: 0.12
+        network_density: 0.08
     # Gate: un evento solo conserva el tema si su texto contiene >=1 término
     # electoral real (evita que "afd" del boletín meteorológico "Area Forecast
     # Discussion", o menciones tangenciales, lo etiqueten como electoral).

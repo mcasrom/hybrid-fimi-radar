@@ -43,13 +43,15 @@ def _tema_weights(config, tema):
     return (config or {}).get("temas", {}).get(tema, {}).get("scoring", {}).get("weights", {}) or {}
 
 
-def compute_scores(components, config, tema=None):
+def compute_scores(components, config, tema=None, weights_override=None):
     """Combina componentes en overall_score ponderado.
 
     components: dict con synchronization, content_similarity, amplification,
     infrastructure, network_density (0-100) y anomaly (0-100).
     weights: configurables en config.yaml->scoring->weights, con override por
     tema en config.yaml->temas-><tema>->scoring->weights (merge sobre global).
+    weights_override: dict opcional que se aplica DESPUÉS del override por tema
+    (p. ej. pesos por fase electoral EEAS en run_fimi). Si es None, no aplica.
     """
     w = (config or {}).get("scoring", {}).get("weights", {})
     default_w = {
@@ -60,6 +62,8 @@ def compute_scores(components, config, tema=None):
     for k, v in default_w.items():
         w.setdefault(k, v)
     w.update(_tema_weights(config, tema))
+    if weights_override:
+        w.update(weights_override)
 
     overall = sum(components.get(k, 0) * w.get(k, 0) for k in default_w)
     overall = round(min(100.0, max(0.0, overall)), 1)

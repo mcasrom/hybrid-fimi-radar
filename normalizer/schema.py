@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS assessments (
     attribution_confidence TEXT,                   -- NO|LOW|MEDIUM|HIGH
     attribution_evidence TEXT,
     missing_evidence TEXT,
+    kcore INTEGER,                                 -- k-core del grafo del cluster (descriptivo)
+    kcore_size INTEGER,                            -- tamaño del núcleo k-core
     FOREIGN KEY(cluster_id) REFERENCES clusters(id)
 );
 
@@ -201,6 +203,8 @@ def get_conn(db_path):
     _ensure_column(conn, "events", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_column(conn, "clusters", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_column(conn, "findings", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
+    _ensure_column(conn, "assessments", "kcore", "kcore INTEGER")
+    _ensure_column(conn, "assessments", "kcore_size", "kcore_size INTEGER")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()

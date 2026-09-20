@@ -31,12 +31,38 @@ from clustering.clustering import cluster_by_components, cluster_summary, cluste
 from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate
 from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
+from detection import graph_metrics
 
 
 def load_config(path=None):
     path = path or ROOT / "config.yaml"
     with open(path) as f:
         return yaml.safe_load(f)
+
+
+def _fase_weights(cfg, tema):
+    """Pesos de scoring por fase electoral (modelo EEAS), opcional por tema.
+
+    Si el tema declara `fase_scoring` en config.yaml y alguna elección del
+    registro (data/elecciones.yaml) está dentro de la ventana (por defecto <=30
+    días antes y hasta 3 días después), devuelve el override de pesos (más peso
+    a la anomalía: en periodo electoral la coordinación inauténtica es más
+    relevante). Sin `fase_scoring` en el tema, no aplica (None)."""
+    fs = (((cfg or {}).get("temas", {}) or {}).get(tema, {}) or {}).get("fase_scoring")
+    if not fs:
+        return None
+    try:
+        from detection.elecciones import cargar_registro, _fase
+        ventana = float(fs.get("ventana_dias", 30))
+        ahora = time.time()
+        for p in cargar_registro():
+            f = _fase(p.get("fecha"), ahora)
+            d = f.get("dias")
+            if d is not None and -3 <= d <= ventana:
+                return fs.get("weights") or None
+    except Exception:
+        return None
+    return None
 
 
 def main():
@@ -82,6 +108,7 @@ def main():
     print("[4/7] Coordinación (grafo)")
     edges = build_edges(df, cfg)
     edges_df = pd.DataFrame(edges) if edges else pd.DataFrame(columns=["source", "target", "weight", "evidence"])
+    _adj = graph_metrics.adjacency(edges)  # grafo de coordinación (para k-core)
     print(f"      {len(edges)} aristas")
     cascades = detect_cascades(df, cfg)
     amp = amplification_signal(edges_df, df["author"].nunique())
@@ -161,7 +188,7 @@ def main():
             "network_density": min(100, s.get("coordination_score", 0) * 6),
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
-        overall, _ = compute_scores(comp, cfg, tema=tema)
+        overall, _ = compute_scores(comp, cfg, tema=tema, weights_override=_fase_weights(cfg, tema))
         # Escala (05/Sep): bonus por masa + piso híbrido (<3 cuentas => banda
         # máx WATCH salvo volumen/infra) + cap CRITICAL/HIGH por masa mínima +
         # tope por "origen único" (1 sola URL => eco de 1 pieza, 11/Sep).
@@ -187,6 +214,16 @@ def main():
         att = attribution(hyp, infra_shared=_infra_score(details.get(label, {})) > 30)
         n_assessed += 1
 
+        # k-core del grafo de coordinación del cluster (descriptivo, no scoring):
+        # núcleo de cuentas mutuamente conectadas dentro del cluster.
+        _kc, _kcs = 0, 0
+        try:
+            if sub_clustered is not None:
+                _mem_a = set(sub_clustered.loc[sub_clustered["cluster"] == label, "author"].astype(str))
+                _kc, _kcs = graph_metrics.kcore_subset(_adj, _mem_a)
+        except Exception:
+            _kc, _kcs = 0, 0
+
         # guardar cluster
         cur = conn.execute(
             "INSERT OR REPLACE INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
@@ -205,14 +242,15 @@ def main():
             "INSERT INTO assessments (cluster_id, coordination_score, amplification_score,"
             " anomaly_score, infrastructure_score, network_density, overall_score, confidence,"
             " assessment, hypotheses_json, attribution, attribution_confidence,"
-            " attribution_evidence, missing_evidence) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " attribution_evidence, missing_evidence, kcore, kcore_size)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (cluster_id, comp["synchronization"], comp["amplification"], comp["anomaly"],
              comp["infrastructure"], comp["network_density"], overall, att["confidence"],
              f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}."
              + (" Posible ruido de bajo volumen." if floored else "")
              + (" Eco de 1 pieza (misma URL)." if es_eco else ""),
              json.dumps(hyp, ensure_ascii=False), att["actor"], att["confidence"],
-             att["evidence"], att["missing_evidence"]))
+             att["evidence"], att["missing_evidence"], _kc, _kcs))
         # eventos miembros del cluster -> contenido real (para la UI)
         # cluster_events: 1 fila por evento que forma parte del cluster, con su
         # texto/titular y url originales. Permite explicar DE QUÉ habla el cluster.
@@ -327,7 +365,7 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             "network_density": min(100, s.get("coordination_score", 0) * 6),
             "anomaly": min(100, s.get("anomaly_score", 0) * 100),
         }
-        overall, _ = compute_scores(comp, cfg, tema=tema)
+        overall, _ = compute_scores(comp, cfg, tema=tema, weights_override=_fase_weights(cfg, tema))
         overall, _, es_eco = solve_scale(
             overall, s.get("accounts", 0), s.get("n_events", 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=s.get("n_urls", 0))
