@@ -94,6 +94,24 @@ CREATE TABLE IF NOT EXISTS cluster_events (
 );
 CREATE INDEX IF NOT EXISTS idx_cluster_events_cluster ON cluster_events(cluster_id);
 
+-- Linaje de clusters entre ciclos (persistencia de campañas). Los cluster_label
+-- NO son estables entre ciclos; esta tabla enlaza cada cluster del ciclo actual
+-- con el del ciclo anterior de máximo solapamiento de miembros (Jaccard sobre
+-- cuentas+URLs), dando un lineage_id lógico + first_seen + n_ciclos. Solo se
+-- conserva el último ciclo (el siguiente lo usa para comparar).
+CREATE TABLE IF NOT EXISTS cluster_lineage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tema_id TEXT NOT NULL,
+    cluster_label TEXT NOT NULL,
+    lineage_id TEXT NOT NULL,
+    first_seen INTEGER,
+    last_seen INTEGER,
+    n_ciclos INTEGER DEFAULT 1,
+    jaccard REAL,
+    cycle_ts INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_cluster_lineage_tema ON cluster_lineage(tema_id);
+
 -- Hallazgos positivos persistidos (historial de resultados, no se pierde
 -- cuando el evento deja de ser noticia). Fecha de primera/last detección.
 CREATE TABLE IF NOT EXISTS findings (

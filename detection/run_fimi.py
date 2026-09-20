@@ -9,6 +9,7 @@ Agnóstico al actor: primero la anomalía, después la atribución (si procede).
 Uso: python -m detection.run_fimi --input data/raw/events.csv --db data/radar.db
 """
 import json
+import sqlite3
 import sys
 import time
 from datetime import datetime, timezone
@@ -29,6 +30,7 @@ from detection.fakenews import detect_cascades, amplification_signal, detect_nar
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
 from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate
 from attribution.attribution import classify_hypotheses, attribution
+from detection import lineage
 
 
 def load_config(path=None):
@@ -113,6 +115,12 @@ def main():
     print("[6/7] Scoring + atribución + persistencia SQLite")
     bands = load_bands(cfg)
     conn = get_conn(args.db)
+    conn.row_factory = sqlite3.Row
+
+    # Linaje (persistencia de campanas): leer el ciclo anterior ANTES de borrar
+    # los clusters (los miembros viven en cluster_events, que se borra con ellos).
+    _lin_min = float((cfg.get("lineage") or {}).get("jaccard_min", 0.5))
+    prev_members, prev_lineage = lineage.read_prev(conn, tema)
 
     # Snapshot del estado actual: la tabla clusters es la VISTA ACTIVA (los
     # clusters que el dashboard muestra ahora mismo). Cada ciclo REEMPLAZA el
@@ -232,6 +240,26 @@ def main():
             if _texts:
                 from collections import Counter
                 summary[label]["topic_dominant"] = Counter(_texts).most_common(1)[0][0][:180]
+
+    # Linaje: asignar lineage_id a los clusters de este ciclo (Jaccard de miembros
+    # vs ciclo anterior). Da "sostenido desde <fecha> · N ciclos" en la UI.
+    try:
+        new_members = {}
+        if sub_clustered is not None and len(sub_clustered):
+            for _lab, _mem in sub_clustered.groupby("cluster"):
+                _keys = set()
+                for _, _ev in _mem.iterrows():
+                    _keys |= lineage.member_keys(_ev.get("author"), _ev.get("url"))
+                new_members[_lab] = _keys
+        _cycle_ts = int(time.time())
+        _lin_rows = lineage.assign(prev_members, prev_lineage, new_members,
+                                   jaccard_min=_lin_min, cycle_ts=_cycle_ts)
+        lineage.write(conn, tema, _lin_rows, _cycle_ts)
+        _sost = sum(1 for v in _lin_rows.values() if v[2] >= 2)
+        print(f"      linaje: {len(_lin_rows)} clusters ({_sost} sostenidos de ciclos previos)")
+    except Exception as _e:
+        print(f"      linaje error (no bloquea): {_e}")
+
     conn.commit()
     print(f"      persistencia SQLite · {time.time()-_ts:.1f}s")
 

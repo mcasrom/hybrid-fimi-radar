@@ -565,6 +565,39 @@ def _sostenido_chip(diver):
     return ""
 
 
+def _lineage_chip(linaje):
+    """Chip de persistencia de campana entre ciclos (linaje de clusters).
+
+    linaje: tupla (first_seen, n_ciclos, jaccard) o None. Los cluster_label NO
+    son estables entre ciclos, pero el nucleo de cuentas/URLs (Jaccard) sí puede
+    seguirse: si un cluster reaparece en ciclos consecutivos, se muestra desde
+    cuándo. Solo lectura; no toca scoring."""
+    if not linaje:
+        return ""
+    try:
+        first_seen, n_ciclos, jac = linaje
+    except Exception:
+        return ""
+    try:
+        n_ciclos = int(n_ciclos or 0)
+    except Exception:
+        return ""
+    if n_ciclos < 2:
+        return ""
+    from datetime import datetime, timezone
+    try:
+        f = datetime.fromtimestamp(int(first_seen), tz=timezone.utc).strftime("%d/%m")
+    except Exception:
+        f = "?"
+    j = f" · solape {float(jac) * 100:.0f}%" if jac else ""
+    return ('<span style="display:inline-block;font-size:.72rem;color:#0e7490;'
+            'border:1px solid #06b6d4;border-radius:999px;padding:1px 10px;'
+            'font-weight:600;background:#ecfeff;cursor:help" '
+            'title="Persistencia entre ciclos: el mismo nucleo de cuentas/URLs '
+            f'detectado en ciclos consecutivos (Jaccard). Desde {f}, {n_ciclos} ciclos{j}.">'
+            f'🔁 sostenido desde {f} · {n_ciclos} ciclos</span>')
+
+
 # S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
 # del modelo (sección 5 del análisis), una combinación de ALTA COORDINACIÓN con
 # BAJA ANOMALÍA y SIN infraestructura común apunta a propagación orgánica (una
@@ -810,7 +843,7 @@ def _disp_label(c, disp_map=None):
     return (disp_map or {}).get(c["id"]) or str(c["cluster_label"] or "")
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None):
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None, linaje=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
@@ -897,6 +930,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{ruido_html}'
          f'{cuentas_html}'
          f'{_sostenido_chip(diver)}'
+         f'{_lineage_chip(linaje)}'
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
@@ -1120,7 +1154,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             + attr + hyp_html)
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None, disp_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None, disp_map=None, lineage_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -1155,7 +1189,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
         _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
-        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global, disp_map)}</div>')
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])))}</div>')
 
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
@@ -1233,7 +1267,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map)}</div></div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])))}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -1975,6 +2009,16 @@ def main():
                 key=lambda x: -x["n_cuentas"])[:4]
     except Exception:
         domains_map = {}
+    # linaje de clusters (persistencia de campanas entre ciclos): da
+    # {(tema_id, cluster_label): (first_seen, n_ciclos, jaccard)} para el chip
+    # "sostenido desde". Los cluster_label no son estables; el nucleo de
+    # cuentas/URLs si (Jaccard), y el linaje lo persiste en run_fimi.
+    lineage_map = {}
+    try:
+        from detection import lineage as _lineage_mod
+        lineage_map = _lineage_mod.load_map(con)
+    except Exception:
+        lineage_map = {}
     # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
     # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
     # forma clusters en varios temas (solape frontera_sur/geopolitica: la pareja
@@ -2992,7 +3036,7 @@ def main():
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
-                disp_map=disp_label_map)
+                disp_map=disp_label_map, lineage_map=lineage_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
