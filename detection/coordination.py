@@ -79,13 +79,14 @@ def build_edges(df, config):
     if acc_text:
         all_t = [t for ts in acc_text.values() for t in ts]
         try:
+            import scipy.sparse as sp
             vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
             X = vec.fit_transform(all_t)
             off = 0
             acc_vec = {}
             for a, ts in acc_text.items():
                 Xa = X[off:off + len(ts)]
-                acc_vec[a] = Xa.mean(axis=0)  # mantiene sparse 1 x Vocab
+                acc_vec[a] = sp.csr_matrix(Xa.mean(axis=0))  # sparse 1 x Vocab
                 off += len(ts)
             alist = list(acc_vec.keys())
             if len(alist) >= 2:
