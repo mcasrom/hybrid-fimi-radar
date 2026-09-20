@@ -5,9 +5,10 @@ ningun tema activo se queda SIN tema (no se vuelca a frontera_sur).
 
 Uso: recompute_temas.py [--dry]
 """
-import sqlite3, sys, yaml, re
+import sqlite3, sys, yaml
 sys.path.insert(0, "/home/deploy/hybrid-fimi-radar")
-from normalizer.clasificar import temas_por_contenido, normalizar
+from normalizer.clasificar import (temas_por_contenido, normalizar, _tokens,
+                                   _matches)
 
 DRY = "--dry" in sys.argv
 ROOT = "/home/deploy/hybrid-fimi-radar"
@@ -17,31 +18,28 @@ temas_cfg = cfg.get("temas", {}) or {}
 activos = {t for t, m in temas_cfg.items()
            if (m or {}).get("estado", "produccion") in ("produccion", "piloto")}
 
+# Gate por tema con el MISMO matcher que capture/backfill/salud (helper `_matches`),
+# no un matcher propio: así el filtro/contexto es plural-tolerante y consistente.
 filtros = {}
 contextos = {}
 for t, m in temas_cfg.items():
     fl = (m or {}).get("filtro")
     if fl:
-        filtros[t] = [normalizar(str(x)) for x in fl if normalizar(str(x))]
+        prep = [(normalizar(str(x)), _tokens(str(x))) for x in fl if normalizar(str(x))]
+        if prep:
+            filtros[t] = prep
     ct = (m or {}).get("contexto")
     if ct:
-        contextos[t] = [normalizar(str(x)) for x in ct if normalizar(str(x))]
+        prep = [(normalizar(str(x)), _tokens(str(x))) for x in ct if normalizar(str(x))]
+        if prep:
+            contextos[t] = prep
 
-def _match(terms, nt):
-    for f in terms:
-        if " " in f:
-            if f in nt:
-                return True
-        elif re.search(r"\b" + re.escape(f) + r"\b", nt):
-            return True
-    return False
-
-def pasa_gate(tema, nt):
+def pasa_gate(tema, nt, ntok):
     fl = filtros.get(tema)
-    if fl and not _match(fl, nt):
+    if fl and not any(_matches(a, b, nt, ntok) for a, b in fl):
         return False
     ct = contextos.get(tema)
-    if ct and not _match(ct, nt):
+    if ct and not any(_matches(a, b, nt, ntok) for a, b in ct):
         return False
     return True
 
@@ -58,7 +56,8 @@ for i, r in enumerate(rows):
     txt = (r["text"] or "") + " " + (r["title"] or "")
     temas = temas_por_contenido(txt, kws)
     nt = normalizar(txt)
-    temas = sorted(t for t in temas if t in activos and pasa_gate(t, nt))
+    ntok = [x for x in nt.split() if len(x) > 2]
+    temas = sorted(t for t in temas if t in activos and pasa_gate(t, nt, ntok))
     if not temas:
         n_sin += 1
         upd.append((r["id"], []))

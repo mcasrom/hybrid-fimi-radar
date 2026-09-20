@@ -1112,6 +1112,9 @@ temas:
     # Contexto obligatorio (19/09): el tema es 'España'. Sin un término de
     # contexto español, historias de injerencia/desinformación de OTROS países
     # (Colombia, Argentina, Países Bajos...) no deben entrar en el tema.
+    # Ampliado (20/09): Ceuta/Melilla/Marruecos/Sánchez — el material español
+    # sobre la crisis de Ceuta y la guerra híbrida en el Estrecho no siempre
+    # menciona literalmente "España/UE/OTAN/Bruselas/Madrid" (~645 ev).
     contexto:
     - España
     - Spain
@@ -1121,6 +1124,10 @@ temas:
     - OTAN
     - Bruselas
     - Madrid
+    - Ceuta
+    - Melilla
+    - Marruecos
+    - Sánchez
     scoring:
       weights:
         anomaly: 0.45
