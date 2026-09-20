@@ -1389,7 +1389,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
     # --- método: pesos / bandas / escala (mismo criterio que la card Metodología) ---
     _w_rows = "".join(
         f"<tr><td>{_w_names.get(k, k)}</td>"
-        f"<td style='text-align:right'>{int(round((_w_global.get(k, _w_default.get(k, 0)))) * 100)}%</td></tr>"
+        f"<td style='text-align:right'>{int(round((_w_global.get(k, _w_default.get(k, 0))) * 100))}%</td></tr>"
         for k in ["synchronization", "content_similarity", "amplification",
                   "infrastructure", "network_density", "anomaly"])
     _w_tabla = ("<table style='border-collapse:collapse;font-size:.78rem;width:100%;max-width:420px'>"
