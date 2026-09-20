@@ -2605,15 +2605,19 @@ def main():
                     _dfr = _rcon.execute(
                         "SELECT date(fecha,'unixepoch') d, MAX(intensidad) mx FROM findings "
                         "WHERE tipo='cluster' AND tema_id=? GROUP BY d ORDER BY d DESC", (_t_r,)).fetchall()
+                    _np_band = ""
                     for _rw in _dfr:
-                        if (_rw[1] or 0) >= 80:
+                        _mx = _rw[1] or 0
+                        if _mx >= 60:
                             _np_sost += 1
+                            _np_band = "CRITICAL" if _mx >= 80 else "HIGH"
                         else:
                             break
                 except Exception:
                     _np_sost = 0
-                _np_sost_txt = (f" Banda CRITICAL sostenida <b>{_np_sost} días</b>."
-                                if _np_sost >= 2 else "")
+                    _np_band = ""
+                _np_sost_txt = (f" Banda {_np_band} sostenida <b>{_np_sost} días</b>."
+                                if _np_sost >= 2 and _np_band else "")
                 _np_anom = (f" Lo más anómalo: <code>{_np_best[0]}</code> (anomalía {_np_best[1]:.0f})."
                             if _np_best else "")
                 _que_pasa_html[_t_r] = (
