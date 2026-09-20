@@ -165,7 +165,13 @@ URL/texto/timing (no por tema), un medio multipropósito (p. ej. `diario.red`) g
    el mismo criterio (una sola vez, tras el cambio).
 3. **Contexto obligatorio por tema** (`temas.<tema>.contexto`): p. ej.
    `espana_amenazas_hibridas` exige un término español (`España`, `UE`, `OTAN`…) además
-   del de amenaza → no captura injerencia de otros países (Colombia, Argentina…).
+   del de amenaza → no captura injerencia de otros países (Colombia, Argentina…). El
+   `contexto` se aplica de forma **consistente** en captura, `recompute_temas`,
+   `backfill_tema_contenido`, `gate_tema_contenido` y `salud_keywords` (20/09/2026,
+   commit `e481380`): antes solo lo aplicaba la captura, así que la auditoría de
+   cobertura de `espana_amenazas_hibridas` medía un ámbito inflado (875 eventos, 11%)
+   y marcaba un falso «keyword ciega»; con el gate aplicado el ámbito es el correcto
+   (96 eventos, 100% de cobertura).
 
 Resultado (75.400 eventos): **25.515 (33,8%) sin tema → descartados**; `frontera_sur`
 **265→57 clusters** (0 rastros de Colombia/Irán/Brasil) y el resto de temas quedan
