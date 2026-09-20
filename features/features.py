@@ -112,7 +112,9 @@ def build_features(df, config):
     # Una sola pasada TF-IDF para near-duplicates (evita A veces fit)
     try:
         near_ratios = content.near_duplicate_ratio_all(df, config)
-    except Exception:
+    except Exception as _e:
+        import sys as _sys
+        print("[warn] build_features near_dup_ratio_all fallo:", _e, file=_sys.stderr)
         near_ratios = {}
     features = {}
     # groupby evita O(A·n) scans de df[df["author"]==a]

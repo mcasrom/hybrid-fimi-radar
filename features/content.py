@@ -117,7 +117,9 @@ def near_duplicate_ratio_all(df, config):
     try:
         vec = TfidfVectorizer(ngram_range=(1, 2), min_df=1, stop_words=None)
         X = vec.fit_transform(all_texts)  # N x Vocab, dispersa
-    except Exception:
+    except Exception as _e:
+        import sys as _sys
+        print("[warn] near_duplicate_ratio_all TF-IDF fallo:", _e, file=_sys.stderr)
         return {a: 0.0 for a in df["author"].unique()}
 
     # Normalizar filas L2 para que producto = coseno

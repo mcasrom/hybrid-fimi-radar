@@ -108,8 +108,9 @@ def build_edges(df, config):
                         b = alist[j]
                         strong_links[(a, b)] += w["near_duplicate_text"]
                         strong_ev[(a, b)].add("near_duplicate_text")
-        except Exception:
-            pass
+        except Exception as _e:
+            import sys as _sys
+            print("[warn] coordination near-dup fallo:", _e, file=_sys.stderr)
 
     # ---- 3) ráfaga sincronizada (señal fuerte) ----
     # Conecta cuentas que tienen ráfagas DENSAS reales: varios eventos propios
