@@ -39,6 +39,21 @@ def _netloc(u):
     return m.group(1).lower().replace("www.", "") if m else ""
 
 
+def _lang(text):
+    """Heurística de idioma (es/fr/en/tr/sv/de) sobre titulares+dominios."""
+    t = " " + " ".join((text or "").lower().split()) + " "
+    def c(words):
+        return sum(t.count(" %s " % w) for w in words)
+    es = c(["el","la","los","las","del","un","una","que","por","para","con","es","son","esta","mas","pero","como","cuando","sobre","tras","segun","gobierno","pais","contra","entre","desde","hasta","ceuta","espana","marruecos"]) + (3 if any(ch in t for ch in "áéíóúñ¿¡") else 0)
+    fr = c(["les","des","une","du","dans","pour","avec","sur","est","qui","aux","cette","ont","ete","plus","comme","selon","gouvernement","france","rapport"])
+    en = c(["the","of","and","to","in","is","are","was","with","for","from","that","this","has","have","will","said"])
+    tr = c(["ve","bir","bu","icin","ile","olan","daha","gibi","olarak"])
+    sv = c(["och","att","for","med","det","som","inte","har","den","till"])
+    de = c(["der","die","das","und","mit","fur","auf","ist","nicht","eine","auch","sich"])
+    sc = {"es": es, "fr": fr, "en": en, "tr": tr, "sv": sv, "de": de}
+    return max(sc, key=sc.get) if max(sc.values()) > 0 else "?"
+
+
 def _active_themes():
     try:
         import yaml
@@ -53,6 +68,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--per-band", type=int, default=8, help="clusters muestreados por banda")
     ap.add_argument("--out", default=str(ROOT / "data" / "validacion"))
+    ap.add_argument("--idioma", default=None, help="filtrar por idioma (p.ej. es)")
     args = ap.parse_args()
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -72,8 +88,11 @@ def main():
             q += "AND tema_id IN (%s) " % ",".join("?" * len(activos))
             params += list(activos)
         q += "ORDER BY RANDOM() LIMIT ?"
-        params.append(args.per_band)
+        params.append(max(args.per_band * 8, 60))
+        _kept = 0
         for c in conn.execute(q, params):
+            if _kept >= args.per_band:
+                break
             cid = c["id"]
             evs = conn.execute(
                 "SELECT ts, author, title, url FROM cluster_events WHERE cluster_id=?",
@@ -87,7 +106,7 @@ def main():
             a = conn.execute(
                 "SELECT coordination_score, anomaly_score, infrastructure_score "
                 "FROM assessments WHERE cluster_id=?", (cid,)).fetchone()
-            rows.append({
+            _row = {
                 "cluster_label": c["cluster_label"],
                 "tema": c["tema_id"],
                 "banda": name,
@@ -104,7 +123,11 @@ def main():
                 "infra": round(a["infrastructure_score"], 1) if a else "",
                 "label": "",
                 "nota": "",
-            })
+            }
+            if args.idioma and _lang(_row["top_titulares"] + " " + _row["top_dominios"]) != args.idioma:
+                continue
+            _kept += 1
+            rows.append(_row)
     conn.close()
 
     cols = list(rows[0].keys()) if rows else ["cluster_label", "tema", "banda", "score", "label"]
