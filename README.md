@@ -612,7 +612,7 @@ Esquema centralizado en una única tabla para todos los canales:
 `suscripciones (id, canal, destino, temas, frecuencia, ultimo_estado, fecha_alta, confirmado)`.
 Crea la tabla con `python detection/schema_suscripciones.py`.
 
-- **Telegram**: bot dedicado (long-poll, `detection/radar_bot.py`, handle `@RadarFIMI_bot`)
+- **Telegram**: bot dedicado (long-poll, `detection/radar_bot.py`, handle `@Sieg_politica_bot` (nombre visible: RadarFIMI_bot))
   con `/radar`, `/mis` y `/baja`. El envío de avisos lo hace `detection/notify_subs_telegram.py` (añadido al cron
   6h): solo notifica cuando un dial cambia de estado (on_change), comparando contra
   `ultimo_estado` — sin spam.
