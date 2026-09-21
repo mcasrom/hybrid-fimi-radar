@@ -20,6 +20,15 @@ sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes
 DB = ROOT / "data" / "radar.db"
 OUT = Path("/var/www/fimi/index.html")
 
+
+def _pl(n, sing, plur=None):
+    """Pluraliza un contador: 1 -> singular, resto -> plural."""
+    try:
+        n = int(n)
+    except Exception:
+        return f"{n} {sing}"
+    return f"1 {sing}" if n == 1 else f"{n} {plur or (sing + 's')}"
+
 BAND_COLORS = {
     "NORMAL": "#16a34a", "WATCH": "#0891b2", "ANOMALOUS": "#eab308",
     "HIGH": "#f97316", "CRITICAL": "#dc2626",
@@ -102,9 +111,9 @@ def render_bubble_chart(rows, temas, temas_cfg, width=1120):
         tot = sum(r["cuentas"] for r in trows)
         mx = max([r["cuentas"] for r in trows] + [0])
         p.append(f"<text x='{width-6}' y='{yc-2:.0f}' text-anchor='end' font-size='10' "
-                 f"font-weight='700' fill='#475569'>{len(trows)} clusters · {tot} cuentas</text>")
+                 f"font-weight='700' fill='#475569'>{_pl(len(trows),'cluster','clusters')} · {_pl(tot,'cuenta','cuentas')}</text>")
         p.append(f"<text x='{width-6}' y='{yc+10:.0f}' text-anchor='end' font-size='9' "
-                 f"fill='#94a3b8'>máx {mx} cuentas</text>")
+                 f"fill='#94a3b8'>máx {_pl(mx,'cuenta','cuentas')}</text>")
         for r in trows:
             _x = x_of(r["score"])
             _r = r_of(r["cuentas"])
@@ -115,7 +124,7 @@ def render_bubble_chart(rows, temas, temas_cfg, width=1120):
                 f"<circle cx='{_x:.0f}' cy='{_y:.0f}' r='{_r:.1f}' fill='{col}' "
                 f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1'>"
                 f"<title>{r['label']} · {r['score']:.0f}/100 {r['banda']} · "
-                f"{r['cuentas']} cuentas</title></circle>")
+                f"{_pl(r['cuentas'],'cuenta','cuentas')}</title></circle>")
     # leyenda de tamaño (abajo-izquierda)
     ly = top + n * row_h + 40
     p.append(f"<text x='{left}' y='{ly}' font-size='9' fill='#94a3b8'>tamaño = cuentas:</text>")
@@ -620,7 +629,7 @@ def _kcore_chip(a):
             'font-weight:600;background:#eef2ff;cursor:help" '
             'title="k-core: nucleo de cuentas mutuamente conectadas (grado >= k) '
             f'en el grafo de coordinacion. Cuanto mayor, mas densa la red.">'
-            f'núcleo k={k} · {s} cuentas</span>')
+            f'núcleo k={k} · {_pl(s,'cuenta','cuentas')}</span>')
 
 
 # S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
@@ -884,7 +893,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
         m = _re.search(r"(\d+)\s+cuentas?", str(a["assessment"] or ""))
         if m:
             n_cuentas = int(m.group(1))
-    cuentas_html = (f' · <span style="color:#475569">{n_cuentas} cuentas</span>'
+    cuentas_html = (f' · <span style="color:#475569">{_pl(n_cuentas,'cuenta','cuentas')}</span>'
                     if n_cuentas is not None else "")
 
     ruido = False
@@ -1028,7 +1037,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
         _dom_chips = "".join(
             f'<span style="display:inline-block;background:#fff;border:1px solid #e2e8f0;'
             f'border-radius:999px;padding:1px 8px;font-size:.72rem;color:#475569;margin:1px 4px 1px 0">'
-            f'{_dom_esc.escape(x["dominio"])} <b style="color:#c2410c">· {x["n_cuentas"]} cuentas</b></span>'
+            f'{_dom_esc.escape(x["dominio"])} <b style="color:#c2410c">· {_pl(x['n_cuentas'],'cuenta','cuentas')}</b></span>'
             for x in dominios[:3])
         if _dom_chips:
             _dom_html = (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;'
@@ -1167,7 +1176,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'padding:4px 10px 8px;margin:6px 0">'
                 f'<summary style="cursor:pointer;font-size:.72rem;color:#64748b;font-weight:600;'
                 f'text-transform:uppercase;padding:4px 0">🔗 Cadena de evidencia '
-                f'({total} eventos)</summary>'
+                f'({_pl(total,'evento','eventos')})</summary>'
                 f'<div style="border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:6px">'
                 f'<div style="font-size:.7rem;color:#94a3b8;margin-bottom:4px">Eventos que '
                 f'forman este cluster, en orden cronológico (primera → última aparición):</div>'
@@ -1289,7 +1298,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'<span style="min-width:150px;text-align:right;font-size:.78rem;color:#475569;'
                 f'font-weight:600">{overall_:.0f}/100 '
                 f'<span style="color:{barcol_};font-weight:700">{band_}</span>'
-                f' · {nacc_} cuentas{_rui}</span></div>')
+                f' · {_pl(nacc_,'cuenta','cuentas')}{_rui}</span></div>')
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
@@ -2388,11 +2397,11 @@ def main():
                     f"<div style='font-size:.9rem;font-weight:600;color:#1e293b;line-height:1.35;flex:1'>{title}</div>"
                     f"<span style='font-size:.78rem;color:{col};font-weight:700;white-space:nowrap'>{pct}%</span></div>"
                     f"<div style='font-size:.78rem;color:#64748b;margin:2px 0 8px'>"
-                    f"{n['n_events']} eventos · {n['n_sources']} fuentes · ventana {n['window_hours']}h</div>"
+                    f"{_pl(n['n_events'],'evento','eventos')} · {_pl(n['n_sources'],'fuente','fuentes')} · ventana {n['window_hours']}h</div>"
                     f"<div style='height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden'>"
                     f"<div style='width:{pct}%;height:100%;background:{col};border-radius:5px'></div></div>"
                     f"<details style='margin-top:8px'><summary style='font-size:.8rem;color:#c2410c;cursor:pointer'>"
-                    f"Ver texto completo ({n['n_events']} eventos)</summary>{eventos_html}</details>"
+                    f"Ver texto completo ({_pl(n['n_events'],'evento','eventos')})</summary>{eventos_html}</details>"
                     f"</div>")
             # bloque a ancho COMPLETO: h3 + caption + filas full-width, sin
             # KPI lateral que desplace el contenido a una columna estrecha.
@@ -2593,13 +2602,13 @@ def main():
             if _estado_dial == "recopilando":
                 _frase = "sin datos suficientes aún (se está acumulando histórico)"
             elif _estado_dial == "subiendo":
-                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy frente a {_tr['hace48']} hace 48h"
                 if _tr["high_hoy"] > _tr["high_48"]:
-                    _frase = f"{_tr['high_hoy']} clusters en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
+                    _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
             elif _estado_dial == "bajando":
-                _frase = f"{_tr['hoy']} hallazgos hoy frente a {_tr['hace48']} hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy frente a {_tr['hace48']} hace 48h"
             else:
-                _frase = f"{_tr['hoy']} hallazgos hoy, sin cambio frente a hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy, sin cambio frente a hace 48h"
         return _estado_dial, _estilo, _frase
 
     # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
@@ -3838,7 +3847,7 @@ def main():
         f"🚨 {_n_alerta} señales en alerta (≥60)</span>"
         f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
         f"background:#fff;border:1px solid #fcd34d;font-size:.78rem;font-weight:700;color:#78350f'>"
-        f"📊 {_n_clusters} clusters activos</span>"
+        f"📊 {_pl(_n_clusters,'cluster','clusters')} activos</span>"
         f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
         f"background:#fff;border:1px solid #e2e8f0;font-size:.78rem;font-weight:700;color:#475569'>"
         f"⚖️ {_n_atrib}/{_n_clusters} con atribución concluyente</span>"
