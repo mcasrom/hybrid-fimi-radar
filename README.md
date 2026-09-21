@@ -35,7 +35,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos
   (`scripts/cron_every_6h.sh`).
 - **Catálogo de fuentes**: **69 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
   + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
-  `analytical_relevance` y nota. El corpus activo ronda los **~83.083 eventos** (ventana 90 d).
+  `analytical_relevance` y nota. El corpus activo ronda los **~91.700 eventos** (ventana 90 d).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),
@@ -48,7 +48,9 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos
   banda, para una impresión visual global de qué temas concentran más cuentas),
   diales por tema, tarjetas de cluster
   (con "De qué habla", **dominios que amplifican por cluster** — eco de un medio vs red —,
-  chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida", export CSV/JSON y
+  chips de trayectoria "ecos de 1 pieza"/"coordinación sostenida" y chips **"🔁 sostenido
+  desde…"** (trayectoria entre ciclos), **"núcleo k=N"** (k-core) y **"📰 eco de prensa"**,
+  export CSV/JSON y
   **borde de color por banda** (rojo CRITICAL · naranja HIGH · ámbar ANOMALOUS · cian
   WATCH) para que la gravedad se perciba a contraluz de la página),
   narrativas, historial, resumen por tema, salud de fuentes, bitácora, **tendencias fuera
@@ -470,7 +472,8 @@ card **«Validación del modelo»** del dashboard resume las **3 capas** y se re
   cuadre de conteos con la BD viva. **No toca producción**:
   `python detection/restore_test.py [--backup ruta] [--json]`.
 - **CI** (`.github/workflows/ci.yml`): `compileall` + `ruff` + `bandit` (advisory) +
-  `pytest` con **cobertura** (gate `--cov-fail-under=50` sobre los módulos con tests).
+  `pip-audit` (advisory; hoy "No known vulnerabilities found") + `pytest` con **cobertura**
+  (gate `--cov-fail-under=50` sobre los módulos con tests).
 
 ## CTA cruzado con el blog (analisis.pruebapublica.com)
 
@@ -554,7 +557,9 @@ hybrid-fimi-radar/
 
 `sources` · `events` · `event_temas` · `narratives` · `clusters` · `indicators` ·
 `assessments` · `cluster_events` · `evidence` · `findings` · `feedback` · `bitacora` ·
-`suscripciones` (esquema en `normalizer/schema.py` y módulos `schema_*.py`).
+`suscripciones` · **`cluster_lineage`** (trayectoria de un cluster entre ciclos) ·
+**`finding_evidence`** (snapshot de los eventos de un hallazgo, se purga con él)
+(esquema en `normalizer/schema.py` y módulos `schema_*.py`).
 
 ## Transparencia del scoring
 
@@ -567,6 +572,30 @@ Además, un **gate de banda** (`scoring.band_gate`) exige, para las bandas altas
 de **anomalía** y de **cuentas**: **HIGH** requiere ≥3 cuentas y anomalía ≥20; **CRITICAL**,
 ≥10 cuentas y anomalía ≥40. Evita que una **pareja de cuentas** o el **eco de masa** (sin
 anomalía) se lean como HIGH/CRITICAL. Configurable y reversible.
+
+Otro tope, el **«eco de prensa»** (`scoring.mainstream_cap`, lista en `detection/mainstream.py`):
+si **≥80 %** de los dominios amplificados por un cluster están en la lista curada de **medios
+establecidos**, la banda se capa a **ANOMALOUS** — la coordinación observada es compatible con
+**cobertura periodística**, no con una campaña (el dashboard añade el chip «📰 eco de prensa»).
+Desplegado: HIGH 73→54 (−26 %). Y el scoring puede ser **por fase electoral**
+(`temas.<tema>.fase_scoring`, ventana propia) vía `compute_scores(..., weights_override)`,
+aplicado hoy en `elecciones`.
+
+## Trayectoria, núcleo k y RSS
+
+Tres lecturas **descriptivas** (no tocan el scoring) que añaden contexto temporal y estructural:
+
+- **Trayectoria entre ciclos** (`detection/lineage.py`): los `cluster_label` se regeneran en
+  cada ciclo, pero cada cluster se enlaza con el del ciclo anterior por **Jaccard de miembros**
+  (cuentas + URLs) → tabla **`cluster_lineage`** con un **`lineage_id` lógico**, `first_seen` y
+  `n_ciclos`. El dashboard lo muestra como chip **«🔁 sostenido desde <fecha> · N ciclos»** y la
+  API pública lo expone en `lineage`.
+- **Núcleo k** (`detection/graph_metrics.py`): k-core del grafo de cuentas del cluster (el
+  subconjunto más densamente conectado) → columnas **`kcore`/`kcore_size`** en `assessments` y
+  chip **«núcleo k=N · M cuentas»**.
+- **RSS de alertas**: los clusters **HIGH/CRITICAL con score ≥60** (hasta 40) se publican en
+  `/var/www/fimi/alerts.xml`, anunciado con `<link rel="alternate" type="application/rss+xml">`
+  en el dashboard.
 
 ## Taxonomía, tendencias y ejes transversales (Fase A)
 
@@ -666,6 +695,11 @@ y URLs de un cluster en CSV o JSON (`--cluster <label> --fmt csv|json`), o en el
 (los links "Exportar evidencia" de cada tarjeta). Recurso público: los datos ya eran
 visibles en las tarjetas; el export solo los facilita.
 
+Además, al generar un **finding** de tipo cluster se archiva un **snapshot de sus eventos**
+en la tabla **`finding_evidence`** (`detection/persistencia.py`), que se purga junto al
+finding. Como `cluster_events` se sobrescribe cada ciclo, sin este archivo no se podría
+**reconstruir un hallazgo pasado**.
+
 ## API pública v1 (read-only)
 
 La misma señal del dashboard, en JSON autodescriptivo, para reutilizarla sin scrapear
@@ -677,14 +711,15 @@ rate-limit 20 req/min por IP) y con CORS abierto para lectura.
 | `GET /api/v1` | Índice de endpoints + bloque `meta` (versión, snapshot, aviso) |
 | `GET /api/v1/temas` | Resumen por tema: nº clusters, en alerta (≥60) y top (score/banda) |
 | `GET /api/v1/tema/<slug>` | Clusters del tema con componentes 0-100, confianza y atribución |
-| `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) |
+| `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) + `lineage` |
 | `GET /api/v1/openapi.json` | Especificación OpenAPI 3.0 |
 | `GET /api/v1/health` | Estado del servicio |
 
 Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: true`,
 `aviso` y `replay` con pesos/bandas/ventana para reproducir el score) y, por cluster,
-`banda`, `components`, `confidence`, `attribution`, `hypotheses` y `disclaimer`
-("señal de comportamiento, no atribución").
+`banda`, `components`, `confidence`, `attribution`, `hypotheses`, **`lineage`**
+(`lineage_id`, `first_seen`, `n_ciclos` — ID lógico que **persiste** aunque cambie el
+`cluster_label`) y `disclaimer` ("señal de comportamiento, no atribución").
 
 **Cautela**: los `cluster_label` se regeneran en cada ciclo (cada 6 h) y **no son
 estables**; cada respuesta es una **foto del último ciclo** (`meta.snapshot=true`).
@@ -882,9 +917,10 @@ Tres capas, todas avisando por Telegram al administrador solo ante cambios (sin 
 | [`/research.html`](https://fimi.viajeinteligencia.com/research.html) | Investigación y validación del modelo |
 | [`/api.html`](https://fimi.viajeinteligencia.com/api.html) | Documentación de la API pública v1 |
 | [`/operativa.html`](https://fimi.viajeinteligencia.com/operativa.html) | Manual de operación (usuario + admin) |
+| [`/privacidad.html`](https://fimi.viajeinteligencia.com/privacidad.html) | Resumen público de la EIPD/DPIA (datos, finalidad, retención, derechos) |
 
-`/sobre.html`, `/suscribirse.html`, `/api.html` y `/operativa.html` son estáticas y viven en
-`/var/www/fimi/` (fuera del repo). El `sitemap.xml` las indexa.
+`/sobre.html`, `/suscribirse.html`, `/api.html`, `/operativa.html` y `/privacidad.html` son
+estáticas y viven en `/var/www/fimi/` (fuera del repo). El `sitemap.xml` las indexa.
 
 ## Licencia
 
