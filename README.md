@@ -589,10 +589,12 @@ Tres lecturas **descriptivas** (no tocan el scoring) que añaden contexto tempor
   cada ciclo, pero cada cluster se enlaza con el del ciclo anterior por **Jaccard de miembros**
   (cuentas + URLs) → tabla **`cluster_lineage`** con un **`lineage_id` lógico**, `first_seen` y
   `n_ciclos`. El dashboard lo muestra como chip **«🔁 sostenido desde <fecha> · N ciclos»** y la
-  API pública lo expone en `lineage`.
+  API pública lo expone en `lineage`. Cada campaña sostenida tiene un **permalink estable**:
+  **`GET /c/<lineage_id>`** resuelve el ID lógico al cluster **actual** de su linaje (JSON; con
+  `?to=web` redirige al tema del dashboard). Routing nginx `location /c/`.
 - **Núcleo k** (`detection/graph_metrics.py`): k-core del grafo de cuentas del cluster (el
-  subconjunto más densamente conectado) → columnas **`kcore`/`kcore_size`** en `assessments` y
-  chip **«núcleo k=N · M cuentas»**.
+  subconjunto más densamente conectado) → columnas **`kcore`/`kcore_size`** en `assessments`,
+  chip **«núcleo k=N · M cuentas»** y campo **`kcore`** en la API.
 - **RSS de alertas**: los clusters **HIGH/CRITICAL con score ≥60** (hasta 40) se publican en
   `/var/www/fimi/alerts.xml`, anunciado con `<link rel="alternate" type="application/rss+xml">`
   en el dashboard.
@@ -711,13 +713,14 @@ rate-limit 20 req/min por IP) y con CORS abierto para lectura.
 | `GET /api/v1` | Índice de endpoints + bloque `meta` (versión, snapshot, aviso) |
 | `GET /api/v1/temas` | Resumen por tema: nº clusters, en alerta (≥60) y top (score/banda) |
 | `GET /api/v1/tema/<slug>` | Clusters del tema con componentes 0-100, confianza y atribución |
-| `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) + `lineage` |
+| `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) + `lineage` + `kcore` |
+| `GET /c/<lineage_id>` | **Permalink** de una campaña sostenida (ID lógico estable) → cluster actual del linaje |
 | `GET /api/v1/openapi.json` | Especificación OpenAPI 3.0 |
 | `GET /api/v1/health` | Estado del servicio |
 
 Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: true`,
 `aviso` y `replay` con pesos/bandas/ventana para reproducir el score) y, por cluster,
-`banda`, `components`, `confidence`, `attribution`, `hypotheses`, **`lineage`**
+`banda`, `components`, `kcore` (`kcore`/`kcore_size`), `confidence`, `attribution`, `hypotheses`, **`lineage`**
 (`lineage_id`, `first_seen`, `n_ciclos` — ID lógico que **persiste** aunque cambie el
 `cluster_label`) y `disclaimer` ("señal de comportamiento, no atribución").
 
@@ -918,9 +921,11 @@ Tres capas, todas avisando por Telegram al administrador solo ante cambios (sin 
 | [`/api.html`](https://fimi.viajeinteligencia.com/api.html) | Documentación de la API pública v1 |
 | [`/operativa.html`](https://fimi.viajeinteligencia.com/operativa.html) | Manual de operación (usuario + admin) |
 | [`/privacidad.html`](https://fimi.viajeinteligencia.com/privacidad.html) | Resumen público de la EIPD/DPIA (datos, finalidad, retención, derechos) |
+| [`/docs.html`](https://fimi.viajeinteligencia.com/docs.html) | **Biblioteca de fuentes primarias**: informes EEAS sobre FIMI + ENISA (enlace al original + espejo local descargable) |
 
-`/sobre.html`, `/suscribirse.html`, `/api.html`, `/operativa.html` y `/privacidad.html` son
-estáticas y viven en `/var/www/fimi/` (fuera del repo). El `sitemap.xml` las indexa.
+`/sobre.html`, `/suscribirse.html`, `/api.html`, `/operativa.html`, `/privacidad.html` y
+`/docs.html` son estáticas y viven en `/var/www/fimi/` (fuera del repo). Los PDF de
+`/docs.html` se sirven desde `/var/www/fimi/docs/`. El `sitemap.xml` las indexa.
 
 ## Licencia
 
