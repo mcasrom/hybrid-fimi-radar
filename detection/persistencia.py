@@ -69,6 +69,15 @@ def persist_findings(conn, narratives, clusters=None, cascades=None, tema_id="fr
              c.get("accounts", 0), c.get("events", 0), 0,
              json.dumps(c.get("evidence", {}), ensure_ascii=False),
              c.get("overall_score", 0), "", tema_id))
+        fid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        # Archivar la evidencia del cluster (snapshot de sus eventos) para poder
+        # reconstruir el hallazgo después, aunque cluster_events se sobrescriba
+        # en el próximo ciclo. Se purga junto al finding.
+        conn.execute(
+            "INSERT INTO finding_evidence (finding_id, ts, source, author, title, text, url) "
+            "SELECT ?, ce.ts, ce.source, ce.author, ce.title, ce.text, ce.url "
+            "FROM cluster_events ce JOIN clusters cl ON cl.id = ce.cluster_id "
+            "WHERE cl.cluster_label = ?", (fid, titulo))
         inserted += 1
 
     # cascadas

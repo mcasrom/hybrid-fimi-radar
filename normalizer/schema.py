@@ -130,6 +130,17 @@ CREATE TABLE IF NOT EXISTS findings (
     tema_id TEXT DEFAULT 'frontera_sur'  -- tema al que pertenece el hallazgo
 );
 
+-- Evidencia ARCHIVADA por finding (snapshot de los eventos del cluster en el
+-- momento de detectarlo). `cluster_events` se sobrescribe cada ciclo, así que
+-- sin esto no se puede reconstruir un hallazgo pasado. Se purga junto al finding.
+CREATE TABLE IF NOT EXISTS finding_evidence (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    finding_id INTEGER,
+    ts INTEGER, source TEXT, author TEXT, title TEXT, text TEXT, url TEXT,
+    FOREIGN KEY(finding_id) REFERENCES findings(id)
+);
+CREATE INDEX IF NOT EXISTS idx_finding_evidence_finding ON finding_evidence(finding_id);
+
 -- Informes diarios (resumen de hallazgos del día)
 CREATE TABLE IF NOT EXISTS daily_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

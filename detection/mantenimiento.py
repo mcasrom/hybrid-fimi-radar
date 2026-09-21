@@ -108,6 +108,10 @@ def main():
     n_purgados += n_temas
     # findings antiguos
     n_purgados += _purge_table(conn, args.dry, "findings", "fecha", cutoff, "findings>90d")
+    # evidencia archivada de findings ya borrados (huerfana)
+    cur = conn.execute(
+        "DELETE FROM finding_evidence WHERE finding_id NOT IN (SELECT id FROM findings)")
+    n_purgados += cur.rowcount
 
     # eventos huérfanos de cluster_events (ya no referenciados) - no son daño pero dejarlo limpio
     cur = conn.execute(
