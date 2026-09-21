@@ -28,10 +28,11 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate
+from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate, mainstream_cap
 from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics
+from detection import mainstream
 
 
 def load_config(path=None):
@@ -179,6 +180,12 @@ def main():
                            & (sub_clustered["url"].astype(str).str.strip() != "")]
         url_counts = _u.groupby("cluster")["url"].nunique().to_dict()
 
+    # fraccion de dominios "medios establecidos" por cluster (cap eco de prensa)
+    _ms_frac = {}
+    if sub_clustered is not None and len(sub_clustered):
+        for _lab, _mem in sub_clustered.groupby("cluster"):
+            _ms_frac[_lab] = mainstream.mainstream_frac(list(_mem["url"]))
+
     for label, s in summary.items():
         comp = {
             "synchronization": min(100, s.get("coordination_score", 0) * 12),
@@ -195,12 +202,17 @@ def main():
         overall, floored, es_eco = solve_scale(
             overall, s.get("accounts", 0), ev_counts.get(label, 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=url_counts.get(label, 0))
+        # Tope "eco de prensa" (21/Sep): si la mayoria de dominios amplificados
+        # son medios establecidos, la coordinacion es compatible con cobertura
+        # periodistica normal, no con una campana inautentica.
+        overall, es_prensa = mainstream_cap(overall, _ms_frac.get(label, 0.0), cfg, tema=tema)
         overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
         band = band_for(overall, bands)
         s["ruido_volumen"] = floored
         s["n_events"] = ev_counts.get(label, 0)
         s["n_urls"] = url_counts.get(label, 0)
         s["origen_unico"] = es_eco
+        s["eco_prensa"] = es_prensa
 
         # FIX: el historial (tabla findings) debe guardar el score que tenia el
         # cluster EN EL MOMENTO de deteccion, no su valor actual. cluster_summary
@@ -248,7 +260,8 @@ def main():
              comp["infrastructure"], comp["network_density"], overall, att["confidence"],
              f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}."
              + (" Posible ruido de bajo volumen." if floored else "")
-             + (" Eco de 1 pieza (misma URL)." if es_eco else ""),
+             + (" Eco de 1 pieza (misma URL)." if es_eco else "")
+             + (" Eco de prensa (dominios de medios establecidos)." if es_prensa else ""),
              json.dumps(hyp, ensure_ascii=False), att["actor"], att["confidence"],
              att["evidence"], att["missing_evidence"], _kc, _kcs))
         # eventos miembros del cluster -> contenido real (para la UI)

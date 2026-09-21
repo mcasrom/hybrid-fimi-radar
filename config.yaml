@@ -64,6 +64,14 @@ scoring:
     max_urls: 1
     min_events: 2
     cap_band: ANOMALOUS
+  # Tope por "eco de prensa" (21/Sep): si >= frac_min de los dominios amplificados
+  # del cluster son medios establecidos (ver detection/mainstream.py), se topa a
+  # la banda cap_band (ANOMALOUS=59). La coordinación observada es compatible con
+  # cobertura periodística normal, no con una campaña. Configurable por tema en
+  # temas.<tema>.scoring.mainstream_cap.
+  mainstream_cap:
+    frac_min: 0.8
+    cap_band: ANOMALOUS
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7

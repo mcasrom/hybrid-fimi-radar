@@ -20,26 +20,10 @@ sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes
 DB = ROOT / "data" / "radar.db"
 OUT = Path("/var/www/fimi/index.html")
 
-# Dominios de medios establecidos (heurística). Para el chip "eco de prensa" y
-# para medir un eventual cap "solo-mainstream". Ampliable.
-_MAINSTREAM = set("""
-eldiario.es elpais.com publico.es elmundo.es abc.es lavanguardia.com
-elconfidencial.com infolibre.es rtve.es cadenaser.com 20minutos.es
-europapress.es elperiodico.com larazon.es theobjective.com vozpopuli.com
-elespanol.com ctxt.es elplural.com infobae.com elcomercio.pe efe.com
-huffingtonpost.es elboletin.com elfarodeceuta.es elsaltodiario.com
-elordenmundial.com eldebate.com elindependiente.com economiadigital.es
-bbc.com bbc.co.uk reuters.com apnews.com theguardian.com cnn.com nbcnews.com
-nytimes.com washingtonpost.com motherjones.com time.com aljazeera.com
-lemonde.fr france24.com bfmtv.com cnews.fr 20minutes.fr franceinfo.fr
-euronews.com dw.com zeit.de spiegel.de tagesspiegel.de stern.de taz.de rnd.de
-sverigesradio.se dn.se svt.se aftonbladet.se expressen.se etc.se tagesschau.de
-npr.org politico.eu thehill.com news.sky.com cnbc.com forbes.com bloomberg.com
-ft.com wsj.com usatoday.com latimes.com independent.co.uk thetimes.co.uk
-telegraph.co.uk courrierinternational.com information.tv5monde.com
-allsides.com elcorreo.com diariovasco.com heraldo.es lne.es farodevigo.es
-lavozdegalicia.es canarias7.es laprovincia.es diariodeibiza.es
-""".split())
+# Lista de medios establecidos (compartida con run_fimi/scoring):
+# ver detection/mainstream.py.
+from detection import mainstream as _ms_mod  # noqa: E402
+_MAINSTREAM = _ms_mod.MAINSTREAM
 
 
 def _pl(n, sing, plur=None):

@@ -183,6 +183,27 @@ def origen_unico_cap(overall, n_urls, n_events, config=None, tema=None):
     return overall, es_eco
 
 
+def mainstream_cap(overall, mainstream_frac, config=None, tema=None):
+    """Tope por "eco de prensa": si >= frac_min de los dominios amplificados del
+    cluster son de medios establecidos, se topa a cap_band (ANOMALOUS). La
+    coordinacion observada es compatible con cobertura periodistica normal, no
+    con una campana inautentica.
+
+    Config: scoring.mainstream_cap = {frac_min, cap_band}.
+    Devuelve (overall, es_eco_prensa)."""
+    p = _tema_scale(config, tema, "mainstream_cap",
+                    {"frac_min": 0.8, "cap_band": "ANOMALOUS"})
+    try:
+        frac = float(mainstream_frac)
+    except Exception:
+        frac = 0.0
+    es_eco = frac >= float(p["frac_min"])
+    if es_eco:
+        bands = load_bands(config)
+        overall = min(float(overall), float(bands[p["cap_band"]][1]))
+    return overall, es_eco
+
+
 def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls=0):
     """Aplica la escala completa del cluster (orden correcto):
     1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima;
