@@ -653,6 +653,35 @@ def _eco_prensa_chip(diver):
             '📰 eco de prensa (medios establecidos)</span>')
 
 
+# Tipologia estructural (detection/tipologia.py): chip con el TIPO de senal del
+# cluster (forma, no intencion). Ayuda al triage cuando hay cientos de clusters.
+_TIPO_META = {
+    "eco_prensa": ("📰", "eco de prensa", "#0f766e", "#f0fdfa", "#14b8a6"),
+    "automatizado_plantilla": ("🤖", "automatizado (plantilla)", "#6d28d9", "#f5f3ff", "#8b5cf6"),
+    "red_dominio_unico": ("🎯", "red de dominio único", "#3730a3", "#eef2ff", "#6366f1"),
+    "mismo_enlace_repetido": ("🔗", "mismo enlace repetido", "#b45309", "#fffbeb", "#f59e0b"),
+    "eco_1_pieza": ("📄", "eco de 1 pieza", "#475569", "#f8fafc", "#94a3b8"),
+    "red_multidominio": ("🕸️", "red multidominio", "#c2410c", "#fff7ed", "#fdba74"),
+    "senal_debil": ("·", "señal débil", "#64748b", "#f8fafc", "#cbd5e1"),
+}
+
+
+def _tipo_chip(tipo, lectura=None):
+    """Chip con el tipo estructural del cluster (tipologia.py). Solo lectura."""
+    if isinstance(tipo, dict):
+        lectura = tipo.get("lectura")
+        tipo = tipo.get("tipo")
+    if not tipo:
+        return ""
+    import html as _tc_esc
+    emoji, label, col, bg, bd = _TIPO_META.get(tipo, _TIPO_META["senal_debil"])
+    tip = f' title="Tipo estructural: {_tc_esc.escape(str(lectura or label))}"' if lectura else ""
+    return (f'<span style="display:inline-block;font-size:.72rem;color:{col};'
+            f'border:1px solid {bd};border-radius:999px;padding:1px 10px;'
+            f'font-weight:600;background:{bg};cursor:help"{tip}>'
+            f'{emoji} {label}</span>')
+
+
 # S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
 # del modelo (sección 5 del análisis), una combinación de ALTA COORDINACIÓN con
 # BAJA ANOMALÍA y SIN infraestructura común apunta a propagación orgánica (una
@@ -933,7 +962,7 @@ def _disp_label(c, disp_map=None):
     return (disp_map or {}).get(c["id"]) or str(c["cluster_label"] or "")
 
 
-def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None, linaje=None):
+def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None, linaje=None, tipo=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
     más probables) + chip de trayectoria (eco puntual vs coordinación
@@ -1022,7 +1051,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{_sostenido_chip(diver)}'
          f'{_lineage_chip(linaje)}'
          f'{_kcore_chip(a)}'
-         f'{_eco_prensa_chip(diver)}'
+         f'{_tipo_chip(tipo)}'
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
@@ -1246,7 +1275,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             + attr + hyp_html)
 
 
-def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None, disp_map=None, lineage_map=None):
+def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", contenido_map=None, diversidad_map=None, domains_map=None, evidencia_map=None, amp_global=None, disp_map=None, lineage_map=None, tipologia_map=None):
     """Renderiza los clusters de un tema.
 
     Escaneo rápido: solo los clusters HIGH/CRITICAL muestran su detalle por
@@ -1281,7 +1310,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         a = asm_by_cid.get(c["id"])
         comps = _cluster_comps(c, a)
         _bcol_out = BAND_COLORS[band_of(c["overall_score"] or 0)]
-        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])))}</div>')
+        out += (f'<div class="card" style="border-left:5px solid {_bcol_out}">{_cluster_detail_html(c, a, comps, contenido_map.get(c["id"]), diversidad_map.get(c["id"]), (domains_map or {}).get(c["id"]), evidencia_map.get(c["id"]), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])), (tipologia_map or {}).get(c["cluster_label"]))}</div>')
 
 
     # --- resto (ANOMALOUS/WATCH/NORMAL): gráfico de barras clicable ---
@@ -1359,7 +1388,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             # detalle completo pre-renderizado (lo mismo que HIGH/CRITICAL)
             _bcol_pool = BAND_COLORS[band_]
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
-                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])))}</div></div>')
+                     f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])), (tipologia_map or {}).get(c["cluster_label"]))}</div></div>')
 
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
@@ -2200,6 +2229,23 @@ def main():
     except Exception as _e:
         print("lineage_map error (no bloquea):", _e, flush=True)
         lineage_map = {}
+    # tipologia estructural (detection/tipologia.py): tipo de senal por cluster
+    # (forma, no intencion) para triage. ~1s sobre todo el corpus.
+    tipologia_map = {}
+    try:
+        from detection import tipologia as _tip_mod
+        _tip_items = _tip_mod.cargar(con)
+        _tip_por_tema = _tip_mod.mapa_cuentas(con)
+        for _tc in _tip_items:
+            _tr = _tip_mod.rasgos(_tc["evs"], _tc["asm"])
+            _tcu = {(e["author"] or "").split(":", 1)[-1] for e in _tc["evs"]}
+            _tcu.discard("")
+            _tr["cross_tema"] = _tip_mod.cross_tema(_tc["label"], _tc["tema"], _tcu, _tip_por_tema)
+            _tt, _tf, _tl = _tip_mod.tipo_de(_tr)
+            tipologia_map[_tc["label"]] = {"tipo": _tt, "flags": _tf, "lectura": _tl}
+    except Exception as _e:
+        print("tipologia_map error (no bloquea):", _e, flush=True)
+        tipologia_map = {}
     # firma de cuentas por cluster (A2, 05/Sep): conjunto de autores distintos
     # en cluster_events -> permite deduplicar el MISMO conjunto de cuentas que
     # forma clusters en varios temas (solape frontera_sur/geopolitica: la pareja
@@ -3217,7 +3263,7 @@ def main():
             _cl_txt = render_component_legend() + _radar + render_cluster_cards(
                 _tema_cl, assessments, contenido_map=contenido_map, diversidad_map=diversidad_map,
                 domains_map=domains_map, evidencia_map=evidencia_map, amp_global=_amp_tema,
-                disp_map=disp_label_map, lineage_map=lineage_map)
+                disp_map=disp_label_map, lineage_map=lineage_map, tipologia_map=tipologia_map)
         # Color de acento por tema: cada dominio del catálogo tiene identidad
         # visual propia en su pestaña (no todas monótonas en gris/naranja).
         # Frontera Sur = naranja (identidad del radar), UE-Marruecos = azul
