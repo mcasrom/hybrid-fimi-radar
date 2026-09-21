@@ -496,8 +496,16 @@ def _cluster_obj(row, bands):
     except Exception:
         hyp = []
     label = d.get("cluster_label")
+    lineage = None
+    if d.get("lineage_id") is not None:
+        lineage = {
+            "lineage_id": d.get("lineage_id"),
+            "first_seen": d.get("lineage_first_seen"),
+            "n_ciclos": d.get("lineage_n_ciclos"),
+        }
     return {
         "cluster_label": label,
+        "lineage": lineage,
         "overall_score": d.get("overall_score"),
         "banda": _band_of(d.get("overall_score") or 0, bands),
         "components": comps,
@@ -559,10 +567,13 @@ def _api_tema(slug):
     try:
         rows = conn.execute(
             "SELECT c.cluster_label, c.overall_score, c.created_at, c.confidence, "
+            " cl.lineage_id AS lineage_id, cl.first_seen AS lineage_first_seen, "
+            " cl.n_ciclos AS lineage_n_ciclos, "
             " a.coordination_score, a.amplification_score, a.anomaly_score, "
             " a.infrastructure_score, a.network_density, a.assessment, a.missing_evidence, "
             " a.attribution, a.attribution_confidence, a.attribution_evidence, a.hypotheses_json "
             "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
+            "LEFT JOIN cluster_lineage cl ON cl.tema_id = c.tema_id AND cl.cluster_label = c.cluster_label "
             "WHERE c.tema_id=? ORDER BY c.overall_score DESC", (slug,)).fetchall()
     finally:
         conn.close()
@@ -598,6 +609,15 @@ def _openapi_spec():
         "type": "object",
         "properties": {
             "cluster_label": {"type": "string", "description": "ID del cluster en ESTE ciclo (no estable entre ciclos)"},
+            "lineage": {
+                "type": "object",
+                "description": "Linaje del cluster entre ciclos: ID logico estable (Jaccard de miembros) + antiguedad.",
+                "properties": {
+                    "lineage_id": {"type": "string"},
+                    "first_seen": {"type": "integer", "description": "epoch de la primera deteccion"},
+                    "n_ciclos": {"type": "integer", "description": "nº de ciclos consecutivos detectado"},
+                },
+            },
             "overall_score": {"type": "number"},
             "banda": {"type": "string", "enum": ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]},
             "components": comp,
@@ -914,6 +934,20 @@ class H(BaseHTTPRequestHandler):
             except KeyError:
                 return self._send(404, {"error": f"cluster no encontrado: {cid}"})
             payload = json.loads(body.decode("utf-8"))
+            # linaje (ID logico estable entre ciclos) del cluster
+            try:
+                _lc = sqlite3.connect(DB)
+                _lc.row_factory = sqlite3.Row
+                _lr = _lc.execute(
+                    "SELECT lineage_id, first_seen, n_ciclos FROM cluster_lineage WHERE cluster_label=?",
+                    (cid,)).fetchone()
+                _lc.close()
+                if _lr:
+                    payload["lineage"] = {"lineage_id": _lr["lineage_id"],
+                                          "first_seen": _lr["first_seen"],
+                                          "n_ciclos": _lr["n_ciclos"]}
+            except Exception:
+                pass
             payload["meta"] = _api_meta()
             payload["disclaimer"] = _DISCLAIMER_CLUSTER
             return self._send(200, payload)

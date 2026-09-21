@@ -37,6 +37,12 @@ jobs:
         continue-on-error: true
         run: bandit -r detection collectors normalizer features clustering attribution -ll
 
+      - name: Dependency audit with pip-audit (advisory)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt || true
+
       - name: Generate synthetic dataset + ground truth (hard gate)
         run: |
           python tests/generate_synthetic.py
