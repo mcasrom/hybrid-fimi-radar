@@ -413,6 +413,10 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
                 payload["hypotheses"] = json.loads(asm["hypotheses_json"]) if asm["hypotheses_json"] else []
             except Exception:
                 payload["hypotheses"] = []
+            payload["kcore"] = {
+                "kcore": asm["kcore"] if "kcore" in asm.keys() else None,
+                "kcore_size": asm["kcore_size"] if "kcore_size" in asm.keys() else None,
+            }
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
@@ -485,6 +489,29 @@ def _api_meta():
     }
 
 
+def _lineage_lookup(lineage_id: str):
+    """Resuelve un lineage_id (ID lógico estable) al cluster ACTUAL de su linaje.
+
+    Devuelve {tema_id, cluster_label, first_seen, n_ciclos, activo} o None si el
+    lineage no existe. `activo` indica si ese cluster sigue en el snapshot actual.
+    """
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        lr = conn.execute(
+            "SELECT tema_id, cluster_label, first_seen, n_ciclos FROM cluster_lineage "
+            "WHERE lineage_id=? ORDER BY n_ciclos DESC LIMIT 1", (lineage_id,)).fetchone()
+        if not lr:
+            return None
+        cur = conn.execute("SELECT 1 FROM clusters WHERE cluster_label=?",
+                           (lr["cluster_label"],)).fetchone()
+        return {"tema_id": lr["tema_id"], "cluster_label": lr["cluster_label"],
+                "first_seen": lr["first_seen"], "n_ciclos": lr["n_ciclos"],
+                "activo": bool(cur)}
+    finally:
+        conn.close()
+
+
 def _cluster_obj(row, bands):
     """Convierte una fila (join cluster+assessment) en el objeto JSON v1."""
     d = dict(row)
@@ -509,6 +536,7 @@ def _cluster_obj(row, bands):
         "overall_score": d.get("overall_score"),
         "banda": _band_of(d.get("overall_score") or 0, bands),
         "components": comps,
+        "kcore": {"kcore": d.get("kcore"), "kcore_size": d.get("kcore_size")},
         "confidence": d.get("confidence"),
         "assessment": d.get("assessment"),
         "missing_evidence": d.get("missing_evidence"),
@@ -571,6 +599,7 @@ def _api_tema(slug):
             " cl.n_ciclos AS lineage_n_ciclos, "
             " a.coordination_score, a.amplification_score, a.anomaly_score, "
             " a.infrastructure_score, a.network_density, a.assessment, a.missing_evidence, "
+            " a.kcore, a.kcore_size, "
             " a.attribution, a.attribution_confidence, a.attribution_evidence, a.hypotheses_json "
             "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
             "LEFT JOIN cluster_lineage cl ON cl.tema_id = c.tema_id AND cl.cluster_label = c.cluster_label "
@@ -621,6 +650,14 @@ def _openapi_spec():
             "overall_score": {"type": "number"},
             "banda": {"type": "string", "enum": ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]},
             "components": comp,
+            "kcore": {
+                "type": "object",
+                "description": "Nucleo k del grafo de cuentas del cluster (subconjunto mas densamente conectado).",
+                "properties": {
+                    "kcore": {"type": "integer", "description": "grado k del nucleo"},
+                    "kcore_size": {"type": "integer", "description": "nº de cuentas del nucleo"},
+                },
+            },
             "confidence": {"type": "string"},
             "assessment": {"type": "string"},
             "missing_evidence": {"type": "string"},
@@ -674,6 +711,11 @@ def _openapi_spec():
                 "responses": {"200": {"description": "OK"}, "404": {"description": "Cluster no encontrado"}}}},
             "/api/v1/health": {"get": {"summary": "Estado del servicio",
                 "responses": {"200": {"description": "OK"}}}},
+            "/c/{lineage_id}": {"get": {"summary": "Permalink de una campana sostenida (ID estable entre ciclos)",
+                "parameters": [{"name": "lineage_id", "in": "path", "required": True, "schema": {"type": "string"},
+                                "example": "frontera_sur_cluster_000@1789928930"}],
+                "responses": {"200": {"description": "Linaje + cluster actual"},
+                              "404": {"description": "Lineage no encontrado"}}}},
         },
     }
 
@@ -950,6 +992,37 @@ class H(BaseHTTPRequestHandler):
                 pass
             payload["meta"] = _api_meta()
             payload["disclaimer"] = _DISCLAIMER_CLUSTER
+            return self._send(200, payload)
+        # Permalink estable de una campana sostenida: /c/<lineage_id>
+        # (el lineage_id NO cambia entre ciclos aunque cambie el cluster_label).
+        if path.startswith("/c/"):
+            lid = path[len("/c/"):].strip("/")
+            if not re.match(r"^[a-z0-9_]+_cluster_[0-9]{3}@[0-9]+$", lid):
+                return self._send(400, {"error": "lineage_id invalido"})
+            info = _lineage_lookup(lid)
+            if not info:
+                return self._send(404, {"error": f"lineage no encontrado: {lid}"})
+            web = f"{BASE_URL}/#{info['tema_id']}"
+            accept = self.headers.get("Accept") or ""
+            if (q.get("to") or [""])[0] == "web" or "text/html" in accept:
+                return self._redirect(web)
+            payload = {
+                "meta": _api_meta(),
+                "lineage_id": lid,
+                "tema": info["tema_id"],
+                "cluster_label": info["cluster_label"],
+                "first_seen": info["first_seen"],
+                "n_ciclos": info["n_ciclos"],
+                "activo": info["activo"],
+                "web": web,
+                "disclaimer": _DISCLAIMER_CLUSTER,
+            }
+            if info["activo"]:
+                try:
+                    _ct, _body, _fn = exportar_cluster(info["cluster_label"], "json")
+                    payload["cluster"] = json.loads(_body.decode("utf-8"))
+                except Exception:
+                    pass
             return self._send(200, payload)
         return self._send(404, {"error": "not found"})
 

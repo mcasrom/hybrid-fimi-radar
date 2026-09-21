@@ -723,6 +723,7 @@ original; material © Unión Europea):
 <a href="https://www.eeas.europa.eu/eeas/2nd-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">2º informe (2024)</a> ·
 <a href="https://www.eeas.europa.eu/eeas/3rd-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">3º informe (2025)</a> ·
 <a href="https://www.eeas.europa.eu/eeas/4th-eeas-report-foreign-information-manipulation-and-interference-threats_en" target="_blank" rel="noopener noreferrer" style="color:#c2410c">4º informe (2026)</a>.
+<a href="/docs.html" style="color:#c2410c">📚 Biblioteca de documentos (descarga) →</a>
 </p>
 </div>
 """
@@ -1503,6 +1504,19 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
             _t_over.append(f"<li><b>{_t}</b>: {' · '.join(_partes)}</li>")
     _over_html = ("<ul style='margin:6px 0 0 18px;padding:0'>" + "".join(_t_over) + "</ul>" if _t_over
                   else "<p style='color:#94a3b8'>Ningún tema define calibración propia (todos usan los globales).</p>")
+    _fase_items_r = []
+    for _t in temas:
+        _fs = (temas_cfg.get(_t, {}) or {}).get("fase_scoring")
+        if not _fs:
+            continue
+        _fw = _fs.get("weights", {}) or {}
+        _fw_txt = ", ".join(f"{_w_names.get(k, k)} {int(round(v * 100))}%" for k, v in _fw.items())
+        _fase_items_r.append(
+            f"<li><b>{_t}</b>: ventana ±{_fs.get('ventana_dias', 30)} d alrededor de cada proceso "
+            f"del registro electoral (<code>data/elecciones.yaml</code>) → {_fw_txt} "
+            f"(más peso a la anomalía: en periodo electoral la coordinación inauténtica es más relevante).</li>")
+    _fase_over_html = ("<ul style='margin:6px 0 0 18px;padding:0'>" + "".join(_fase_items_r) + "</ul>" if _fase_items_r
+                       else "<p style='color:#94a3b8'>Ningún tema define scoring por fase.</p>")
 
     _fuentes_txt = (f"<b>{n_sources}</b> fuentes de captura con eventos recientes"
                     f" ({n_src_feeds} feeds RSS · {n_src_plt} plataformas · {n_src_tg} Telegram · "
@@ -1637,6 +1651,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
     <p style="margin-top:8px">Bandas: {_b_html}</p>
     <p class="caption">{_escala}</p>
     <p>Calibración por tema:{_over_html}</p>
+    <p>Scoring por <b>fase electoral</b> (modelo EEAS):{_fase_over_html}</p>
     <p class="caption">Detalle y fórmula completa (con el antes/después de cada ajuste de escala):
       <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/docs/SCORING.md">docs/SCORING.md</a>.</p>
   </div>
@@ -3869,6 +3884,22 @@ def main():
             _t_over.append(f"<li><b>{_t}</b>: {' · '.join(_partes)}</li>")
     _t_over_html = ("<ul style='margin:4px 0 0 18px;padding:0'>" + "".join(_t_over) + "</ul>" if _t_over
                     else "<span style='color:#94a3b8'>Ningún tema define calibración propia (todos usan valores globales).</span>")
+    # scoring por fase electoral (modelo EEAS), opcional por tema
+    _fase_items = []
+    for _t in temas:
+        _fs = (temas_cfg.get(_t, {}) or {}).get("fase_scoring")
+        if not _fs:
+            continue
+        _fw = _fs.get("weights", {}) or {}
+        _fw_txt = ", ".join(f"{_w_names.get(k,k)} {int(round(v*100))}%" for k, v in _fw.items())
+        _fase_items.append(
+            f"<li><b>{_t}</b>: ventana ±<b>{_fs.get('ventana_dias',30)} d</b> alrededor de cada proceso "
+            f"del registro electoral (<code>data/elecciones.yaml</code>). Dentro de la fase se usan estos pesos: "
+            f"{_fw_txt} — más peso a la <b>anomalía</b>, porque en periodo electoral la coordinación "
+            f"inauténtica es más relevante. Fuera de la ventana, pesos normales.</li>")
+    _fase_html = ("<ul style='margin:4px 0 0 18px;padding:0'>" + "".join(_fase_items) + "</ul>"
+                  if _fase_items else
+                  "<span style='color:#94a3b8'>Ningún tema define scoring por fase.</span>")
     _scoring_html = (
         f"<div style='margin-top:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;"
         f"border-radius:8px;font-size:.72rem;line-height:1.6'>"
@@ -3878,6 +3909,8 @@ def main():
         f"Bandas: {_b_html}<br>{_escala_global}</span>"
         f"<div style='margin-top:6px;border-top:1px solid #e2e8f0;padding-top:6px'>"
         f"Calibración por tema (config.yaml → temas): {_t_over_html}</div>"
+        f"<div style='margin-top:6px;border-top:1px solid #e2e8f0;padding-top:6px'>"
+        f"Scoring por <b>fase electoral</b> (modelo EEAS): {_fase_html}</div>"
         f"</div>"
     )
     # S1 — banner ejecutivo nivel 1 (vista resumen): una lectura de TODO el radar
@@ -4477,6 +4510,7 @@ a{{color:#c2410c}}
   <a class="transp" href="/research.html" title="Investigación y validación del modelo">Research</a>
   <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
   <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
+  <a class="transp" href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos</a>
   <a class="transp" href="/sobre.html" title="Qué es el Radar FIMI">Sobre</a>
   <a class="transp" href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
   <div class="chips">
@@ -4802,7 +4836,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="/privacidad.html" style="color:#c2410c">Privacidad</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="/docs.html" style="color:#c2410c">Documentos</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="/privacidad.html" style="color:#c2410c">Privacidad</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
