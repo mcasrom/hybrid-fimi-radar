@@ -599,6 +599,17 @@ Tres lecturas **descriptivas** (no tocan el scoring) que añaden contexto tempor
   `/var/www/fimi/alerts.xml`, anunciado con `<link rel="alternate" type="application/rss+xml">`
   en el dashboard.
 
+## Tipología estructural de clusters (apoyo al analista)
+
+`detection/tipologia.py` clasifica cada cluster por su **forma** (no su intención) a partir de
+`cluster_events`, para **triage rápido** (con ~660 clusters): cuentas, URLs, dominio dominante,
+boilerplate, enlace repetido, cross-tema, sostenido y k-core. Tipos (por prioridad): `eco_prensa` ·
+`automatizado_plantilla` (una plantilla/pie común en ≥50 % de los textos) · `red_dominio_unico`
+(≥70 % de los enlaces a un solo dominio) · `mismo_enlace_repetido` · `eco_1_pieza` ·
+`red_multidominio` · `senal_debil`. CLI:
+`python detection/tipologia.py --tema X | --cluster Y | --all [--min-score 60] [--json] [--resumen]`.
+**Mide forma, no intención ni atribución.**
+
 ## Taxonomía, tendencias y ejes transversales (Fase A)
 
 Capa de estructura temática y lectura transversal, **sin captura nueva ni cambio en el
