@@ -608,7 +608,8 @@ boilerplate, enlace repetido, cross-tema, sostenido y k-core. Tipos (por priorid
 (≥70 % de los enlaces a un solo dominio) · `mismo_enlace_repetido` · `eco_1_pieza` ·
 `red_multidominio` · `senal_debil`. CLI:
 `python detection/tipologia.py --tema X | --cluster Y | --all [--min-score 60] [--json] [--resumen]`.
-**Mide forma, no intención ni atribución.**
+**Mide forma, no intención ni atribución.** El **tipo** se muestra además como **chip** en cada
+tarjeta del dashboard (con la lectura en el tooltip), para triage visual.
 
 ## Taxonomía, tendencias y ejes transversales (Fase A)
 
