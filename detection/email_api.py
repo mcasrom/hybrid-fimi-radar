@@ -377,6 +377,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
         evs = conn.execute(
             "SELECT ts, source, author, title, text, url FROM cluster_events"
             " WHERE cluster_id=? ORDER BY ts", (row["id"],)).fetchall()
+        tipos = _tipos_map(conn, cluster=cluster_label)
     finally:
         conn.close()
 
@@ -417,6 +418,8 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
                 "kcore": asm["kcore"] if "kcore" in asm.keys() else None,
                 "kcore_size": asm["kcore_size"] if "kcore_size" in asm.keys() else None,
             }
+        if tipos.get(cid):
+            payload["tipo"] = tipos[cid]
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
@@ -512,7 +515,22 @@ def _lineage_lookup(lineage_id: str):
         conn.close()
 
 
-def _cluster_obj(row, bands):
+def _tipos_map(conn, tema=None, cluster=None):
+    """{cluster_label: {tipo, flags, lectura}} via detection/tipologia.py."""
+    try:
+        try:
+            from detection import tipologia as _tip
+        except Exception:
+            import tipologia as _tip  # la API corre como script (sys.path[0]=detection/)
+        m = _tip.clasificar(conn, tema=tema, cluster=cluster)
+        return {k: {"tipo": v["tipo"], "flags": v["flags"], "lectura": v["lectura"]}
+                for k, v in m.items()}
+    except Exception as _e:
+        print("[warn] _tipos_map:", _e, file=sys.stderr)
+        return {}
+
+
+def _cluster_obj(row, bands, tipo=None):
     """Convierte una fila (join cluster+assessment) en el objeto JSON v1."""
     d = dict(row)
     comps = {k: d.get(k) for k in (
@@ -537,6 +555,7 @@ def _cluster_obj(row, bands):
         "banda": _band_of(d.get("overall_score") or 0, bands),
         "components": comps,
         "kcore": {"kcore": d.get("kcore"), "kcore_size": d.get("kcore_size")},
+        "tipo": tipo,
         "confidence": d.get("confidence"),
         "assessment": d.get("assessment"),
         "missing_evidence": d.get("missing_evidence"),
@@ -604,9 +623,10 @@ def _api_tema(slug):
             "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
             "LEFT JOIN cluster_lineage cl ON cl.tema_id = c.tema_id AND cl.cluster_label = c.cluster_label "
             "WHERE c.tema_id=? ORDER BY c.overall_score DESC", (slug,)).fetchall()
+        tipos = _tipos_map(conn, tema=slug)
     finally:
         conn.close()
-    clusters = [_cluster_obj(r, bands) for r in rows]
+    clusters = [_cluster_obj(r, bands, tipos.get(r["cluster_label"])) for r in rows]
     snap = None
     if rows:
         snap = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(rows[0]["created_at"]))
@@ -656,6 +676,17 @@ def _openapi_spec():
                 "properties": {
                     "kcore": {"type": "integer", "description": "grado k del nucleo"},
                     "kcore_size": {"type": "integer", "description": "nº de cuentas del nucleo"},
+                },
+            },
+            "tipo": {
+                "type": "object",
+                "description": "Tipologia estructural del cluster (FORMA, no intencion): tipo + flags + lectura.",
+                "properties": {
+                    "tipo": {"type": "string", "enum": [
+                        "eco_prensa", "automatizado_plantilla", "red_dominio_unico",
+                        "mismo_enlace_repetido", "eco_1_pieza", "red_multidominio", "senal_debil"]},
+                    "flags": {"type": "array", "items": {"type": "string"}},
+                    "lectura": {"type": "string"},
                 },
             },
             "confidence": {"type": "string"},
@@ -988,6 +1019,16 @@ class H(BaseHTTPRequestHandler):
                     payload["lineage"] = {"lineage_id": _lr["lineage_id"],
                                           "first_seen": _lr["first_seen"],
                                           "n_ciclos": _lr["n_ciclos"]}
+            except Exception:
+                pass
+            # tipologia estructural (forma, no intencion)
+            try:
+                _tc = sqlite3.connect(DB)
+                _tc.row_factory = sqlite3.Row
+                _tm = _tipos_map(_tc, cluster=cid)
+                _tc.close()
+                if cid in _tm:
+                    payload["tipo"] = _tm[cid]
             except Exception:
                 pass
             payload["meta"] = _api_meta()

@@ -196,6 +196,30 @@ def cross_tema(label, tema, cuentas, por_tema):
     return sorted(otros)
 
 
+def _cross_tema_q(conn, tema, autores):
+    """Cross-tema por consulta directa (barato; para un cluster o un tema)."""
+    autores = sorted({a for a in autores if a})
+    if not autores:
+        return []
+    ph = ",".join("?" * len(autores))
+    rows = conn.execute(
+        f"SELECT DISTINCT cl.tema_id FROM cluster_events ce "
+        f"JOIN clusters cl ON cl.id=ce.cluster_id "
+        f"WHERE cl.tema_id != ? AND ce.author IN ({ph})", [tema] + autores).fetchall()
+    return sorted(r[0] for r in rows)
+
+
+def clasificar(conn, tema=None, cluster=None, min_score=0.0):
+    """{cluster_label: {tipo, flags, lectura, rasgos}} — para API/dashboard."""
+    out = {}
+    for c in cargar(conn, tema, cluster, min_score):
+        r = rasgos(c["evs"], c["asm"])
+        r["cross_tema"] = _cross_tema_q(conn, c["tema"], [e["author"] for e in c["evs"]])
+        t, f, l = tipo_de(r)
+        out[c["label"]] = {"tipo": t, "flags": f, "lectura": l, "rasgos": r}
+    return out
+
+
 # --- main -----------------------------------------------------------------
 
 def main():
