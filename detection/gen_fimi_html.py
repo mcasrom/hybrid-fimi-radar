@@ -20,6 +20,27 @@ sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes
 DB = ROOT / "data" / "radar.db"
 OUT = Path("/var/www/fimi/index.html")
 
+# Dominios de medios establecidos (heurística). Para el chip "eco de prensa" y
+# para medir un eventual cap "solo-mainstream". Ampliable.
+_MAINSTREAM = set("""
+eldiario.es elpais.com publico.es elmundo.es abc.es lavanguardia.com
+elconfidencial.com infolibre.es rtve.es cadenaser.com 20minutos.es
+europapress.es elperiodico.com larazon.es theobjective.com vozpopuli.com
+elespanol.com ctxt.es elplural.com infobae.com elcomercio.pe efe.com
+huffingtonpost.es elboletin.com elfarodeceuta.es elsaltodiario.com
+elordenmundial.com eldebate.com elindependiente.com economiadigital.es
+bbc.com bbc.co.uk reuters.com apnews.com theguardian.com cnn.com nbcnews.com
+nytimes.com washingtonpost.com motherjones.com time.com aljazeera.com
+lemonde.fr france24.com bfmtv.com cnews.fr 20minutes.fr franceinfo.fr
+euronews.com dw.com zeit.de spiegel.de tagesspiegel.de stern.de taz.de rnd.de
+sverigesradio.se dn.se svt.se aftonbladet.se expressen.se etc.se tagesschau.de
+npr.org politico.eu thehill.com news.sky.com cnbc.com forbes.com bloomberg.com
+ft.com wsj.com usatoday.com latimes.com independent.co.uk thetimes.co.uk
+telegraph.co.uk courrierinternational.com information.tv5monde.com
+allsides.com elcorreo.com diariovasco.com heraldo.es lne.es farodevigo.es
+lavozdegalicia.es canarias7.es laprovincia.es diariodeibiza.es
+""".split())
+
 
 def _pl(n, sing, plur=None):
     """Pluraliza un contador: 1 -> singular, resto -> plural."""
@@ -632,6 +653,22 @@ def _kcore_chip(a):
             f'núcleo k={k} · {_pl(s,'cuenta','cuentas')}</span>')
 
 
+def _eco_prensa_chip(diver):
+    """Chip descriptivo: el cluster amplifica SOLO medios establecidos.
+
+    Si todos los dominios amplificados son de medios consolidados, la
+    "coordinacion" observada es compatible con eco de prensa legitimo, no con
+    una campana inautentica. Solo lectura; no toca el scoring."""
+    if not diver or not diver.get("eco_prensa"):
+        return ""
+    return ('<span style="display:inline-block;font-size:.72rem;color:#0f766e;'
+            'border:1px solid #14b8a6;border-radius:999px;padding:1px 10px;'
+            'font-weight:600;background:#f0fdfa;cursor:help" '
+            'title="Eco de prensa: predominan los medios establecidos entre las URLs del cluster (>=80%). '
+            'Compatible con cobertura periodistica normal, no con una campana coordinada.">'
+            '📰 eco de prensa (medios establecidos)</span>')
+
+
 # S3 — propagación orgánica: el radar también sabe NO acusar. Según la matriz
 # del modelo (sección 5 del análisis), una combinación de ALTA COORDINACIÓN con
 # BAJA ANOMALÍA y SIN infraestructura común apunta a propagación orgánica (una
@@ -966,6 +1003,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{_sostenido_chip(diver)}'
          f'{_lineage_chip(linaje)}'
          f'{_kcore_chip(a)}'
+         f'{_eco_prensa_chip(diver)}'
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
@@ -2111,6 +2149,11 @@ def main():
                 [{"dominio": x["dominio"], "n_cuentas": len(x["autores"])}
                  for x in _dominos.values()],
                 key=lambda x: -x["n_cuentas"])[:4]
+        # eco de prensa: predominan los medios establecidos (>=80% de los dominios)
+        for _cid, _dominos in _dacc.items():
+            _hosts = set(_dominos.keys())
+            _frac = (len(_hosts & _MAINSTREAM) / len(_hosts)) if _hosts else 0.0
+            diversidad_map.setdefault(_cid, {})["eco_prensa"] = _frac >= 0.8
     except Exception:
         domains_map = {}
     # linaje de clusters (persistencia de campanas entre ciclos): da
