@@ -728,6 +728,40 @@ original; material © Unión Europea):
 """
 
 
+# Cobertura y bandas (21/Sep): aviso honesto de plataformas vistas/no vistas +
+# significado de cada banda. Responde al "¿qué se ve y qué no?".
+_COBERTURA_HTML = """
+<div class="card" id="cobertura">
+<h3 style="margin-bottom:6px">Cobertura y bandas (qué se ve y qué no)</h3>
+<p class="caption" style="font-size:.84rem;color:#334155;line-height:1.6;margin:4px 0">
+El radar <b>no ve todo internet</b>. Esto es lo que observa y lo que queda fuera: la
+<b>ausencia de señal no implica ausencia de campaña</b>.
+</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+  <div style="flex:1;min-width:240px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 12px;font-size:.82rem;color:#166534">
+    <b>✓ Plataformas observadas</b><br>
+    Bluesky · Google News · Telegram (canales públicos) · Reddit · RSS de medios
+  </div>
+  <div style="flex:1;min-width:240px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:.82rem;color:#991b1b">
+    <b>✗ Plataformas NO observadas</b><br>
+    X/Twitter · TikTok · Instagram · Facebook · WhatsApp (sin acceso público)
+  </div>
+</div>
+<h3 style="font-size:.9rem;margin:12px 0 4px">Qué significa cada banda</h3>
+<ul style="font-size:.82rem;color:#334155;line-height:1.6;padding-left:20px;margin:4px 0">
+  <li><b>NORMAL</b> (0–19): sin señal relevante.</li>
+  <li><b>WATCH</b> (20–39): señal débil o ruido de bajo volumen (a menudo 2-3 cuentas).</li>
+  <li><b>ANOMALOUS</b> (40–59): patrón anómalo sin llegar a banda alta. <i>Aquí caen los ecos de prensa</i> (≥80% de dominios de medios establecidos).</li>
+  <li><b>HIGH</b> (60–79): coordinación sostenida con producción propia (dominios variados, no solo prensa). <b>Pista fuerte, no prueba de campaña.</b></li>
+  <li><b>CRITICAL</b> (80–100): coordinación anómala de alta masa. <i>No hay ninguno ahora</i> (el <code>band_gate</code> exige ≥10 cuentas y anomalía ≥40).</li>
+</ul>
+<p class="caption" style="font-size:.8rem;color:#64748b;margin-top:6px">
+Recuerda: el radar mide <b>coordinación, no autoría</b>; <code>UNKNOWN</code> es un resultado válido.
+</p>
+</div>
+"""
+
+
 # O2 — lectura en lenguaje llano: traduce los componentes (coordinación,
 # anomalía, infraestructura, densidad) + el nº de cuentas/URLs/eventos a UNA
 # frase que el visitante entiende sin conocer el scoring. Responde al "mucho
@@ -4594,6 +4628,7 @@ Las conclusiones deben leerse siempre con esta limitación presente.
 </div>
 
 {_GUIA_HTML}
+{_COBERTURA_HTML}
 
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
@@ -4767,7 +4802,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
-    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+    <b>Radar FIMI</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/api.html" style="color:#c2410c">API</a> · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="/privacidad.html" style="color:#c2410c">Privacidad</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
@@ -5002,7 +5037,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','como-leerlo','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','auditoria-descarte','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
+  var _transAnchors=['que-es-fimi','como-leerlo','cobertura','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','auditoria-descarte','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
