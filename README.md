@@ -734,7 +734,9 @@ Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: tr
 `aviso` y `replay` con pesos/bandas/ventana para reproducir el score) y, por cluster,
 `banda`, `components`, `kcore` (`kcore`/`kcore_size`), `confidence`, `attribution`, `hypotheses`, **`lineage`**
 (`lineage_id`, `first_seen`, `n_ciclos` — ID lógico que **persiste** aunque cambie el
-`cluster_label`) y `disclaimer` ("señal de comportamiento, no atribución").
+`cluster_label`) y `disclaimer` ("señal de comportamiento, no atribución"). Incluye también
+**`tipo`** (tipología estructural: `tipo` + `flags` + `lectura` — la **forma** de la amplificación,
+no la intención).
 
 **Cautela**: los `cluster_label` se regeneran en cada ciclo (cada 6 h) y **no son
 estables**; cada respuesta es una **foto del último ciclo** (`meta.snapshot=true`).
