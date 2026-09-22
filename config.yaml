@@ -516,15 +516,6 @@ feeds:
   transparency: medium
   note: Defensa EE.UU. (industria y política).
   analytical_relevance: media
-- nombre: Defense One (EN)
-  url: https://www.defenseone.com/rss/all/
-  tipo: media
-  idioma: en
-  bias: center
-  reliability: mostly-factual
-  transparency: medium
-  note: Defensa EE.UU. y seguridad nacional.
-  analytical_relevance: media
 # === Feeds capítulo electoral (14-sep-2026): Alemania + Suecia ===
 # Añadidos para la cobertura del capítulo "Election Threat Landscape" (elecciones de
 # Alemania -Länder sep-2026- y Suecia -Riksdag 13-sep-2026). Balance por país:
@@ -831,16 +822,6 @@ feeds:
   pais: US
   analytical_relevance: alta
   note: threat intelligence
-- nombre: Threatpost
-  url: https://threatpost.com/feed/
-  tipo: rss
-  idioma: en
-  bias: center
-  reliability: mixed
-  transparency: medium
-  pais: US
-  analytical_relevance: alta
-  note: cybersecurity news
 - nombre: IntelNews
   url: https://www.intelnews.org/feed/
   tipo: rss
@@ -1690,7 +1671,6 @@ keywords:
 telegram_canales:
 - elfarodeceuta
 - maldita_es
-- burkinamaliniger
 - sahelbrut
 subreddits:
 - spain
