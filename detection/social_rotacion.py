@@ -100,6 +100,26 @@ def _publicar(texto, img_url):
     return out
 
 
+def _notify_telegram(texto):
+    """Avisa al dueño por Telegram (para revisar el borrador desde el movil)."""
+    try:
+        env = {}
+        for line in open(ROOT / ".env"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                env[k.strip()] = v.strip()
+        tok = env.get("FIMI_TELEGRAM_BOT_TOKEN")
+        chat = env.get("FIMI_OWNER_CHAT")
+        if not tok or not chat:
+            return
+        import requests
+        requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
+                      data={"chat_id": chat, "text": texto[:3900]}, timeout=20)
+    except Exception as e:
+        print("[notify] error:", e)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--publicar", action="store_true", help="publica en Mastodon+Bluesky")
@@ -171,6 +191,10 @@ def main():
             _guardar_estado(st)
     else:
         print("[borrador] no publicado. Revisar y re-ejecutar con --publicar")
+        _notify_telegram(
+            f"📝 Borrador del radar — {elegido} ({d['banda']} {d['score']})\n\n{texto}\n\n"
+            f"🖼️ {img_url}\n\nPara publicar (Mastodon+Bluesky):\n"
+            f"cd hybrid-fimi-radar && .venv/bin/python detection/social_rotacion.py --publicar")
 
 
 if __name__ == "__main__":
