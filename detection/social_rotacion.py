@@ -100,8 +100,8 @@ def _publicar(texto, img_url):
     return out
 
 
-def _notify_telegram(texto):
-    """Avisa al dueño por Telegram (para revisar el borrador desde el movil)."""
+def _notify_telegram(texto, img_path=None):
+    """Avisa al dueño por Telegram CON la imagen (sendPhoto) para revisar."""
     try:
         env = {}
         for line in open(ROOT / ".env"):
@@ -114,8 +114,15 @@ def _notify_telegram(texto):
         if not tok or not chat:
             return
         import requests
-        requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
-                      data={"chat_id": chat, "text": texto[:3900]}, timeout=20)
+        api = f"https://api.telegram.org/bot{tok}"
+        if img_path and Path(img_path).exists():
+            with open(img_path, "rb") as fh:
+                requests.post(f"{api}/sendPhoto",
+                              data={"chat_id": chat, "caption": texto[:1024]},
+                              files={"photo": ("radar.png", fh, "image/png")}, timeout=60)
+        else:
+            requests.post(f"{api}/sendMessage",
+                          data={"chat_id": chat, "text": texto[:3900]}, timeout=20)
     except Exception as e:
         print("[notify] error:", e)
 
@@ -193,8 +200,9 @@ def main():
         print("[borrador] no publicado. Revisar y re-ejecutar con --publicar")
         _notify_telegram(
             f"📝 Borrador del radar — {elegido} ({d['banda']} {d['score']})\n\n{texto}\n\n"
-            f"🖼️ {img_url}\n\nPara publicar (Mastodon+Bluesky):\n"
-            f"cd hybrid-fimi-radar && .venv/bin/python detection/social_rotacion.py --publicar")
+            f"Para publicar (Mastodon+Bluesky):\n"
+            f"cd hybrid-fimi-radar && .venv/bin/python detection/social_rotacion.py --publicar",
+            img_path=f"/var/www/fimi/radar-{elegido}.png")
 
 
 if __name__ == "__main__":
