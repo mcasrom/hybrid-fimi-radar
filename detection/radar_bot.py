@@ -270,6 +270,25 @@ def main():
                 m_id = cb["message"]["message_id"]
                 data = cb.get("data", "")
                 cur = sel.get(chat_id, set())
+                if data.startswith("post:"):
+                    if chat_id != _owner():
+                        continue
+                    _, accion, tema = data.split(":", 2)
+                    if accion == "pub":
+                        send(chat_id, f"⏳ Publicando <b>{tema}</b> en Mastodon + Bluesky…")
+                        import subprocess
+                        r = subprocess.run(
+                            [str(ROOT / ".venv/bin/python"),
+                             str(ROOT / "detection/social_rotacion.py"),
+                             "--tema", tema, "--publicar"],
+                            capture_output=True, text=True, timeout=300, cwd=str(ROOT))
+                        ok = r.returncode == 0
+                        send(chat_id, (f"✅ Publicado <b>{tema}</b> en Mastodon + Bluesky.\n"
+                                       f"No olvides X (manual).") if ok else
+                                      f"⚠️ Falló la publicación de <b>{tema}</b>. Revisa el log.")
+                    else:
+                        send(chat_id, f"❌ Descartado <b>{tema}</b>. No se publica nada.")
+                    continue
                 if data.startswith("tema:"):
                     t = data.split(":", 1)[1]
                     if t in cur:
@@ -332,6 +351,19 @@ def main():
                                    "<code>tests/export_validacion.py</code>.")
                     else:
                         _enviar_cluster(chat, path, rows, _siguiente_pendiente(rows))
+            elif txt.startswith("/post"):
+                if chat != _owner():
+                    send(chat, "Solo el administrador puede publicar.")
+                else:
+                    import subprocess
+                    send(chat, "⏳ Preparando borrador del radar…")
+                    r = subprocess.run(
+                        [str(ROOT / ".venv/bin/python"),
+                         str(ROOT / "detection/social_rotacion.py")],
+                        capture_output=True, text=True, timeout=180, cwd=str(ROOT))
+                    if "[silencio]" in (r.stdout or ""):
+                        send(chat, "🔇 Sin señal hoy: no se publica nada.")
+                    # el propio script envía la imagen + botones Publicar/Descartar
         time.sleep(1)
 
 

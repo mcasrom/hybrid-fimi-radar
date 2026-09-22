@@ -100,8 +100,8 @@ def _publicar(texto, img_url):
     return out
 
 
-def _notify_telegram(texto, img_path=None):
-    """Avisa al dueño por Telegram CON la imagen (sendPhoto) para revisar."""
+def _notify_telegram(texto, img_path=None, tema=None):
+    """Avisa al dueño por Telegram CON la imagen y botones Publicar/Descartar."""
     try:
         env = {}
         for line in open(ROOT / ".env"):
@@ -115,14 +115,24 @@ def _notify_telegram(texto, img_path=None):
             return
         import requests
         api = f"https://api.telegram.org/bot{tok}"
+        kbd = None
+        if tema:
+            kbd = json.dumps({"inline_keyboard": [[
+                {"text": "✅ Publicar", "callback_data": f"post:pub:{tema}"},
+                {"text": "❌ Descartar", "callback_data": f"post:no:{tema}"}]]})
         if img_path and Path(img_path).exists():
             with open(img_path, "rb") as fh:
+                data = {"chat_id": chat, "caption": texto[:1024]}
+                if kbd:
+                    data["reply_markup"] = kbd
                 requests.post(f"{api}/sendPhoto",
-                              data={"chat_id": chat, "caption": texto[:1024]},
+                              data=data,
                               files={"photo": ("radar.png", fh, "image/png")}, timeout=60)
         else:
-            requests.post(f"{api}/sendMessage",
-                          data={"chat_id": chat, "text": texto[:3900]}, timeout=20)
+            data = {"chat_id": chat, "text": texto[:3900]}
+            if kbd:
+                data["reply_markup"] = kbd
+            requests.post(f"{api}/sendMessage", data=data, timeout=20)
     except Exception as e:
         print("[notify] error:", e)
 
@@ -199,10 +209,8 @@ def main():
     else:
         print("[borrador] no publicado. Revisar y re-ejecutar con --publicar")
         _notify_telegram(
-            f"📝 Borrador del radar — {elegido} ({d['banda']} {d['score']})\n\n{texto}\n\n"
-            f"Para publicar (Mastodon+Bluesky):\n"
-            f"cd hybrid-fimi-radar && .venv/bin/python detection/social_rotacion.py --publicar",
-            img_path=f"/var/www/fimi/radar-{elegido}.png")
+            f"📝 Borrador del radar — {elegido} ({d['banda']} {d['score']})\n\n{texto}",
+            img_path=f"/var/www/fimi/radar-{elegido}.png", tema=elegido)
 
 
 if __name__ == "__main__":
