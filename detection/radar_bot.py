@@ -283,9 +283,18 @@ def main():
                              "--tema", tema, "--publicar"],
                             capture_output=True, text=True, timeout=300, cwd=str(ROOT))
                         ok = r.returncode == 0
-                        send(chat_id, (f"✅ Publicado <b>{tema}</b> en Mastodon + Bluesky.\n"
-                                       f"No olvides X (manual).") if ok else
-                                      f"⚠️ Falló la publicación de <b>{tema}</b>. Revisa el log.")
+                        x_txt = ""
+                        try:
+                            if "[X-TEXTO]" in r.stdout:
+                                x_txt = r.stdout.split("[X-TEXTO]", 1)[1].split("[/X-TEXTO]", 1)[0].strip()
+                        except Exception:
+                            pass
+                        if ok:
+                            send(chat_id, f"✅ Publicado <b>{tema}</b> en Mastodon + Bluesky.")
+                            if x_txt:
+                                send(chat_id, "📋 <b>Para X</b> (copia y pega):\n\n" + x_txt)
+                        else:
+                            send(chat_id, f"⚠️ Falló la publicación de <b>{tema}</b>. Revisa el log.")
                     else:
                         send(chat_id, f"❌ Descartado <b>{tema}</b>. No se publica nada.")
                     continue

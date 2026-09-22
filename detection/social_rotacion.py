@@ -206,6 +206,7 @@ def main():
             st.setdefault("publicados", []).append(
                 {"tema": elegido, "fecha": fecha, "ts": int(time.time())})
             _guardar_estado(st)
+        print(f"\n[X-TEXTO]\n{texto}\n[/X-TEXTO]\n[X-IMG]{img_url}[/X-IMG]")
     else:
         print("[borrador] no publicado. Revisar y re-ejecutar con --publicar")
         _notify_telegram(
