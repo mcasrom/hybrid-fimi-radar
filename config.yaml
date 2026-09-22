@@ -478,6 +478,7 @@ feeds:
   bias: least-biased
   reliability: high
   transparency: high
+  tema: energia
   note: 'Energía EE.UU. (organismo oficial): datos y análisis diarios.'
   analytical_relevance: alta
 - nombre: Energy Monitor (EN)
@@ -487,6 +488,7 @@ feeds:
   bias: center
   reliability: mostly-factual
   transparency: medium
+  tema: energia
   note: Transición energética global.
   analytical_relevance: media
 - nombre: Carbon Brief (EN)
