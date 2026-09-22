@@ -357,6 +357,17 @@ def main():
                 e["_temas"] = {tema} if tema else set()
                 events.append(e)
 
+    # Guard: timestamps FUTUROS (p.ej. Bluesky createdAt lo pone el cliente con
+    # reloj adelantado). Se recortan a "ahora" para no envenenar MAX(events.timestamp)
+    # ni el indicador de "ultima ingesta" del dashboard.
+    _now = int(time.time())
+    _fut = sum(1 for e in events if e.get("timestamp", 0) > _now)
+    for e in events:
+        if e.get("timestamp", 0) > _now:
+            e["timestamp"] = _now
+    if _fut:
+        print(f"  timestamps futuros recortados a ahora: {_fut}")
+
     # Ventana temporal: descartar eventos mas antiguos que CAPTURE_WINDOW_DAYS.
     # Las busquedas (bluesky searchPosts, google-news RSS) devuelven resultados
     # historicos; sin este filtro se clusterizan campanas de hace meses/anios como
