@@ -2264,7 +2264,8 @@ def main():
     # Última ingesta real: momento de la captura más reciente (events.timestamp).
     # Se muestra en la vista resumen bajo "¿Qué está pasando ahora?".
     try:
-        _last_ts = con.execute("SELECT MAX(timestamp) FROM events").fetchone()[0]
+        _last_ts = con.execute("SELECT MAX(timestamp) FROM events WHERE timestamp <= ?",
+                               (int(time.time()),)).fetchone()[0]
     except Exception:
         _last_ts = None
     # Fuentes de captura: total real en events + desglose por clase.
@@ -3827,7 +3828,7 @@ def main():
     if _last_ts:
         _lt_s = datetime.fromtimestamp(_last_ts, tz=timezone.utc)
         _lt_txt = _lt_s.strftime("%d/%m/%Y %H:%M UTC")
-        _min = int((time.time() - _last_ts) / 60)
+        _min = max(0, int((time.time() - _last_ts) / 60))
         if _min < 60:
             _lt_rel = f"hace {max(_min, 1)} min"
         elif _min < 1440:
