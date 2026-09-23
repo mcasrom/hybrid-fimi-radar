@@ -51,19 +51,19 @@ def estado(tema, _cfg=None):
 
 
 def temas_activos(_cfg=None):
-    """Temas monitorizados: estado en {produccion, piloto}."""
+    """Temas monitorizados: estado en {produccion, piloto} (ausente = produccion)."""
     cfg = _cfg if _cfg is not None else cargar_config()
     return sorted(
         t for t, m in (cfg.get("temas") or {}).items()
-        if (m or {}).get("estado") in ACTIVOS)
+        if (m or {}).get("estado", "produccion") in ACTIVOS)
 
 
 def temas_cerrados(_cfg=None):
-    """Temas NO activos (p. ej. 'cerrado'): fuera de captura y de salud de keywords."""
+    """Temas NO activos (cerrado/candidato/…): fuera de captura y de salud de keywords."""
     cfg = _cfg if _cfg is not None else cargar_config()
     return sorted(
         t for t, m in (cfg.get("temas") or {}).items()
-        if (m or {}).get("estado") not in ACTIVOS)
+        if (m or {}).get("estado", "produccion") not in ACTIVOS)
 
 
 def reglas_por_tema(_cfg=None):

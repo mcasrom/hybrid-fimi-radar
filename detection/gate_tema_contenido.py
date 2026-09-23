@@ -16,13 +16,12 @@ import sqlite3
 import sys
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "radar.db"
 sys.path.insert(0, str(ROOT))
 
-from normalizer.clasificar import normalizar, _tokens, _matches  # noqa: E402
+from detection import tema_reglas as tr  # noqa: E402
+normalizar, _tokens, _matches = tr.normalizar, tr._tokens, tr._matches
 
 
 def main():
@@ -31,10 +30,9 @@ def main():
     ap.add_argument("--dry", action="store_true")
     args = ap.parse_args()
 
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
-    temas = cfg.get("temas", {}) or {}
-    filtros = {t: (m or {}).get("filtro") for t, m in temas.items() if (m or {}).get("filtro")}
-    contextos = {t: (m or {}).get("contexto") for t, m in temas.items() if (m or {}).get("contexto")}
+    _por_tema, filtros_raw, contextos_raw, _cerrados = tr.reglas_por_tema()
+    filtros = {t: v for t, v in filtros_raw.items() if v}
+    contextos = {t: v for t, v in contextos_raw.items() if v}
     if args.tema:
         filtros = {k: v for k, v in filtros.items() if k == args.tema}
         contextos = {k: v for k, v in contextos.items() if k == args.tema}
@@ -47,8 +45,9 @@ def main():
     conn.row_factory = sqlite3.Row
     total = 0
     for t, (terms, ctx_terms) in gates.items():
-        prep = [(normalizar(str(x)), _tokens(str(x))) for x in (terms or []) if normalizar(str(x))]
-        prep_ctx = [(normalizar(str(x)), _tokens(str(x))) for x in (ctx_terms or []) if normalizar(str(x))]
+        _fl, _ct = tr.prep_gates({t: terms}, {t: ctx_terms})
+        prep = _fl.get(t, [])
+        prep_ctx = _ct.get(t, [])
         rows = conn.execute(
             "SELECT et.event_id, e.text, e.title, e.tema_id FROM event_temas et"
             " JOIN events e ON e.id=et.event_id WHERE et.tema_id=?", (t,)).fetchall()

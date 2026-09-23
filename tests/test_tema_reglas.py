@@ -40,7 +40,6 @@ def test_matcher_plural_tolerante():
 def test_temas_activos_ignora_estado_desconocido():
     cfg = {"temas": {"a": {"estado": "produccion"}, "b": {"estado": "cerrado"},
                      "c": {"estado": "candidato_a_cierre"}, "d": {}}}
-    # candidato_a_cierre y sin estado no cuentan como activos (ni 'a' falta)
-    activos = tr.temas_activos(cfg)
-    assert activos == ["a"]
-    assert set(tr.temas_cerrados(cfg)) == {"b", "c", "d"}
+    # estado ausente = produccion (fiel a capture/recompute); candidato/cerrado NO activos
+    assert tr.temas_activos(cfg) == ["a", "d"]
+    assert set(tr.temas_cerrados(cfg)) == {"b", "c"}

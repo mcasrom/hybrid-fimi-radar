@@ -7,32 +7,21 @@ Uso: recompute_temas.py [--dry]
 """
 import sqlite3, sys, yaml
 sys.path.insert(0, "/home/deploy/hybrid-fimi-radar")
-from normalizer.clasificar import (temas_por_contenido, normalizar, _tokens,
-                                   _matches)
+from detection import tema_reglas as tr
+temas_por_contenido, normalizar, _tokens, _matches = (
+    tr.temas_por_contenido, tr.normalizar, tr._tokens, tr._matches)
 
 DRY = "--dry" in sys.argv
 ROOT = "/home/deploy/hybrid-fimi-radar"
 cfg = yaml.safe_load(open(f"{ROOT}/config.yaml"))
 kws = cfg.get("keywords", [])
 temas_cfg = cfg.get("temas", {}) or {}
-activos = {t for t, m in temas_cfg.items()
-           if (m or {}).get("estado", "produccion") in ("produccion", "piloto")}
+activos = set(tr.temas_activos(cfg))
 
-# Gate por tema con el MISMO matcher que capture/backfill/salud (helper `_matches`),
-# no un matcher propio: así el filtro/contexto es plural-tolerante y consistente.
-filtros = {}
-contextos = {}
-for t, m in temas_cfg.items():
-    fl = (m or {}).get("filtro")
-    if fl:
-        prep = [(normalizar(str(x)), _tokens(str(x))) for x in fl if normalizar(str(x))]
-        if prep:
-            filtros[t] = prep
-    ct = (m or {}).get("contexto")
-    if ct:
-        prep = [(normalizar(str(x)), _tokens(str(x))) for x in ct if normalizar(str(x))]
-        if prep:
-            contextos[t] = prep
+# Gate por tema con el MISMO matcher que capture/backfill/salud (helper compartido
+# en tema_reglas): el filtro/contexto es plural-tolerante y consistente.
+_por_tema, _filtros_raw, _contextos_raw, _ = tr.reglas_por_tema(cfg)
+filtros, contextos = tr.prep_gates(_filtros_raw, _contextos_raw)
 
 def pasa_gate(tema, nt, ntok):
     fl = filtros.get(tema)

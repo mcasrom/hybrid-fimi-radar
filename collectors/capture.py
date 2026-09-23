@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 
 DB = ROOT / "data" / "radar.db"
 OUT = ROOT / "data" / "raw" / f"events_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.json"
+from detection import tema_reglas as tr  # noqa: E402  (fuente única de reglas de tema)
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ECR-capture/0.1"
 
 # Canales Telegram públicos (ejemplos genéricos; configúralos en config.yaml)
@@ -311,8 +312,7 @@ def main():
     # Un tema CERRADO (estado != produccion|piloto en config) deja de capturarse:
     # se saltan sus keywords para no seguir trayendo eventos de un tema cerrado.
     _temas_cfg = cfg.get("temas", {}) or {}
-    _cerrados = {t for t, m in _temas_cfg.items()
-                 if (m or {}).get("estado", "produccion") not in ("produccion", "piloto")}
+    _cerrados = set(tr.temas_cerrados(cfg))
     _kw_filt = [k for k in keywords
                 if (k.get("tema") or "frontera_sur") not in _cerrados]
     bsky_q = [(k["palabra"], k.get("tema", "frontera_sur")) for k in _kw_filt if "bluesky" in k.get("plataformas", [])]
@@ -424,17 +424,8 @@ def main():
                       if (m or {}).get("contexto")}
     if _filtros_cfg or _contextos_cfg:
         try:
-            from normalizer.clasificar import normalizar as _norm, _tokens as _tok, _matches as _mat
-            _filtros = {}
-            for _t, _terms in _filtros_cfg.items():
-                _prep = [(_norm(str(_x)), _tok(str(_x))) for _x in (_terms or []) if _norm(str(_x))]
-                if _prep:
-                    _filtros[_t] = _prep
-            _contextos_prep = {}
-            for _t, _terms in _contextos_cfg.items():
-                _prep = [(_norm(str(_x)), _tok(str(_x))) for _x in (_terms or []) if _norm(str(_x))]
-                if _prep:
-                    _contextos_prep[_t] = _prep
+            _norm, _mat = tr.normalizar, tr._matches
+            _filtros, _contextos_prep = tr.prep_gates(_filtros_cfg, _contextos_cfg)
             if _filtros or _contextos_prep:
                 _keep = []
                 for e in uniq:

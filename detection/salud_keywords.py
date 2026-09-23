@@ -34,8 +34,6 @@ import datetime
 from collections import Counter
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 DB = ROOT / "data" / "radar.db"
@@ -85,31 +83,17 @@ def es_metodologica(palabra):
 
 
 def _cargar_config():
-    cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8")) or {}
-    keywords = cfg.get("keywords", []) or []
-    por_tema = {}
-    for k in keywords:
-        if not isinstance(k, dict):
-            continue
-        t = k.get("tema") or "frontera_sur"
-        por_tema.setdefault(t, []).append(k.get("palabra", "").strip())
-    # Gate de contenido por tema (temas.<tema>.filtro), igual que capture.py.
-    filtros = {t: ((m or {}).get("filtro") or [])
-               for t, m in (cfg.get("temas") or {}).items()}
-    # Gate de contexto por tema (temas.<tema>.contexto), igual que capture.py.
-    contextos = {t: ((m or {}).get("contexto") or [])
-                 for t, m in (cfg.get("temas") or {}).items()}
-    # Temas CERRADOS: no se monitorizan -> fuera del análisis de keywords
-    # (si no, un tema cerrado seguía marcándose como "posible keyword ciega").
-    cerrados = {t for t, m in (cfg.get("temas") or {}).items()
-                if (m or {}).get("estado") == "cerrado"}
-    return por_tema, filtros, contextos, cerrados
+    """Delegado en la fuente única de reglas de tema (detection/tema_reglas.py)."""
+    from detection import tema_reglas
+    return tema_reglas.reglas_por_tema()
 
 
 def analizar(dias=None):
     import sys as _s
     _s.path.insert(0, str(ROOT))
-    from normalizer.clasificar import normalizar, _tokens, _matches, STOP
+    from detection import tema_reglas as _tr
+    normalizar, _tokens, _matches, STOP = (
+        _tr.normalizar, _tr._tokens, _tr._matches, _tr.STOP)
 
     dias = dias or DIAS_DEFECTO
     por_tema, filtros, contextos, cerrados = _cargar_config()
@@ -297,7 +281,8 @@ def sugerir(dias=None, tema=None, max_matches=None):
     """
     import sys as _s
     _s.path.insert(0, str(ROOT))
-    from normalizer.clasificar import normalizar, _tokens, _matches
+    from detection import tema_reglas as _tr
+    normalizar, _tokens, _matches = _tr.normalizar, _tr._tokens, _tr._matches
 
     dias = dias or DIAS_DEFECTO
     umbral = LOW_MAX if max_matches is None else max_matches

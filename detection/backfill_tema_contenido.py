@@ -28,8 +28,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from normalizer.clasificar import (temas_por_contenido, normalizar, _tokens,
-                                   _matches)
+from detection import tema_reglas as tr  # noqa: E402
+temas_por_contenido, normalizar, _tokens, _matches = (
+    tr.temas_por_contenido, tr.normalizar, tr._tokens, tr._matches)
 
 
 def main():
@@ -83,10 +84,9 @@ def main():
 
     total_add = 0
     for tema, kws in temas_con_kw.items():
-        prep = [(normalizar(str(x)), _tokens(str(x)))
-                for x in (filtros.get(tema) or []) if normalizar(str(x))]
-        prep_ctx = [(normalizar(str(x)), _tokens(str(x)))
-                    for x in (contextos.get(tema) or []) if normalizar(str(x))]
+        _fl, _ct = tr.prep_gates({tema: filtros.get(tema)}, {tema: contextos.get(tema)})
+        prep = _fl.get(tema, [])
+        prep_ctx = _ct.get(tema, [])
         añadidos = 0
         for r in rows:
             txt = (r["title"] or "") + " " + (r["text"] or "")

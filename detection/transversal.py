@@ -23,14 +23,12 @@ import sys
 import unicodedata
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "radar.db"
 sys.path.insert(0, str(ROOT))
 
 try:
-    from normalizer.clasificar import (
+    from detection.tema_reglas import (
         normalizar as _cl_norm, _tokens as _cl_toks, _matches as _cl_match,
         STOP as _CL_STOP)
 except Exception:  # pragma: no cover
@@ -92,10 +90,8 @@ _ANCLA_RE = re.compile(r"\b(" + "|".join(re.escape(a) for a in _ANCLAS_N) + r")\
 
 
 def cargar_config():
-    try:
-        return yaml.safe_load(open(ROOT / "config.yaml"))
-    except Exception:
-        return {}
+    from detection import tema_reglas
+    return tema_reglas.cargar_config()
 
 
 def _familia_evento(temas):
