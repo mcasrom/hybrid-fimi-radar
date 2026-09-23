@@ -4303,6 +4303,29 @@ def main():
     # --- Validación del modelo (D+B) ---
     from detection.validacion_card import _validacion_html
 
+    # --- KPI «Antigüedad de la alerta» (honesto: edad del evento más antiguo) ---
+    try:
+        import importlib.util as _ilu_k
+        _spec_k = _ilu_k.spec_from_file_location("kpi_alerta", ROOT / "detection" / "kpi_alerta.py")
+        _kpi_mod = _ilu_k.module_from_spec(_spec_k)
+        _spec_k.loader.exec_module(_kpi_mod)
+        _kpi = _kpi_mod.kpi()
+    except Exception as _e_kpi:
+        _kpi = None
+    if _kpi:
+        _kpi_alerta_html = (
+            "<div class='card' id='kpi-alerta'><h3>Antigüedad de la alerta (hasta la detección)</h3>"
+            f"<p>Para los <b>{_kpi['n']}</b> clusters en banda <b>ANOMALOUS o superior</b>, el tiempo entre el "
+            f"evento más antiguo del cluster y el ciclo que lo detectó es de <b>mediana {_kpi['mediana_h']:.0f} h</b> "
+            f"(p90 {_kpi['p90_h']:.0f} h · rango {_kpi['min_h']:.0f}–{_kpi['max_h']:.0f} h).</p>"
+            "<p class='caption' style='font-size:.8rem;color:#94a3b8'>"
+            "<b>Qué mide y qué NO:</b> mide la <b>edad del evento más antiguo</b> del cluster al ser detectado "
+            "(latencia interna del radar), <b>no</b> el «lead time» frente a una campaña real — eso exigiría "
+            "verdad de referencia externa que no tenemos. Un valor alto suele indicar que el cluster agrupa "
+            "contenido que llevaba días circulando, no que el radar tardara en verlo.</p></div>")
+    else:
+        _kpi_alerta_html = ""
+
     # --- Bitácora de temas (transparencia metodológica) ---
     # Ciclo de vida por tema: inicio de ingesta (derivado de BD), estado vigente
     # (config.yaml = fuente de verdad), cambios de estado y sugerencias del
@@ -4857,6 +4880,8 @@ Detalle completo (umbrales y variables configurables):
 {_trans_html}
 
 {_validacion_html}
+
+{_kpi_alerta_html}
 
 <div class="card" id="licencia">
 <h3>Licencia: GNU AGPL-3.0 (código abierto)</h3>

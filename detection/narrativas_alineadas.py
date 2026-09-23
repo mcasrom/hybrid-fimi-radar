@@ -29,6 +29,8 @@ import sqlite3
 _UMBRAL = 0.18          # similitud coseno mínima para alinear dos clusters
 _MAX_GRUPOS = 8         # grupos que se muestran en el dashboard
 _MIN_EVENTOS = 2        # clusters con <2 eventos no participan (ruido)
+_MAX_MIEMBROS = 12      # tamaño máximo de un grupo; los grandes se parten en
+                        # comunidades (evita el mega-grupo por encadenamiento)
 
 # Familia temática por tema (taxonomía, ver docs/TAXONOMIA.md). Un grupo que
 # cruza >=2 familias distintas señala un "salto de dominio": la misma narrativa
@@ -54,7 +56,10 @@ _STOP = frozenset(
     "cual cuando donde quien quienes cuyo como que cuan quien donde the and of to in for on with at "
     "by from as or an if but not et les des une du dans sur pour avec pas est sont aussi mais ce cet "
     "cette ces il elle nous vous ils elles y en un uno uma os as ao aos das dos do da para com por "
-    "que se nao em no na nas nem mais mas como esta foram foi pelo pela".split())
+    "que se nao em no na nas nem mais mas como esta foram foi pelo pela "
+    # tokens genéricos/ruido web que favorecían el encadenamiento:
+    "www http https com net org html htm rt amp via news the is are was were been being "
+    "2022 2023 2024 2025 2026 2027 url link href src img video photo image post read more".split())
 
 
 def _padre(padres, x):
@@ -70,7 +75,35 @@ def _unir(padres, a, b):
         padres[rb] = ra
 
 
-def detectar(conn, umbral=_UMBRAL, min_eventos=_MIN_EVENTOS, max_grupos=_MAX_GRUPOS):
+def _partir_componente(nx, g, comp, max_size, _depth=0):
+    """Parte un componente GRANDE en comunidades (greedy modularity), recursivo.
+
+    Evita el encadenamiento transitivo (single-linkage) que fusionaba cientos de
+    clusters no relacionados en un único mega-grupo. Recursivo hasta que cada
+    parte respete `max_size` (guarda de profundidad). Componentes pequeños no se
+    tocan; si modularity no aporta partición, se devuelve intacto.
+    """
+    if max_size <= 0 or len(comp) <= max_size or _depth > 8:
+        return [comp]
+    try:
+        from networkx.algorithms.community import greedy_modularity_communities
+        comms = greedy_modularity_communities(g.subgraph(comp), weight="weight")
+        parts = [set(c) for c in comms if len(c) >= 2]
+    except Exception:
+        parts = []
+    if len(parts) < 2:
+        return [comp]
+    out = []
+    for p in parts:
+        if len(p) > max_size:
+            out.extend(_partir_componente(nx, g, p, max_size, _depth + 1))
+        else:
+            out.append(p)
+    return out if len(out) >= 2 else [comp]
+
+
+def detectar(conn, umbral=_UMBRAL, min_eventos=_MIN_EVENTOS, max_grupos=_MAX_GRUPOS,
+             max_miembros=_MAX_MIEMBROS):
     """Devuelve lista de narrativas alineadas (cluster-of-clusters) activas.
 
     Cada grupo: {label, miembros: [cluster_label...], n_clusters, n_eventos,
@@ -124,19 +157,35 @@ def detectar(conn, umbral=_UMBRAL, min_eventos=_MIN_EVENTOS, max_grupos=_MAX_GRU
         return []
 
     n = len(ids)
-    padres = list(range(n))
-    for i in range(n):
-        for j in range(i + 1, n):
-            if S[i][j] >= umbral:
-                _unir(padres, i, j)
-
-    grupos = {}
-    for i in range(n):
-        g = _padre(padres, i)
-        grupos.setdefault(g, []).append(i)
+    # Grafo de similitud y partición en comunidades. El union-find simple encadena
+    # transitivamente (single-linkage) y generaba un mega-grupo degenerado
+    # (p. ej. 703 clusters / 2.611 cuentas): se parte por comunidades.
+    try:
+        import networkx as nx
+        G = nx.Graph()
+        for i in range(n):
+            for j in range(i + 1, n):
+                w = float(S[i][j])
+                if w >= umbral:
+                    G.add_edge(i, j, weight=w)
+        partes = []
+        for comp in nx.connected_components(G):
+            partes.extend(_partir_componente(nx, G, comp, max_miembros))
+    except Exception:
+        # Fallback sin networkx: union-find clásico (puede encadenar).
+        padres = list(range(n))
+        for i in range(n):
+            for j in range(i + 1, n):
+                if S[i][j] >= umbral:
+                    _unir(padres, i, j)
+        _grupos = {}
+        for i in range(n):
+            _grupos.setdefault(_padre(padres, i), []).append(i)
+        partes = list(_grupos.values())
 
     resultado = []
-    for miembros_idx in grupos.values():
+    for miembros_idx in partes:
+        miembros_idx = sorted(miembros_idx)
         if len(miembros_idx) < 2:
             continue
         mem = [ids[i] for i in miembros_idx]
