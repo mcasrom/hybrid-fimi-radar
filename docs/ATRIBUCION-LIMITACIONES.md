@@ -96,6 +96,43 @@ Dry-run (23/Sep): de los clusters con `infra=100` (203), **127 mantienen H2** y
 negativos). `overall_score` y **banda NO cambian** (las hipótesis no alimentan el
 scoring; solo `assessments.hypotheses_json`).
 
+## Limitaciones conocidas del sistema de hipótesis (23/Sep/2026)
+
+1. **Umbral `kcore_size >= 3` (H2/H2b): corte sensible, no suave.** Sobre los
+   clusters con `infra=100` (snapshot 23/Sep, 207):
+   - `kcore=2` (par mutuo): **77** clusters.
+   - `kcore=3` (frontera aplicada): **46** clusters.
+   - `kcore>=4` (endurecido): **81** supervivientes de 207.
+   Justificación del corte en 3: exige un **núcleo de ≥3 cuentas mutuamente
+   interconectadas**, no solo un par — `kcore=2` no distingue una coordinación
+   real de dos cuentas citando casualmente la misma fuente.
+
+2. **Caso sintético (h) explorado y descartado.** Se probó si H2 podía dispararse
+   con `sync` artificialmente bajo (`sync=10`) e `infra=100`. Conclusión:
+   **inalcanzable con datos reales** — `sync = min(100, coordination_score·12)`
+   tiene un **suelo estructural de 36** para cualquier cluster detectado
+   (`coordination_score` mínimo por diseño del pipeline). No se añade un gate
+   `sync_min` adicional por no corregir un problema inexistente en producción.
+
+3. **Empate exacto H2 = H3** (caso `sync=50, anom=50, net=50, infra=100`: ambas
+   0.500). El desempate es hoy por **orden de inserción del diccionario**, sin
+   criterio explícito documentado. No afecta a `overall_score`/banda; solo a qué
+   etiqueta se muestra primero en el (raro) caso de empate exacto. **Pendiente**:
+   definir criterio de desempate si se observa en producción.
+
+4. **Asimetría de pesos sin justificar entre H2 y H2b.**
+   `H2 = struct·(sync·0.55 + (1−anom)·0.45)` frente a
+   `H2b = (1−struct)·(sync·0.65 + (1−anom)·0.35)`: los coeficientes difieren
+   (0.55/0.45 vs 0.65/0.35) sin una razón de diseño documentada. Menor, anotado
+   para revisión futura.
+
+5. **Redundancia H5/H2b.** Ambas capturan "sincronía sin estructura" con
+   solapamiento alto (ejemplo sintético: **0.885 vs 0.87** sobre el mismo caso);
+   solo se distinguen por el término de diversidad de URLs. Ya identificado como
+   parte de la **versión "completa" pendiente del fix de H5** (pasar `tema`/flag
+   electoral a `classify_hypotheses`), sin implementar; se referencia aquí para
+   trazabilidad.
+
 ## Regla de lectura
 
 Antes de afirmar "campaña extranjera" se necesita, como mínimo, UNA de estas:
