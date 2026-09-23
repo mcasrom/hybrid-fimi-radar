@@ -109,7 +109,7 @@ def main(dry_run: bool = False):
                     try:
                         cid = crow["id"]
                         nc = conn.execute("SELECT COUNT(DISTINCT author) FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()[0] or 0
-                    except: nc = 0
+                    except Exception: nc = 0
                     banda = "CRITICAL" if sc>=80 else "HIGH" if sc>=60 else "ANOMALOUS" if sc>=40 else "WATCH" if sc>=20 else "NORMAL"
                     tit = ""
                     try:
@@ -120,7 +120,8 @@ def main(dry_run: bool = False):
                             url = (er["url"] or "").strip()
                             if tit.startswith("http"):
                                 tit = tit.split(" ",1)[-1][:90] if " " in tit else tit[:90]
-                    except: pass
+                    except Exception as _e:
+                        print(f"[digest] titulo {t}: {_e}", file=sys.stderr)
                     url_link = f' · <a href="{url}" style="color:#c2410c">"{tit}"</a>' if tit and url else (f' · "{tit}"' if tit else "")
                     top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas{url_link}</span>"
                     banda_txt = f" · {banda}"
@@ -138,18 +139,21 @@ def main(dry_run: bool = False):
                     p25 = vals[int(len(vals)*0.25)]
                     p75 = vals[int(len(vals)*0.75)]
                     extra += f" · banda normal {int(p25)}-{int(p75)}"
-            except: pass
+            except Exception as _e:
+                print(f"[digest] banda {t}: {_e}", file=sys.stderr)
             try:
                 sm = salud_map.get(t)
                 if sm:
                     extra += f" · salud {int(sm.get('score',0))}/100 {sm.get('nivel','')}"
-            except: pass
+            except Exception as _e:
+                print(f"[digest] salud {t}: {_e}", file=sys.stderr)
             # narrativas sostenidas
             try:
                 narr = conn.execute("SELECT COUNT(*) FROM findings WHERE tema_id=? AND tipo='narrativa' AND intensidad>=60", (t,)).fetchone()[0]
                 if narr:
                     extra += f" · {narr} narrativas HIGH"
-            except: pass
+            except Exception as _e:
+                print(f"[digest] narrativas {t}: {_e}", file=sys.stderr)
             link = f"{BASE_URL}/#{t}"
             lines.append(f"<li style=\"margin:12px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt}{banda_txt} · <b>{hoy}/100</b> · {high_hoy} HIGH hoy vs {high_48} hace 48h<span style=\"color:#64748b;font-size:.82rem\">{extra}</span>{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
         lines.append("</ul>")
