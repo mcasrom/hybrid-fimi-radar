@@ -99,7 +99,11 @@ def _cargar_config():
     # Gate de contexto por tema (temas.<tema>.contexto), igual que capture.py.
     contextos = {t: ((m or {}).get("contexto") or [])
                  for t, m in (cfg.get("temas") or {}).items()}
-    return por_tema, filtros, contextos
+    # Temas CERRADOS: no se monitorizan -> fuera del análisis de keywords
+    # (si no, un tema cerrado seguía marcándose como "posible keyword ciega").
+    cerrados = {t for t, m in (cfg.get("temas") or {}).items()
+                if (m or {}).get("estado") == "cerrado"}
+    return por_tema, filtros, contextos, cerrados
 
 
 def analizar(dias=None):
@@ -108,7 +112,9 @@ def analizar(dias=None):
     from normalizer.clasificar import normalizar, _tokens, _matches, STOP
 
     dias = dias or DIAS_DEFECTO
-    por_tema, filtros, contextos = _cargar_config()
+    por_tema, filtros, contextos, cerrados = _cargar_config()
+    for _t in cerrados:
+        por_tema.pop(_t, None)
     # Pre-normalizar el gate `filtro` por tema (consistencia con capture.py:
     # un tema con filtro solo cuenta como "ámbito" si el texto pasa el gate).
     filtros_pre = {}
@@ -295,7 +301,9 @@ def sugerir(dias=None, tema=None, max_matches=None):
 
     dias = dias or DIAS_DEFECTO
     umbral = LOW_MAX if max_matches is None else max_matches
-    por_tema, _, _ = _cargar_config()
+    por_tema, _, _, cerrados = _cargar_config()
+    for _t in cerrados:
+        por_tema.pop(_t, None)
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     t0 = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - dias * 86400
