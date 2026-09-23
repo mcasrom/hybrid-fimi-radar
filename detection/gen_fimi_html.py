@@ -43,10 +43,11 @@ BAND_COLORS = {
 # quien no conoce el motor entienda la tarjeta sin códigos internos.
 HYPOTHESIS_ES = {
     "H1": {"t": "Viralización orgánica", "d": "muchas cuentas distintas lo difunden sin pauta coordinada clara"},
-    "H2": {"t": "Campaña coordinada doméstica", "d": "coordinación dentro del país, sin infraestructura externa compartida"},
+    "H2": {"t": "Campaña coordinada doméstica (con estructura)", "d": "coordinación dentro del país CON núcleo de cuentas interconectadas (kcore ≥ 3)"},
+    "H2b": {"t": "Sincronización sin atribución de operador", "d": "alta sincronía temporal sin evidencia de estructura organizada (no atribuye operador)"},
     "H3": {"t": "Operación de influencia extranjera", "d": "coordinación + infraestructura común + narrativa que cruza países"},
     "H4": {"t": "Amplificación mediática", "d": "el eco lo dan medios establecidos, no cuentas anónimas coordinadas"},
-    "H5": {"t": "Campaña política", "d": "coordinación en el marco electoral o partidista"},
+    "H5": {"t": "Sincronía sostenida (sin estructura)", "d": "alta sincronía y contenido diverso sin estructura; NO implica campaña política"},
     "H6": {"t": "Sin evidencia concluyente", "d": "no hay señal suficiente para distinguir entre las anteriores"},
 }
 
@@ -2857,8 +2858,9 @@ def main():
                 if _hyp_dom_r:
                     _hh = _hyp_dom_r.get("top")
                     _hlab = {"H1": "viralización orgánica", "H2": "campaña coordinada doméstica",
-                             "H3": "operación de influencia extranjera", "H4": "amplificación mediática",
-                             "H5": "campaña política", "H6": "sin evidencia concluyente"}.get(_hh, _hh)
+                             "H2b": "sincronización sin operador", "H3": "operación de influencia extranjera",
+                             "H4": "amplificación mediática", "H5": "sincronía sostenida (sin estructura)",
+                             "H6": "sin evidencia concluyente"}.get(_hh, _hh)
                     _h3n = _hyp_dom_r.get("h3") or 0
                     _np_dom = f"Lo dominante es <b>{_hlab}</b> ({_hh}); "
                     if _h3n == 0:

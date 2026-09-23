@@ -221,13 +221,11 @@ def main():
         # real (antes caia a 0 por .get("overall_score", 0)).
         summary[label]["overall_score"] = overall
 
-        hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
-                                   "n_urls": url_counts.get(label, 0)})
-        att = attribution(hyp, infra_shared=_infra_score(details.get(label, {})) > 30)
-        n_assessed += 1
-
         # k-core del grafo de coordinación del cluster (descriptivo, no scoring):
-        # núcleo de cuentas mutuamente conectadas dentro del cluster.
+        # núcleo de cuentas mutuamente conectadas dentro del cluster. Se calcula
+        # ANTES de las hipótesis porque H2 (campaña doméstica estructurada) exige
+        # kcore_size>=3 como evidencia de coordinación REAL (evita etiquetar eco
+        # de prensa de 1-2 cuentas como "campaña coordinada doméstica").
         _kc, _kcs = 0, 0
         try:
             if sub_clustered is not None:
@@ -235,6 +233,13 @@ def main():
                 _kc, _kcs = graph_metrics.kcore_subset(_adj, _mem_a)
         except Exception:
             _kc, _kcs = 0, 0
+        summary[label]["kcore_size"] = _kcs
+
+        hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
+                                   "n_urls": url_counts.get(label, 0),
+                                   "kcore_size": _kcs})
+        att = attribution(hyp, infra_shared=_infra_score(details.get(label, {})) > 30)
+        n_assessed += 1
 
         # guardar cluster
         cur = conn.execute(
@@ -384,7 +389,8 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             comp["infrastructure"], cfg, tema=tema, n_urls=s.get("n_urls", 0))
         overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
-                                   "n_urls": s.get("n_urls", 0)})
+                                   "n_urls": s.get("n_urls", 0),
+                                   "kcore_size": s.get("kcore_size", 0)})
         att = attribution(hyp, infra_shared=comp["infrastructure"] > 30)
         lines.append(f"### {label} — {s.get('accounts',0)} cuentas"
                      + (" · **_Posible ruido de bajo volumen_**" if s.get("ruido_volumen") else "")

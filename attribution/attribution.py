@@ -23,10 +23,11 @@ ACTORS = [
 
 HYPOTHESES = [
     ("H1", "Organic viral event", "Muchas cuentas, diversidad alta, contenido modificado, difusión progresiva."),
-    ("H2", "Domestic coordinated campaign", "Coordinación temporal/contenido dentro del país, sin infraestructura externa."),
+    ("H2", "Domestic coordinated campaign", "Coordinación temporal/contenido DENTRO del país CON evidencia de estructura compartida (URLs/dominios)."),
+    ("H2b", "Synchronized activity without operator attribution", "Alta sincronía temporal SIN evidencia de estructura organizada (cuentas/dominios/administradores): no atribuye operador."),
     ("H3", "Foreign influence operation", "Coordinación + infraestructura compartida + narrativa transversal a países."),
     ("H4", "Media amplification", "Amplificación por medios establecidos, no por cuentas anónimas coordinadas."),
-    ("H5", "Political campaign", "Coordinación en el marco electoral/partidista doméstico."),
+    ("H5", "Sustained synchronization with diverse content", "Alta sincronía + contenido diverso SIN evidencia de estructura; NO implica campaña política ni electoral."),
     ("H6", "Unknown", "Sin evidencia suficiente para discriminar entre las anteriores."),
 ]
 
@@ -55,18 +56,27 @@ def classify_hypotheses(cluster):
     n_urls = c.get("n_urls", 0)
     masa = min(1.0, accounts / 20)   # masa de red (satura a 20 cuentas)
     div = min(1.0, n_urls / 10)      # diversidad de contenido (satura a 10 urls)
+    # EVIDENCIA DE ESTRUCTURA: exige núcleo mutuo kcore_size>=3 (coordinación
+    # real). Sin eso, aunque haya muchas URLs/dominios compartidos (eco de prensa),
+    # NO se considera "campaña coordinada doméstica" (va a H2b).
+    kc_size = c.get("kcore_size", 0) or 0
+    struct = min(1.0, infra) if kc_size >= 3 else 0.0
 
     scores = {}
     # H1 orgánico viral: contenido diverso, anomalía e infraestructura bajas
     scores["H1"] = div * 0.30 + (1 - anom) * 0.25 + (1 - infra) * 0.25 + masa * 0.20
-    # H2 campaña doméstica: sincronía alta, infraestructura/anomalía bajas
-    scores["H2"] = sync * 0.45 + (1 - infra) * 0.30 + (1 - anom) * 0.25
+    # H2 campaña doméstica: EXIGE estructura (URLs/dominios compartidos). Sin
+    # estructura compartida NO es "campaña coordinada" (ese material va a H2b).
+    scores["H2"] = struct * (sync * 0.55 + (1 - anom) * 0.45)
+    # H2b sincronización sin atribución de operador: sync alta y SIN estructura.
+    scores["H2b"] = (1 - struct) * (sync * 0.65 + (1 - anom) * 0.35)
     # H3 operación extranjera: requiere infraestructura + red + anomalía altas
     # a la vez (sin eso no hay base para atribuir actor externo).
     scores["H3"] = min(infra, net, anom) * 0.9 + sync * 0.1
     # H4 amplificación mediática: amplificación global alta, anomalía/infra bajas
     scores["H4"] = amp * 0.45 + (1 - anom) * 0.30 + (1 - infra) * 0.25
-    # H5 campaña política: sincronía + diversidad, sin infraestructura
+    # H5 (renombrada): sincronía + diversidad, sin estructura. NO es "campaña
+    # política": midió siempre la FORMA (sync+diversidad), no un contexto político.
     scores["H5"] = sync * 0.40 + div * 0.35 + (1 - infra) * 0.25
     # H6 desconocido: ninguna señal fuerte
     scores["H6"] = (1 - max(sync, content, amp, anom, infra, net)) * 0.8 + 0.2

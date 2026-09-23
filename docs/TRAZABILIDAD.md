@@ -81,3 +81,42 @@ sección `=== run_fimi ... ===`):
 - Bloque "Narrativas alineadas (cluster-of-clusters)" en vivo: grupo de 7
   clusters cruzando frontera_sur + politica_nacional sobre gobierno/Marruecos/
   España.
+
+## 23/Sep/2026 — Recalibración de hipótesis: H2/H2b + renombrado de H5
+
+**Motivo.** Comparación manual de `frontera_sur_cluster_005` (lineage
+`frontera_sur_cluster_010@1789928930`) contra un análisis independiente (LLM con
+búsqueda web) sobre la misma ventana. Coincidían en score global (70/100 HIGH) y
+en no atribuir actor externo, pero discrepaban en las hipótesis:
+
+- **H5** salía dominante (0.75) como "Campaña política" **sin que su fórmula
+  contuviera ninguna señal política/electoral** (medía `sync + diversidad de URLs
+  − infra`). Bug de nomenclatura heredado.
+- **H2** salía alto (0.60, y hasta 0.85 en clusters de 2 cuentas / 1 URL) **sin
+  evidencia de estructura organizada** (premiaba la baja infraestructura).
+
+**Opciones evaluadas**
+- **Opción A (descartada)**: `struct = infra/100`. Sobre-etiquetaba como H2 todo
+  cluster con `infra=100` por mero eco de enlaces de prensa (203/203 disparaban
+  H2; no separaba nada).
+- **Opción B (aplicada)**: `struct = infra/100` **si `kcore_size >= 3`**, si no
+  `0`. Exige un núcleo mutuo de ≥3 cuentas (k-core) como estructura real.
+
+**Cambio aplicado**
+- `attribution/attribution.py`: H2 exige estructura; nueva **H2b** "Sincronización
+  sin atribución de operador"; **H5 renombrada** ("Sincronía sostenida con
+  contenido diverso"), misma fórmula.
+- `detection/run_fimi.py`: el k-core se calcula **antes** de las hipótesis y se
+  pasa `kcore_size` a `classify_hypotheses`.
+- `gen_fimi_html.py` / `resumen_tema.py`: leyendas/short-labels H2b + H5 nuevo.
+
+**Verificación (dry-run, 23/Sep):** de los 203 clusters con `infra=100`, **127
+mantienen H2** y **76 caen a H2b** (comprobados como eco de prensa de 1-2 cuentas
+con dominios consolidados — eldebate/vozpopuli/elpais, nytimes/haaretz —, no
+falsos negativos). `oriente_medio_cluster_050` (sync 96, infra 30, 1 URL):
+H2 0.85 → **H2b 0.64**, H2 0.27.
+
+**Impacto en score: NULL.** `overall_score` y banda **no cambian** (las hipótesis
+no alimentan el scoring: `classify_hypotheses` se ejecuta después y solo escribe
+`assessments.hypotheses_json`). No requiere el backfill de scores de `d0c34b9`
+(los `findings` no guardan hipótesis).

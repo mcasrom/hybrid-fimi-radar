@@ -128,9 +128,10 @@ def generar_resumen_tema(tema_id, nombre, salud, cluster_top, sostenidas_tema,
         _tot = dominante.get("total") or 0
         _h3 = dominante.get("h3") or 0
         _lab = {"H1": "viralización orgánica", "H2": "campaña coordinada doméstica",
-                "H3": "operación de influencia extranjera", "H4": "amplificación mediática",
-                "H5": "campaña política", "H6": "sin evidencia concluyente"}.get(_h, _h)
-        if _h in ("H1", "H2", "H5") or _h3 == 0:
+                "H2b": "sincronización sin atribución de operador", "H3": "operación de influencia extranjera",
+                "H4": "amplificación mediática", "H5": "sincronía sostenida (sin estructura)",
+                "H6": "sin evidencia concluyente"}.get(_h, _h)
+        if _h in ("H1", "H2", "H2b", "H5") or _h3 == 0:
             lineas.append(
                 f"Hipótesis dominante: **{_h} {_lab}** ({_n} de {_tot} clusters) — "
                 f"lectura **doméstica**, no externa (H3 solo en {_h3}).")
