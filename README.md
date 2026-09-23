@@ -16,6 +16,8 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos** (7 producción + 2 piloto):
 
+> **Versión desplegada:** `v0.2-22-gbdab433` · **Última actualización de este README:** 23/Sep/2026.
+
 | Tema | Estado |
 |---|---|
 | Frontera Sur (España-Marruecos) | Producción |
@@ -33,9 +35,10 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos
 - **Keywords**: derivadas del filtro (mismo bloque). Si el tema es ciego (0 keywords), salud_keywords no verifica cobertura -> añadir las palabras del filtro como keywords. Visto en espana_amenazas_hibridas (18/Sep, commit 77c9bf9).
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
-- **Catálogo de fuentes**: **69 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
-  + 4 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
-  `analytical_relevance` y nota. El corpus activo ronda los **~91.700 eventos** (ventana 90 d).
+- **Catálogo de fuentes**: **67 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
+  + 3 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
+  `analytical_relevance` y nota. El corpus activo ronda los **~104.000 eventos** y **~770 clusters**
+  (ventana 90 d, 23/Sep/2026).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por
   nginx, reorganizado en **pestañas sticky** (Radar | Transparencia | GitHub) con un
   **hero de centro de situación** (OBSERVAR → DETECTAR → CONTRASTAR + estado en vivo),

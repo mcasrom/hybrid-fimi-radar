@@ -1,6 +1,10 @@
 # European Hybrid & FIMI Radar — WAYAHEAD / ROADMAP
 
-## Estado actual (verificado 31/08/2026)
+> ⚠️ **OBSOLETO (sep/2026).** Documento desfasado (describe el MVP del 31/Ago: Streamlit, 3 temas,
+> etc.). El estado real está en el [README](./README.md) y en el dashboard en vivo
+> (`fimi.viajeinteligencia.com`). Se conserva solo como histórico.
+
+## Estado actual (verificado 31/08/2026 — desfasado)
 
 - **MVP completo en local** (`~/hybrid-fimi-radar`), repo `mcasrom/hybrid-fimi-radar`.
 - **DEPLOY A HETZNER (24/7)**: captura + análisis corren en `178.105.80.193`
