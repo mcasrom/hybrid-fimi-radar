@@ -17,10 +17,17 @@ Componentes 0-100 por cluster:
 
 **`network_density` ELIMINADO del compuesto (24/Sep, cambio "D").** Era
 `coordination_score * 6`: una transformación lineal del MISMO `coordination_score`
-que alimenta `synchronization` → doble conteo del eje de coordinación. Se quita y se
-renormalizan los pesos restantes a suma 1. El componente se sigue calculando y
-persistiendo (`network_density` en `clusters`) porque la hipótesis H3 de `attribution`
-lo usa, pero ya NO pondera en `overall`.
+que alimenta `synchronization` → doble conteo del eje de coordinación. El componente
+se sigue calculando y persistiendo (`network_density` en `clusters`) porque la hipótesis
+H3 de `attribution` lo usa, pero ya NO pondera en `overall`.
+
+> **Corrección clave (24/Sep, 2ª pasada).** El primer cambio D tocó solo `config.yaml`;
+> `compute_scores()` en `detection/scoring.py` seguía declarando `network_density: 0.10`
+> en su `default_w` y lo **sumaba** → la densidad SEGUÍA ponderando y los pesos sumaban
+> ~1,10 (riesgo de saturación y HIGH inflados). Se corrigió `default_w` a las **5 claves**
+> (el dict define además qué suma el score). Detectado en revisión externa; ahora
+> `scoring.py`, `config.yaml` y esta doc coinciden. `tests/test_units.py` incluye un
+> test de regresión (`test_network_density_no_pondera_en_el_score`).
 
 Bandas: 0-19 NORMAL · 20-39 WATCH · 40-59 ANOMALOUS · 60-79 HIGH · 80-100 CRITICAL.
 
@@ -29,13 +36,20 @@ eeuu_politica y oriente_medio (piloto) usan anomaly 0.4444 y amplification 0.111
 (renormalizados tras quitar density) para no marcar como ANOMALOUS la coordinación
 partidista/editorial legítima. La fase electoral (`fase_scoring`) usa anomaly 0.3261.
 
-## Efecto medido del cambio D (24/Sep)
+## Efecto real del cambio D (recalibrado 24/Sep)
 
-Dry-run en copia de la BD (3 temas) comparando producción vs D vs D+aminusamplification:
-el impacto en bandas es **pequeño** (frontera_sur: HIGH 6→6 con D, 6→9 con D−amp;
-oriente_medio: prácticamente igual; espana: sin cambio). Es decir, el doble conteo
-**no inflaba materialmente** los HIGH: el cambio D es una mejora de **honestidad
-metodológica**, no una corrección de alertas infladas. La amplificación global se
+Recalculado sobre la BD viva (n≈816; los temas cerrados `politica_nacional`/
+`geopolitica_ue_marruecos` se re-clusterizaron y aportan menos):
+
+| | NORMAL | WATCH | ANOMALOUS | HIGH | CRITICAL |
+|---|---|---|---|---|---|
+| antes (D incompleto: `density` 0,10 aún sumaba; Σpesos 1,10) | 0 | 450 | 280 | **95** | **2** |
+| después (D real: `density` fuera; Σpesos 1,00) | 0 | 469 | 267 | **80** | **0** |
+
+El fix **sí tiene efecto**: **−15 HIGH y −2 CRITICAL**. (El primer dry-run decía "efecto
+pequeño" porque medía con el bug activo: en ambos lados `network_density` pesaba 0,10, así
+que solo se veía la renormalización de los otros 5 pesos.) **Los snapshots de score
+anteriores al 24/Sep no son comparables con los actuales.** La `amplification` global se
 deja como está (quitarla subiría el peso de la anomalía y algunos HIGH).
 
 ## Escala (05/Sep): el orden invertido detectado

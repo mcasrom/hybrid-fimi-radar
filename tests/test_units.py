@@ -40,9 +40,9 @@ def _cfg():
         "scoring": {
             "bands": {"NORMAL": [0, 19], "WATCH": [20, 39], "ANOMALOUS": [40, 59],
                       "HIGH": [60, 79], "CRITICAL": [80, 100]},
-            "weights": {"synchronization": 0.25, "content_similarity": 0.20,
-                        "amplification": 0.20, "infrastructure": 0.15,
-                        "network_density": 0.10, "anomaly": 0.10},
+            "weights": {"synchronization": 0.1667, "content_similarity": 0.1667,
+                        "amplification": 0.0556, "infrastructure": 0.1111,
+                        "anomaly": 0.50},
             "scale_min_accounts": {"HIGH": 2, "CRITICAL": 10},
             "scale_bonus": {"cap": 3.5, "per_account": 0.08},
             "scale_floor": {"min_accounts": 3, "except_events": 10, "except_infra": 80},
@@ -64,13 +64,24 @@ def test_compute_scores_global_y_override_por_tema():
     cfg = _cfg()
     comp = {"synchronization": 0, "content_similarity": 0, "amplification": 0,
             "infrastructure": 0, "network_density": 0, "anomaly": 100}
-    # global: anomaly pesa 0.10 -> 10.0
+    # global: anomaly pesa 0.50 -> 50.0
     overall, _ = compute_scores(comp, cfg)
-    assert overall == 10.0
+    assert overall == 50.0
     # override por tema: anomaly 0.40 -> 40.0
     cfg["temas"] = {"politica_nacional": {"scoring": {"weights": {"anomaly": 0.40}}}}
     overall_t, _ = compute_scores(comp, cfg, tema="politica_nacional")
     assert overall_t == 40.0
+
+
+def test_network_density_no_pondera_en_el_score():
+    # cambio D (24/Sep): network_density ya no está en default_w -> no suma,
+    # aunque el componente venga a 100 y el config lo liste.
+    cfg = _cfg()
+    cfg["scoring"]["weights"]["network_density"] = 0.10
+    comp = {"synchronization": 0, "content_similarity": 0, "amplification": 0,
+            "infrastructure": 0, "network_density": 100, "anomaly": 0}
+    overall, _ = compute_scores(comp, cfg)
+    assert overall == 0.0
 
 
 def test_scale_bonus():

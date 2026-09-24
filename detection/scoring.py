@@ -52,12 +52,18 @@ def compute_scores(components, config, tema=None, weights_override=None):
     tema en config.yaml->temas-><tema>->scoring->weights (merge sobre global).
     weights_override: dict opcional que se aplica DESPUÉS del override por tema
     (p. ej. pesos por fase electoral EEAS en run_fimi). Si es None, no aplica.
+
+    NOTA (cambio D, 24/Sep): este `default_w` define ADEMÁS las claves que suma
+    `overall`. `network_density` se calcula y persiste (lo usa H3 de attribution)
+    pero NO está aquí -> no pondera. Si tuviera que ponderar, habría que añadir su
+    peso al config (y el config lo sobreescribiría); el diseño evita el doble
+    conteo del mismo `coordination_score` que alimenta `synchronization`.
     """
     w = (config or {}).get("scoring", {}).get("weights", {})
     default_w = {
-        "synchronization": 0.25, "content_similarity": 0.20,
-        "amplification": 0.20, "infrastructure": 0.15,
-        "network_density": 0.10, "anomaly": 0.10,
+        "synchronization": 0.1667, "content_similarity": 0.1667,
+        "amplification": 0.0556, "infrastructure": 0.1111,
+        "anomaly": 0.50,
     }
     for k, v in default_w.items():
         w.setdefault(k, v)
