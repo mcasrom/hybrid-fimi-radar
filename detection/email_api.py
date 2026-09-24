@@ -433,8 +433,8 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
         if row["narrative_subtype"]:
             try:
                 payload["narrative_subtype"] = json.loads(row["narrative_subtype"])
-            except Exception:
-                pass
+            except Exception as e:
+                print("[warn] narrative_subtype:", e, file=sys.stderr)
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")

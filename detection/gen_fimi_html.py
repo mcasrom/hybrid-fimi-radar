@@ -1013,8 +1013,8 @@ def _render_explicaciones(c):
                 _role = (f'<span style="font-size:.7rem;color:#334155;background:#eef2ff;'
                          f'border:1px solid #c7d2fe;border-radius:999px;padding:1px 8px;'
                          f'font-weight:600">Rol: {_rj.get("label") or _rj["dominant"]}</span> ')
-        except Exception:
-            pass
+        except Exception as e:
+            print("[warn] narrative_subtype:", e, file=sys.stderr)
     otros = [it["label"] for it in _plau if it is not prim]
     var = (f'<div style="font-size:.72rem;color:#475569;margin-top:3px">'
            f'También plausibles: {", ".join(otros)}</div>') if otros else ""
