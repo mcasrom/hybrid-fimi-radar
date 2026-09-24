@@ -44,3 +44,5 @@ htmlcov/
 # check de descarte (estado por ciclo + export opcional)
 data/descarte_estado.json
 data/eventos_sin_tema.csv
+# estado de rotación de publicación en redes (runtime)
+data/rotacion_estado.json

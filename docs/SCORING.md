@@ -6,21 +6,37 @@ Complementa TRAZABILIDAD.md.
 
 ## Fórmula base (config.yaml -> scoring)
 
-overall = sync*0.15 + content*0.15 + amp*0.05 + infra*0.10 + density*0.10 + anomaly*0.45
+overall = sync*0.1667 + content*0.1667 + amp*0.0556 + infra*0.1111 + anomaly*0.50
 
 Componentes 0-100 por cluster:
 - synchronization = coordination_score * 12  (cap 100)
 - content_similarity = nº textos representativos * 25 (cap 100)
 - amplification = señal global del run (igual para todo el tema)
 - infrastructure = (urls+dominios compartidos) * 15 (cap 100)
-- network_density = coordination_score * 6
 - anomaly = anomaly_score * 100
+
+**`network_density` ELIMINADO del compuesto (24/Sep, cambio "D").** Era
+`coordination_score * 6`: una transformación lineal del MISMO `coordination_score`
+que alimenta `synchronization` → doble conteo del eje de coordinación. Se quita y se
+renormalizan los pesos restantes a suma 1. El componente se sigue calculando y
+persistiendo (`network_density` en `clusters`) porque la hipótesis H3 de `attribution`
+lo usa, pero ya NO pondera en `overall`.
 
 Bandas: 0-19 NORMAL · 20-39 WATCH · 40-59 ANOMALOUS · 60-79 HIGH · 80-100 CRITICAL.
 
-Los pesos son configurables por tema (temas.<tema>.scoring.weights): politica_nacional y eeuu_politica
-(piloto) usan anomaly 0.40 (vs 0.45 global) y amplification 0.10 (vs 0.05 global)
-para no marcar como ANOMALOUS la coordinación partidista legítima.
+Los pesos son configurables por tema (temas.<tema>.scoring.weights): politica_nacional,
+eeuu_politica y oriente_medio (piloto) usan anomaly 0.4444 y amplification 0.1111
+(renormalizados tras quitar density) para no marcar como ANOMALOUS la coordinación
+partidista/editorial legítima. La fase electoral (`fase_scoring`) usa anomaly 0.3261.
+
+## Efecto medido del cambio D (24/Sep)
+
+Dry-run en copia de la BD (3 temas) comparando producción vs D vs D+aminusamplification:
+el impacto en bandas es **pequeño** (frontera_sur: HIGH 6→6 con D, 6→9 con D−amp;
+oriente_medio: prácticamente igual; espana: sin cambio). Es decir, el doble conteo
+**no inflaba materialmente** los HIGH: el cambio D es una mejora de **honestidad
+metodológica**, no una corrección de alertas infladas. La amplificación global se
+deja como está (quitarla subiría el peso de la anomalía y algunos HIGH).
 
 ## Escala (05/Sep): el orden invertido detectado
 

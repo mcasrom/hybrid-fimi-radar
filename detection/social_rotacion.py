@@ -101,7 +101,7 @@ def _publicar(texto, img_url):
 
 
 def _notify_telegram(texto, img_path=None, tema=None):
-    """Avisa al dueño por Telegram CON la imagen y botones Publicar/Descartar."""
+    """Avisa al administrador por Telegram CON la imagen y botones Publicar/Descartar."""
     try:
         env = {}
         for line in open(ROOT / ".env"):

@@ -881,7 +881,7 @@ class H(BaseHTTPRequestHandler):
                 conn.close()
             return self._redirect(BASE_URL + "?baja=1")
         if path == "/api/admin/feedback":
-            # Solo el dueno: header x-admin-secret == FIMI_ADMIN_SECRET (env/.env).
+            # Solo el administrador: header x-admin-secret == FIMI_ADMIN_SECRET (env/.env).
             if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
                 return self._send(403, {"error": "prohibido"})
             conn = _init_feedback()

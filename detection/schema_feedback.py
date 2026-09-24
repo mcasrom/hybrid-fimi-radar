@@ -3,7 +3,7 @@
 
 Único esquema central de feedback: votos por tema (Si/No/No lo se) + sugerencias
 de temas nuevos. Idempotente. Visibilidad: los votos/sugerencias solo los ve el
-dueno (GET /api/admin/feedback con secreto); NUNCA son superficie publica de
+administrador (GET /api/admin/feedback con secreto); NUNCA son superficie publica de
 conteo (un radar FIMI no debe ser manipulable con votacion publica).
 """
 import sqlite3
