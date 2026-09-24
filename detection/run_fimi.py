@@ -367,6 +367,12 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
     lines = []
     lines.append("# European Hybrid & FIMI Radar — Informe")
     lines.append("")
+    lines.append("> **Aviso.** Este radar identifica patrones observables de coordinación, "
+                 "sincronización y amplificación de contenido que **pueden ser compatibles** "
+                 "con actividades de influencia o manipulación coordinada (FIMI). **No "
+                 "constituye atribución de actor ni prueba concluyente** de inautenticidad o "
+                 "campaña extranjera; requiere validación adicional y análisis contextual.")
+    lines.append("")
     lines.append(f"- Eventos: {len(df)} · Cuentas: {df['author'].nunique()} · Tiempo: {elapsed:.1f}s")
     lines.append(f"- Señal global de amplificación: {amp:.2f}")
     lines.append(f"- Cascadas detectadas: {len(cascades)}")
