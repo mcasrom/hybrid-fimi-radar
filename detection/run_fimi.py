@@ -33,7 +33,7 @@ from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics
 from detection import mainstream
-from detection import explicaciones, tipologia
+from detection import explicaciones, tipologia, subtipo
 
 
 def load_config(path=None):
@@ -247,15 +247,26 @@ def main():
         # Explicaciones alternativas (opción 2, 24/Sep): dato persistido derivado
         # de métricas YA calculadas. No toca score/bandas/atribución. El
         # boilerplate se extrae de los textos reales del cluster (reusa tipologia).
-        _bpf = 0.0
+        _txts = []
         try:
             if sub_clustered is not None:
                 _txts = sub_clustered.loc[sub_clustered["cluster"] == label, "text"]
                 _txts = _txts.dropna().astype(str).tolist()
-                _bp = tipologia._boilerplate(_txts)
-                _bpf = float(_bp[1]) if _bp else 0.0
+        except Exception as e:
+            print(f"      explicaciones: textos falló ({e})", file=sys.stderr)
+        _bpf = 0.0
+        try:
+            _bp = tipologia._boilerplate(_txts)
+            _bpf = float(_bp[1]) if _bp else 0.0
         except Exception as e:
             print(f"      explicaciones: boilerplate falló ({e})", file=sys.stderr)
+        # Rol narrativo del cluster (capa semántica): distingue "hablar de FIMI"
+        # (meta/respuesta/reporte) de "posible narrativa FIMI". No toca el score.
+        rol = {"dominant": "", "counts": {}, "label": ""}
+        try:
+            rol = subtipo.dominante(_txts)
+        except Exception as e:
+            print(f"      subtipo: falló ({e})", file=sys.stderr)
         _hyp_codes = [h["hypothesis"] for h in hyp] if hyp else []
         expl = explicaciones.para_cluster(
             accounts=s.get("accounts", 0), n_events=ev_counts.get(label, 0),
@@ -266,18 +277,21 @@ def main():
             anomaly=comp["anomaly"], kcore=_kc, kcore_size=_kcs,
             mainstream_frac=_ms_frac.get(label, 0.0), mainstream_cap_applied=es_prensa,
             single_piece_cap=es_eco, boilerplate_frac=_bpf,
-            top_hypothesis=(_hyp_codes[0] if _hyp_codes else ""), hypotheses=_hyp_codes)
+            top_hypothesis=(_hyp_codes[0] if _hyp_codes else ""), hypotheses=_hyp_codes,
+            narrative_role=rol["dominant"])
         summary[label]["alternative_explanations"] = expl
+        summary[label]["narrative_subtype"] = rol
 
         # guardar cluster
         cur = conn.execute(
             "INSERT OR REPLACE INTO clusters (created_at, cluster_label, type, tema_id, coordination_score,"
             " amplification_score, anomaly_score, infrastructure_score, network_density,"
-            " overall_score, confidence, alternative_explanations) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            " overall_score, confidence, alternative_explanations, narrative_subtype)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (int(time.time()), label, "mixed", tema, s.get("coordination_score", 0),
              comp["amplification"], comp["anomaly"], comp["infrastructure"],
              comp["network_density"], overall, att["confidence"],
-             json.dumps(expl, ensure_ascii=False)))
+             json.dumps(expl, ensure_ascii=False), json.dumps(rol, ensure_ascii=False)))
         cluster_id = cur.lastrowid
         # indicators
         for k, v in comp.items():

@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS clusters (
     anomaly_score REAL, infrastructure_score REAL,
     network_density REAL, overall_score REAL,
     confidence TEXT,                               -- NONE|LOW|MEDIUM|HIGH
-    alternative_explanations TEXT                  -- JSON: explicaciones alternativas (opción 2)
+    alternative_explanations TEXT,                 -- JSON: explicaciones alternativas (opción 2)
+    narrative_subtype TEXT                         -- JSON: rol narrativo del cluster (capa semántica)
 );
 
 CREATE TABLE IF NOT EXISTS indicators (
@@ -218,6 +219,7 @@ def get_conn(db_path):
     _ensure_column(conn, "assessments", "kcore", "kcore INTEGER")
     _ensure_column(conn, "assessments", "kcore_size", "kcore_size INTEGER")
     _ensure_column(conn, "clusters", "alternative_explanations", "alternative_explanations TEXT")
+    _ensure_column(conn, "clusters", "narrative_subtype", "narrative_subtype TEXT")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()

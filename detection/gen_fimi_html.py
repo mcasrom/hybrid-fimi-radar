@@ -999,6 +999,22 @@ def _render_explicaciones(c):
     col = _col.get(prim.get("status"), "#64748b")
     ev = prim.get("evidence") or {}
     evs = ", ".join(f"{k}={v}" for k, v in ev.items() if v not in (None, "", False))
+    # Rol narrativo del cluster (capa semántica): distingue "hablar de FIMI" de
+    # "posible narrativa FIMI". Solo lectura de c["narrative_subtype"].
+    _role = ""
+    try:
+        _rraw = c["narrative_subtype"]
+    except Exception:
+        _rraw = None
+    if _rraw:
+        try:
+            _rj = json.loads(_rraw)
+            if _rj.get("dominant"):
+                _role = (f'<span style="font-size:.7rem;color:#334155;background:#eef2ff;'
+                         f'border:1px solid #c7d2fe;border-radius:999px;padding:1px 8px;'
+                         f'font-weight:600">Rol: {_rj.get("label") or _rj["dominant"]}</span> ')
+        except Exception:
+            pass
     otros = [it["label"] for it in _plau if it is not prim]
     var = (f'<div style="font-size:.72rem;color:#475569;margin-top:3px">'
            f'También plausibles: {", ".join(otros)}</div>') if otros else ""
@@ -1006,7 +1022,7 @@ def _render_explicaciones(c):
            f'Evidencia: {evs}</div>') if evs else ""
     return (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid {col};'
             f'border-radius:6px;padding:7px 11px;margin:2px 0 6px;font-size:.8rem;color:#334155;line-height:1.5">'
-            f'<b>Explicación principal:</b> <span style="color:{col};font-weight:700">{prim.get("label")}</span> '
+            f'{_role}<b>Explicación principal:</b> <span style="color:{col};font-weight:700">{prim.get("label")}</span> '
             f'<span style="font-size:.7rem;color:#94a3b8">[{prim.get("status")}]</span>'
             f'{evh}{var}</div>')
 

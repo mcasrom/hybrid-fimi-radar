@@ -52,6 +52,12 @@ no maliciosa, movilización legítima, artefacto del grafo y *sin explicación c
 una clasificación de "la verdad": es material para la revisión humana, visible en el dashboard,
 la API y las exportaciones.
 
+Cada cluster publica además un **rol narrativo** (`narrative_subtype`) que separa *hablar de
+FIMI* — `official_response` (respuesta oficial), `incident_report` (reporte de incidente),
+`meta_analysis` (análisis) — de *posible narrativa FIMI* (`potential_narrative`,
+`coordination_signal`). Ayuda a no leer como "operación" lo que es una noticia que la combate
+o la analiza.
+
 Con eso calcula una **puntuación 0-100** y una **banda** (NORMAL→CRITICAL), y evalúa
 **hipótesis alternativas** (anti sesgo de confirmación):
 

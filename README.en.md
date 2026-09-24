@@ -53,6 +53,11 @@ automation, legitimate mobilisation, graph artefact and *no conclusive explanati
 a "truth" classifier: it is material for human review, shown in the dashboard, the API and the
 exports.
 
+Each cluster also publishes a **narrative role** (`narrative_subtype`) separating *talking about
+FIMI* — `official_response`, `incident_report`, `meta_analysis` — from *possible FIMI narrative*
+(`potential_narrative`, `coordination_signal`). It helps avoid reading as an "operation" what is
+really a story that counters or analyses it.
+
 From these it produces a **0–100 score** and a **band** (NORMAL→CRITICAL), and evaluates
 **alternative hypotheses** (anti-confirmation-bias):
 

@@ -368,7 +368,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     try:
         row = conn.execute(
             "SELECT c.id, c.cluster_label, c.tema_id, c.overall_score, c.created_at,"
-            " c.alternative_explanations"
+            " c.alternative_explanations, c.narrative_subtype"
             " FROM clusters c WHERE c.cluster_label=? LIMIT 1",
             (cluster_label,)).fetchone()
         if not row:
@@ -430,6 +430,11 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
         if _expl:
             payload["alternative_explanations"] = _expl
             payload["explanation_summary"] = _expl_resumen(_expl)
+        if row["narrative_subtype"]:
+            try:
+                payload["narrative_subtype"] = json.loads(row["narrative_subtype"])
+            except Exception:
+                pass
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
@@ -592,6 +597,13 @@ def _cluster_obj(row, bands, tipo=None):
             expl_items = json.loads(raw_expl)
         except Exception:
             expl_items = None
+    nsub = None
+    raw_nsub = d.get("narrative_subtype")
+    if raw_nsub:
+        try:
+            nsub = json.loads(raw_nsub)
+        except Exception:
+            nsub = None
     return {
         "cluster_label": label,
         "lineage": lineage,
@@ -602,6 +614,7 @@ def _cluster_obj(row, bands, tipo=None):
         "tipo": tipo,
         "alternative_explanations": expl_items,
         "explanation_summary": _expl_resumen(expl_items) if expl_items else None,
+        "narrative_subtype": nsub,
         "confidence": d.get("confidence"),
         "assessment": d.get("assessment"),
         "missing_evidence": d.get("missing_evidence"),
@@ -665,7 +678,7 @@ def _api_tema(slug):
             " a.coordination_score, a.amplification_score, a.anomaly_score, "
             " a.infrastructure_score, a.network_density, a.assessment, a.missing_evidence, "
             " a.kcore, a.kcore_size, "
-            " c.alternative_explanations, "
+            " c.alternative_explanations, c.narrative_subtype, "
             " a.attribution, a.attribution_confidence, a.attribution_evidence, a.hypotheses_json "
             "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
             "LEFT JOIN cluster_lineage cl ON cl.tema_id = c.tema_id AND cl.cluster_label = c.cluster_label "

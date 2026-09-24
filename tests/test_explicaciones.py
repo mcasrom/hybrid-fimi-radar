@@ -93,6 +93,11 @@ def test_unresolved_ruled_out_cuando_hay_explicacion():
     assert items["unresolved"]["status"] == "ruled_out"
 
 
+def test_narrative_role_en_evidencia_unresolved():
+    items = _by_code(para_cluster(**_base(narrative_role="meta_analysis")))
+    assert items["unresolved"]["evidence"]["narrative_role"] == "meta_analysis"
+
+
 def test_principal_y_resumen():
     items = para_cluster(**_base(mainstream_frac=0.9))
     assert principal(items) == "mainstream_echo"

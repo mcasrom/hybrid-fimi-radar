@@ -57,6 +57,7 @@ def para_cluster(
     boilerplate_frac=0.0,
     top_hypothesis="",
     hypotheses=None,
+    narrative_role="",
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
@@ -156,6 +157,7 @@ def para_cluster(
     resolved = any(it["status"] == "supported" for it in items)
     items.append(_item("unresolved", "ruled_out" if resolved else "supported", {
         "resolved_by": next((it["code"] for it in items if it["status"] == "supported"), None),
+        "narrative_role": narrative_role or "",
     }))
     return items
 
