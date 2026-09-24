@@ -56,11 +56,13 @@ def classify_hypotheses(cluster):
     n_urls = c.get("n_urls", 0)
     masa = min(1.0, accounts / 20)   # masa de red (satura a 20 cuentas)
     div = min(1.0, n_urls / 10)      # diversidad de contenido (satura a 10 urls)
-    # EVIDENCIA DE ESTRUCTURA: exige núcleo mutuo kcore_size>=3 (coordinación
-    # real). Sin eso, aunque haya muchas URLs/dominios compartidos (eco de prensa),
-    # NO se considera "campaña coordinada doméstica" (va a H2b).
+    # EVIDENCIA DE ESTRUCTURA: exige un núcleo MUTUO (kcore>=2) de al menos 3
+    # cuentas (kcore_size>=3). El gate anterior (solo kcore_size>=3) admitía
+    # 1-cores (cadenas/estrellas, kcore=1) como "estructura"; ahora se exige
+    # además que el núcleo sea mutuo (k>=2), alineado con el badge _kcore_chip.
     kc_size = c.get("kcore_size", 0) or 0
-    struct = min(1.0, infra) if kc_size >= 3 else 0.0
+    kc = c.get("kcore", 0) or 0
+    struct = min(1.0, infra) if (kc >= 2 and kc_size >= 3) else 0.0
 
     scores = {}
     # H1 orgánico viral: contenido diverso, anomalía e infraestructura bajas

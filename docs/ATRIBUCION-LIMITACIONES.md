@@ -98,14 +98,22 @@ scoring; solo `assessments.hypotheses_json`).
 
 ## Limitaciones conocidas del sistema de hipótesis (23/Sep/2026)
 
-1. **Umbral `kcore_size >= 3` (H2/H2b): corte sensible, no suave.** Sobre los
+1. **Umbral de estructura de H2 (`kcore`): corte sensible, no suave.** Sobre los
    clusters con `infra=100` (snapshot 23/Sep, 207):
    - `kcore=2` (par mutuo): **77** clusters.
    - `kcore=3` (frontera aplicada): **46** clusters.
    - `kcore>=4` (endurecido): **81** supervivientes de 207.
-   Justificación del corte en 3: exige un **núcleo de ≥3 cuentas mutuamente
-   interconectadas**, no solo un par — `kcore=2` no distingue una coordinación
-   real de dos cuentas citando casualmente la misma fuente.
+
+   **Corregido el 24/Sep/2026.** El gate original exigía solo `kcore_size>=3`
+   (el TAMAÑO del núcleo), lo que permitía **núcleos no mutuos** (1-cores:
+   cadenas/estrellas con `kcore=1`) colarse como "estructura". Detectado en
+   `frontera_sur_cluster_022` (3 cuentas, `kcore=1`, `kcore_size=3`, **H2=76 %**
+   antes del fix pese a no tener núcleo mutuo). El nuevo gate es
+   **`kcore>=2 AND kcore_size>=3`** (núcleo **mutuo** de ≥3 cuentas), **alineado
+   con el criterio del badge visual `_kcore_chip`** (que ya usaba `kcore>=2` y
+   hasta ahora discrepaba del gate de scoring). Efecto sobre el corpus: **47 de
+   803 clusters (22 con `infra=100`) pasan de H2 a H2b**. `overall_score`/banda
+   **NO** cambian (solo `hypotheses_json`).
 
 2. **Caso sintético (h) explorado y descartado.** Se probó si H2 podía dispararse
    con `sync` artificialmente bajo (`sync=10`) e `infra=100`. Conclusión:
