@@ -712,13 +712,20 @@ def _organico_chip(coordination_score=None, anomaly_score=None, infrastructure_s
 _GUIA_HTML = """
 <div class="card" id="como-leerlo">
 <h3 style="margin-bottom:6px">Cómo leer este radar (guía rápida)</h3>
+<div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #0ea5e9;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.82rem;color:#334155;line-height:1.55">
+  <b>Señal potencial de FIMI.</b> Se observan patrones de coordinación y amplificación.
+  La señal <b>sugiere posible actividad coordinada</b>, pero <b>no confirma atribución</b>
+  de actor, inautenticidad ni influencia extranjera sin evidencia adicional.
+</div>
 <ol style="font-size:.84rem;color:#334155;padding-left:20px;line-height:1.7;margin:6px 0">
   <li><b>Qué es.</b> El radar <b>observa coordinación</b> en fuentes públicas (quién amplifica qué,
       cómo y cuándo). No es un agregador de noticias ni un detector de mentiras.</li>
   <li><b>Qué mide.</b> Cada <b>cluster</b> agrupa cuentas que amplifican lo mismo. Su
-      <b>score 0–100</b> combina 6 señales —coordinación, contenido similar, amplificación,
-      infraestructura, densidad de red y anomalía— y se traduce a una banda:
-      NORMAL · WATCH · ANOMALOUS · HIGH · CRITICAL.</li>
+      <b>score 0–100</b> combina 5 señales —coordinación, contenido similar, amplificación,
+      infraestructura y anomalía— y se traduce a una banda:
+      NORMAL · WATCH · ANOMALOUS · HIGH · CRITICAL. (La <b>densidad de red</b> se muestra como
+      dato, pero <b>no pondera</b> en el score: es una transformación del mismo eje de
+      coordinación y se retiró para evitar doble conteo.)</li>
   <li><b>Cómo se lee cada tarjeta.</b> Trae una <b>lectura en lenguaje llano</b> (qué tipo de señal
       es: eco de una pieza, amplificación inauténtica, difusión coordinada…) y una
       <b>cadena de evidencia</b> para comprobarlo tú mismo, con descarga en CSV/JSON.</li>
@@ -1429,9 +1436,9 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         "anomaly": "Anomalía",
     }
     _w_default = {
-        "synchronization": 0.25, "content_similarity": 0.20,
-        "amplification": 0.20, "infrastructure": 0.15,
-        "network_density": 0.10, "anomaly": 0.10,
+        "synchronization": 0.1667, "content_similarity": 0.1667,
+        "amplification": 0.0556, "infrastructure": 0.1111,
+        "anomaly": 0.50,
     }
     n_events = n_sources = n_clusters = n_ecos = n_sost = n_rss_ev = n_redes_ev = 0
     n_src_feeds = n_src_plt = n_src_tg = n_src_reddit = 0
@@ -1487,7 +1494,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         f"<tr><td>{_w_names.get(k, k)}</td>"
         f"<td style='text-align:right'>{int(round((_w_global.get(k, _w_default.get(k, 0))) * 100))}%</td></tr>"
         for k in ["synchronization", "content_similarity", "amplification",
-                  "infrastructure", "network_density", "anomaly"])
+                  "infrastructure", "anomaly"])
     _w_tabla = ("<table style='border-collapse:collapse;font-size:.78rem;width:100%;max-width:420px'>"
                 "<tr style='border-bottom:1px solid #e2e8f0;background:#f8fafc'>"
                 "<th style='text-align:left;padding:4px 8px'>Componente</th>"
@@ -1624,7 +1631,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 <main>
   <div class="hero">
     <h1>FIMI Radar · Research</h1>
-    <p class="sub">Notas de investigación del radar de manipulación informativa:
+    <p class="sub">Notas de investigación del radar de señales de coordinación y amplificación:
       lo que queremos detectar, los datos que observamos, cómo lo medimos, qué hemos
       encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
       puede descargar. Herramienta OSINT <b>agnóstica al actor</b>: nunca atribuimos
@@ -3868,9 +3875,9 @@ def main():
         "anomaly": "Anomalía",
     }
     _w_default = {
-        "synchronization": 0.25, "content_similarity": 0.20,
-        "amplification": 0.20, "infrastructure": 0.15,
-        "network_density": 0.10, "anomaly": 0.10,
+        "synchronization": 0.1667, "content_similarity": 0.1667,
+        "amplification": 0.0556, "infrastructure": 0.1111,
+        "anomaly": 0.50,
     }
     _bandas = _scr.get("bands", {}) or {
         "NORMAL": [0, 19], "WATCH": [20, 39], "ANOMALOUS": [40, 59],
@@ -3879,7 +3886,7 @@ def main():
     _band_order = ["NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"]
     _w_rows = []
     for k in ["synchronization", "content_similarity", "amplification",
-              "infrastructure", "network_density", "anomaly"]:
+              "infrastructure", "anomaly"]:
         pct = int(round((_w_global.get(k, _w_default.get(k, 0))) * 100))
         _w_rows.append(f"<tr><td>{_w_names.get(k,k)}</td><td>{pct}%</td></tr>")
     _w_tabla = ("<table style='border-collapse:collapse;font-size:.72rem;width:100%'>"
@@ -4603,10 +4610,11 @@ a{{color:#c2410c}}
     <span><span class="dot" style="background:#c2410c"></span>Radar FIMI · Centro de observación en español</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
-  <h1>Radar FIMI · Centro de situación de desinformación</h1>
+  <h1>Radar FIMI · Señales de coordinación y amplificación</h1>
   <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
-  para detectar <strong>coordinación, amplificación y anomalías</strong> — la maquinaria de la
-  manipulación de información (FIMI). Observamos el comportamiento en red; nunca atribuimos a un actor sin evidencia.</p>
+  para detectar <strong>patrones observables de coordinación y amplificación</strong> potencialmente
+  compatibles con actividades de influencia o manipulación informativa (FIMI). Observamos el
+  comportamiento en red; <strong>no confirmamos atribución de actor ni campaña</strong> sin evidencia adicional.</p>
   <div class="chain">
     <div class="step"><b><span class="ic">👁</span> OBSERVAR</b><span>captura de {n_sources} fuentes abiertas en {len(temas)} temas, sin prejuicio de actor.</span></div>
     <div class="arrow">→</div>

@@ -1147,12 +1147,11 @@ temas:
     - Sánchez
     scoring:
       weights:
-        anomaly: 0.45
-        sync: 0.15
-        content: 0.15
-        amp: 0.05
-        infra: 0.1
-        density: 0.1
+        synchronization: 0.1667
+        content_similarity: 0.1667
+        amplification: 0.1111
+        infrastructure: 0.1111
+        anomaly: 0.4444
     keywords:
     - palabra: desinformación
       plataformas:

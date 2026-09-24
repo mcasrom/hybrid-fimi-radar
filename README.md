@@ -1,14 +1,20 @@
-# FIMI Radar — Radar de manipulación e interferencia informativa
+# FIMI Radar — Radar de señales de coordinación y amplificación
 
 ## 1. Qué es FIMI Radar
 
-FIMI Radar es un sistema OSINT que observa, con datos públicos, **cómo se coordina y
-se amplifica** la conversación en redes sociales y prensa sobre un conjunto de temas
-(frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel, amenazas
-híbridas en España, defensa…). No dictamina "qué es verdad o mentira": mira **quién
-empuja el mismo mensaje, a la vez y de la misma forma**, para detectar comportamientos
-anómalos compatibles con campañas de manipulación (FIMI). Está pensado para periodistas,
-investigadores y ciudadanía que quieran comprobar los datos por sí mismos.
+**Radar de señales de coordinación y amplificación:** sistema OSINT que detecta, con
+datos públicos, **patrones observables de sincronización, repetición de contenido y
+agrupación estructural** de la conversación en redes sociales y prensa sobre un conjunto
+de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
+amenazas híbridas en España, defensa…). Mira **quién empuja el mismo mensaje, a la vez
+y de la misma forma**, para señalar patrones potencialmente compatibles con actividades
+de influencia o manipulación coordinada (FIMI).
+
+La herramienta **no atribuye actor ni confirma inautenticidad o campaña extranjera por
+sí sola**: sus salidas son **señales conductuales** que requieren validación adicional,
+análisis contextual y evidencia organizativa. No dictamina "qué es verdad o mentira".
+Está pensado para periodistas, investigadores y ciudadanía que quieran comprobar los
+datos por sí mismos.
 
 ## 2. Qué NO hace
 
@@ -33,8 +39,11 @@ y RSS), las normaliza y calcula componentes estructurales por **cluster** de cue
 - **Anomalía:** cuánto se desvía el comportamiento de esas cuentas del habitual
   (detección de valores atípicos, sin conocer antes a la cuenta).
 - **Infraestructura:** enlaces/dominios compartidos entre cuentas.
-- **Densidad de red:** grado de interconexión dentro del grupo.
-  (+ similitud de contenido y amplificación)
+- **Similitud de contenido** y **amplificación** (señal global del ciclo).
+
+> La **densidad de red** se calcula y se publica como dato, pero **no pondera en el
+> score**: es una transformación del mismo eje de coordinación (doble conteo) y se
+> retiró el 24/Sep-2026. La usa el módulo de atribución (hipótesis H3).
 
 Con eso calcula una **puntuación 0-100** y una **banda** (NORMAL→CRITICAL), y evalúa
 **hipótesis alternativas** (anti sesgo de confirmación):

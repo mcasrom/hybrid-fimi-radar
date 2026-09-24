@@ -1,14 +1,20 @@
-# FIMI Radar — A radar for foreign information manipulation and interference
+# FIMI Radar — Coordination and amplification signal radar
 
 ## 1. What FIMI Radar is
 
-FIMI Radar is an OSINT system that watches, using public data, **how conversation is
-coordinated and amplified** across social platforms and the press around a set of topics
-(southern border & Morocco, Middle East, elections, energy, AI, Sahel, hybrid threats in
-Spain, defence…). It doesn't fact-check "true or false": it looks at **who pushes the same
-message, at the same time and in the same way**, to surface anomalous behaviour consistent
-with manipulation campaigns (FIMI). It's meant for journalists, researchers and citizens
-who want to check the data themselves.
+**Coordination and amplification signal radar:** an OSINT system that detects, from
+public data, **observable patterns of synchronisation, content repetition and structural
+clustering** across social platforms and the press around a set of topics (southern
+border & Morocco, Middle East, elections, energy, AI, Sahel, hybrid threats in Spain,
+defence…). It looks at **who pushes the same message, at the same time and in the same
+way**, to surface patterns potentially consistent with coordinated influence or
+manipulation activity (FIMI).
+
+The tool **does not attribute an actor or confirm inauthenticity or a foreign campaign
+by itself**: its outputs should be interpreted as **behavioural signals requiring
+additional validation, contextual analysis, and organisational evidence**. It doesn't
+fact-check "true or false". It's meant for journalists, researchers and citizens who
+want to check the data themselves.
 
 ## 2. What it does NOT do
 
@@ -34,8 +40,11 @@ normalises them and computes structural components per account **cluster**:
 - **Anomaly:** how far these accounts' behaviour deviates from normal (outlier detection,
   with no prior knowledge of the account).
 - **Infrastructure:** links/domains shared across accounts.
-- **Network density:** how interconnected the group is.
-  (+ content similarity and amplification)
+- **Content similarity** and **amplification** (a global signal of the cycle).
+
+> **Network density** is still computed and published as a datum, but it **does not
+> weight the score**: it is a transform of the same coordination axis (double counting)
+> and was removed on 24-Sep-2026. It feeds the attribution module (hypothesis H3).
 
 From these it produces a **0–100 score** and a **band** (NORMAL→CRITICAL), and evaluates
 **alternative hypotheses** (anti-confirmation-bias):
