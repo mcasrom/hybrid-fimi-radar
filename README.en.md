@@ -49,11 +49,11 @@ Hypotheses **do not change the score**; they are an informational reading.
 
 ## 4. Current status
 
-Latest run snapshot (23 Sep 2026, **v0.2-29-gaa5280f**):
+Latest run snapshot (24 Sep 2026, **v0.2**):
 
 - **9 active topics** (7 in production + 2 pilot: `elecciones`, `defensa_espana`).
-- **~107,700 events** and **797 clusters** (90-day window).
-- **67 RSS feeds** + 2 platform searches, 3 public Telegram channels, 2 subreddits.
+- **~113,500 events** and **824 clusters** (90-day window).
+- **68 RSS feeds** + 2 platform searches, 3 public Telegram channels, 2 subreddits.
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - Latest release: **v0.2**.
 

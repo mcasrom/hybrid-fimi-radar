@@ -189,6 +189,17 @@ feeds:
   note: 'Línea conservadora. MBFC: Right-Center, Mostly Factual.'
   idioma: es
   analytical_relevance: media
+- nombre: El Mundo Internacional
+  url: https://e00-elmundo.uecdn.es/elmundo/rss/internacional.xml
+  tipo: media
+  bias: center-right
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/el-mundo/
+  note: 'Internacional (amenaza rusa/híbrida en Europa). Cobertura España-Francia-Italia.'
+  idioma: es
+  analytical_relevance: alta
+  tema: espana_amenazas_hibridas
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
@@ -1113,6 +1124,12 @@ temas:
     - sabotajes
     - guerras híbridas
     - amenazas híbridas
+    # Ángulo ruso (24/09): permitir la narrativa "ataque ruso" / "ataques híbridos"
+    # (p. ej. aviso CIA a España/Francia/Italia) sin abrir la mano a "drones" genérico.
+    - ataque ruso
+    - ataques rusos
+    - ataque híbrido
+    - ataques híbridos
     # Contexto obligatorio (19/09): el tema es 'España'. Sin un término de
     # contexto español, historias de injerencia/desinformación de OTROS países
     # (Colombia, Argentina, Países Bajos...) no deben entrar en el tema.
@@ -1633,6 +1650,24 @@ keywords:
   plataformas: *id006
   tema: espana_amenazas_hibridas
 - palabra: amenazas híbridas
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ataque ruso
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ataques rusos
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ataque híbrido
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: ataques híbridos
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: drones rusos
+  plataformas: *id006
+  tema: espana_amenazas_hibridas
+- palabra: gerbera
   plataformas: *id006
   tema: espana_amenazas_hibridas
 - palabra: fuerzas armadas

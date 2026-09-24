@@ -48,11 +48,11 @@ Las hipótesis **no cambian la puntuación**; son una lectura informativa.
 
 ## 4. Estado actual
 
-Snapshot del último run (23/Sep/2026, **v0.2-29-gaa5280f**):
+Snapshot del último run (24/Sep/2026, **v0.2**):
 
 - **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
-- **~107.700 eventos** y **797 clusters** (ventana de 90 días).
-- **67 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
+- **~113.500 eventos** y **824 clusters** (ventana de 90 días).
+- **68 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
 

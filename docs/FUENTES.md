@@ -27,13 +27,18 @@ fiabilidad editorial (**actualizado 14/09/2026**).
 4. Para **eliminar**: quitar la entrada. El cron 6h lo aplica en el siguiente ciclo.
 5. Guardar y el cron lo recoge automáticamente (no hace falta reiniciar nada).
 
-## Resumen del catálogo (14/09/2026)
+## Resumen del catálogo (24/09/2026)
 
-- **40 feeds RSS** · idiomas: **fr 15 · es 9 · en 9 · de 3 · sv 3 · ar 1**.
-- **2 plataformas** de búsqueda (bluesky, google-news) · **4 canales Telegram** · **2 subreddits**.
-- Metadata editorial (`bias`) en **40/40**; `factcheck_url` formal en las fuentes con página MBFC.
-- **Nuevo (14/09)**: 6 feeds de **Alemania y Suecia** para el capítulo *Election Threat Landscape*
-  (ver sección propia más abajo).
+- **68 feeds RSS** · idiomas: **en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1**.
+- **2 plataformas** de búsqueda (bluesky, google-news) · **3 canales Telegram** · **2 subreddits**.
+- Metadata editorial (`bias`) presente por feed; `factcheck_url` formal en las fuentes con página MBFC.
+- **Feeds con tema asignado** (pasan por el `filtro` del tema): **El Mundo Internacional →
+  `espana_amenazas_hibridas`** (24/09), **EIA Today in Energy** y **Energy Monitor** → `energia`.
+- **Nuevo (24/09)**: alta del feed **El Mundo · Internacional** + ampliación del tema
+  `espana_amenazas_hibridas` (keywords/`filtro`: `ataque ruso`, `ataques rusos`, `ataque híbrido`,
+  `ataques híbridos`, `drones rusos`, `gerbera`) para capturar la narrativa de amenaza híbrida rusa
+  sobre España/Francia/Italia.
+- *(Las tablas por sección de más abajo son del 14/09; pendientes de refresco total.)*
 
 ## Metadata editorial aplicada
 
