@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS clusters (
     coordination_score REAL, amplification_score REAL,
     anomaly_score REAL, infrastructure_score REAL,
     network_density REAL, overall_score REAL,
-    confidence TEXT                                -- NONE|LOW|MEDIUM|HIGH
+    confidence TEXT,                               -- NONE|LOW|MEDIUM|HIGH
+    alternative_explanations TEXT                  -- JSON: explicaciones alternativas (opción 2)
 );
 
 CREATE TABLE IF NOT EXISTS indicators (
@@ -216,6 +217,7 @@ def get_conn(db_path):
     _ensure_column(conn, "findings", "tema_id", "tema_id TEXT DEFAULT 'frontera_sur'")
     _ensure_column(conn, "assessments", "kcore", "kcore INTEGER")
     _ensure_column(conn, "assessments", "kcore_size", "kcore_size INTEGER")
+    _ensure_column(conn, "clusters", "alternative_explanations", "alternative_explanations TEXT")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()

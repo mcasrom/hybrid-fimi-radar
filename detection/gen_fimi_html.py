@@ -970,6 +970,47 @@ def _disp_label(c, disp_map=None):
     return (disp_map or {}).get(c["id"]) or str(c["cluster_label"] or "")
 
 
+def _render_explicaciones(c):
+    """Bloque 'explicaciones alternativas' de un cluster (opción 2, 24/Sep).
+
+    Lee el JSON persistido en `clusters.alternative_explanations` (lo calcula el
+    pipeline con métricas ya existentes; esto solo lo MUESTRA). Solo lectura: no
+    toca score/bandas/atribución."""
+    if c is None:
+        return ""
+    try:
+        raw = c["alternative_explanations"]
+    except Exception:
+        return ""
+    if not raw:
+        return ""
+    try:
+        items = json.loads(raw)
+    except Exception:
+        return ""
+    if not items:
+        return ""
+    _col = {"supported": "#b91c1c", "plausible": "#b45309", "ruled_out": "#64748b"}
+    _sup = [it for it in items if it.get("status") == "supported"]
+    _plau = [it for it in items if it.get("status") == "plausible"]
+    prim = _sup[0] if _sup else (_plau[0] if _plau else {
+        "label": "Sin explicación concluyente", "status": "ruled_out",
+        "code": "unresolved", "evidence": {}})
+    col = _col.get(prim.get("status"), "#64748b")
+    ev = prim.get("evidence") or {}
+    evs = ", ".join(f"{k}={v}" for k, v in ev.items() if v not in (None, "", False))
+    otros = [it["label"] for it in _plau if it is not prim]
+    var = (f'<div style="font-size:.72rem;color:#475569;margin-top:3px">'
+           f'También plausibles: {", ".join(otros)}</div>') if otros else ""
+    evh = (f'<div style="font-size:.72rem;color:#64748b;margin-top:2px">'
+           f'Evidencia: {evs}</div>') if evs else ""
+    return (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid {col};'
+            f'border-radius:6px;padding:7px 11px;margin:2px 0 6px;font-size:.8rem;color:#334155;line-height:1.5">'
+            f'<b>Explicación principal:</b> <span style="color:{col};font-weight:700">{prim.get("label")}</span> '
+            f'<span style="font-size:.7rem;color:#94a3b8">[{prim.get("status")}]</span>'
+            f'{evh}{var}</div>')
+
+
 def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None, evidencia=None, amp_global=None, disp_map=None, linaje=None, tipo=None):
     """Detalle completo de un cluster: contenido real (titulares) + barra
     overall + componentes con barra (X/100) + atribución + hipótesis (solo 2
@@ -1278,7 +1319,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'{_extra}'
                 f'</div></details>')
 
-    return (h + _lectura_html + _senal_html + content_html + _dom_html + _ev_html
+    return (h + _lectura_html + _render_explicaciones(c) + _senal_html + content_html + _dom_html + _ev_html
             + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
             + attr + hyp_html)
 

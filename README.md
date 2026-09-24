@@ -45,6 +45,13 @@ y RSS), las normaliza y calcula componentes estructurales por **cluster** de cue
 > score**: es una transformación del mismo eje de coordinación (doble conteo) y se
 > retiró el 24/Sep-2026. La usa el módulo de atribución (hipótesis H3).
 
+Cada cluster publica además **`alternative_explanations`**: explicaciones alternativas con
+estado (`supported` / `plausible` / `ruled_out`) y la **evidencia** que lo motiva — eco de
+prensa, eco de una sola pieza, viralidad orgánica, sincronización sin operador, automatización
+no maliciosa, movilización legítima, artefacto del grafo y *sin explicación concluyente*. No es
+una clasificación de "la verdad": es material para la revisión humana, visible en el dashboard,
+la API y las exportaciones.
+
 Con eso calcula una **puntuación 0-100** y una **banda** (NORMAL→CRITICAL), y evalúa
 **hipótesis alternativas** (anti sesgo de confirmación):
 

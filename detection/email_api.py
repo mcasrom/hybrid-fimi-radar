@@ -367,7 +367,8 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     conn.row_factory = sqlite3.Row
     try:
         row = conn.execute(
-            "SELECT c.id, c.cluster_label, c.tema_id, c.overall_score, c.created_at"
+            "SELECT c.id, c.cluster_label, c.tema_id, c.overall_score, c.created_at,"
+            " c.alternative_explanations"
             " FROM clusters c WHERE c.cluster_label=? LIMIT 1",
             (cluster_label,)).fetchone()
         if not row:
@@ -420,6 +421,15 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
             }
         if tipos.get(cid):
             payload["tipo"] = tipos[cid]
+        _expl = None
+        if row["alternative_explanations"]:
+            try:
+                _expl = json.loads(row["alternative_explanations"])
+            except Exception:
+                _expl = None
+        if _expl:
+            payload["alternative_explanations"] = _expl
+            payload["explanation_summary"] = _expl_resumen(_expl)
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
@@ -435,12 +445,24 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     w.writerow(["# replay", "window_days", replay["window_days"]])
     w.writerow(["# replay", "capture_window_days", replay["capture_window_days"]])
     w.writerow(["# replay", "banda", banda])
+    _expl = None
+    if row["alternative_explanations"]:
+        try:
+            _expl = json.loads(row["alternative_explanations"])
+        except Exception:
+            _expl = None
+    _exsum = _expl_resumen(_expl) if _expl else None
+    _expl_principal = (_exsum or {}).get("principal") or ""
+    w.writerow(["# explicaciones", "principal", _expl_principal])
+    w.writerow(["# explicaciones", "json",
+                json.dumps(_expl, ensure_ascii=False) if _expl else ""])
     w.writerow(["cluster_label", "tema", "overall_score", "banda", "ts_utc",
-                "source", "author", "title", "text", "url"])
+                "source", "author", "title", "text", "url", "explicacion_principal"])
     for e in evs:
         w.writerow([cid, row["tema_id"], row["overall_score"], banda,
                     time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(e["ts"])),
-                    e["source"], e["author"], e["title"], e["text"], e["url"]])
+                    e["source"], e["author"], e["title"], e["text"], e["url"],
+                    _expl_principal])
     body = buf.getvalue().encode("utf-8")
     return ("text/csv; charset=utf-8", body, f"fimi-evidence-{cid}.csv")
 
@@ -530,6 +552,21 @@ def _tipos_map(conn, tema=None, cluster=None):
         return {}
 
 
+def _expl_resumen(items):
+    """Resumen {principal, supported, plausible} de las explicaciones alternativas."""
+    if not items:
+        return None
+    try:
+        try:
+            from detection import explicaciones as _ex
+        except Exception:
+            import explicaciones as _ex  # la API corre como script (sys.path[0]=detection/)
+        return _ex.resumen(items)
+    except Exception as e:
+        print("[warn] _expl_resumen:", e, file=sys.stderr)
+        return None
+
+
 def _cluster_obj(row, bands, tipo=None):
     """Convierte una fila (join cluster+assessment) en el objeto JSON v1."""
     d = dict(row)
@@ -548,6 +585,13 @@ def _cluster_obj(row, bands, tipo=None):
             "first_seen": d.get("lineage_first_seen"),
             "n_ciclos": d.get("lineage_n_ciclos"),
         }
+    expl_items = None
+    raw_expl = d.get("alternative_explanations")
+    if raw_expl:
+        try:
+            expl_items = json.loads(raw_expl)
+        except Exception:
+            expl_items = None
     return {
         "cluster_label": label,
         "lineage": lineage,
@@ -556,6 +600,8 @@ def _cluster_obj(row, bands, tipo=None):
         "components": comps,
         "kcore": {"kcore": d.get("kcore"), "kcore_size": d.get("kcore_size")},
         "tipo": tipo,
+        "alternative_explanations": expl_items,
+        "explanation_summary": _expl_resumen(expl_items) if expl_items else None,
         "confidence": d.get("confidence"),
         "assessment": d.get("assessment"),
         "missing_evidence": d.get("missing_evidence"),
@@ -619,6 +665,7 @@ def _api_tema(slug):
             " a.coordination_score, a.amplification_score, a.anomaly_score, "
             " a.infrastructure_score, a.network_density, a.assessment, a.missing_evidence, "
             " a.kcore, a.kcore_size, "
+            " c.alternative_explanations, "
             " a.attribution, a.attribution_confidence, a.attribution_evidence, a.hypotheses_json "
             "FROM clusters c LEFT JOIN assessments a ON a.cluster_id = c.id "
             "LEFT JOIN cluster_lineage cl ON cl.tema_id = c.tema_id AND cl.cluster_label = c.cluster_label "

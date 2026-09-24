@@ -46,6 +46,13 @@ normalises them and computes structural components per account **cluster**:
 > weight the score**: it is a transform of the same coordination axis (double counting)
 > and was removed on 24-Sep-2026. It feeds the attribution module (hypothesis H3).
 
+Each cluster also publishes **`alternative_explanations`**: alternative explanations with a
+status (`supported` / `plausible` / `ruled_out`) and the **evidence** behind it — mainstream
+echo, single-piece echo, organic virality, synchronisation without an operator, non-malicious
+automation, legitimate mobilisation, graph artefact and *no conclusive explanation*. It is not
+a "truth" classifier: it is material for human review, shown in the dashboard, the API and the
+exports.
+
 From these it produces a **0–100 score** and a **band** (NORMAL→CRITICAL), and evaluates
 **alternative hypotheses** (anti-confirmation-bias):
 
