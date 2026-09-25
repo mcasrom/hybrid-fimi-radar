@@ -157,8 +157,8 @@ def main():
     con = _s.connect(str(ROOT / "data" / "radar.db"))
     try:
         _init(con)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[mensual] schema init: {e}", file=sys.stderr)
     if args.to:
         destinos = [{"id": None, "destino": args.to}]
     elif args.todos_email:
