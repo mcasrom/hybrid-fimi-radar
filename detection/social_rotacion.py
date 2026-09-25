@@ -112,6 +112,7 @@ def _notify_telegram(texto, img_path=None, tema=None):
         tok = env.get("FIMI_TELEGRAM_BOT_TOKEN")
         chat = env.get("FIMI_OWNER_CHAT")
         if not tok or not chat:
+            print("[notify] sin token/chat; no se avisa", file=sys.stderr)
             return
         import requests
         api = f"https://api.telegram.org/bot{tok}"
@@ -120,21 +121,35 @@ def _notify_telegram(texto, img_path=None, tema=None):
             kbd = json.dumps({"inline_keyboard": [[
                 {"text": "✅ Publicar", "callback_data": f"post:pub:{tema}"},
                 {"text": "❌ Descartar", "callback_data": f"post:no:{tema}"}]]})
+
+        def _ok(r):
+            try:
+                return bool(r.ok and r.json().get("ok"))
+            except Exception:
+                return False
+
+        r = None
         if img_path and Path(img_path).exists():
             with open(img_path, "rb") as fh:
                 data = {"chat_id": chat, "caption": texto[:1024]}
                 if kbd:
                     data["reply_markup"] = kbd
-                requests.post(f"{api}/sendPhoto",
-                              data=data,
-                              files={"photo": ("radar.png", fh, "image/png")}, timeout=60)
-        else:
+                r = requests.post(f"{api}/sendPhoto", data=data,
+                                  files={"photo": ("radar.png", fh, "image/png")}, timeout=60)
+            if not _ok(r):
+                print(f"[notify] sendPhoto fallo ({getattr(r, 'status_code', '?')}); "
+                      f"reintento como texto", file=sys.stderr)
+                r = None
+        if r is None:
             data = {"chat_id": chat, "text": texto[:3900]}
             if kbd:
                 data["reply_markup"] = kbd
-            requests.post(f"{api}/sendMessage", data=data, timeout=20)
+            r = requests.post(f"{api}/sendMessage", data=data, timeout=20)
+        if not _ok(r):
+            print(f"[notify] fallo Telegram ({getattr(r, 'status_code', '?')}): "
+                  f"{getattr(r, 'text', '')[:200]}", file=sys.stderr)
     except Exception as e:
-        print("[notify] error:", e)
+        print("[notify] error:", e, file=sys.stderr)
 
 
 def main():
