@@ -24,8 +24,27 @@ anotan al final.
 | **APIs de datos** (p. ej. X) | variable | Ampliar **cobertura** de plataformas hoy fuera del radar. |
 | **APIs de traducción** | variable | Idiomas hoy no cubiertos. |
 
-## Qué NO se financia / qué NO se hace
+## Quién mantiene esto
 
+El Radar FIMI lo desarrolla y mantiene **una sola persona, en su tiempo libre** — no es un
+proyecto financiado ni el producto de una empresa. El mantenimiento real (auditar el motor
+de detección, corregir sesgos cuando aparecen, revisar clusters, responder issues, escribir
+documentación) ocupa habitualmente **varias horas a la semana**, sin coste que se facture a
+nadie.
+
+Las donaciones **no cubren ese tiempo** — solo ayudan a que la infraestructura (servidor,
+dominio, APIs) siga en pie mientras ese trabajo se sigue haciendo gratis. Un ejemplo reciente
+de en qué se traduce ese tiempo: en septiembre de 2026 se **auditó el propio motor de
+clasificación** contra un análisis externo, se encontraron **dos sesgos reales** en cómo se
+etiquetaban ciertos patrones de coordinación, y se corrigieron en producción en **48 horas**
+— todo documentado públicamente en el [repositorio](https://github.com/mcasrom/hybrid-fimi-radar)
+(`docs/ATRIBUCION-LIMITACIONES.md`, `docs/TRAZABILIDAD.md`).
+
+Ese trabajo de auditoría y corrección **no aparece en ninguna tabla de costes** porque no
+tiene un precio fijado — pero es, probablemente, la parte que más sostiene la fiabilidad del
+proyecto.
+
+## Qué NO se financia / qué NO se hace
 - No se venden ni ceden datos.
 - No se perfilan usuarios (solo se analiza contenido **público**).
 - La IA **no** decide ni atribuye; no sustituye la revisión humana.
@@ -40,4 +59,5 @@ anotan al final.
 
 ## Cambios
 
+- 2026-09-25 — Añadida sección "Quién mantiene esto" (contexto de dedicación horaria, sin monetizar el tiempo).
 - 2026-09-25 — Desglose inicial (servidor ~20 €/mes, dominio ~20 €/año, APIs variables).
