@@ -1720,3 +1720,15 @@ auditoria:
   max_seconds: 30            # timeout de la ejecución (corta y marca truncated)
   sample_seed: 20260924      # semilla para muestreo determinista (validación ciega)
   blind_default_muestra: 40  # filas por defecto en --formato blind (si no se pasa --muestra)
+
+# Vigilancia de narrativas (observación intensa). detection/vigilancia_narrativa.py
+# Cuenta eventos por narrativa y avisa por Telegram si hay escalada (cron cada 6 h).
+vigilancia:
+  ventana_horas: 48
+  factor_escalada: 1.5     # avisa si sube >= 50% respecto a la última ejecución
+  delta_escalada: 10       # ...y al menos +10 eventos
+  narrativas:
+    - id: drones_ceuta_melilla
+      nombre: "Drones (Marruecos) sobre Ceuta/Melilla"
+      requeridos: [dron]                          # dron/drones (subcadena normalizada)
+      contexto: [ceuta, melilla, marruecos]
