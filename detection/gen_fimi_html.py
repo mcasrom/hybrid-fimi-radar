@@ -1106,9 +1106,6 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
 
     h = (f'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">'
          f'<b style="font-size:1.02rem">{_disp_label(c, disp_map)}</b>'
-         f'<span style="font-size:1.25rem;color:{col}">{overall:.0f}/100</span>'
-         f'<span style="font-size:.8rem;color:{col};background:{col}18;border:1px solid {col};'
-         f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
          f'{_hyp_chip}{_h3_warn}'
          f'{_sat_warn}'
          f'{_alerta_chip}'
@@ -1336,8 +1333,33 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 f'{_extra}'
                 f'</div></details>')
 
-    return (h + _lectura_html + _render_explicaciones(c) + _senal_html + content_html + _dom_html + _ev_html
-            + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
+    # EVIDENCIA PRIMERO (25/Sep): la tarjeta muestra antes el CONTENIDO, los
+    # dominios y una nota honesta; el score/banda pasa a dato SECUNDARIO (abajo).
+    # No cambia ninguna fórmula de scoring.
+    _score_html = (
+        f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 2px">'
+        f'<span style="font-size:.78rem;color:#64748b;text-transform:uppercase;font-weight:600">'
+        f'Señal (score)</span>'
+        f'<b style="font-size:1.05rem;color:{col}">{overall:.0f}/100</b>'
+        f'<span style="font-size:.78rem;color:{col};background:{col}18;border:1px solid {col};'
+        f'border-radius:999px;padding:1px 10px;font-weight:700">{band}</span>'
+        f'<span style="font-size:.72rem;color:#94a3b8">coordinación/amplificación observada — '
+        f'no es una conclusión</span></div>')
+
+    # Nota honesta junto a señales altas: el score NO equivale a desinformación.
+    _nota_alta_html = ""
+    if band in ("HIGH", "CRITICAL"):
+        _nota_alta_html = (
+            '<div style="background:#fff7ed;border:1px solid #fdba74;border-left:4px solid #ea580c;'
+            'border-radius:6px;padding:7px 11px;margin:6px 0;font-size:.78rem;color:#7c2d12;line-height:1.5">'
+            '<b>Alta señal ≠ desinformación confirmada.</b> La validación externa (EUvsDisinfo) no confirma '
+            'estos clusters como desinformación documentada; con la evidencia actual, la explicación más '
+            'probable es <b>reacción sincronizada a noticias reales</b> (a menudo eco de prensa). '
+            'Revisa la evidencia antes de concluir · '
+            '<a href="#transparencia" style="color:#c2410c;font-weight:600">Transparencia</a>.</div>')
+
+    return (h + content_html + _dom_html + _nota_alta_html + _lectura_html + _render_explicaciones(c) + _senal_html + _ev_html
+            + _score_html + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
             + attr + hyp_html)
 
 
