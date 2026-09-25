@@ -7,8 +7,11 @@ tema y muestreo reproducible. Usan una BD SQLite temporal mínima (sin producci�
 """
 from __future__ import annotations
 
+import csv as _csv
+import io
 import json
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,8 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from detection.auditoria_high import (  # noqa: E402
-    MISSING_EVIDENCE, auditar, evaluar_chain, resumen, review_priority,
-    seleccionar_muestra, to_blind_csv, to_csv,
+    BLIND_COLS, BLIND_FORBIDDEN, MISSING_EVIDENCE, auditar, evaluar_chain,
+    resumen, review_priority, seleccionar_muestra, to_blind_csv, to_csv,
 )
 
 SCHEMA = """
@@ -83,6 +86,29 @@ def _mk(tmp_path):
     con.executemany(
         "INSERT INTO cluster_events (cluster_id, ts, source, author, title, text, url)"
         " VALUES (?,?,?,?,?,?,?)", evs)
+    con.commit()
+    con.close()
+    return str(db)
+
+
+def _mk_many(tmp_path, n):
+    """n clusters HIGH (score 60+) con eventos, para probar muestreo/límites."""
+    db = tmp_path / "many.db"
+    con = sqlite3.connect(db)
+    con.executescript(SCHEMA)
+    for i in range(1, n + 1):
+        con.execute(
+            "INSERT INTO clusters (id, cluster_label, tema_id, coordination_score,"
+            " amplification_score, anomaly_score, infrastructure_score, overall_score)"
+            " VALUES (?,?,?,?,?,?,?,?)",
+            (i, f"tema_cluster_{i:03d}", "tema", 5.0, 10, 30, 20, 60 + (i % 15)))
+        con.execute(
+            "INSERT INTO assessments (cluster_id, coordination_score, anomaly_score,"
+            " infrastructure_score, kcore, kcore_size) VALUES (?,60,30,20,2,4)", (i,))
+        con.execute(
+            "INSERT INTO cluster_events (cluster_id, ts, source, author, title, text, url)"
+            " VALUES (?,?,?,?,?,?,?)",
+            (i, _H, "bluesky", f"a{i}", "titular", "cuerpo del texto", f"https://m{i}.es/n"))
     con.commit()
     con.close()
     return str(db)
@@ -190,8 +216,67 @@ def test_exports(tmp_path):
     blind = to_blind_csv(records)
     head = blind.splitlines()[0]
     assert "label_inautenticidad" in head and "label_fimi" in head
-    assert ",,,,," in blind.splitlines()[1]  # columnas de etiqueta vacías
     assert resumen(records)["n"] == 2
+
+
+def test_blind_sin_columnas_filtradas(tmp_path):
+    db = _mk(tmp_path)
+    records, _ = auditar(db, cfg={})
+    table = list(_csv.reader(io.StringIO(to_blind_csv(records))))
+    head = table[0]
+    assert head == BLIND_COLS
+    assert not (set(head) & BLIND_FORBIDDEN)
+    for col in ("cuentas", "eventos", "urls_distintas", "dominios_distintos",
+                "ventana_horas", "coordinacion", "anomalia", "infraestructura",
+                "kcore", "kcore_size", "urls_evidencia", "textos_evidencia"):
+        assert col in head
+    flat = ",".join(",".join(row) for row in table)
+    for bad in BLIND_FORBIDDEN:
+        assert bad not in flat  # ninguna etiqueta del sistema en el CSV ciego
+    lidx = [head.index(c) for c in head if c.startswith("label_") or c == "notas"]
+    assert all(row[i] == "" for row in table[1:] for i in lidx)
+
+
+def test_blind_evidencia_bruta(tmp_path):
+    db = _mk(tmp_path)
+    records, _ = auditar(db, cfg={})
+    table = list(_csv.reader(io.StringIO(to_blind_csv(records))))
+    head = table[0]
+    row = next(r for r in table[1:] if r[head.index("cluster_label")] == "tema_cluster_001")
+    assert "elmundo.es" in row[head.index("urls_evidencia")]
+    assert row[head.index("textos_evidencia")] != ""
+
+
+def test_blind_muestra_determinista_exacta(tmp_path):
+    db = _mk_many(tmp_path, 25)
+    records, _ = auditar(db, cfg={})
+    m = seleccionar_muestra(records, 20, 42)
+    assert len(m) == 20
+    table = list(_csv.reader(io.StringIO(to_blind_csv(m))))
+    assert len(table) == 21  # 1 cabecera + 20 filas
+
+
+def test_blind_cli_muestra_20(tmp_path):
+    db = _mk_many(tmp_path, 25)
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "detection" / "auditoria_high.py"),
+         "--db", db, "--formato", "blind", "--muestra", "20", "--seed", "42"],
+        capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    table = list(_csv.reader(io.StringIO(r.stdout)))
+    assert len(table) == 21
+    assert not (set(table[0]) & BLIND_FORBIDDEN)
+
+
+def test_blind_cli_default_seguro(tmp_path):
+    db = _mk_many(tmp_path, 45)
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "detection" / "auditoria_high.py"),
+         "--db", db, "--formato", "blind"],
+        capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    table = list(_csv.reader(io.StringIO(r.stdout)))
+    assert len(table) == 41  # cabecera + 40 (blind_default_muestra)
 
 
 def test_load_bands_sin_config(tmp_path):

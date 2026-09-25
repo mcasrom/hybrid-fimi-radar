@@ -54,6 +54,9 @@ DEFAULTS = {
     "max_urls_per_cluster": 200,
     "max_seconds": 30,
     "sample_seed": 20260924,
+    # Nº de filas por defecto en `--formato blind` si no se pasa --muestra
+    # (límite seguro y documentado para una revisión humana).
+    "blind_default_muestra": 40,
 }
 
 # Explicaciones que, si están `supported`, rebajan la prioridad de revisión:
@@ -329,23 +332,63 @@ def to_csv(records):
     return buf.getvalue()
 
 
-def to_blind_csv(records):
-    """CSV para validación humana CIEGA: metadatos + columnas de etiquetado vacías.
+# Columnas del CSV CIEGO: solo evidencia bruta + componentes normalizados +
+# columnas de anotación humana vacías. Sin etiquetas ni interpretaciones del sistema.
+BLIND_COLS = [
+    "cluster_label", "tema", "score", "banda",
+    "cuentas", "eventos", "urls_distintas", "dominios_distintos", "ventana_horas",
+    "coordinacion", "anomalia", "infraestructura", "amplificacion",
+    "kcore", "kcore_size", "urls_evidencia", "textos_evidencia",
+    "label_coordinacion", "label_inautenticidad", "label_intencion",
+    "label_dimension_extranjera", "label_fimi", "notas",
+]
+# Columnas PROHIBIDAS en el CSV ciego (interpretación/etiqueta automática del sistema).
+BLIND_FORBIDDEN = {
+    "narrative_role", "main_explanation", "review_priority",
+    "alternative_explanations", "hypotheses", "attribution", "missing_evidence",
+    "chain", "explanation_summary",
+}
 
-    No incluye `alternative_explanations` ni el score oculto? El score y la banda
-    se mantienen (el anotador debe poder ordenar), pero NO se le da la etiqueta del
-    sistema sobre el resultado final; las columnas `label_*` quedan vacías.
+
+def _blind_urls(r):
+    seen, out = set(), []
+    for e in (r.get("eventos_muestra") or []):
+        u = str(e.get("url") or "").strip()
+        if u and u not in seen:
+            seen.add(u)
+            out.append(u)
+    return "; ".join(out)
+
+
+def _blind_textos(r):
+    parts = []
+    for e in (r.get("eventos_muestra") or []):
+        t = str(e.get("title") or e.get("text") or "").replace("\n", " ").replace("\r", " ").strip()
+        if t:
+            parts.append(t)
+    return " || ".join(parts)
+
+
+def to_blind_csv(records):
+    """CSV para validación humana CIEGA: solo evidencia bruta + componentes.
+
+    NO incluye `narrative_role`, `main_explanation`, `review_priority`,
+    `alternative_explanations`, `hypotheses` ni `attribution` (cegaría al anotador).
+    Incluye los textos y URLs de evidencia y columnas `label_*` vacías para anotar.
     """
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["cluster_label", "tema", "score", "banda", "narrative_role",
-                "main_explanation", "review_priority",
-                "label_coordinacion", "label_inautenticidad", "label_intencion",
-                "label_dimension_extranjera", "label_fimi", "notas"])
+    w.writerow(BLIND_COLS)
     for r in records:
-        w.writerow([r["cluster_label"], r["tema"], r["score"], r["banda"],
-                    r["narrative_role"], (r["main_explanation"] or {}).get("label", ""),
-                    r["review_priority"], "", "", "", "", "", ""])
+        w.writerow([
+            r["cluster_label"], r["tema"], r["score"], r["banda"],
+            r["cuentas"], r["eventos"], r["urls_distintas"],
+            r["dominios_distintos"], r["ventana_horas"],
+            r["coordinacion"], r["anomalia"], r["infraestructura"],
+            r["amplificacion"], r["kcore"], r["kcore_size"],
+            _blind_urls(r), _blind_textos(r),
+            "", "", "", "", "", "",
+        ])
     return buf.getvalue()
 
 
@@ -376,8 +419,15 @@ def main():
     records, truncated = auditar(args.db, cfg, limite=args.limite, tema=args.tema)
     print(f"[auditoria_high] {resumen(records)} truncated={truncated}", file=sys.stderr)
 
-    if args.muestra:
-        records = seleccionar_muestra(records, args.muestra, args.seed or a["sample_seed"])
+    # Muestreo: en `blind` SIEMPRE se aplica (con `--muestra` o con el límite
+    # seguro por defecto); en json/csv solo si se pide --muestra.
+    muestra = args.muestra
+    if args.formato == "blind" and not muestra:
+        muestra = a.get("blind_default_muestra", 40)
+    if muestra:
+        records = seleccionar_muestra(records, muestra, args.seed or a["sample_seed"])
+        print(f"[auditoria_high] muestra={len(records)} "
+              f"(seed={args.seed or a['sample_seed']})", file=sys.stderr)
 
     if args.formato == "json":
         body = json.dumps({"records": records, "truncated": truncated,
@@ -391,7 +441,9 @@ def main():
         Path(args.out).write_text(body, encoding="utf-8")
         print(f"[auditoria_high] escrito {args.out}", file=sys.stderr)
     else:
-        print(body)
+        # sin salto de línea extra (evita una fila vacía al final del CSV)
+        sys.stdout.write(body if body.endswith("\n") else body + "\n")
+    return 0
 
 
 if __name__ == "__main__":

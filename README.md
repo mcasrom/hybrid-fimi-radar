@@ -87,6 +87,12 @@ python detection/auditoria_high.py --tema <tema> --limite 50
 python detection/auditoria_high.py --formato blind --muestra 40 --seed 7 --out ciego.csv
 ```
 
+En `--formato blind` el muestreo se aplica **siempre** (con `--muestra`/`--seed`; si omites
+`--muestra`, se usan **40 filas** por defecto, `auditoria.blind_default_muestra`). El CSV ciego
+**no** incluye rol narrativo, explicación principal, prioridad, hipótesis ni atribución: solo
+evidencia bruta y componentes (cuentas, eventos, URLs/dominios, ventana, k-core, textos y URLs
+de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
+
 ## 4. Estado actual
 
 Snapshot del último run (24/Sep/2026, **v0.2**):

@@ -1719,3 +1719,4 @@ auditoria:
   max_urls_per_cluster: 200  # máx. de URLs para contar dominios distintos
   max_seconds: 30            # timeout de la ejecución (corta y marca truncated)
   sample_seed: 20260924      # semilla para muestreo determinista (validación ciega)
+  blind_default_muestra: 40  # filas por defecto en --formato blind (si no se pasa --muestra)

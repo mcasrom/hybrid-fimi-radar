@@ -87,6 +87,12 @@ python detection/auditoria_high.py --tema <topic> --limite 50
 python detection/auditoria_high.py --formato blind --muestra 40 --seed 7 --out blind.csv
 ```
 
+In `--formato blind` sampling is **always** applied (with `--muestra`/`--seed`; if you omit
+`--muestra`, **40 rows** are used by default, `auditoria.blind_default_muestra`). The blind CSV
+does **not** include narrative role, main explanation, priority, hypotheses or attribution: only
+raw evidence and components (accounts, events, URLs/domains, window, k-core, evidence texts and
+URLs) plus the empty `label_*` columns for human annotation.
+
 ## 4. Current status
 
 Latest run snapshot (24 Sep 2026, **v0.2**):
