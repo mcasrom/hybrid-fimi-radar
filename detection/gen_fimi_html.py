@@ -730,8 +730,9 @@ _GUIA_HTML = """
       es: eco de una pieza, amplificación inauténtica, difusión coordinada…) y una
       <b>cadena de evidencia</b> para comprobarlo tú mismo, con descarga en CSV/JSON.</li>
   <li><b>Qué NO dice.</b> El radar <b>no atribuye</b> a ningún actor sin pruebas:
-      <b>UNKNOWN es un resultado válido</b>. Una señal alta <b>no</b> es una campaña probada, y
-      mucho volumen <b>no</b> equivale a alerta.</li>
+      <b>UNKNOWN es un resultado válido</b>. <b>No es un detector de FIMI</b>: no demuestra que
+      exista una campaña. Una señal alta <b>no</b> es una campaña probada, y mucho volumen
+      <b>no</b> equivale a alerta.</li>
   <li><b>Qué hacer con ello.</b> Trátalo como <b>pista para investigar</b>, no como sentencia:
       contrasta con las fuentes y revisa la evidencia del cluster.</li>
 </ol>

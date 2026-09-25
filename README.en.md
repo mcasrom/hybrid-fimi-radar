@@ -18,6 +18,11 @@ want to check the data themselves.
 
 ## 2. What it does NOT do
 
+- **It is not a FIMI detector.** It does not prove a campaign exists: it produces
+  **candidates for investigation**. HIGH/CRITICAL clusters carry **plausible alternative
+  explanations** —often more parsimonious—: mainstream echo, organic virality, legitimate
+  coordinated activism, non-malicious automation or graph artefacts. Claiming "confirmed
+  FIMI" requires **independent external evidence**.
 - **No authorship or intent attribution.** Attribution is a separate, conservative module:
   the default result is `UNKNOWN`. The radar never claims "this is Russia/China/Morocco/
   the US/the left/the right".
@@ -111,6 +116,11 @@ the live value):
   evidence isn't enough to attribute.
 - **The score is a behavioural signal, not a verdict:** a HIGH band means anomalous
   coordinated behaviour, not proof of orchestration.
+- **Honest, experimental validation.** Group separation is measured with **synthetic** data
+  (ARI) and curated/external layers; **none proves real FIMI detection**. Human **blind**
+  validation —with separate labels for *observable coordination*, *inauthentic/manipulative
+  behaviour* and *FIMI with independent external evidence*— is **prepared**
+  (`auditoria_high --formato blind`) but **not yet run**.
 - **Limited coverage:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp are not observed
   (API cost or not public); multimodal analysis (image/video) is missing.
 

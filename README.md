@@ -18,6 +18,11 @@ datos por sí mismos.
 
 ## 2. Qué NO hace
 
+- **No es un detector de FIMI.** No demuestra que exista una campaña: produce
+  **candidatos para investigación**. Los clusters HIGH/CRITICAL tienen **explicaciones
+  alternativas plausibles** —y a menudo más parsimoniosas—: eco de prensa, viralidad
+  orgánica, activismo coordinado legítimo, automatización no maliciosa o artefactos del
+  grafo. Sostener "FIMI confirmado" exige **evidencia externa independiente**.
 - **No atribuye autoría ni intención.** La atribución es un módulo aparte y conservador:
   por defecto el resultado es `UNKNOWN`. El radar no dice "esto lo hace Rusia/China/
   Marruecos/EEUU/la izquierda/la derecha".
@@ -111,6 +116,12 @@ muestra el valor vivo):
   evidencia estructural no basta para atribuir.
 - **El score es una señal conductual, no una condena:** una banda HIGH indica
   comportamiento coordinado anómalo, no prueba de orquestación.
+- **Validación honesta y experimental.** La separación de grupos se mide con datos
+  **sintéticos** (ARI) y con capas curada/externa; **ninguna demuestra detección de FIMI
+  real**. La validación humana **ciega** —con etiquetas separadas de *coordinación
+  observable*, *comportamiento inauténtico/manipulativo* y *FIMI con evidencia externa
+  independiente*— está **preparada** (`auditoria_high --formato blind`) pero **no
+  ejecutada** todavía.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
   (coste/API o no público); falta análisis multimodal (imagen/vídeo).
 
