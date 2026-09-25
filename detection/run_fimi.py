@@ -281,6 +281,23 @@ def main():
             rol = subtipo.dominante(_txts)
         except Exception as e:
             print(f"      subtipo: falló ({e})", file=sys.stderr)
+        # Concentración de fuente: ¿una sola cuenta o dominio domina el cluster?
+        # (distingue un feed personal de verdadera coordinación entre cuentas).
+        _dac, _ddc = 0.0, 0.0
+        try:
+            if sub_clustered is not None:
+                _sub = sub_clustered.loc[sub_clustered["cluster"] == label]
+                _n = max(len(_sub), 1)
+                _ac = _sub["author"].dropna().astype(str).value_counts()
+                _dc = {}
+                for _u in _sub["url"].dropna().astype(str):
+                    _h = tipologia._host(_u)
+                    if _h:
+                        _dc[_h] = _dc.get(_h, 0) + 1
+                _dac = float(_ac.iloc[0]) / _n if len(_ac) else 0.0
+                _ddc = (max(_dc.values()) / _n) if _dc else 0.0
+        except Exception as e:
+            print(f"      explicaciones: concentración falló ({e})", file=sys.stderr)
         _hyp_codes = [h["hypothesis"] for h in hyp] if hyp else []
         expl = explicaciones.para_cluster(
             accounts=s.get("accounts", 0), n_events=ev_counts.get(label, 0),
@@ -292,7 +309,8 @@ def main():
             mainstream_frac=_ms_frac.get(label, 0.0), mainstream_cap_applied=es_prensa,
             single_piece_cap=es_eco, boilerplate_frac=_bpf,
             top_hypothesis=(_hyp_codes[0] if _hyp_codes else ""), hypotheses=_hyp_codes,
-            narrative_role=rol["dominant"])
+            narrative_role=rol["dominant"],
+            dominant_account_frac=_dac, dominant_domain_frac=_ddc)
         summary[label]["alternative_explanations"] = expl
         summary[label]["narrative_subtype"] = rol
 

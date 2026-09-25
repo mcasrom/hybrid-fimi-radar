@@ -62,7 +62,7 @@ DEFAULTS = {
 # Explicaciones que, si están `supported`, rebajan la prioridad de revisión:
 # describen difusión legítima / artefactos, no una posible operación.
 BENIGN_SUPPORTED = {
-    "mainstream_echo", "single_piece_echo", "organic_viral",
+    "single_source_feed", "mainstream_echo", "single_piece_echo", "organic_viral",
     "automated_non_malicious", "legitimate_mobilization", "graph_artifact",
 }
 
@@ -100,6 +100,10 @@ def review_priority(band, anomaly, items, cfg=None):
     hi_anom = (_cfg(cfg)).get("priority_high_anomaly", 40)
     benign = any(it.get("status") == "supported" and it.get("code") in BENIGN_SUPPORTED
                  for it in (items or []))
+    # Señal de coordinación real entre cuentas distintas -> prioridad alta siempre.
+    if any(it.get("code") == "cross_account_synchrony" and it.get("status") == "supported"
+           for it in (items or [])):
+        return "high"
     p = {"CRITICAL": "high", "HIGH": "medium"}.get(band, "low")
     if (anomaly or 0) >= hi_anom:
         p = "high"

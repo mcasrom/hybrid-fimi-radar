@@ -22,8 +22,10 @@ from __future__ import annotations
 # Orden de prioridad: el primer `supported` (o si no, el primer `plausible`) es la
 # explicación principal del cluster.
 CODES = [
+    ("single_source_feed", "Feed de una sola fuente"),
     ("mainstream_echo", "Eco de prensa"),
     ("single_piece_echo", "Eco de una sola pieza"),
+    ("cross_account_synchrony", "Reproducción coordinada entre cuentas"),
     ("organic_viral", "Viralidad orgánica"),
     ("synchronized_without_operator", "Sincronización sin operador identificable"),
     ("automated_non_malicious", "Automatización no maliciosa"),
@@ -58,14 +60,29 @@ def para_cluster(
     top_hypothesis="",
     hypotheses=None,
     narrative_role="",
+    dominant_account_frac=0.0,
+    dominant_domain_frac=0.0,
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
-    Métricas 0-100 salvo `mainstream_frac`/`boilerplate_frac` (0-1) y `accounts`/`n_*`.
+    Métricas 0-100 salvo `mainstream_frac`/`boilerplate_frac`/`dominant_*_frac` (0-1).
     Los umbrales son heurísticos y conservadores: ante la duda -> `plausible`, y si
     nada encaja -> `unresolved` (que pasa a `supported`, "sin explicación concluyente").
     """
     items = []
+
+    # 0. Feed de una sola fuente: una cuenta o un dominio concentran casi todo. NO es
+    # coordinación entre cuentas distintas (p. ej. alguien que publica su propio sitio).
+    if dominant_account_frac >= 0.55 or dominant_domain_frac >= 0.8:
+        st = "supported"
+    elif dominant_account_frac >= 0.4 or dominant_domain_frac >= 0.6:
+        st = "plausible"
+    else:
+        st = "ruled_out"
+    items.append(_item("single_source_feed", st, {
+        "dominant_account_fraction": round(float(dominant_account_frac), 2),
+        "dominant_domain_fraction": round(float(dominant_domain_frac), 2),
+    }))
 
     # 1. Eco de prensa: la mayoría de dominios son medios establecidos.
     if mainstream_cap_applied or mainstream_frac >= 0.8:
@@ -88,6 +105,21 @@ def para_cluster(
         st = "ruled_out"
     items.append(_item("single_piece_echo", st, {
         "distinct_urls": int(n_urls), "n_events": int(n_events),
+    }))
+
+    # 2b. Reproducción coordinada entre cuentas DISTINTAS: muchas cuentas, ninguna
+    # domina y comparten el mismo contenido. Es el patrón que SÍ merece revisión.
+    if accounts >= 5 and dominant_account_frac < 0.4 and dominant_domain_frac < 0.5 and content_similarity >= 70:
+        st = "supported"
+    elif accounts >= 3 and dominant_account_frac < 0.5 and content_similarity >= 50:
+        st = "plausible"
+    else:
+        st = "ruled_out"
+    items.append(_item("cross_account_synchrony", st, {
+        "accounts": int(accounts),
+        "dominant_account_fraction": round(float(dominant_account_frac), 2),
+        "dominant_domain_fraction": round(float(dominant_domain_frac), 2),
+        "content_similarity": round(float(content_similarity), 1),
     }))
 
     # 3. Viralidad orgánica: mucha sincronía, anomalía e infraestructura bajas.
