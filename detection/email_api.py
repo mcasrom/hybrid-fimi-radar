@@ -1206,12 +1206,15 @@ class H(BaseHTTPRequestHandler):
         if not isinstance(temas, list) or not temas:
             return self._send(400, {"error": "selecciona al menos un tema"})
         temas = [str(t) for t in temas[:6]]
+        frecuencia = (data.get("frecuencia") or "ambos").strip().lower()
+        if frecuencia not in ("semanal", "mensual", "ambos"):
+            frecuencia = "ambos"
         sid = short_id("email", email)
         conn = _init_schema()
         row = conn.execute("SELECT * FROM suscripciones WHERE id=?", (sid,)).fetchone()
         if row:
-            conn.execute("UPDATE suscripciones SET temas=?, proyecto=?, confirmado=0 WHERE id=?",
-                         (json.dumps(temas), proyecto, sid))
+            conn.execute("UPDATE suscripciones SET temas=?, proyecto=?, frecuencia=?, confirmado=0 WHERE id=?",
+                         (json.dumps(temas), proyecto, frecuencia, sid))
             conn.commit()
             conn.close()
             self._reenviar_confirmacion(email, sid, temas)
@@ -1219,7 +1222,7 @@ class H(BaseHTTPRequestHandler):
         conn.execute(
             "INSERT INTO suscripciones (id, canal, destino, temas, frecuencia, confirmado, proyecto)"
             " VALUES (?,?,?,?,?,?,?)",
-            (sid, "email", email, json.dumps(temas), "semanal", 0, proyecto))
+            (sid, "email", email, json.dumps(temas), frecuencia, 0, proyecto))
         conn.commit()
         conn.close()
         self._reenviar_confirmacion(email, sid, temas)

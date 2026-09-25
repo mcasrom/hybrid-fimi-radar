@@ -36,6 +36,7 @@ def main(dry_run: bool = False):
 
     subs = conn.execute(
         "SELECT * FROM suscripciones WHERE canal='email' AND confirmado=1"
+        " AND frecuencia IN ('semanal','ambos')"
         " AND frecuencia='semanal'").fetchall()
     enviados = 0
     for row in subs:

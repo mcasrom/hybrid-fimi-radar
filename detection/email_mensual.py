@@ -218,7 +218,7 @@ def main():
     else:
         destinos = [dict(r) for r in con.execute(
             "SELECT id,destino FROM suscripciones WHERE canal='email' AND confirmado=1"
-            " AND frecuencia='mensual'")]
+            " AND frecuencia IN ('mensual','ambos')")]
     con.close()
     enviados = 0
     for row in destinos:
