@@ -68,6 +68,25 @@ H6 sin evidencia concluyente.
 
 Las hipótesis **no cambian la puntuación**; son una lectura informativa.
 
+### Auditoría de señales altas (HIGH/CRITICAL)
+
+Para que cada señal alta pueda revisarse **sin afirmar que sea FIMI**, `detection/auditoria_high.py`
+genera un registro auditable por cluster con score ≥60: cuentas, eventos, URLs/dominios distintos,
+ventana temporal, componentes, k-core, **rol narrativo** y **explicaciones alternativas**, más la
+**cadena** que separa la *coordinación observable* (medida) de la *inautenticidad*, la *intención* y
+la *dimensión extranjera* (que el radar no puede confirmar por sí solo) y del *FIMI confirmado* (que
+requiere evidencia independiente). Ordena la revisión por prioridad humana.
+
+Es de **solo lectura y ligero**: audita únicamente los clusters ≥ umbral y sus eventos, con límites
+configurables (`auditoria` en `config.yaml`: máx. de clusters, eventos y longitud de texto, timeout,
+semilla). No usa red, LLMs ni dependencias pesadas.
+
+```bash
+python detection/auditoria_high.py --formato csv --out auditoria_high.csv
+python detection/auditoria_high.py --tema <tema> --limite 50
+python detection/auditoria_high.py --formato blind --muestra 40 --seed 7 --out ciego.csv
+```
+
 ## 4. Estado actual
 
 Snapshot del último run (24/Sep/2026, **v0.2**):

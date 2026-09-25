@@ -1707,3 +1707,15 @@ telegram_canales:
 subreddits:
 - spain
 - es
+
+# Auditoría ligera y reproducible de clusters HIGH/CRITICAL
+# (detection/auditoria_high.py). Solo lectura; no toca scoring/bandas/atribución.
+# Límites de rendimiento: se auditan únicamente clusters >= min_score y sus eventos.
+auditoria:
+  min_score: 60
+  max_clusters: 200          # máx. de clusters auditados por ejecución
+  max_events_per_cluster: 40 # máx. de eventos leídos por cluster (muestra)
+  max_text_len: 280          # máx. de caracteres por texto
+  max_urls_per_cluster: 200  # máx. de URLs para contar dominios distintos
+  max_seconds: 30            # timeout de la ejecución (corta y marca truncated)
+  sample_seed: 20260924      # semilla para muestreo determinista (validación ciega)

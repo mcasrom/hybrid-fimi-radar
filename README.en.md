@@ -68,6 +68,25 @@ H6 no conclusive evidence.
 
 Hypotheses **do not change the score**; they are an informational reading.
 
+### Auditing high signals (HIGH/CRITICAL)
+
+So that every high signal can be reviewed **without claiming it is FIMI**, `detection/auditoria_high.py`
+produces an auditable record for each cluster with score ≥60: accounts, events, distinct URLs/domains,
+time window, components, k-core, **narrative role** and **alternative explanations**, plus the
+**chain** that separates *observable coordination* (measured) from *inauthenticity*, *intent* and
+*foreign dimension* (which the radar cannot confirm on its own) and from *confirmed FIMI* (which needs
+independent evidence). It orders human review by priority.
+
+It is **read-only and lightweight**: it audits only clusters ≥ threshold and their events, with
+configurable limits (`auditoria` in `config.yaml`: max clusters, events and text length, timeout,
+seed). No network, LLMs or heavy dependencies.
+
+```bash
+python detection/auditoria_high.py --formato csv --out auditoria_high.csv
+python detection/auditoria_high.py --tema <topic> --limite 50
+python detection/auditoria_high.py --formato blind --muestra 40 --seed 7 --out blind.csv
+```
+
 ## 4. Current status
 
 Latest run snapshot (24 Sep 2026, **v0.2**):
