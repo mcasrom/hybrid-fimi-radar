@@ -138,6 +138,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--to", default=None)
+    ap.add_argument("--todos-email", action="store_true",
+                    help="envía a TODOS los suscriptores email confirmados (prueba), ignorando frecuencia")
     ap.add_argument("--db", default=str(DB))
     args = ap.parse_args()
 
@@ -159,6 +161,9 @@ def main():
         pass
     if args.to:
         destinos = [{"id": None, "destino": args.to}]
+    elif args.todos_email:
+        destinos = [dict(r) for r in con.execute(
+            "SELECT id,destino FROM suscripciones WHERE canal='email' AND confirmado=1")]
     else:
         destinos = [dict(r) for r in con.execute(
             "SELECT id,destino FROM suscripciones WHERE canal='email' AND confirmado=1"
