@@ -283,7 +283,7 @@ def main():
             print(f"      subtipo: falló ({e})", file=sys.stderr)
         # Concentración de fuente: ¿una sola cuenta o dominio domina el cluster?
         # (distingue un feed personal de verdadera coordinación entre cuentas).
-        _dac, _ddc = 0.0, 0.0
+        _dac, _ddc, _ven = 0.0, 0.0, 0.0
         try:
             if sub_clustered is not None:
                 _sub = sub_clustered.loc[sub_clustered["cluster"] == label]
@@ -296,6 +296,11 @@ def main():
                         _dc[_h] = _dc.get(_h, 0) + 1
                 _dac = float(_ac.iloc[0]) / _n if len(_ac) else 0.0
                 _ddc = (max(_dc.values()) / _n) if _dc else 0.0
+                _tcol = next((c for c in ("ts", "timestamp") if c in _sub.columns), None)
+                if _tcol is not None:
+                    _tvv = _sub[_tcol].dropna()
+                    if len(_tvv):
+                        _ven = float(max(_tvv) - min(_tvv)) / 3600.0
         except Exception as e:
             print(f"      explicaciones: concentración falló ({e})", file=sys.stderr)
         _hyp_codes = [h["hypothesis"] for h in hyp] if hyp else []
@@ -310,7 +315,7 @@ def main():
             single_piece_cap=es_eco, boilerplate_frac=_bpf,
             top_hypothesis=(_hyp_codes[0] if _hyp_codes else ""), hypotheses=_hyp_codes,
             narrative_role=rol["dominant"],
-            dominant_account_frac=_dac, dominant_domain_frac=_ddc)
+            dominant_account_frac=_dac, dominant_domain_frac=_ddc, ventana_horas=_ven)
         summary[label]["alternative_explanations"] = expl
         summary[label]["narrative_subtype"] = rol
 

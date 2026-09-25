@@ -26,6 +26,7 @@ CODES = [
     ("mainstream_echo", "Eco de prensa"),
     ("single_piece_echo", "Eco de una sola pieza"),
     ("cross_account_synchrony", "Reproducción coordinada entre cuentas"),
+    ("sustained_amplification", "Amplificación sostenida"),
     ("organic_viral", "Viralidad orgánica"),
     ("synchronized_without_operator", "Sincronización sin operador identificable"),
     ("automated_non_malicious", "Automatización no maliciosa"),
@@ -62,6 +63,7 @@ def para_cluster(
     narrative_role="",
     dominant_account_frac=0.0,
     dominant_domain_frac=0.0,
+    ventana_horas=0.0,
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
@@ -107,18 +109,35 @@ def para_cluster(
         "distinct_urls": int(n_urls), "n_events": int(n_events),
     }))
 
-    # 2b. Reproducción coordinada entre cuentas DISTINTAS: muchas cuentas, ninguna
-    # domina y comparten el mismo contenido. Es el patrón que SÍ merece revisión.
-    if accounts >= 5 and dominant_account_frac < 0.4 and dominant_domain_frac < 0.5 and content_similarity >= 70:
+    # 2b. Coordinación entre cuentas DISTINTAS, separando RÁFAGA de ECO SOSTENIDO.
+    # Muchas cuentas, ninguna dominante, mismo contenido. La VENTANA decide:
+    #   - <= 24 h  -> ráfaga sincronizada (merece revisión, prioridad alta)
+    #   - > 72 h   -> amplificación sostenida (misma pieza empujada durante días/semanas)
+    _core = (accounts >= 5 and dominant_account_frac < 0.4
+             and dominant_domain_frac < 0.5 and content_similarity >= 70)
+    if _core and ventana_horas <= 24:
         st = "supported"
-    elif accounts >= 3 and dominant_account_frac < 0.5 and content_similarity >= 50:
+    elif _core and ventana_horas <= 72:
         st = "plausible"
     else:
         st = "ruled_out"
     items.append(_item("cross_account_synchrony", st, {
-        "accounts": int(accounts),
+        "accounts": int(accounts), "ventana_horas": round(float(ventana_horas), 1),
         "dominant_account_fraction": round(float(dominant_account_frac), 2),
         "dominant_domain_fraction": round(float(dominant_domain_frac), 2),
+        "content_similarity": round(float(content_similarity), 1),
+    }))
+
+    # 2c. Amplificación sostenida: mismo patrón pero en ventana LARGA (>72 h). No es
+    # sincronía (no es una ráfaga); es una pieza empujada durante días/semanas.
+    if _core and ventana_horas > 72:
+        st = "supported"
+    elif accounts >= 3 and dominant_account_frac < 0.5 and content_similarity >= 50 and ventana_horas > 72:
+        st = "plausible"
+    else:
+        st = "ruled_out"
+    items.append(_item("sustained_amplification", st, {
+        "accounts": int(accounts), "ventana_horas": round(float(ventana_horas), 1),
         "content_similarity": round(float(content_similarity), 1),
     }))
 

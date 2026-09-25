@@ -123,6 +123,18 @@ def test_cross_account_synchrony_soportado():
     assert principal(para_cluster(**comp)) == "cross_account_synchrony"
 
 
+def test_burst_vs_sustained_amplification():
+    base = dict(accounts=9, dominant_account_frac=0.11, dominant_domain_frac=0.11,
+                content_similarity=100.0)
+    burst = _by_code(para_cluster(**_base(**base, ventana_horas=2)))
+    assert burst["cross_account_synchrony"]["status"] == "supported"
+    assert burst["sustained_amplification"]["status"] == "ruled_out"
+    slow = _by_code(para_cluster(**_base(**base, ventana_horas=600)))
+    assert slow["cross_account_synchrony"]["status"] == "ruled_out"     # no es ráfaga
+    assert slow["sustained_amplification"]["status"] == "supported"     # es eco sostenido
+    assert principal(para_cluster(**_base(**base, ventana_horas=600))) == "sustained_amplification"
+
+
 def test_single_source_feed_es_benigno():
     from detection.auditoria_high import review_priority
     assert review_priority("HIGH", 10, [{"code": "single_source_feed", "status": "supported"}]) == "low"
