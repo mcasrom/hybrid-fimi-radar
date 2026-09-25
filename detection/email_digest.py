@@ -160,7 +160,7 @@ def main(dry_run: bool = False):
         sid = row["id"]
         baja = f"{BASE_URL}/api/baja?id={sid}"
         html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
-                '<h2>📡 Radar FIMI · Resumen semanal</h2>'
+                '<h2>📡 Observatorio · Resumen semanal</h2>'
                 '<p>Estado actual de tus temas (score, HIGH y top cluster):</p>'
                 + "".join(lines) +
                 f'<p><a href="{BASE_URL}" style="background:#c2410c;color:#fff;padding:9px 16px;'
@@ -168,7 +168,7 @@ def main(dry_run: bool = False):
                 f'<p style="font-size:.82rem;color:#64748b">Recibes esto porque te suscribiste en fimi.viajeinteligencia.com · 1 email/semana · <a href="{baja}">Darme de baja</a></p>'
                 '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com · semilla única</p></div>')
         if not dry_run:
-            ok = send_email(row["destino"], "Radar FIMI · Resumen semanal", html)
+            ok = send_email(row["destino"], "Observatorio · Resumen semanal", html)
             print(f"[digest] {'ok' if ok else 'FAIL'} -> {row['destino']}")
         else:
             print(f"[digest][dry] -> {row['destino']}")
