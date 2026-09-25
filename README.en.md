@@ -1,14 +1,15 @@
-# FIMI Radar — Coordination and amplification signal radar
+# Coordination and amplification signal observatory (FIMI domain)
 
-## 1. What FIMI Radar is
+## 1. What it is
 
-**Coordination and amplification signal radar:** an OSINT system that detects, from
+**Coordination and amplification signal observatory:** an OSINT system that detects, from
 public data, **observable patterns of synchronisation, content repetition and structural
 clustering** across social platforms and the press around a set of topics (southern
 border & Morocco, Middle East, elections, energy, AI, Sahel, hybrid threats in Spain,
 defence…). It looks at **who pushes the same message, at the same time and in the same
 way**, to surface patterns potentially consistent with coordinated influence or
-manipulation activity (FIMI).
+manipulation activity (FIMI). FIMI is the **domain** being observed, not a detection: the
+observatory **does not** confirm campaigns or attribute actors.
 
 The tool **does not attribute an actor or confirm inauthenticity or a foreign campaign
 by itself**: its outputs should be interpreted as **behavioural signals requiring

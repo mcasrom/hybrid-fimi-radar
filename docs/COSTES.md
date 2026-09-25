@@ -1,6 +1,6 @@
-# Costes del Radar FIMI — desglose
+# Costes del observatorio — desglose
 
-Transparencia de costes del **Radar FIMI** (orientativo, 2026). El proyecto se sostiene
+Transparencia de costes del **Observatorio** (orientativo, 2026). El proyecto se sostiene
 con donaciones ([Ko-fi](https://ko-fi.com/m_castillo)) y, si se conceden, con financiación
 de software libre (NLnet). **No vende ni cede datos.** Esta página es el desglose completo
 al que apunta `apoyo.html`.
@@ -26,7 +26,7 @@ anotan al final.
 
 ## Quién mantiene esto
 
-El Radar FIMI lo desarrolla y mantiene **una sola persona, en su tiempo libre** — no es un
+El Observatorio lo desarrolla y mantiene **una sola persona, en su tiempo libre** — no es un
 proyecto financiado ni el producto de una empresa. El mantenimiento real (auditar el motor
 de detección, corregir sesgos cuando aparecen, revisar clusters, responder issues, escribir
 documentación) ocupa habitualmente **varias horas a la semana**, sin coste que se facture a

@@ -1,14 +1,15 @@
-# FIMI Radar — Radar de señales de coordinación y amplificación
+# Observatorio de señales de coordinación y amplificación (ámbito FIMI)
 
-## 1. Qué es FIMI Radar
+## 1. Qué es
 
-**Radar de señales de coordinación y amplificación:** sistema OSINT que detecta, con
+**Observatorio de señales de coordinación y amplificación:** sistema OSINT que detecta, con
 datos públicos, **patrones observables de sincronización, repetición de contenido y
 agrupación estructural** de la conversación en redes sociales y prensa sobre un conjunto
 de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
 amenazas híbridas en España, defensa…). Mira **quién empuja el mismo mensaje, a la vez
 y de la misma forma**, para señalar patrones potencialmente compatibles con actividades
-de influencia o manipulación coordinada (FIMI).
+de influencia o manipulación coordinada (FIMI). FIMI es el **ámbito** que se observa,
+no una detección: el observatorio **no** confirma campañas ni atribuye actores.
 
 La herramienta **no atribuye actor ni confirma inautenticidad o campaña extranjera por
 sí sola**: sus salidas son **señales conductuales** que requieren validación adicional,
