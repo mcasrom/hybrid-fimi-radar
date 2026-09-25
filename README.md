@@ -51,11 +51,20 @@ y RSS), las normaliza y calcula componentes estructurales por **cluster** de cue
 > retiró el 24/Sep-2026. La usa el módulo de atribución (hipótesis H3).
 
 Cada cluster publica además **`alternative_explanations`**: explicaciones alternativas con
-estado (`supported` / `plausible` / `ruled_out`) y la **evidencia** que lo motiva — eco de
-prensa, eco de una sola pieza, viralidad orgánica, sincronización sin operador, automatización
-no maliciosa, movilización legítima, artefacto del grafo y *sin explicación concluyente*. No es
-una clasificación de "la verdad": es material para la revisión humana, visible en el dashboard,
-la API y las exportaciones.
+estado (`supported` / `plausible` / `ruled_out`) y la **evidencia** que lo motiva. Distingue,
+entre otras, dos situaciones que **no deben confundirse**:
+
+- **`single_source_feed` — «Feed de una sola fuente»**: una **cuenta o un dominio concentran
+  casi todo** (p. ej. alguien que publica su propio sitio). No es coordinación entre cuentas
+  distintas → **prioridad baja**.
+- **`cross_account_synchrony` — «Reproducción coordinada entre cuentas»**: **varias cuentas
+  distintas, ninguna dominante, con el mismo contenido**. Este es el patrón que **sí merece
+  revisión humana** → **prioridad alta**.
+
+Y también eco de prensa, eco de una sola pieza, viralidad orgánica, sincronización sin operador,
+automatización no maliciosa, movilización legítima, artefacto del grafo y *sin explicación
+concluyente*. No es una clasificación de "la verdad": es material para la revisión humana,
+visible en el dashboard, la API y las exportaciones.
 
 Cada cluster publica además un **rol narrativo** (`narrative_subtype`) que separa *hablar de
 FIMI* — `official_response` (respuesta oficial), `incident_report` (reporte de incidente),

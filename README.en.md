@@ -52,11 +52,19 @@ normalises them and computes structural components per account **cluster**:
 > and was removed on 24-Sep-2026. It feeds the attribution module (hypothesis H3).
 
 Each cluster also publishes **`alternative_explanations`**: alternative explanations with a
-status (`supported` / `plausible` / `ruled_out`) and the **evidence** behind it — mainstream
-echo, single-piece echo, organic virality, synchronisation without an operator, non-malicious
-automation, legitimate mobilisation, graph artefact and *no conclusive explanation*. It is not
-a "truth" classifier: it is material for human review, shown in the dashboard, the API and the
-exports.
+status (`supported` / `plausible` / `ruled_out`) and the **evidence** behind it. Among others,
+it separates two situations that **must not be confused**:
+
+- **`single_source_feed`** — a single **account or domain concentrates almost everything**
+  (e.g. someone posting their own site). Not coordination between distinct accounts → **low
+  priority**.
+- **`cross_account_synchrony`** — **several distinct accounts, none dominant, with the same
+  content**. This is the pattern that **does deserve human review** → **high priority**.
+
+Plus mainstream echo, single-piece echo, organic virality, synchronisation without an operator,
+non-malicious automation, legitimate mobilisation, graph artefact and *no conclusive
+explanation*. It is not a "truth" classifier: it is material for human review, shown in the
+dashboard, the API and the exports.
 
 Each cluster also publishes a **narrative role** (`narrative_subtype`) separating *talking about
 FIMI* — `official_response`, `incident_report`, `meta_analysis` — from *possible FIMI narrative*
