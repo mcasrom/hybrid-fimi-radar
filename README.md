@@ -95,10 +95,11 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 
 ## 4. Estado actual
 
-Snapshot del último run (24/Sep/2026, **v0.2**):
+Snapshot del último run (25/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
+muestra el valor vivo):
 
 - **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
-- **~113.500 eventos** y **824 clusters** (ventana de 90 días).
+- **~118.500 eventos** y **841 clusters** (ventana de 90 días).
 - **68 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
@@ -128,7 +129,7 @@ sobre todos los temas activos de `config.yaml`; el dashboard se publica como HTM
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python tests/generate_synthetic.py                 # datos sintéticos de validación
-python detection/run_fimi.py --tema frontera_sur   # pipeline de un tema
+python detection/run_fimi.py --input data/radar.db --tema frontera_sur   # pipeline de un tema
 python detection/gen_fimi_html.py                  # dashboard estático
 ```
 
