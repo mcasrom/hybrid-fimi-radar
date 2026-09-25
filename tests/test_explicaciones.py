@@ -113,6 +113,16 @@ def test_single_source_feed_soportado():
     assert principal(para_cluster(**_base(dominant_account_frac=0.8))) == "single_source_feed"
 
 
+def test_syndicated_wire_no_es_coordinacion():
+    # mismo titular, cada cuenta una vez y cuentas-MEDIO (handles tipo dominio)
+    comp = _base(accounts=5, dominant_account_frac=0.2, dominant_domain_frac=0.2,
+                 content_similarity=100.0, media_account_frac=1.0)
+    items = _by_code(para_cluster(**comp))
+    assert items["syndicated_wire"]["status"] == "supported"
+    assert items["cross_account_synchrony"]["status"] == "ruled_out"
+    assert principal(para_cluster(**comp)) == "syndicated_wire"
+
+
 def test_cross_account_synchrony_soportado():
     # muchas cuentas, ninguna domina, mismo contenido -> señal que merece revisión
     comp = _base(accounts=9, dominant_account_frac=0.11, dominant_domain_frac=0.11,

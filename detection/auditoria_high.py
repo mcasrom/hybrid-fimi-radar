@@ -62,8 +62,8 @@ DEFAULTS = {
 # Explicaciones que, si están `supported`, rebajan la prioridad de revisión:
 # describen difusión legítima / artefactos, no una posible operación.
 BENIGN_SUPPORTED = {
-    "single_source_feed", "mainstream_echo", "single_piece_echo", "organic_viral",
-    "automated_non_malicious", "legitimate_mobilization", "graph_artifact",
+    "single_source_feed", "syndicated_wire", "mainstream_echo", "single_piece_echo",
+    "organic_viral", "automated_non_malicious", "legitimate_mobilization", "graph_artifact",
 }
 
 # Evidencia que el radar NO produce por sí solo (cadena señal->FIMI).

@@ -25,6 +25,7 @@ CODES = [
     ("single_source_feed", "Feed de una sola fuente"),
     ("mainstream_echo", "Eco de prensa"),
     ("single_piece_echo", "Eco de una sola pieza"),
+    ("syndicated_wire", "Sindicación de prensa"),
     ("cross_account_synchrony", "Reproducción coordinada entre cuentas"),
     ("sustained_amplification", "Amplificación sostenida"),
     ("organic_viral", "Viralidad orgánica"),
@@ -64,6 +65,7 @@ def para_cluster(
     dominant_account_frac=0.0,
     dominant_domain_frac=0.0,
     ventana_horas=0.0,
+    media_account_frac=0.0,
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
@@ -109,12 +111,24 @@ def para_cluster(
         "distinct_urls": int(n_urls), "n_events": int(n_events),
     }))
 
+    # 2a. Sindicación de prensa: mismo titular, cada cuenta publica UNA vez y las
+    # cuentas son MEDIOS (handles tipo dominio). No es coordinación: es un teletipo
+    # republicado por una red de medios (p. ej. States Newsroom).
+    _synd = (content_similarity >= 70 and accounts >= 4 and media_account_frac >= 0.4
+             and dominant_account_frac < 0.6)
+    st = "supported" if _synd else "ruled_out"
+    items.append(_item("syndicated_wire", st, {
+        "media_account_fraction": round(float(media_account_frac), 2), "accounts": int(accounts),
+    }))
+
     # 2b. Coordinación entre cuentas DISTINTAS, separando RÁFAGA de ECO SOSTENIDO.
     # Muchas cuentas, ninguna dominante, mismo contenido. La VENTANA decide:
     #   - <= 24 h  -> ráfaga sincronizada (merece revisión, prioridad alta)
     #   - > 72 h   -> amplificación sostenida (misma pieza empujada durante días/semanas)
+    # No aplica si es sindicación de prensa ni automatización por plantilla.
     _core = (accounts >= 5 and dominant_account_frac < 0.4
-             and dominant_domain_frac < 0.5 and content_similarity >= 70)
+             and dominant_domain_frac < 0.5 and content_similarity >= 70
+             and not _synd)
     if _core and ventana_horas <= 24:
         st = "supported"
     elif _core and ventana_horas <= 72:
