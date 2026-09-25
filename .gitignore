@@ -46,3 +46,4 @@ data/descarte_estado.json
 data/eventos_sin_tema.csv
 # estado de rotación de publicación en redes (runtime)
 data/rotacion_estado.json
+data/vigilancia_estado.json
