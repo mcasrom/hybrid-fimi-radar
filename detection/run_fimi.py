@@ -6,7 +6,7 @@ Flujo (del prompt):
   -> SCORING -> ATTRIBUTION -> SQLITE -> REPORT -> DASHBOARD
 
 Agnóstico al actor: primero la anomalía, después la atribución (si procede).
-Uso: python -m detection.run_fimi --input data/raw/events.csv --db data/radar.db
+Uso: python -m detection.run_fimi --input data/radar.db --db data/radar.db --tema <tema>
 """
 import json
 import sqlite3
@@ -70,11 +70,25 @@ def _fase_weights(cfg, tema):
 def main():
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default=str(ROOT / "data" / "raw" / "events.csv"))
+    # Default SEGURO: la BD activa (como el cron), NO data/raw/events.csv. El CSV
+    # de data/raw es el dataset SINTÉTICO de los tests; usarlo por accidente
+    # clusteriza datos falsos y borra los clusters reales del tema.
+    ap.add_argument("--input", default=str(ROOT / "data" / "radar.db"),
+                    help="BD SQLite (recomendado) o CSV. Por defecto data/radar.db.")
     ap.add_argument("--db", default=str(ROOT / "data" / "radar.db"))
     ap.add_argument("--config", default=None)
     ap.add_argument("--tema", default=None, help="Tema/dominio (frontera_sur, geopolitica_ue_marruecos, politica_nacional). Default: frontera_sur")
     args = ap.parse_args()
+
+    # Guarda: no seguir si el input no existe (evita crear/clusterizar en vacío).
+    if not Path(args.input).exists():
+        print(f"ERROR: --input no existe: {args.input}", file=sys.stderr)
+        sys.exit(2)
+    # Guarda: avisar si se usa un CSV (p. ej. el sintético de data/raw).
+    if str(args.input).endswith(".csv"):
+        print("AVISO: input CSV. Si es data/raw/events.csv es el dataset SINTÉTICO "
+              "de los tests; NO lo uses para producción (borraría clusters reales).",
+              file=sys.stderr)
 
     cfg = load_config(args.config)
     t0 = time.time()

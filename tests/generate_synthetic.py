@@ -12,11 +12,18 @@ El detector NO debe conocer estos grupos. Salida: events.csv (sin etiquetas) +
 ground_truth.csv (solo para evaluación).
 """
 import csv
+import os
 import random
+import sys
 from pathlib import Path
 
 random.seed(7)
-OUT = Path(__file__).parent.parent / "data" / "raw"
+# Directorio de salida: variable de entorno GEN_SYNTHETIC_OUT o argv[1]; por
+# defecto data/raw (donde lo espera el CI). Los tests lo redirigen a un temporal
+# para NO escribir en data/raw de producción al correr pytest en el servidor.
+_DEFAULT_OUT = Path(__file__).parent.parent / "data" / "raw"
+OUT = Path(os.environ.get("GEN_SYNTHETIC_OUT")
+           or (sys.argv[1] if len(sys.argv) > 1 else _DEFAULT_OUT))
 OUT.mkdir(parents=True, exist_ok=True)
 
 WORDS = ["frontera", "migracion", "Ceuta", "Melilla", "valla", "asilo", "crisis",

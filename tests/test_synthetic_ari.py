@@ -22,8 +22,10 @@ Uso:  python tests/test_synthetic_ari.py      (exit != 0 si falla el umbral)
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -44,15 +46,16 @@ FP_RATE_MAX = 0.01                 # ≤1% de cuentas orgánicas (A/D) en cluste
 #                                    detecta fallos gruesos, no ruido del fixture.
 
 
-def _generate() -> None:
-    """Ejecuta el generador sintético (escribe data/raw/events.csv + ground_truth.csv)."""
+def _generate(out_dir) -> None:
+    """Genera el dataset sintético en `out_dir` (NO escribe data/raw de producción)."""
+    env = {**os.environ, "GEN_SYNTHETIC_OUT": str(out_dir)}
     subprocess.run(
         [sys.executable, str(ROOT / "tests" / "generate_synthetic.py")],
-        check=True, capture_output=True,
+        check=True, capture_output=True, env=env,
     )
 
 
-def _run_pipeline():
+def _run_pipeline(events_csv):
     """Corre el detector real y devuelve la tabla por cuenta con cluster_label."""
     from detection.run_fimi import load_config
     from normalizer.ingest import load, normalize
@@ -63,7 +66,7 @@ def _run_pipeline():
     from clustering.clustering import cluster_by_components
 
     cfg = load_config()
-    df = normalize(load(ROOT / "data" / "raw" / "events.csv"))
+    df = normalize(load(str(events_csv)))
     feat = build_features(df, cfg)
     for a in feat.index:
         feat.loc[a, "bot_signal"], _ = bot_signal_score(feat.loc[a].to_dict())
@@ -75,10 +78,11 @@ def _run_pipeline():
     return cluster_by_components(scored, edges_df, cfg, tema="synthetic")
 
 
-def evaluate() -> dict:
-    _generate()
-    merged = _run_pipeline()
-    gt = pd.read_csv(ROOT / "data" / "raw" / "ground_truth.csv")
+def evaluate(out_dir) -> dict:
+    out_dir = Path(out_dir)
+    _generate(out_dir)
+    merged = _run_pipeline(out_dir / "events.csv")
+    gt = pd.read_csv(out_dir / "ground_truth.csv")
     gt_map = dict(zip(gt["author"], gt["cluster"]))
 
     pred = {}
@@ -120,9 +124,9 @@ def evaluate() -> dict:
     }
 
 
-def test_synthetic_ari():
+def test_synthetic_ari(tmp_path):
     """Gate: el detector separa B/C/F (ARI) y no inventa clusters en A/D (FP)."""
-    r = evaluate()
+    r = evaluate(tmp_path)
     print(json.dumps(r, ensure_ascii=False, indent=2))
     assert r["ari"] >= ARI_MIN, (
         f"ARI {r['ari']} < {ARI_MIN}: el detector no separa bien las campañas B/C/F"
@@ -133,7 +137,8 @@ def test_synthetic_ari():
 
 
 def main() -> int:
-    r = evaluate()
+    with tempfile.TemporaryDirectory() as d:
+        r = evaluate(d)
     print(json.dumps(r, ensure_ascii=False, indent=2))
     ok = r["ari"] >= ARI_MIN and r["fp_rate"] <= FP_RATE_MAX
     print(f"\n[ari] ARI={r['ari']} (min {ARI_MIN}) · FP={r['fp']} "
