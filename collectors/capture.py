@@ -208,6 +208,50 @@ def store_sqlite(events):
     return n
 
 
+def refresh_bsky_engagement(days=7, cap=300):
+    """Refresca likes/reposts/replies de los posts de Bluesky recientes (getPosts).
+
+    El engagement de un post crece con el tiempo y `searchPosts` deja de
+    devolverlo al envejecer. Aquí se consulta `app.bsky.feed.getPosts` por los
+    `bsky_uri` guardados (hasta `cap`, de los últimos `days` días), en lotes de 25.
+    """
+    from normalizer.schema import get_conn
+    jwt = _bsky_login()
+    if not jwt:
+        print("  bsky refresh: sin credenciales")
+        return 0
+    con = get_conn(DB)
+    cutoff = int(time.time()) - days * 86400
+    rows = con.execute(
+        "SELECT bsky_uri FROM events WHERE source='bluesky' AND bsky_uri IS NOT NULL"
+        " AND timestamp >= ? GROUP BY bsky_uri ORDER BY MAX(id) DESC LIMIT ?",
+        (cutoff, cap)).fetchall()
+    uris = [r[0] for r in rows if r[0]]
+    import urllib.parse
+    n = 0
+    for i in range(0, len(uris), 25):
+        chunk = uris[i:i + 25]
+        try:
+            q = urllib.parse.urlencode([("uris", u) for u in chunk])
+            req = urllib.request.Request(
+                "https://api.bsky.app/xrpc/app.bsky.feed.getPosts?" + q)
+            req.add_header("Authorization", "Bearer " + jwt)
+            req.add_header("User-Agent", UA)
+            data = json.loads(urllib.request.urlopen(req, timeout=30).read().decode())
+            for post in data.get("posts", []):
+                con.execute(
+                    "UPDATE events SET bsky_likes=?, bsky_reposts=?, bsky_replies=?"
+                    " WHERE bsky_uri=?",
+                    (post.get("likeCount", 0), post.get("repostCount", 0),
+                     post.get("replyCount", 0), post.get("uri")))
+                n += 1
+        except Exception as e:
+            print(f"  bsky refresh error: {e}")
+    con.commit()
+    con.close()
+    return n
+
+
 def grab_google_news(query, n=50):
     """Titulares reales de Google News RSS (sin clave)."""
     out = []
@@ -485,6 +529,13 @@ def main():
     total = store_sqlite(uniq)
     print(f"  capturados {len(uniq)} eventos nuevos; total en SQLite: {total}")
     print(f"  guardado: {OUT}")
+
+    try:
+        _nr = refresh_bsky_engagement()
+        if _nr:
+            print(f"  engagement bluesky refrescado en {_nr} posts")
+    except Exception as _e:
+        print(f"  refresh engagement error: {_e}")
 
     if not args.no_analyze:
         print("[analisis] ejecutando run_analysis sobre SQLite ...")
