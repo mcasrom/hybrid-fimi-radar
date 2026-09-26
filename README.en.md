@@ -1,5 +1,7 @@
 # Coordination and amplification signal observatory (FIMI domain)
 
+*English · [Español](README.md)*
+
 ## 1. What it is
 
 **Coordination and amplification signal observatory:** an OSINT system that detects, from
@@ -109,11 +111,11 @@ URLs) plus the empty `label_*` columns for human annotation.
 
 ## 4. Current status
 
-Latest run snapshot (25 Sep 2026, **v0.2**; figures grow every cycle — the dashboard shows
+Latest run snapshot (26 Sep 2026, **v0.2**; figures grow every cycle — the dashboard shows
 the live value):
 
 - **9 active topics** (7 in production + 2 pilot: `elecciones`, `defensa_espana`).
-- **~118,500 events** and **841 clusters** (90-day window).
+- **~128,000 events** and **915 clusters** (90-day window).
 - **68 RSS feeds** + 2 platform searches, 3 public Telegram channels, 2 subreddits.
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - Latest release: **v0.2**.

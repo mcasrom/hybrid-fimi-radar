@@ -1,5 +1,7 @@
 # Observatorio de señales de coordinación y amplificación (ámbito FIMI)
 
+*[English](README.en.md) · Español*
+
 ## 1. Qué es
 
 **Observatorio de señales de coordinación y amplificación:** sistema OSINT que detecta, con
@@ -110,11 +112,11 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 
 ## 4. Estado actual
 
-Snapshot del último run (25/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
+Snapshot del último run (26/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
 - **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
-- **~118.500 eventos** y **841 clusters** (ventana de 90 días).
+- **~128.000 eventos** y **915 clusters** (ventana de 90 días).
 - **68 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
