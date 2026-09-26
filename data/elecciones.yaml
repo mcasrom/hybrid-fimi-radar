@@ -69,8 +69,12 @@
   estado: activo
   keywords:
   - bosnia
-  - izbori
-  - glasanje
+  - bosna
+  - herzegovina
+  - hercegovina
+  - sarajevo
+  - izbori bosna
+  - glasanje bosna
   - elecciones bosnia
   - generales bosnia
 - pais: Brasil
@@ -92,8 +96,9 @@
   estado: activo
   keywords:
   - bulgaria
-  - избори
-  - гласуване
+  - sofia
+  - избори българия
+  - гласуване българия
   - elecciones bulgaria
   - presidenciales bulgaria
 - pais: Serbia
@@ -103,7 +108,9 @@
   estado: activo
   keywords:
   - serbia
-  - izbori
-  - glasanje
+  - srbija
+  - beograd
+  - izbori srbija
+  - glasanje srbija
   - elecciones serbia
   - parlamentarias serbia

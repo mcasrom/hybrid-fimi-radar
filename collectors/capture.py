@@ -107,8 +107,10 @@ def _bsky_login(env_path=None):
         return None
 
 
-def grab_bluesky(query, n=50):
-    """Posts reales de Bluesky (API autenticada, sin clave comercial)."""
+def grab_bluesky(query, n=50, sort=None):
+    """Posts reales de Bluesky (API autenticada, sin clave comercial).
+
+    `sort`: None (relevancia/reciente) o "top" (más apoyados, para medir interés)."""
     out = []
     jwt = _bsky_login()
     if not jwt:
@@ -117,7 +119,8 @@ def grab_bluesky(query, n=50):
     try:
         import urllib.parse, re
         url = ("https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?q="
-               + urllib.parse.quote(query) + f"&limit={n}")
+               + urllib.parse.quote(query) + f"&limit={n}"
+               + (f"&sort={sort}" if sort else ""))
         req = urllib.request.Request(url)
         req.add_header("Authorization", "Bearer " + jwt)
         req.add_header("User-Agent", UA)
@@ -389,6 +392,14 @@ def main():
         for e in grab_bluesky(q):
             e["_temas"] = {tema}
             events.append(e)
+        # Pasada de interés: los posts más apoyados (sort=top). n pequeño para no
+        # inflar el corpus; lo normal ya viene en la pasada anterior (se deduplica).
+        try:
+            for e in grab_bluesky(q, n=10, sort="top"):
+                e["_temas"] = {tema}
+                events.append(e)
+        except Exception as _e:
+            print(f"  bluesky/{q} top error: {_e}")
     for q, tema in news_q:
         print(f"  google-news/{q} (tema={tema}) ...")
         for e in grab_google_news(q):
