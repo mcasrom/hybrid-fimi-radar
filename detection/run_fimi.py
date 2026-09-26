@@ -394,8 +394,14 @@ def main():
                     _keys |= lineage.member_keys(_ev.get("author"), _ev.get("url"))
                 new_members[_lab] = _keys
         _cycle_ts = int(time.time())
+        # Labels en banda ANOMALOUS+ este ciclo: fija first_band_ts (antigüedad
+        # de la alerta hacia delante) en el linaje.
+        _alert_labels = {
+            _l for _l, _s in summary.items()
+            if band_for(_s.get("overall_score", 0), bands) in ("ANOMALOUS", "HIGH", "CRITICAL")}
         _lin_rows = lineage.assign(prev_members, prev_lineage, new_members,
-                                   jaccard_min=_lin_min, cycle_ts=_cycle_ts)
+                                   jaccard_min=_lin_min, cycle_ts=_cycle_ts,
+                                   alert_labels=_alert_labels)
         lineage.write(conn, tema, _lin_rows, _cycle_ts)
         _sost = sum(1 for v in _lin_rows.values() if v[2] >= 2)
         print(f"      linaje: {len(_lin_rows)} clusters ({_sost} sostenidos de ciclos previos)")

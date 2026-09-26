@@ -4400,7 +4400,7 @@ def main():
     # --- Validación del modelo (D+B) ---
     from detection.validacion_card import _validacion_html
 
-    # --- KPI «Antigüedad de la alerta» (honesto: edad del evento más antiguo) ---
+    # --- KPI «Antigüedad de la alerta» (hacia delante, honesto) ---
     try:
         import importlib.util as _ilu_k
         _spec_k = _ilu_k.spec_from_file_location("kpi_alerta", ROOT / "detection" / "kpi_alerta.py")
@@ -4409,17 +4409,45 @@ def main():
         _kpi = _kpi_mod.kpi()
     except Exception as _e_kpi:
         _kpi = None
+        print(f"kpi_alerta: {_e_kpi}", file=sys.stderr)
     if _kpi:
+        _ag = _kpi.get("antiguedad") or {}
+        _rm = _kpi.get("rampa") or {}
+        _rc = _kpi.get("recencia") or {}
+        _pk = []
+        if _ag.get("n"):
+            _pk.append(
+                f"<p>Para los <b>{_ag['n']}</b> linajes <b>hoy en banda ANOMALOUS o superior</b>, "
+                f"la alerta lleva activa <b>mediana {_ag['mediana_h']:.0f} h</b> "
+                f"(p90 {_ag['p90_h']:.0f} h) desde que cruzó el umbral por primera vez. "
+                f"<span style='color:#94a3b8'>(registro instrumentado desde 26-Sep-2026; para los linajes "
+                f"previos se usa su primera observación, así que es una cota superior.)</span></p>")
+        else:
+            _pk.append("<p class='caption' style='color:#94a3b8'>Aún sin datos hacia delante "
+                       "(instrumentado desde 26-Sep-2026; se poblará en los próximos ciclos).</p>")
+        if _rm.get("n") and _rm.get("mediana_h"):
+            _pk.append(f"<p class='caption' style='font-size:.85rem;color:#64748b'>Tiempo medio desde la "
+                       f"primera observación hasta la alerta: <b>{_rm['mediana_h']:.0f} h</b> "
+                       f"(n={_rm['n']}).</p>")
+        if _kpi.get("mediana_h") is not None:
+            _pk.append(
+                f"<p class='caption' style='font-size:.85rem;color:#64748b'>Latencia interna "
+                f"(diagnóstico): un cluster en alerta arrastra eventos de <b>mediana "
+                f"{_kpi['mediana_h']:.0f} h</b> de antigüedad al detectarse "
+                f"(p90 {_kpi['p90_h']:.0f} h).</p>")
+        if _rc.get("mediana_pct") is not None:
+            _pk.append(f"<p class='caption' style='font-size:.85rem;color:#64748b'>Actividad viva: "
+                       f"de media, <b>{_rc['mediana_pct']:.0f}%</b> de los eventos de un cluster en "
+                       f"alerta son de los últimos 7 días.</p>")
         _kpi_alerta_html = (
-            "<div class='card' id='kpi-alerta'><h3>Antigüedad de la alerta (hasta la detección)</h3>"
-            f"<p>Para los <b>{_kpi['n']}</b> clusters en banda <b>ANOMALOUS o superior</b>, el tiempo entre el "
-            f"evento más antiguo del cluster y el ciclo que lo detectó es de <b>mediana {_kpi['mediana_h']:.0f} h</b> "
-            f"(p90 {_kpi['p90_h']:.0f} h · rango {_kpi['min_h']:.0f}–{_kpi['max_h']:.0f} h).</p>"
-            "<p class='caption' style='font-size:.8rem;color:#94a3b8'>"
-            "<b>Qué mide y qué NO:</b> mide la <b>edad del evento más antiguo</b> del cluster al ser detectado "
-            "(latencia interna del radar), <b>no</b> el «lead time» frente a una campaña real — eso exigiría "
-            "verdad de referencia externa que no tenemos. Un valor alto suele indicar que el cluster agrupa "
-            "contenido que llevaba días circulando, no que el radar tardara en verlo.</p></div>")
+            "<div class='card' id='kpi-alerta'><h3>Antigüedad de la alerta</h3>"
+            + "".join(_pk)
+            + "<p class='caption' style='font-size:.8rem;color:#94a3b8'>"
+            "<b>Qué mide y qué NO:</b> mide cuánto tiempo lleva activa una alerta <b>dentro del "
+            "radar</b>, no el «lead time» frente a una campaña real (exigiría verdad de referencia "
+            "externa que no tenemos). El pipeline alimenta el clustering con <b>todo el corpus del "
+            "tema, sin ventana temporal</b>, por lo que un cluster incluye el histórico de sus "
+            "cuentas: por eso la edad del evento más antiguo es alta.</p></div>")
     else:
         _kpi_alerta_html = ""
 

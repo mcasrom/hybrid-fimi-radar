@@ -112,7 +112,8 @@ CREATE TABLE IF NOT EXISTS cluster_lineage (
     last_seen INTEGER,
     n_ciclos INTEGER DEFAULT 1,
     jaccard REAL,
-    cycle_ts INTEGER
+    cycle_ts INTEGER,
+    first_band_ts INTEGER           -- ciclo en que el linaje cruzó ANOMALOUS por 1ª vez
 );
 CREATE INDEX IF NOT EXISTS idx_cluster_lineage_tema ON cluster_lineage(tema_id);
 
@@ -220,6 +221,7 @@ def get_conn(db_path):
     _ensure_column(conn, "assessments", "kcore_size", "kcore_size INTEGER")
     _ensure_column(conn, "clusters", "alternative_explanations", "alternative_explanations TEXT")
     _ensure_column(conn, "clusters", "narrative_subtype", "narrative_subtype TEXT")
+    _ensure_column(conn, "cluster_lineage", "first_band_ts", "first_band_ts INTEGER")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()
