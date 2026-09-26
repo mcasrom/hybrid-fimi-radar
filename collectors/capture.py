@@ -155,7 +155,11 @@ def grab_bluesky(query, n=50):
                         break
             out.append({"timestamp": ts, "author": f"bsky:{author}", "text": text[:500],
                         "url": url_found, "hashtags": tags, "mentions": mentions,
-                        "action": "post", "source": "bluesky"})
+                        "action": "post", "source": "bluesky",
+                        "bsky_uri": post.get("uri", ""),
+                        "like_count": post.get("likeCount", 0),
+                        "repost_count": post.get("repostCount", 0),
+                        "reply_count": post.get("replyCount", 0)})
         out = out[:n]
     except Exception as e:
         print(f"  bsky:{query} error: {e}")
@@ -171,10 +175,13 @@ def store_sqlite(events):
     from normalizer.schema import get_conn
     con = get_conn(DB)
     con.executemany(
-        "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text, tema_id)"
-        " VALUES (?,?,?,?,?,?,?)",
+        "INSERT OR IGNORE INTO events (timestamp, source, author, title, url, text, tema_id,"
+        " bsky_uri, bsky_likes, bsky_reposts, bsky_replies)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         [(e["timestamp"], e["source"], e.get("author", ""), e["text"][:120], e["url"], e["text"],
-          (e.get("tema_id") or (sorted(e.get("_temas"))[0] if e.get("_temas") else ""))) for e in events])
+          (e.get("tema_id") or (sorted(e.get("_temas"))[0] if e.get("_temas") else "")),
+          (e.get("bsky_uri") or None), e.get("like_count"), e.get("repost_count"),
+          e.get("reply_count")) for e in events])
     con.commit()
     # relacion many-to-many: a cada evento (por url o texto) sus temas
     for e in events:
@@ -185,6 +192,13 @@ def store_sqlite(events):
         if not row:
             continue
         eid = row[0]
+        # refrescar engagement (los likes crecen entre ciclos)
+        if e.get("like_count") is not None:
+            con.execute(
+                "UPDATE events SET bsky_uri=COALESCE(?, bsky_uri), bsky_likes=?,"
+                " bsky_reposts=?, bsky_replies=? WHERE id=?",
+                ((e.get("bsky_uri") or None), e.get("like_count"), e.get("repost_count"),
+                 e.get("reply_count"), eid))
         for t in temas:
             con.execute("INSERT OR IGNORE INTO event_temas (event_id, tema_id) VALUES (?,?)",
                         (eid, t))

@@ -23,7 +23,11 @@ CREATE TABLE IF NOT EXISTS events (
     tema_id TEXT DEFAULT 'frontera_sur',           -- dominio/alert tematico (multi-tema)
     raw_json TEXT,                                -- observación original (auditable)
     features_json TEXT,                           -- características extraídas
-    normalized INTEGER DEFAULT 1
+    normalized INTEGER DEFAULT 1,
+    bsky_uri TEXT,                                -- at:// del post (Bluesky)
+    bsky_likes INTEGER,                           -- engagement: likeCount
+    bsky_reposts INTEGER,                         -- engagement: repostCount
+    bsky_replies INTEGER                          -- engagement: replyCount
 );
 
 CREATE TABLE IF NOT EXISTS narratives (
@@ -222,6 +226,10 @@ def get_conn(db_path):
     _ensure_column(conn, "clusters", "alternative_explanations", "alternative_explanations TEXT")
     _ensure_column(conn, "clusters", "narrative_subtype", "narrative_subtype TEXT")
     _ensure_column(conn, "cluster_lineage", "first_band_ts", "first_band_ts INTEGER")
+    _ensure_column(conn, "events", "bsky_uri", "bsky_uri TEXT")
+    _ensure_column(conn, "events", "bsky_likes", "bsky_likes INTEGER")
+    _ensure_column(conn, "events", "bsky_reposts", "bsky_reposts INTEGER")
+    _ensure_column(conn, "events", "bsky_replies", "bsky_replies INTEGER")
     _ensure_events_unique(conn)
     _ensure_event_temas(conn)
     conn.commit()
