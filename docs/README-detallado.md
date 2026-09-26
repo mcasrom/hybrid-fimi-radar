@@ -602,6 +602,22 @@ Tres lecturas **descriptivas** (no tocan el scoring) que añaden contexto tempor
   `/var/www/fimi/alerts.xml`, anunciado con `<link rel="alternate" type="application/rss+xml">`
   en el dashboard.
 
+## Interés y tiempo de alerta (medidas hacia delante)
+
+Dos lecturas **descriptivas** (no tocan el scoring) para responder a «¿interesa?» y «¿cuánto lleva viva la alerta?»:
+
+- **Engagement Bluesky** (`collectors/capture.py`): se persiste **`bsky_uri`** + `likeCount`/`repostCount`/`replyCount`
+  por post en `events` (**`bsky_likes`/`bsky_reposts`/`bsky_replies`**). La captura guarda también los más apoyados
+  (`searchPosts` con `sort=top`) y **refresca** el engagement con `app.bsky.feed.getPosts` (lotes de 25). Mide
+  **audiencia**, no coordinación (ojo: la captura de Bluesky no es estable en el tiempo → no usar el volumen como
+  serie temporal sin control).
+- **Serie de interés** (`detection/interes_electoral.py`): agrega el engagement por proceso electoral
+  (`--dias`/`--proceso`/`--json`): posts, likes, reposts, respuestas, mediana, cuentas y serie semanal.
+- **KPI de alerta** (`detection/kpi_alerta.py`): la columna **`cluster_lineage.first_band_ts`** guarda el ciclo en
+  que el linaje **cruzó ANOMALOUS** (se hereda entre ciclos; no se resetea). El KPI **`antiguedad = now − first_band_ts`**
+  mide cuánto lleva viva una alerta (hacia delante) e incluye `rampa` (1ª observación→alerta) y `recencia` (% de
+  eventos en 7 d). **No** es *lead time* frente al mundo (exigiría verdad de referencia externa que no existe).
+
 ## Tipología estructural de clusters (apoyo al analista)
 
 `detection/tipologia.py` clasifica cada cluster por su **forma** (no su intención) a partir de
