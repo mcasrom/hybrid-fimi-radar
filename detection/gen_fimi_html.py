@@ -3101,9 +3101,17 @@ def main():
             "elecciones", ROOT / "detection" / "elecciones.py")
         _et_mod = _ilu_et.module_from_spec(_spec_et)
         _spec_et.loader.exec_module(_et_mod)
-        _elec_tema_html = {"elecciones": _et_mod._html(_et_mod.detectar(dias=90))}
-    except Exception:
+        _et_res = _et_mod.detectar(dias=90)
+        try:
+            _et_res["clusters_activos"] = sum(
+                1 for _c in clusters
+                if _vt(_c) == "elecciones" and _c["cluster_label"] not in _duplicados)
+        except Exception as _e:
+            print(f"elec clusters_activos: {_e}", file=sys.stderr)
+        _elec_tema_html = {"elecciones": _et_mod._html(_et_res)}
+    except Exception as e:
         _elec_tema_html = {}
+        print(f"elecciones html: {e}", file=sys.stderr)
     for i, _t in enumerate(temas):
         d = por_tema.get(_t, {"eventos": 0, "fuentes": 0, "clusters": []})
         _cl = d["clusters"]

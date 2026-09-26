@@ -181,6 +181,27 @@ def _cobertura(n_ev, n_fu):
     return "baja", "#dc2626"
 
 
+# Explicaciones alternativas "benignas" (eco/feed/sindicación/movilización): NO deben
+# ser el "top" representativo de un proceso electoral (sí cuentan para la cobertura).
+BENIGN = {
+    "single_source_feed", "syndicated_wire", "mainstream_echo", "single_piece_echo",
+    "sustained_amplification", "organic_viral", "automated_non_malicious",
+    "legitimate_mobilization", "graph_artifact",
+}
+
+
+def _principal_expl(raw):
+    """Código de la explicación principal soportada (o ''), desde el JSON del cluster."""
+    try:
+        items = json.loads(raw or "[]")
+    except Exception:
+        return ""
+    for it in items:
+        if it.get("status") == "supported":
+            return it.get("code", "")
+    return ""
+
+
 def detectar(dias=90, registro_path=None, conn=None):
     cerrar = conn is None
     if conn is None:
@@ -215,11 +236,12 @@ def detectar(dias=90, registro_path=None, conn=None):
         temas_ev.setdefault(r["event_id"], []).append(r["tema_id"])
     # Clusters actuales (coordinación) + firmas para enlazar evento↔cluster.
     clusters = {}
-    for r in conn.execute("SELECT id, cluster_label, tema_id, overall_score"
-                          " FROM clusters"):
+    for r in conn.execute("SELECT id, cluster_label, tema_id, overall_score,"
+                          " alternative_explanations FROM clusters"):
         sc = round(float(r["overall_score"] or 0), 1)
         clusters[r["id"]] = {"label": r["cluster_label"], "tema": r["tema_id"],
-                             "score": sc, "banda": _banda(sc, bands)}
+                             "score": sc, "banda": _banda(sc, bands),
+                             "alt": _principal_expl(r["alternative_explanations"])}
     sig_url, sig_ts = {}, {}
     for r in conn.execute("SELECT cluster_id, author, url, ts FROM cluster_events"):
         a = r["author"] or ""
@@ -288,21 +310,31 @@ def detectar(dias=90, registro_path=None, conn=None):
             if not p["ejemplo"]:
                 p["ejemplo"] = (e["title"] or e["text"] or "").strip()[:150]
 
+    vivas = [p for p in prep if p["estado"] != "cerrado"]
+    # Pass 1: top bruto por proceso -> detectar clusters "generales" (top de >=2 procesos).
+    _top_count = collections.Counter()
+    for p in vivas:
+        _raw = [clusters[c] for c in p["cluster_ids"] if c in clusters]
+        if _raw:
+            _top_count[max(_raw, key=lambda z: z["score"])["label"]] += 1
+    generales = {lab for lab, ct in _top_count.items() if ct >= 2}
     salida = []
-    for p in prep:
-        if p["estado"] == "cerrado":
-            continue
+    for p in vivas:
         n_ev, n_fu = p["n_ev"], len(p["fuentes"])
         cob, cob_col = _cobertura(n_ev, n_fu)
-        tops = [clusters[c] for c in p["cluster_ids"] if c in clusters]
-        top = max(tops, key=lambda z: z["score"]) if tops else None
+        _raw = [clusters[c] for c in p["cluster_ids"] if c in clusters]
+        top_bruto = max(_raw, key=lambda z: z["score"]) if _raw else None
+        # Top ESPECÍFICO: excluye clusters generales (top de varios procesos) y de
+        # explicación benigna (eco/feed/sindicación). Si no queda ninguno -> None.
+        _cands = [c for c in _raw if c["label"] not in generales and c.get("alt") not in BENIGN]
+        top = max(_cands, key=lambda z: z["score"]) if _cands else None
         salida.append({
             "pais": p["pais"], "nombre": p["nombre"], "fecha": p["fecha"],
             "idioma": p["idioma"], "fase": _fase(p["fecha"], ahora),
             "n_ev": n_ev, "fuentes": n_fu,
             "cobertura": cob, "cobertura_color": cob_col,
             "n_cluster": p["n_cluster"], "n_clusters": len(p["cluster_ids"]),
-            "top": top,
+            "top": top, "top_bruto": top_bruto,
             "actores": dict(p["actores"].most_common()),
             "cinco_d": dict(p["cinco_d"].most_common()),
             "temas": dict(p["temas"].most_common(4)),
@@ -405,11 +437,16 @@ def _coordinacion_html(e):
                 f"detectada</span> <span style='color:#94a3b8'>(0 de {e['n_ev']} eventos "
                 f"en clusters)</span>")
     tb = e["top"]
-    bcol = _BAND_COL.get(tb["banda"], "#64748b") if tb else "#64748b"
-    extra = (f" · mayor: <b style='color:{bcol}'>{tb['score']:.0f}/100 {tb['banda']}</b> "
-             f"<span style='color:#94a3b8'>({tb['label']}; puede ser un cluster "
-             f"general)</span>") if tb else ""
     pct = 100.0 * e["n_cluster"] / e["n_ev"]
+    if tb is None:
+        _br = e.get("top_bruto")
+        _brtxt = (f"mayor: <b>{_br['score']:.0f}/100 {_br['banda']}</b> ({_br['label']}) — "
+                  f"<b>no específico</b>: general o eco") if _br else "sin cluster específico"
+        return (f"<b style='color:#c2410c'>{e['n_cluster']} de {e['n_ev']}</b> ({pct:.0f}%) en "
+                f"<b>{e['n_clusters']}</b> cluster(s) · <span style='color:#94a3b8'>{_brtxt}</span>")
+    bcol = _BAND_COL.get(tb["banda"], "#64748b")
+    extra = (f" · mayor: <b style='color:{bcol}'>{tb['score']:.0f}/100 {tb['banda']}</b> "
+             f"<span style='color:#94a3b8'>({tb['label']}, específico)</span>")
     return (f"<b style='color:#c2410c'>{e['n_cluster']} de {e['n_ev']}</b> "
             f"({pct:.0f}%) en <b>{e['n_clusters']}</b> cluster(s){extra}")
 
@@ -426,18 +463,18 @@ def _html(res):
     _n_with_cl = sum(1 for e in els if e.get("n_cluster", 0) > 0)
     _n_cov = len(els) - _n_with_cl
     _n_clusters_total = sum(e.get("n_cluster", 0) for e in els)
-    _n_detect = len(res.get("elec_top", []))
+    _n_specific = sum(1 for e in els if e.get("top"))
     exec_txt = (
         f"<div style='margin:0 0 10px;padding:10px 13px;background:#f8fafc;"
         f"border:1px solid #e2e8f0;border-left:5px solid #64748b;border-radius:9px'>"
         f"<b style='color:#1e293b'>Resumen ejecutivo</b> · "
         f"<span style='color:#475569'>"
         f"De <b>{len(els)}</b> procesos en el calendario, "
-        f"<b>{_n_with_cl}</b> muestran coordinación detectada en su contenido "
-        f"({_n_clusters_total} eventos en clusters) y <b>{_n_cov}</b> tienen "
-        f"cobertura editorial sin señal de coordinación. "
-        f"El radar detectó <b>{_n_detect}</b> clusters asociados a estas "
-        f"elecciones. "
+        f"<b>{_n_with_cl}</b> tienen eventos en clusters del tema "
+        f"({_n_clusters_total} eventos; <b>en su mayoría cobertura o eco</b> de prensa). "
+        f"De ellos, <b style='color:#c2410c'>{_n_specific}</b> presentan una <b>señal de "
+        f"coordinación específica</b> entre cuentas distintas; el resto es difusión "
+        f"editorial. <b>{_n_cov}</b> no tienen clusters. "
         f'<span style="color:#b91c1c;font-weight:600">'
         f"⚠ 'menciona interferencia' = el texto contiene términos de "
         f"desinformación (es mención, no prueba de operación).</span></span>"
@@ -514,13 +551,15 @@ def _html(res):
     rs = res.get("elec_resumen") or {}
     resumen_txt = ""
     if rs:
+        _n_uni = res.get("clusters_activos", rs.get("n", 0))
         resumen_txt = (
             f"<div style='margin:0 0 6px'><span style='font-size:.78rem;"
             f"color:#334155;background:#fff7ed;border:1px solid #fed7aa;"
-            f"border-radius:7px;padding:2px 9px'>de <b>{rs.get('n', 0)}</b> clusters: "
-            f"<b>{rs.get('interferencia', 0)}</b> mencionan interferencia · "
+            f"border-radius:7px;padding:2px 9px'>de <b>{_n_uni}</b> clusters activos del "
+            f"tema <code>elecciones</code>: "
+            f"<b>{rs.get('interferencia', 0)}</b> mencionan interferencia (léxico) · "
             f"<b>{rs.get('cobertura', 0)}</b> cobertura electoral (se listan los "
-            f"principales, señal primero)</span></div>")
+            f"principales)</span></div>")
     det = ("<h4 style='margin:14px 0 4px;font-size:.9rem;color:#c2410c'>"
            "Coordinación detectada (clusters del tema <code>elecciones</code>)</h4>"
            "<p class='caption' style='margin:0 0 6px'>Coordinación observada en el "
