@@ -4589,7 +4589,7 @@ def main():
  {_jsonld_html}
  <meta property="og:type" content="website">
  <meta property="og:title" content="Observatorio de señales de coordinación y amplificación ({n_events} eventos, {n_clusters} clusters)">
-<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, geopolítica UE-Marruecos, política nacional). {n_clusters} clusters señalados hoy ({n_high} HIGH). Señal, no atribución.">
+<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, Oriente Medio, elecciones, inteligencia artificial). {n_clusters} clusters señalados hoy ({n_high} HIGH). Señal, no atribución.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
@@ -4597,7 +4597,7 @@ def main():
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Observatorio · Multi-tema">
+<meta name="twitter:title" content="Observatorio de señales de coordinación y amplificación">
 <meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
