@@ -7,8 +7,8 @@
 **Coordination and amplification signal observatory:** an OSINT system that detects, from
 public data, **observable patterns of synchronisation, content repetition and structural
 clustering** across social platforms and the press around a set of topics (southern
-border & Morocco, Middle East, elections, energy, AI, Sahel, hybrid threats in Spain,
-defence…). It looks at **who pushes the same message, at the same time and in the same
+border & Morocco, Middle East, elections, energy, AI, Sahel, defence and hybrid
+threats…). It looks at **who pushes the same message, at the same time and in the same
 way**, to surface patterns potentially consistent with coordinated influence or
 manipulation activity (FIMI). FIMI is the **domain** being observed, not a detection: the
 observatory **does not** confirm campaigns or attribute actors.
@@ -111,12 +111,13 @@ URLs) plus the empty `label_*` columns for human annotation.
 
 ## 4. Current status
 
-Latest run snapshot (26 Sep 2026, **v0.2**; figures grow every cycle — the dashboard shows
+Latest run snapshot (27 Sep 2026, **v0.2**; figures grow every cycle — the dashboard shows
 the live value):
 
-- **9 active topics** (7 in production + 2 pilot: `elecciones`, `defensa_espana`).
-- **~128,000 events** and **915 clusters** (90-day window).
-- **68 RSS feeds** + 2 platform searches, 3 public Telegram channels, 2 subreddits.
+- **8 active topics** (6 in production + 2 pilot: `elecciones`, `defensa_espana`).
+  `espana_amenazas_hibridas` was merged into `defensa_espana` on 27 Sep (renamed "Spain — defence and hybrid threats").
+- **~133,000 events** and **933 clusters** (90-day window).
+- **72 RSS feeds** + 2 platform searches, 3 public Telegram channels, 2 subreddits.
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - Latest release: **v0.2**.
 

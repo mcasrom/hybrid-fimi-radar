@@ -8,7 +8,7 @@
 datos públicos, **patrones observables de sincronización, repetición de contenido y
 agrupación estructural** de la conversación en redes sociales y prensa sobre un conjunto
 de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
-amenazas híbridas en España, defensa…). Mira **quién empuja el mismo mensaje, a la vez
+defensa y amenazas híbridas…). Mira **quién empuja el mismo mensaje, a la vez
 y de la misma forma**, para señalar patrones potencialmente compatibles con actividades
 de influencia o manipulación coordinada (FIMI). FIMI es el **ámbito** que se observa,
 no una detección: el observatorio **no** confirma campañas ni atribuye actores.
@@ -112,12 +112,13 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 
 ## 4. Estado actual
 
-Snapshot del último run (26/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
+Snapshot del último run (27/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
-- **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
-- **~128.000 eventos** y **915 clusters** (ventana de 90 días).
-- **68 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
+- **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
+  `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
+- **~133.000 eventos** y **933 clusters** (ventana de 90 días).
+- **72 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
 
