@@ -4574,8 +4574,9 @@ def main():
         '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de señales de coordinación y amplificación — eventos y clusters", '
         f'"description": "{n_events} eventos y {n_clusters} clusters de coordinación del ciclo actual (6h) del observatorio.", '
         '"isAccessibleForFree": true, "inLanguage": "es", '
+        '"license": "https://creativecommons.org/licenses/by/4.0/", '
         f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
-        '"creator": {"@type": "Organization", "name": "ViajeInteligencia / Observatorio"}}'
+        '"creator": {"@type": "Organization", "name": "ViajeInteligencia / Observatorio", "url": "https://fimi.viajeinteligencia.com/"}}'
         "]}</script>"
     )
 
