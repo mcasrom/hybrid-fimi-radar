@@ -19,6 +19,12 @@ ROOT = Path("/home/deploy/hybrid-fimi-radar")
 sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes (se corre como script)
 DB = ROOT / "data" / "radar.db"
 OUT = Path("/var/www/fimi/index.html")
+# El detalle de los clusters del "resto" (oculto, ~900 tarjetas) NO se incrusta en
+# index.html (lo llevaba a ~17,8 MB y rompía el "Request indexing" de GSC). Se
+# acumula aquí y se escribe aparte en `resto.html`, que el dashboard carga solo
+# al pulsar una barra. Index.html queda ligero; el detalle sigue disponible.
+POOL_ACC = []
+RESTO_OUT = Path("/var/www/fimi/resto.html")
 
 # Lista de medios establecidos (compartida con run_fimi/scoring):
 # ver detection/mainstream.py.
@@ -1487,8 +1493,9 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
                 f'(solo se muestra uno a la vez).</p>'
                 f'{bars}'
                 f'<div id="fimiRestoPane" style="display:none;margin-top:10px"></div>'
-                f'{pool}'
                 f'</details></div>')
+        # El detalle (pool) va a resto.html, no inline (ver POOL_ACC).
+        POOL_ACC.append(pool)
 
     return out
 
@@ -5103,20 +5110,33 @@ if ('serviceWorker' in navigator) {{
 
   // Detalle de los clusters WATCH/ANOMALOUS del gráfico de barras: al clicar
   // una barra, muestra su panel (uno solo a la vez) sin recargar la página.
+  // El detalle del "resto" vive en resto.html (~varios MB) y se carga SOLO la
+  // primera vez que se pulsa una barra. Así index.html queda ligero.
+  var _poolReq=null;
+  function _ensurePool(cb){{
+    if(document.getElementById('fimiRestoPool')){{ cb(); return; }}
+    if(_poolReq){{ _poolReq.then(cb); return; }}
+    _poolReq = fetch('resto.html').then(function(r){{ return r.text(); }}).then(function(h){{
+      var d=document.createElement('div'); d.id='fimiRestoPool'; d.hidden=true; d.innerHTML=h;
+      document.body.appendChild(d);
+    }}).catch(function(){{}}).then(cb);
+  }}
   function fimiResto(cid){{
-    var src=document.querySelector('.fimi-resto-detail[data-cid="'+cid+'"]');
-    var pane=document.getElementById('fimiRestoPane');
-    if(!src||!pane){{ return; }}
-    pane.innerHTML = src.innerHTML;
-    pane.style.display = 'block';
-    var bs=document.querySelectorAll('.fimi-bar');
-    for(var i=0;i<bs.length;i++){{
-      var b=bs[i];
-      var act = parseInt(b.getAttribute('data-cid'),10) === parseInt(cid,10);
-      b.style.background = act ? '#f1f5f9' : 'transparent';
-      b.style.borderColor = act ? '#c2410c' : 'transparent';
-    }}
-    pane.scrollIntoView({{behavior:'smooth', block:'nearest'}});
+    _ensurePool(function(){{
+      var src=document.querySelector('.fimi-resto-detail[data-cid="'+cid+'"]');
+      var pane=document.getElementById('fimiRestoPane');
+      if(!src||!pane){{ return; }}
+      pane.innerHTML = src.innerHTML;
+      pane.style.display = 'block';
+      var bs=document.querySelectorAll('.fimi-bar');
+      for(var i=0;i<bs.length;i++){{
+        var b=bs[i];
+        var act = parseInt(b.getAttribute('data-cid'),10) === parseInt(cid,10);
+        b.style.background = act ? '#f1f5f9' : 'transparent';
+        b.style.borderColor = act ? '#c2410c' : 'transparent';
+      }}
+      pane.scrollIntoView({{behavior:'smooth', block:'nearest'}});
+    }});
   }}
   window.fimiResto=fimiResto;
 
@@ -5295,6 +5315,14 @@ if ('serviceWorker' in navigator) {{
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
     print(f"OK: {OUT} — {n_events} eventos, {n_sources} fuentes, {len(clusters)} clusters")
+    # Detalle de los clusters del "resto" EN UN FICHERO APARTE (no inline): el
+    # dashboard lo carga solo al pulsar una barra. Mantiene index.html ligero.
+    try:
+        _pool_html = "".join(POOL_ACC)
+        RESTO_OUT.write_text(_pool_html, encoding="utf-8")
+        print(f"OK: {RESTO_OUT} — {len(_pool_html):,} bytes")
+    except Exception as _e_pool:
+        print(f"resto.html fallo (no bloquea el dashboard): {_e_pool}")
     # Página /research (independiente, misma run para que los números no se anticuen).
     # Envuelta: si falla, el dashboard (página principal) sigue intacto.
     try:
