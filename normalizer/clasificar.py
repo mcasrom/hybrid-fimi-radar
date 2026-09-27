@@ -16,6 +16,7 @@ significativos de la keyword.
 import math
 import re
 import unicodedata
+from functools import lru_cache
 
 STOP = set("de la el en y a los las un una con por para se su sus al del que es no lo"
            " e o u entre como más ya fue han ha sobre desde hasta".split())
@@ -27,11 +28,18 @@ def normalizar(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
+@lru_cache(maxsize=None)
 def _tokens(kw):
-    """Términos significativos de una keyword (sin stopwords)."""
+    """Términos significativos de una keyword (sin stopwords).
+
+    Caché: se llama millones de veces con el MISMO puñado de keywords en cada
+    generación del dashboard (el matcher recorre el corpus por keyword). Recalcular
+    normalizar+split+stopwords cada vez era parte del cuello (~30 M llamadas).
+    """
     return [t for t in normalizar(kw).split() if len(t) > 2 and t not in STOP]
 
 
+@lru_cache(maxsize=None)
 def _plurales(palabra):
     """Variantes plurales de una palabra (tolerancia -s / -es).
 
@@ -44,12 +52,26 @@ def _plurales(palabra):
     post de moda entraba en el tema `elecciones`; "partidos" -> "partido"). La
     tolerancia es solo en la dirección singular->plural. Tampoco se generan
     variantes para palabras de <3 letras.
+
+    Caché: el conjunto depende solo de la palabra (vocabulario acotado) y se
+    pedía ~30 M veces por generación. El set devuelto NO debe mutarse.
     """
     v = {palabra}
     if len(palabra) >= 3:
         v.add(palabra + "s")
         v.add(palabra + "es")
     return v
+
+
+@lru_cache(maxsize=None)
+def _word_pat(kw_norm):
+    """Regex \\b(?:variantes)\\b precompilada por keyword de 1 término.
+
+    Antes se hacía `re.escape` + `re.search` (compila) en CADA llamada (~13 M
+    compilaciones por generación). La keyword normalizada es vocabulario acotado.
+    """
+    vars_ = sorted(_plurales(kw_norm), key=len, reverse=True)
+    return re.compile(r"\b(?:" + "|".join(re.escape(v) for v in vars_) + r")\b")
 
 
 def _tok_present(t, texto_toks):
@@ -69,9 +91,7 @@ def _matches(kw_norm, kw_toks, texto_norm, texto_toks):
     if n == 0:
         return False
     if n == 1:
-        vars_ = sorted(_plurales(kw_norm), key=len, reverse=True)
-        pat = r"\b(?:" + "|".join(re.escape(v) for v in vars_) + r")\b"
-        return re.search(pat, texto_norm) is not None
+        return _word_pat(kw_norm).search(texto_norm) is not None
     present = sum(1 for t in kw_toks if _tok_present(t, texto_toks))
     need = n if n == 2 else int(math.ceil(0.6 * n))
     return present >= need
