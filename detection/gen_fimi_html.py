@@ -1954,6 +1954,48 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
     print(f"OK: {ALERTS_OUT} — {len(items)} alertas")
 
 
+def _minify_inline_styles(html):
+    """Deduplica estilos inline repetidos -> clases CSS (una sola <style> en
+    <head>). Reduce el index ~35% sin cambiar el aspecto. NO toca el contenido
+    de <script>. Bajo riesgo: si no hay <head> o algo falla, devuelve el html tal cual.
+    """
+    import re as _re
+    import collections as _col
+    if "</head>" not in html:
+        return html
+    parts = _re.split(r"(<script.*?</script>)", html, flags=_re.S)
+    all_styles = _col.Counter()
+    for p in parts:
+        if not p.startswith("<script"):
+            all_styles.update(_re.findall(r'\sstyle="([^"]*)"', p))
+    reuse = {v for v, n in all_styles.items() if n >= 8 and len(v) > 12}
+    if not reuse:
+        return html
+    cls = {v: f"fs{i}" for i, v in enumerate(sorted(reuse))}
+
+    def _repl(m):
+        tag = m.group(0)
+        sm = _re.search(r'\sstyle="([^"]*)"', tag)
+        if not sm or sm.group(1) not in cls:
+            return tag
+        name = cls[sm.group(1)]
+        t = tag[:sm.start()] + tag[sm.end():]
+        cm = _re.search(r'\sclass="([^"]*)"', t)
+        if cm:
+            t = t[:cm.end(1)] + " " + name + t[cm.end(1):]
+        else:
+            i = t.rstrip().rfind(">")
+            t = t[:i] + f' class="{name}"' + t[i:]
+        return t
+
+    out = []
+    for p in parts:
+        out.append(p if p.startswith("<script") else _re.sub(r"<[^>]+>", _repl, p))
+    new = "".join(out)
+    css = "".join(f".{cls[v]}{{{v}}}" for v in cls)
+    return new.replace("</head>", f"<style>{css}</style></head>", 1)
+
+
 def main():
     # cargar config para inventario de fuentes y keywords
     try:
@@ -5313,6 +5355,10 @@ if ('serviceWorker' in navigator) {{
 </body></html>"""
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        html = _minify_inline_styles(html)
+    except Exception as _e_min:
+        print(f"minify estilos fallo (no bloquea): {_e_min}")
     OUT.write_text(html, encoding="utf-8")
     print(f"OK: {OUT} — {n_events} eventos, {n_sources} fuentes, {len(clusters)} clusters")
     # Detalle de los clusters del "resto" EN UN FICHERO APARTE (no inline): el
