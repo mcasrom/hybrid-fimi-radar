@@ -126,7 +126,29 @@ daba filas pasa a dar cero, `ingest` avisa en vez de avanzar el cursor.
 ## Límite del histórico
 
 Los logs locales cubren 14 días. La base conserva para siempre lo que se ha
-leído, así que **desde el 27-09-2026 el histórico es completo**, pero lo
-anterior no es recuperable del servidor. Cloudflare Analytics guarda bastante
-más, pero en el plan actual devuelve agregados por día/país/ASN, no la lista de
-IP que pedía un "daily list" de IPs humanas.
+leído, así que **desde el 27-09-2026 el histórico es completo e incremental**,
+pero lo anterior no es recuperable del servidor.
+
+Cloudflare Analytics guarda bastante más, y en teoría podría reconstruir el
+tráfico anterior, pero **no está resuelto**:
+
+- Con la clave global API actual, la API GraphQL **no responde**: `zone(zoneTag:)`
+  da *unknown field*, `zones(filter:{accountTag:})` da *unknown arg* y
+  `viewer { accounts { id } }` da *unknown field*. El esquema está restringido
+  para ese token, así que no se ha podido ni comprobar qué devuelve.
+- Documentado, el grouping por `clientIP` de `httpRequestsAdaptiveGroups`
+  requiere Logpush, que es de pago. En planes habituales se obtienen agregados
+  por día, país y ASN, **no la lista de IPs** que necesita un daily list de IPs
+  humanas.
+
+O sea: para tener "desde el inicio" harían falta los logs de origen, que
+Cloudflare solo da con Logpush. Si en algún momento se contrata, el punto de
+enganche es `ingestar()`: basta un `cf-backfill` que alimente la misma tabla
+`accesos` con `fuente='cloudflare'`.
+
+## Pendiente conocido
+
+- `envio_informe_diario.py` y `monitor_lectores.py` (scripts del ecosistema)
+  siguen con su propia lógica y su bug de lectura de `.gz`: solo miran hoy y
+  ayer. Ahora FIMI tiene su propio registro, pero el del blog sigue así.
+
