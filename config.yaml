@@ -1756,18 +1756,6 @@ keywords:
 - palabra: amenaza híbrida
   plataformas: *id006
   tema: defensa_espana
-- palabra: ciberataque
-  plataformas: *id006
-  tema: defensa_espana
-- palabra: sabotaje
-  plataformas: *id006
-  tema: defensa_espana
-- palabra: espionaje
-  plataformas: *id006
-  tema: defensa_espana
-- palabra: injerencia
-  plataformas: *id006
-  tema: defensa_espana
 - palabra: ataque ruso
   plataformas: *id006
   tema: defensa_espana
