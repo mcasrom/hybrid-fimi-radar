@@ -14,7 +14,7 @@ de manipulación o interferencia (FIMI — Foreign Information Manipulation and 
 
 ## Estado en producción
 
-El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos** (7 producción + 2 piloto):
+El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas activos** (6 producción + 2 piloto):
 
 > **Versión desplegada:** `v0.2-22-gbdab433` · **Última actualización de este README:** 23/Sep/2026.
 
@@ -26,11 +26,10 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **9 temas activos
 | Sahel (África Occidental) | Producción |
 | Energía (petróleo/gas/precios) | Producción |
 | Inteligencia artificial | Producción |
-| España — Amenazas híbridas y FIMI | Producción |
-| Defensa y Fuerzas Armadas (España) | Piloto (en calibración) |
+| España — defensa y amenazas híbridas | Piloto (en calibración) |
 | Elecciones e interferencia electoral | Piloto (en calibración) |
 
-**Temas cerrados** (redundantes con `frontera_sur`): Política nacional, Geopolítica UE-Marruecos.
+**Temas cerrados**: Política nacional y Geopolítica UE-Marruecos (redundantes con `frontera_sur`) + **España — Amenazas híbridas y FIMI** (fusionado en `defensa_espana` el 27/Sep).
 
 - **Keywords**: derivadas del filtro (mismo bloque). Si el tema es ciego (0 keywords), salud_keywords no verifica cobertura -> añadir las palabras del filtro como keywords. Visto en espana_amenazas_hibridas (18/Sep, commit 77c9bf9).
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h

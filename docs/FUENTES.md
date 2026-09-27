@@ -24,19 +24,19 @@ fiabilidad editorial (**actualizado 24/09/2026**, generado desde `config.yaml`).
    Los campos `bias/reliability/transparency` alimentan la card **«Salud y fiabilidad
    de las fuentes»** del dashboard. Investígalos (MBFC, Ad Fontes, NewsGuard).
    **Asignar `tema` a un feed** lo hace pasar por el `filtro` del tema (útil para
-   fuentes de un beat concreto; p.ej. `El Mundo Internacional → espana_amenazas_hibridas`).
+   fuentes de un beat concreto; p.ej. `El Mundo Internacional → defensa_espana`).
 3. Para **añadir palabras de búsqueda**: añadir a `keywords` (sección abajo).
 4. Para **eliminar**: quitar la entrada. El cron 6h lo aplica en el siguiente ciclo.
 5. Guardar y el cron lo recoge automáticamente (no hace falta reiniciar nada).
 
-## Resumen del catálogo (24/09/2026)
+## Resumen del catálogo (27/09/2026)
 
-- **68 feeds RSS** · idiomas: en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1
+- **72 feeds RSS** · idiomas: en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1
 - **2 plataformas** de búsqueda (bluesky, google-news) · **3 canales Telegram** · **2 subreddits** (spain, es).
-- **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `espana_amenazas_hibridas` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia`.
-- **Novedad (24/09)**: alta de **El Mundo · Internacional** y ampliación del tema
-  `espana_amenazas_hibridas` (keywords/`filtro`: `ataque ruso`, `ataques rusos`, `ataque híbrido`,
-  `ataques híbridos`, `drones rusos`, `gerbera`) para la narrativa de amenaza híbrida rusa.
+- **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `defensa_espana` · Politico/NPR/Guardian US/PBS → `eeuu_politica` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia`.
+- **Novedad (27/09)**: fusión de `espana_amenazas_hibridas` en `defensa_espana` (renombrado «España —
+  defensa y amenazas híbridas»); alta de 4 feeds US (`eeuu_politica`) + keywords `midterms`; arreglo del feed
+  AIB Burkina (`?feed=rss2`).
 
 ## Metadata editorial aplicada
 
@@ -88,7 +88,11 @@ Una fuente con corroboration BAJA y además fiabilidad `mixed`/`low` desbloquea 
 |---|---|---|---|---|---|---|---|
 | 1 | EIA Today in Energy (EN) | — | media | least-biased | high | en | energia |
 | 2 | Energy Monitor (EN) | — | media | center | mostly-factual | en | energia |
-| 3 | El Mundo Internacional | — | media | center-right | mostly-factual | es | espana_amenazas_hibridas |
+| 3 | El Mundo Internacional | — | media | center-right | mostly-factual | es | defensa_espana |
+| 3b | Politico (US) | US | media | center | high | en | eeuu_politica |
+| 3c | NPR Politics (US) | US | media | center | high | en | eeuu_politica |
+| 3d | The Guardian US politics (EN) | GB | media | center-left | high | en | eeuu_politica |
+| 3e | PBS NewsHour Politics (US) | US | media | center | high | en | eeuu_politica |
 | 4 | ActuIA | FR | media | center | mixed | fr | — |
 | 5 | AI News | GB | media | center | mixed | en | — |
 | 6 | AIB - Agence Info Burkina | BF | oficial | state | mostly-factual | fr | — |
@@ -159,11 +163,11 @@ Una fuente con corroboration BAJA y además fiabilidad `mixed`/`low` desbloquea 
 
 Bloque global `keywords:` agrupado por tema (el campo `tema:` asigna el evento; sin él, `frontera_sur`):
 
-- **defensa_espana** (11): fuerzas armadas, Eurofighter, Ministerio de Defensa, JEMAD, ejército español, industria de defensa, industria militar, gasto en defensa, presupuesto de defensa, submarino S-80, fragata
-- **eeuu_politica** (4): elecciones medio mandato EEUU 2026, election interference, desinformación elecciones EEUU, 2026 midterms interference
+- **defensa_espana** (23): fuerzas armadas, Eurofighter, Ministerio de Defensa, JEMAD, ejército español, industria de defensa, industria militar, gasto en defensa, presupuesto de defensa, submarino S-80, fragata, guerra híbrida, amenaza híbrida, ciberataque, sabotaje, espionaje, injerencia, ataque ruso, ataques rusos, ataque híbrido, ataques híbridos, drones rusos, gerbera
+- **eeuu_politica** (6): elecciones medio mandato EEUU 2026, election interference, desinformación elecciones EEUU, 2026 midterms interference, midterms, midterms 2026
 - **elecciones** (31): elecciones, electoral, campaña electoral, urnas, papeletas, fraude electoral, afd, midterms, medio mandato, election interference, sondeos, votantes, landtagswahl, bundestagswahl, europawahl, wahlkampf, wahlen, wähler, riksdag, riksdagsval, valet, väljare, rösta, valrörelse, выборы, госдума, vēlēšanas, saeima, izbori, eleições, избори
 - **energia** (10): petróleo, gas natural, Brent, OPEP, Sonatrach, Medgaz, gasoducto, precio de la luz, Ormuz, tarifa eléctrica
-- **espana_amenazas_hibridas** (22): desinformación, propaganda, injerencia, espionaje, ciberataque, sabotaje, guerra híbrida, amenaza híbrida, desinformaciones, propagandas, injerencias, espionajes, ciberataques, sabotajes, guerras híbridas, amenazas híbridas, ataque ruso, ataques rusos, ataque híbrido, ataques híbridos, drones rusos, gerbera
+- **espana_amenazas_hibridas** (CERRADO 27/Sep): fusionado en `defensa_espana`; sus keywords específicos (guerra/amenaza híbrida, ciberataque, sabotaje, espionaje, injerencia, ataque(s) ruso(s), ataque(s) híbrido(s), drones rusos, gerbera) pasaron a `defensa_espana`; los genéricos quedan inactivos.
 - **frontera_sur** (13): Ceuta, Melilla, frontera Marruecos, migración España, Ceuta Melilla frontera, migración Canarias, España Marruecos, migración, Ceuta crise, Maghreb, infiltration, inmigración irregular, soldados fantasma
 - **geopolitica_ue_marruecos** (4): relaciones España Marruecos diplomacia, acuerdo bilateral España Marruecos, política exterior UE Magreb, Marruecos Unión Europea relaciones
 - **inteligencia_artificial** (11): inteligencia artificial, artificial intelligence, OpenAI, ChatGPT, Gemini, Claude, Anthropic, deepfake, Nvidia, robot, algoritmo
