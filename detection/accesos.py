@@ -34,6 +34,7 @@ import hashlib
 import ipaddress
 import os
 import re
+import socket
 import sqlite3
 import time
 from datetime import datetime
@@ -129,9 +130,45 @@ UA_BOT = re.compile(
     r"curl|wget|python|java/|okhttp|libwww|java-http|nutch|"
     r"dataprovider|pingdom|gtmetrix|lighthouse|pagespeed|"
     r"cf-?bot|claudebot|perplexity|amazonbot|applebot-extended|"
-    r"img2txt|getprox|virus|scan|masscan|zgrab|nmap|sqlmap|nikto",
+    r"img2txt|getprox|virus|scan|masscan|zgrab|nmap|sqlmap|nikto|"
+    r"skywatch|unifiedpaths|nuxtfyi|lightpanda|hunter/|undici|"
+    r"rootevidence|wordpress/|opengraph\.io|flipboard",
     re.I,
 )
+
+# Asistentes de IA: ni personas ni crawlers "clásicos". `Claude-User` lo
+# dispara alguien (abre el enlace dentro de Claude), pero quien descarga la
+# página es el agente. No cuentan como lector, pero SÍ son una vía de entrada
+# con público real: en 15 días (13→27/Sep) fueron 23 aperturas con alguien
+# detrás (12 Claude-User + 11 ChatGPT-User) frente a 65 peticiones de crawlers
+# de IA. Por eso van en categoría propia en vez de diluirse en BOT, y por eso
+# se separan SIEMPRE antes de reportar.
+UA_IA = re.compile(
+    r"claude-user|claude-web|chatgpt-user|gptbot|oai-searchbot|"
+    r"perplexitybot|perplexity-user|google-extended|ccbot|bytespider|"
+    r"anthropic-ai|meta-externalagent|applebot-extended|omgili|youbot|"
+    r"claudebot",
+    re.I,
+)
+
+# La categoría ASISTENTE_IA mezcla dos cosas muy distintas y hay que separarlas
+# SIEMPRE antes de contar nada, porque una tapa a la otra:
+#   · "gente": alguien preguntó a un asistente y el asistente abrió el enlace
+#     (Claude-User, ChatGPT-User, Perplexity-User). Es tráfico humano, aunque
+#     lo descargue la máquina. En los 15 días medidos: 23 aperturas.
+#   · "crawlers": OpenAI, Anthropic y demás indexando para sus modelos.
+#     En los mismos 15 días: 65 peticiones. Contarlas como "gente" multiplicaba
+#     por tres el canal que de verdad trae audiencia.
+UA_IA_GENTE = re.compile(
+    r"claude-user|claude-web|chatgpt-user|perplexity-user", re.I
+)
+
+# Un Chrome de verdad manda SIEMPRE cuatro componentes de versión
+# (`Chrome/120.0.0.0`). "Chrome/120.0" o "Chrome/126" los manda un crawler que
+# se hace pasar por navegador: en los 15 días medidos fueron 737 peticiones
+# (el patrón dominante del tráfico candidato) con la marca mal formada.
+UA_CHROME = re.compile(r"Chrome/", re.I)
+UA_CHROME_REAL = re.compile(r"Chrome/\d+\.\d+\.\d+\.\d+")
 
 ASSET_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".css",
              ".js", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".webm", ".xml",
@@ -161,6 +198,44 @@ INTERNAL_NETS = tuple(
               "192.168.0.0/16", "169.254.0.0/16")
 )
 
+# Direcciones del propio servidor que NO caen en INTERNAL_NETS.
+#
+# La IPv6 está porque sale en el log del propio servidor: es la primera línea
+# literal de un access.log real usada como fixture en los tests
+# (`2a01:4f8:1c1e:92d2::1 - - [27/Sep/2026:00:00:09 +0000] "GET / HTTP/1.1"`)
+# y por ahí salen el canario y Uptime-Kuma. No es una suposición: está
+# observada. Aun así se puede ampliar sin tocar código con la variable de
+# entorno FIMI_IPS_PROPIAS (lista separada por comas).
+IPS_PROPIAS_EXTRA = ("2a01:4f8:1c1e:92d2::1",)
+
+_PROPIAS = None
+
+
+def _ips_propias():
+    """Direcciones del propio servidor, IPv4 **e IPv6**.
+
+    Esto no es cosmético: el canario y Uptime-Kuma salen por la IPv6 del server
+    y `es_internal` solo miraba `127.0.0.0/8` y `::1/128`. Resultado: cientos
+    de peticiones/día de monitor propio contadas como "humano probable", y en
+    los días que el canario usa UA de navegador colaban en el recuento de
+    lectores. El propio tráfico, excluido.
+    """
+    global _PROPIAS
+    if _PROPIAS is None:
+        ips = set(IPS_PROPIAS_EXTRA)
+        ips.update(x.strip() for x in
+                   os.environ.get("FIMI_IPS_PROPIAS", "").split(",")
+                   if x.strip())
+        try:
+            for info in socket.getaddrinfo(socket.gethostname(), None):
+                ips.add(info[4][0])
+        except OSError as exc:
+            print(f"[accesos] AVISO: no puedo resolver las IP propias del"
+                  f" servidor ({exc}); el trafico propio puede colarse como"
+                  " humano. Anadelas a FIMI_IPS_PROPIAS.", flush=True)
+        _PROPIAS = ips
+    return _PROPIAS
+
 
 def es_dueno(ip):
     return ip in OWNER_IPS or any(ip.startswith(p) for p in OWNER_PREFIXES)
@@ -169,6 +244,8 @@ def es_dueno(ip):
 def es_internal(ip, ua):
     if UA_PROPIO.search(ua or ""):
         return True
+    if ip in _ips_propias():
+        return True
     try:
         a = ipaddress.ip_address(ip)
     except ValueError:
@@ -176,6 +253,12 @@ def es_internal(ip, ua):
     if any(a in n for n in INTERNAL_NETS):
         return True
     return False
+
+
+def es_ua_imitada(ua):
+    """Se hace pasar por navegador sin saber imitarlo."""
+    u = ua or ""
+    return bool(UA_CHROME.search(u) and not UA_CHROME_REAL.search(u))
 
 
 def es_datacenter(ip):
@@ -254,7 +337,9 @@ def clasificar(ip, ruta, status, ua):
         return "API", scan, prof
     if es_cachebuster(ruta):
         return "BOT", scan, prof
-    if UA_BOT.search(ua or ""):
+    if UA_IA.search(ua or ""):
+        return "ASISTENTE_IA", scan, prof
+    if UA_BOT.search(ua or "") or es_ua_imitada(ua):
         return "BOT", scan, prof
     if scan:
         return "BOT", scan, prof
@@ -304,6 +389,7 @@ CREATE TABLE IF NOT EXISTS accesos (
     categoria    TEXT NOT NULL,
     es_scan      INTEGER NOT NULL DEFAULT 0,
     es_profundo  INTEGER NOT NULL DEFAULT 0,
+    referer      TEXT,
     fuente       TEXT NOT NULL DEFAULT 'nginx'
 );
 CREATE INDEX IF NOT EXISTS ix_accesos_dia ON accesos(dia);
@@ -311,6 +397,9 @@ CREATE INDEX IF NOT EXISTS ix_accesos_pseudo ON accesos(ip_pseudo);
 CREATE INDEX IF NOT EXISTS ix_accesos_cat ON accesos(categoria);
 CREATE INDEX IF NOT EXISTS ix_accesos_prof ON accesos(es_profundo);
 CREATE INDEX IF NOT EXISTS ix_accesos_base ON accesos(ruta_base);
+-- El índice de `referer` lo crea `_migrar`, no aquí: en una base ya existente
+-- la columna todavía no existe cuando se ejecuta este DDL, y un CREATE INDEX
+-- sobre una columna ausente aborta el script entero.
 
 CREATE TABLE IF NOT EXISTS ip_dia (
     ip_pseudo   TEXT NOT NULL,
@@ -356,10 +445,12 @@ CREATE TABLE IF NOT EXISTS meta (
 def _migrar(con):
     """Añade columnas nuevas a tablas existentes (CREATE TABLE no las mete)."""
     for tabla, col, decl in (("cursor_log", "leidas", "INTEGER DEFAULT 0"),
-                             ("cursor_log", "ok", "INTEGER DEFAULT 0")):
+                             ("cursor_log", "ok", "INTEGER DEFAULT 0"),
+                             ("accesos", "referer", "TEXT")):
         cols = {f["name"] for f in con.execute(f"PRAGMA table_info({tabla})")}
         if col not in cols:
             con.execute(f"ALTER TABLE {tabla} ADD COLUMN {col} {decl}")
+    con.execute("CREATE INDEX IF NOT EXISTS ix_accesos_ref ON accesos(referer)")
     con.commit()
 
 
@@ -497,11 +588,11 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
             salt_obj.execute(
                 "INSERT INTO accesos (ts, dia, host, metodo, ruta, ruta_base,"
                 " status, bytes, ip_pseudo, ua, categoria, es_scan, es_profundo,"
-                " fuente) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                " referer, fuente) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (r["ts"], r["dia"], r["host"], r["metodo"], r["ruta"],
                  r["ruta"].split("?")[0], r["status"], 0, r["ip_pseudo"],
                  r["ua"], r["categoria"], r["es_scan"], r["es_profundo"],
-                 "nginx"),
+                 (r.get("referer") or "")[:300], "nginx"),
             )
             salt_obj.execute(
                 "INSERT INTO ip_dia (ip_pseudo, dia, categoria, requests, profundas,"
@@ -647,18 +738,20 @@ def lectores_del_dia(con, dia, incluir_dueno=False):
         if mezcla:
             f["nivel"] = "VISITA"
             f["motivo"] = f"mixto: {mezcla} peticiones automatizadas"
-        elif profundo >= 1 and not f["rafaga"]:
-            f["nivel"] = "LECTOR"
-            f["motivo"] = "abrió contenido"
-        elif profundo >= 1:
+        elif profundo >= 1 and f["rafaga"]:
             f["nivel"] = "VISITA"
             f["motivo"] = f"ráfaga de {span:.0f} s"
-        elif f["rutas"] >= 3 and f["dias"] >= 2 and not f["rafaga"]:
+        elif profundo >= 1 and (f["req"] >= 2 or f["dias"] >= 2):
             f["nivel"] = "LECTOR"
-            f["motivo"] = f"{f['rutas']} rutas en {f['dias']} días"
-        elif f["dias"] >= 3 and f["req"] >= 3 and not f["rafaga"]:
-            f["nivel"] = "LECTOR"
-            f["motivo"] = f"volvió {f['dias']} días"
+            f["motivo"] = "abrió contenido y volvió"
+        elif profundo >= 1:
+            # Contenido sí, pero una sola petición y un solo día. En los datos
+            # reales esto era SIEMPRE un crawler: 9 IP distintas con la misma
+            # UA de iOS 13 (diciembre de 2019) abriendo una página cada una, sin
+            # referer, una detrás de otra por el sitemap. Una persona que llega
+            # por un enlace trae referer y al menos un par de peticiones.
+            f["nivel"] = "VISITA"
+            f["motivo"] = "abrió 1 página y no volvió"
         else:
             f["nivel"] = "VISITA"
             f["motivo"] = ("ráfaga automatizada" if f["rafaga"]
@@ -679,35 +772,259 @@ def rutas_del_dia(con, dia, categoria=("HUMANO_PROBABLE",)):
         f" ORDER BY req DESC", (dia, *categoria))]
 
 
+# --- De dónde viene la gente ---------------------------------------------------
+# El referrer es la ÚNICA señal que separa a una persona de un crawler: un clic
+# trae referer, un rastreo no. En los 15 días medidos (13→27/Sep, 9.051
+# peticiones) había solo 8 referrers externos distintos y sumaban esto:
+#   · 16 clics de `google.com/search?q=viajeinteligencia` desde 14 IP — la
+#     búsqueda de MARCA funciona; es el primer canal orgánico real
+#   · 2 de redes (Facebook móvil y Bluesky) y 1 de la app de Gmail
+#   · 20 desde nuestros propios sitios (blog + landing) → CTA, no alcance ajeno
+#   · 11 de la raíz de `google.com` → previsualizadores, no búsquedas
+# Además, 23 aperturas desde asistentes de IA con alguien detrás y 65 crawlers
+# de IA. Por eso el KPI titular ya no son los pageviews: son los orígenes.
+# La cifra vieja "35 humanos" era de `HUMANO_PROBABLE` sin mirar el referrer;
+# con referrer, casi todo lo externo eran previsualizadores y rastreadores.
+
+_OWN = ("pruebapublica.com", "viajeinteligencia.com")
+
+ORIGENES = (
+    # El ORDEN IMPORTA: se evalúa de arriba abajo y gana la primera coincidencia.
+    # "correo" y "asistente IA" van antes que "buscador" porque
+    # `android-app://com.google.android.gm/` y `gemini.google` contienen
+    # "google." y acabarían clasificados como búsquedas.
+    ("correo", ("com.google.android.gm", "mail.google", "outlook.live",
+                "mail.yahoo")),
+    ("asistente IA", ("chatgpt", "openai", "claude", "anthropic", "perplexity",
+                      "gemini.google", "copilot.microsoft", "you.com", "phind",
+                      "poe.")),
+    ("red social", ("mastodon", "bsky", "bluesky", "twitter", "x.com", "t.co",
+                    "linkedin", "reddit", "t.me", "telegram", "facebook",
+                    "instagram", "tiktok", "threads.net", "news.ycombinator",
+                    "lobste.rs", "ok.ru", "vk.com", "weibo")),
+    ("buscador", ("google.", "bing.", "duckduckgo", "yandex", "baidu", "ecosia",
+                  "brave.", "mojeek", "startpage", "qwant", "search.brave",
+                  "googleusercontent")),
+    ("prensa / institucional", ("efe", "eldiario", "elpais", "el pais",
+                                "lavanguardia", "abc.", "20minutos", "elmundo",
+                                "el mundo", "rtve", "ceuta", "northdata",
+                                "verenna", "nlnet", "europa.eu", "eui.eu",
+                                "enisa", "edmo", "unitary", "gdelt")),
+    ("otro sitio", ()),
+)
+
+# Abstención deliberada: NO todo referrer de una plataforma es una persona.
+# Estas son máquinas que abren el enlace para enseñar la vista previa. Se
+# distinguen de un clic real por el subdominio: `t.co` es alguien que pulsa
+# "Compartir" en X (gente), `l.facebook.com/l.php` es Facebook comprobando que
+# el enlace exista (bot). Confundirlos era exactamente el error que inflaba el
+# alcance: un solo enlace de Telegram puede generar decenas de peticiones.
+PREVISUALIZADORES = (
+    "l.facebook.com", "facebookexternalhit", "telegram.org", "slack.com",
+    "slack-imgproxy", "discord.com", "discordapp.com", "embedly.com",
+    "iframely.com", "nuzzel.com", "outbrain.com", "skypeuripreview",
+    "vkshare", "pinterest.com", "redditbot", "linkedinbot", "quora.com",
+    "opengraph.io", "googleweblight",
+)
+# OJO: la raíz de `google.com` NO va aquí a propósito. Una búsqueda real llega
+# como `google.com/search?q=...` y comparte prefijo con
+# `https://www.google.com` a secas, que es un previsualizador. Se resuelve más
+# abajo, en el bucle de ORIGENES, donde se puede mirar la ruta entera. Meter
+# "google.com" aquí habría matado también las búsquedas de verdad.
+
+
+def clasificar_origen(referer):
+    """Etiqueta un referrer externo. `None` si no es un origen real.
+
+    nginx escribe `-` cuando no hay cabecera Referer, y los previsualizadores
+    de redes (facebookexternalhit, WhatsApp, Slack…) también llegan con
+    referrer propio: ninguno de los dos es tráfico de gente.
+    """
+    ref = (referer or "").strip()
+    if not ref or ref == "-":
+        return None
+    low = ref.lower()
+    if SITIO in low:
+        # Navegar de /sobre.html a /research.html dentro del propio dashboard.
+        # Con esta regla salían 2.035 peticiones y 69 IP de "origen": es el
+        # público que ya estaba dentro, no alcance nuevo. No se cuenta.
+        return None
+    for propio in _OWN:
+        if propio in low:
+            return "sitio propio (CTA)"
+    for marca in PREVISUALIZADORES:
+        if marca in low:
+            return None
+    for etiqueta, marcas in ORIGENES:
+        for m in marcas:
+            if m in low:
+                if etiqueta == "buscador" and "www.google.com" in low \
+                        and "/search" not in low and "/url" not in low:
+                    # La raíz de google.com como referrer es un previsualizador
+                    # o un crawler, no alguien que buscó y pinchó.
+                    return "raíz de buscador (bot)"
+                return etiqueta
+    return "otro sitio"
+
+
+# Lo que NO cuenta como alcance externo de gente:
+#  · la raíz de los buscadores: previsualizadores y crawlers
+#  · nuestros propios sitios (blog, landing): si el CTA funciona es una
+#    métrica nuestra ("¿el blog alimenta al radar?"), no alcance ajeno
+#    ("¿el blog alimenta al radar?"), no alcance ajeno
+SIN_CUENTAS = ("raíz de buscador (bot)", "sitio propio (CTA)")
+
+
+def origenes_reales(org):
+    return {k: v for k, v in org.items() if k not in SIN_CUENTAS}
+
+
+def origenes_del_dia(con, dia):
+    """De dónde viene la gente DE VERDAD ese día, agrupado por tipo de origen.
+
+    `ips` es un CONJUNTO de seudónimos, no un entero. La versión anterior sumaba
+    `COUNT(DISTINCT ip_pseudo)` por referer en un set de enteros, así que el
+    recuento de IPs era el número de magnitudes distintas, no de direcciones:
+    los 16 clics de `google.com/search?q=viajeinteligencia` desde 14 IP salían
+    como "1 IP" y parecían un scraper. Eran personas.
+    """
+    filas = con.execute(
+        "SELECT referer, ip_pseudo FROM accesos"
+        " WHERE dia=? AND COALESCE(referer,'')<>''", (dia,)
+    ).fetchall()
+    salida = {}
+    for f in filas:
+        et = clasificar_origen(f["referer"])
+        if not et:
+            continue
+        d = salida.setdefault(et, {"req": 0, "ips": set(), "refs": set()})
+        d["req"] += 1
+        d["ips"].add(f["ip_pseudo"])
+        d["refs"].add(f["referer"][:70])
+    return salida
+
+
+# Acciones que solo hace una persona si quiere algo: darse de alta, confirmar
+# el alta, sugerir un cluster, pedir clave. Un pageview no se puede atribuir;
+# esto sí.
+RUTAS_CONVERSION = (
+    "/api/confirmar", "/api/sugerir", "/api/alta", "/api/suscribir",
+    "/api/newsletter", "/api/clave", "/api/key",
+)
+
+
+def conversiones_del_dia(con, dia):
+    filas = con.execute(
+        "SELECT ruta, metodo, ip_pseudo, ts FROM accesos"
+        " WHERE dia=? AND ruta_base IN (%s)"
+        " ORDER BY ts" % ",".join("?" * len(RUTAS_CONVERSION)),
+        (dia, *RUTAS_CONVERSION)
+    ).fetchall()
+    return [dict(f) for f in filas]
+
+
+def es_ia_gente(ua):
+    """True si el User-Agent es el de un asistente al que UNA PERSONA pidió
+    algo (y el asistente vino a leer el enlace). False si es un crawler que
+    indexa por su cuenta. Nunca contarlos juntos."""
+    return bool(UA_IA_GENTE.search(ua or ""))
+
+
+def asistentes_dia(con, dia):
+    """Aperturas desde asistentes de IA, separadas por si hay alguien detrás.
+
+    Devuelve los tres: sin el desglose, 'asistentes' es una cifra que no quiere
+    decir nada (65 crawlers de OpenAI pueden tapar a 23 personas reales).
+    """
+    f = con.execute(
+        "SELECT COUNT(*) req, COUNT(DISTINCT ip_pseudo) ips FROM accesos"
+        " WHERE dia=? AND categoria='ASISTENTE_IA'", (dia,)
+    ).fetchone()
+    g = con.execute(
+        "SELECT COUNT(*) req, COUNT(DISTINCT ip_pseudo) ips FROM accesos"
+        " WHERE dia=? AND categoria='ASISTENTE_IA' AND"
+        " (ua LIKE '%Claude-User%' OR ua LIKE '%claude-web%'"
+        "  OR ua LIKE '%ChatGPT-User%' OR ua LIKE '%Perplexity-User%')",
+        (dia,)
+    ).fetchone()
+    total = f["req"] or 0
+    gente = g["req"] or 0
+    return {"req": total, "ips": f["ips"] or 0,
+            "gente": gente, "gente_ips": g["ips"] or 0,
+            "crawlers": total - gente}
+
+
+def _n(num, sing, plur=None):
+    """'1 petición' / '3 peticiones'. Los números sueltos en un daily parecen
+    un descuido aunque el dato sea correcto."""
+    return f"{num} {sing if num == 1 else (plur or sing + 's')}"
+
+
 def daily_markdown(con, dia, db="data/accesos.db"):
     """Daily list del día. Fichero legible; las IPs van seudonizadas."""
     r = resumen_dia(con, dia)
     total = sum(v["req"] for v in r.values())
     total_ips = len({f["ip_pseudo"] for f in con.execute(
         "SELECT DISTINCT ip_pseudo FROM accesos WHERE dia=?", (dia,))})
-    led = [f for f in lectores_del_dia(con, dia) if f["nivel"] == "LECTOR"]
-    vis = [f for f in lectores_del_dia(con, dia) if f["nivel"] == "VISITA"]
+    todos = lectores_del_dia(con, dia)
+    led = [f for f in todos if f["nivel"] == "LECTOR"]
+    vis = [f for f in todos if f["nivel"] == "VISITA"]
+    org = origenes_del_dia(con, dia)
+    ia = asistentes_dia(con, dia)
+    conv = conversiones_del_dia(con, dia)
+    ext = sum(v["req"] for v in origenes_reales(org).values())
 
+    ext_por_tipo = ", ".join(f"{k} {v['req']}"
+                          for k, v in origenes_reales(org).items())
     L = []
     L.append(f"# Accesos al observatorio — {dia}")
     L.append("")
-    L.append("> IPs seudonizadas (hash con salt local). "
-             "\"Lector\" = abrió contenido, varias rutas o volvió otro día.")
+    L.append("> IPs seudonizadas (hash con salt local). Una visita de una sola")
+    L.append("> página y sin referer **no se cuenta como lector**: en los datos")
+    L.append("> reales ese patrón era un crawler. El titular es \"de dónde viene")
+    L.append("> la gente\", no el número de páginas vistas.")
     L.append("")
-    L.append("## Resumen")
+    L.append("## Titular")
+    L.append("")
+    L.append(f"- **Lectores: {len(led)}**")
+    L.append(f"- **Orígenes externos: {_n(ext, 'petición', 'peticiones')}** — "
+             f"{ext_por_tipo or 'sin ninguno'}")
+    L.append(f"- **Alguien preguntó a una IA y vino a leer: {ia['gente']}** "
+             f"({_n(ia['gente_ips'], 'IP')}) — junto con la búsqueda de marca, "
+             f"el canal que trae gente de fuera")
+    L.append(f"- Crawlers de IA (OpenAI, Anthropic…): {ia['crawlers']} — "
+             f"indexan, no son público")
+    L.append(f"- **Conversiones: {len(conv)}** (alta, confirmar, sugerir, clave)")
+    L.append("")
+
+    L.append("## Resumen del tráfico")
     L.append("")
     L.append(f"- Peticiones: **{total}**")
     L.append(f"- Direcciones distintas: **{total_ips}**")
-    for cat in ("HUMANO_PROBABLE", "DUENO", "API", "INTERNAL", "BOT"):
+    for cat in ("HUMANO_PROBABLE", "ASISTENTE_IA", "DUENO", "API", "INTERNAL", "BOT"):
         v = r.get(cat)
         if v:
-            L.append(f"- {cat}: {v['req']} peticiones · {v['ips']} IP")
-    L.append(f"- **Lectores probables: {len(led)}** "
-             f"(candidatos no concluyentes: {len(vis)})")
+            L.append(f"- {cat}: {_n(v['req'], 'petición', 'peticiones')} · {_n(v['ips'], 'IP')}")
     dueno = r.get("DUENO")
     if dueno:
-        L.append(f"- Tus visitas: {dueno['req']} peticiones "
+        L.append(f"- Tus visitas: {_n(dueno['req'], 'petición', 'peticiones')} "
                  f"({dueno['ips']} IP, no cuentan como lector)")
+    L.append("")
+
+    L.append("## De dónde viene la gente")
+    L.append("")
+    if not org:
+        L.append("_Nadie llega desde fuera: ni buscador, ni red social, ni chat._")
+        L.append("")
+        L.append("Los previsualizadores de enlaces (Slack, WhatsApp, Telegram,")
+        L.append("Facebook) y la raíz de los buscadores no se cuentan como")
+        L.append("origen: entran, pero no son una persona.")
+    else:
+        L.append("| Origen | Peticiones | IP | Ejemplos |")
+        L.append("|---|---:|---:|---|")
+        for k, v in sorted(org.items(), key=lambda kv: -kv[1]["req"]):
+            ej = ", ".join(f"`{x}`" for x in list(v["refs"])[:2])
+            L.append(f"| {k} | {v['req']} | {len(v['ips'])} | {ej} |")
     L.append("")
 
     L.append("## Lectores")
@@ -722,9 +1039,16 @@ def daily_markdown(con, dia, db="data/accesos.db"):
                      f"{f['rutas']} | {f['dias']} | {f['motivo']} |")
     L.append("")
 
+    if conv:
+        L.append("## Conversiones")
+        L.append("")
+        for c in conv:
+            L.append(f"- `{c['metodo']} {c['ruta']}` · `{c['ip_pseudo']}` · {c['ts']}")
+        L.append("")
+
     rutas = [x for x in rutas_del_dia(con, dia)
              if x["profundas"] or x["req"] >= 2][:15]
-    L.append("## Rutas abiertas por humanos candidatos")
+    L.append("## Rutas abiertas por los candidatos a humano")
     L.append("")
     if not rutas:
         L.append("_Sin datos._")
@@ -737,7 +1061,10 @@ def daily_markdown(con, dia, db="data/accesos.db"):
     L.append("")
 
     if vis:
-        L.append("## No concluyente (1 visita a la portada)")
+        L.append(f"## No concluyente ({len(vis)} IP)")
+        L.append("")
+        L.append("Abrieron una página y no volvieron, o solo pasaron por la")
+        L.append("portada. Mayormente rastreadores; se listan por completitud.")
         L.append("")
         L.append(", ".join(f"`{f['ip']}`" for f in vis[:40]))
         L.append("")

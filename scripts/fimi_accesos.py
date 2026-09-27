@@ -9,11 +9,17 @@ fimi_accesos.py — CLI del registro de accesos del observatorio.
     python3 scripts/fimi_accesos.py daily --todos --no-tg
     python3 scripts/fimi_accesos.py stats
     python3 scripts/fimi_accesos.py lectores
+    python3 scripts/fimi_accesos.py origenes            # de dónde viene la gente
     python3 scripts/fimi_accesos.py reset --confirmar   # rebaca desde cero
 
 El daily escribe `data/listas/AAAA-MM-DD.md` y avisa por Telegram. La base es
 incremental: `ingest` solo lee lo que no se ha leído (cursor por inodo+offset),
 así que se puede lanzar cada hora sin duplicar ni perder nada.
+
+El titular NO es el número de páginas vistas sino de dónde viene la gente: en
+las medidas reales, contar "humano probable" daba ~35 lecturas en 15 días y
+todas eran rastreadores. El referrer es lo único que distingue a una persona de
+una máquina, y se guardó en la BD precisamente por eso.
 """
 
 import argparse
@@ -26,8 +32,9 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from detection.accesos import (  # noqa: E402
-    DB_PATH, SITIO, conectar, daily_markdown, ingestar, lectores_del_dia,
-    resumen_dia, stats,
+    DB_PATH, SITIO, asistentes_dia, conectar, conversiones_del_dia,
+    daily_markdown, ingestar, lectores_del_dia, origenes_del_dia,
+    origenes_reales, resumen_dia, stats,
 )
 
 FIMI_ENV = os.path.join(
@@ -109,26 +116,31 @@ def cmd_daily(args):
             fh.write(md)
         led = [f for f in lectores_del_dia(con, dia) if f["nivel"] == "LECTOR"]
         r = resumen_dia(con, dia)
+        org = origenes_del_dia(con, dia)
+        ia = asistentes_dia(con, dia)
+        conv = conversiones_del_dia(con, dia)
+        ext = sum(v["req"] for v in origenes_reales(org).values())
         print(f"[accesos] {dia}: {ruta} "
               f"({r.get('HUMANO_PROBABLE', {}).get('req', 0)} probable(s), "
-              f"{len(led)} lector(es))")
+              f"{len(led)} lector(es), {ext} origen(es) externos)")
         if args.tg and dia == dias[-1] and not args.no_tg:
-            rutas = [x["ruta"] for x in
-                     sorted(
-                         ({"ruta": f["ruta"], "n": f["n"]}
-                          for f in con.execute(
-                              "SELECT ruta, COUNT(*) n FROM accesos"
-                              " WHERE dia=? AND es_profundo=1"
-                              " GROUP BY ruta ORDER BY n DESC", (dia,))),
-                         key=lambda x: -x["n"])[:5]]
-            txt = (f"<b>Accesos FIMI — {dia}</b>\n"
-                   f"Humanos probables: {r.get('HUMANO_PROBABLE', {}).get('req', 0)}"
-                   f" peticiones · {len(led)} lector(es)\n"
-                   f"Bot {r.get('BOT', {}).get('req', 0)} · "
-                   f"interno {r.get('INTERNAL', {}).get('req', 0)}\n"
-                   + (("Contenido leído: " + ", ".join(rutas[:5])) if rutas
-                      else "Sin lectura de contenido."))
-            _tg(txt)
+            org_txt = ", ".join(f"{k} {v['req']}"
+                                for k, v in origenes_reales(org).items()) \
+                or "sin orígenes externos"
+            lineas = [
+                f"<b>Accesos FIMI — {dia}</b>",
+                f"Lectores: {len(led)}",
+                f"Orígenes externos: {ext} ({org_txt})",
+                f"IA con alguien detrás: {ia['gente']} apertura(s) "
+                f"· crawlers de IA: {ia['crawlers']}",
+                f"Conversiones: {len(conv)}",
+                f"Probable: {r.get('HUMANO_PROBABLE', {}).get('req', 0)} · "
+                f"bot {r.get('BOT', {}).get('req', 0)} · "
+                f"interno {r.get('INTERNAL', {}).get('req', 0)}",
+            ]
+            if not ext and not ia["gente"] and not len(led):
+                lineas.append("Sin gente. Todo esto fueron máquinas.")
+            _tg("\n".join(lineas))
             enviados += 1
     con.close()
     if args.tg and not args.no_tg:
@@ -141,9 +153,11 @@ def cmd_stats(args):
     s = stats(con)
     print(f"[accesos] {s}")
     print("\nPor día (dia · req · probables · IPs · lecturas externas):")
-    print("  'lecturas' = contenido abierto por HUMANO_PROBABLE. No cuenta el")
-    print("  canario (INTERNAL) ni tus visitas: sin eso, el canario solo eclipsa")
-    print("  la señal real (634 de 807 lecturas de estos 15 días eran canario).")
+    print("  'lecturas' = contenido abierto por HUMANO_PROBABLE, sin contar el")
+    print("  canario ni tus visitas. OJO: 'probables' NO son personas. En los")
+    print("  15 días medidos, 18 de esas 'lecturas' fueron 18 rastreadores")
+    print("  distintos con la misma UA de iOS 13. Usa `origenes`: el referrer")
+    print("  es lo único que separa a una persona de una máquina.")
     for f in con.execute(
             "SELECT dia, COUNT(*) req,"
             " SUM(categoria='HUMANO_PROBABLE') prob,"
@@ -179,6 +193,56 @@ def cmd_lectores(args):
                         key=lambda kv: (-kv[1]["prof"], -kv[1]["dias"])):
         rutas = ", ".join(sorted(e["rutas"])[:6])
         print(f"{ip}  ·  {e['dias']:>2}  ·  {e['req']:>3}  ·  {e['prof']:>3}  ·  {rutas}")
+    con.close()
+    return 0
+
+
+def cmd_origenes(args):
+    """De dónde viene la gente. Esta es la cifra que sustituye a los pageviews."""
+    con = conectar(args.db)
+    dias = [args.dia] if args.dia else [f["dia"] for f in con.execute(
+        "SELECT DISTINCT dia FROM accesos ORDER BY dia")]
+    if args.desde:
+        dias = [d for d in dias if d >= args.desde]
+    tot = {}
+    print(f"{'tipo de origen':<26} {'peticiones':>10} {'IP':>5}  ejemplos")
+    for dia in dias:
+        for k, v in origenes_del_dia(con, dia).items():
+            e = tot.setdefault(k, {"req": 0, "ips": set(), "refs": set()})
+            e["req"] += v["req"]
+            e["ips"] |= v["ips"]
+            e["refs"] |= v["refs"]
+    for k, v in sorted(tot.items(), key=lambda kv: -kv[1]["req"]):
+        ej = ", ".join(list(v["refs"])[:3])
+        print(f"{k:<26} {v['req']:>10} {len(v['ips']):>5}  {ej[:60]}")
+
+    ext = sum(v["req"] for v in origenes_reales(tot).values())
+    gen = ("(ua LIKE '%Claude-User%' OR ua LIKE '%claude-web%'"
+           " OR ua LIKE '%ChatGPT-User%' OR ua LIKE '%Perplexity-User%')")
+    ia = con.execute(
+        f"SELECT COUNT(*) req, COUNT(DISTINCT ip_pseudo) ips FROM accesos"
+        f" WHERE categoria='ASISTENTE_IA'"
+        + (f" AND dia>='{args.desde}'" if args.desde else "")
+    ).fetchone()
+    g = con.execute(
+        f"SELECT COUNT(*) req, COUNT(DISTINCT ip_pseudo) ips FROM accesos"
+        f" WHERE categoria='ASISTENTE_IA' AND {gen}"
+        + (f" AND dia>='{args.desde}'" if args.desde else "")
+    ).fetchone()
+    conv = con.execute(
+        "SELECT COUNT(*) n FROM accesos WHERE ruta_base IN"
+        " ('/api/confirmar','/api/sugerir','/api/alta','/api/suscribir',"
+        "  '/api/newsletter','/api/clave','/api/key')"
+        + (f" AND dia>='{args.desde}'" if args.desde else "")
+    ).fetchone()
+    print(f"\nOrígenes externos totales: {ext}")
+    print(f"IA con alguien detrás: {g['req']} apertura(s) · {g['ips']} IP")
+    print(f"Crawlers de IA (indexan, no son público): {ia['req'] - g['req']}")
+    print(f"Conversiones: {conv['n']}")
+    print("\n'raíz de buscador' son previsualizadores y crawlers: se dejan")
+    print("fuera del total de orígenes a propósito. Los crawlers de IA se")
+    print("cuentan aparte de la gente a propósito: son las mismas máquinas")
+    print("que descargan la página, pero detrás no hay ninguna persona.")
     con.close()
     return 0
 
@@ -227,6 +291,12 @@ def main():
     l = sub.add_parser("lectores", help="lectores acumulados de todo el histórico")
     l.add_argument("--dia")
     l.set_defaults(func=cmd_lectores)
+
+    o = sub.add_parser("origenes",
+                       help="de dónde viene la gente (la cifra que cuenta)")
+    o.add_argument("--dia")
+    o.add_argument("--desde", default="", help="solo días >= YYYY-MM-DD")
+    o.set_defaults(func=cmd_origenes)
 
     r = sub.add_parser("reset")
     r.add_argument("--confirmar", action="store_true")
