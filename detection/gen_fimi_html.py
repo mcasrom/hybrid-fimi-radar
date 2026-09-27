@@ -1664,6 +1664,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Observatorio · Research — pregunta, datos, método, evidencia e incertidumbre</title>
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/research.html">
 <meta name="description" content="Nota de investigación del observatorio: qué detecta, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
@@ -1671,7 +1672,8 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:title" content="Observatorio · Research">
 <meta property="og:description" content="De la pregunta a la incertidumbre: cómo detecta el observatorio coordinación y amplificación, qué puede equivocarse y cómo repetirlo.">
-<meta property="og:image" content="/og-preview.jpg">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/research.html">
 <meta name="twitter:card" content="summary_large_image">
 <style>
 :root{{color-scheme:light}}
