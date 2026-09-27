@@ -200,7 +200,7 @@ feeds:
   note: 'Internacional (amenaza rusa/híbrida en Europa). Cobertura España-Francia-Italia.'
   idioma: es
   analytical_relevance: alta
-  tema: espana_amenazas_hibridas
+  tema: defensa_espana
 - nombre: Yabiladi Maroc (FR)
   url: https://www.yabiladi.com/rss/
   tipo: media
@@ -425,7 +425,7 @@ feeds:
   note: Actualidad de Burkina Faso (francófono).
   analytical_relevance: media
 - nombre: AIB - Agence Info Burkina
-  url: https://www.aib.media/feed/
+  url: https://www.aib.media/?feed=rss2
   tipo: oficial
   pais: BF
   idioma: fr
@@ -846,6 +846,50 @@ feeds:
   pais: US
   analytical_relevance: alta
   note: intelligence/security
+- nombre: Politico (US)
+  url: https://rss.politico.com/politics-news.xml
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: high
+  pais: US
+  analytical_relevance: alta
+  tema: eeuu_politica
+  note: politica EEUU / midterms
+- nombre: NPR Politics (US)
+  url: https://feeds.npr.org/1014/rss.xml
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: high
+  pais: US
+  analytical_relevance: alta
+  tema: eeuu_politica
+  note: politica EEUU
+- nombre: The Guardian US politics (EN)
+  url: https://www.theguardian.com/us-news/us-politics/rss
+  tipo: media
+  idioma: en
+  bias: center-left
+  reliability: high
+  transparency: high
+  pais: GB
+  analytical_relevance: alta
+  tema: eeuu_politica
+  note: politica EEUU
+- nombre: PBS NewsHour Politics (US)
+  url: https://www.pbs.org/newshour/feeds/rss/politics
+  tipo: media
+  idioma: en
+  bias: center
+  reliability: high
+  transparency: high
+  pais: US
+  analytical_relevance: alta
+  tema: eeuu_politica
+  note: politica EEUU
 temas:
   frontera_sur:
     estado: produccion
@@ -1093,7 +1137,7 @@ temas:
     - Nvidia
     - ia
   espana_amenazas_hibridas:
-    estado: produccion
+    estado: cerrado
     nombre: España — Amenazas híbridas y FIMI
     filtro:
     - desinformación
@@ -1220,7 +1264,7 @@ temas:
       - mastodon
   defensa_espana:
     estado: piloto
-    nombre: Defensa y Fuerzas Armadas (España)
+    nombre: España — defensa y amenazas híbridas
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -1341,6 +1385,12 @@ keywords:
   plataformas: *id001
   tema: eeuu_politica
 - palabra: 2026 midterms interference
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: midterms
+  plataformas: *id001
+  tema: eeuu_politica
+- palabra: midterms 2026
   plataformas: *id001
   tema: eeuu_politica
 - palabra: Gaza
@@ -1699,6 +1749,42 @@ keywords:
   tema: defensa_espana
 - palabra: fragata
   plataformas: *id007
+  tema: defensa_espana
+- palabra: guerra híbrida
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: amenaza híbrida
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: ciberataque
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: sabotaje
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: espionaje
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: injerencia
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: ataque ruso
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: ataques rusos
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: ataque híbrido
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: ataques híbridos
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: drones rusos
+  plataformas: *id006
+  tema: defensa_espana
+- palabra: gerbera
+  plataformas: *id006
   tema: defensa_espana
 telegram_canales:
 - elfarodeceuta

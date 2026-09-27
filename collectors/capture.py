@@ -474,7 +474,10 @@ def main():
     try:
         from normalizer.clasificar import temas_por_contenido
         for e in uniq:
-            extra = temas_por_contenido((e.get("text") or "") + " " + (e.get("title") or ""), keywords)
+            # `_kw_filt` (no `keywords`): un tema CERRADO no debe reasignarse por
+            # contenido. Antes se usaba la lista completa y un tema cerrado seguía
+            # recibiendo eventos por match de sus keywords aunque no se consultara.
+            extra = temas_por_contenido((e.get("text") or "") + " " + (e.get("title") or ""), _kw_filt)
             if extra:
                 cur = set(e.get("_temas") or set())
                 cur.update(extra)

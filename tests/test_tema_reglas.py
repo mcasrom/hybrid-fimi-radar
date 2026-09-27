@@ -9,7 +9,7 @@ from detection import tema_reglas as tr  # noqa: E402
 
 ACTIVOS_ESPERADOS = {
     "frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
-    "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_amenazas_hibridas",
+    "eeuu_politica", "sahel", "energia", "defensa_espana",
 }
 
 
@@ -20,6 +20,8 @@ def test_temas_activos_y_cerrados_disjuntos():
     # Regresión: los temas cerrados NO deben colarse como activos.
     assert "politica_nacional" in cerrados
     assert "geopolitica_ue_marruecos" in cerrados
+    # 27/Sep: espana_amenazas_hibridas se fusionó en defensa_espana (decisión B).
+    assert "espana_amenazas_hibridas" in cerrados
 
 
 def test_reglas_por_tema_shape():
