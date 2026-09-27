@@ -5,6 +5,14 @@ lectura humana de tráfico automatizado. Nace de un problema concreto: el log de
 nginx rota a los 14 días y el informe diario era un texto que se enviaba y se
 perdía, así que no había forma de responder "¿cuánta gente ha leído esto?".
 
+> **Corrección importante (27-09-2026).** La primera versión tituló con
+> `HUMANO_PROBABLE` sin mirar el referrer y llegó a decir "35 lectores humanos
+> en 15 días". Era falso: casi todo era tráfico de previsualizadores y
+> rastreadores. El titular correcto no son los pageviews sino **de dónde viene
+> la gente** (`scripts/fimi_accesos.py origenes`), y el referrer es la única
+> señal que separa un clic de un rastreo. Los números honestos de 13→27/Sep
+> están en «De dónde viene la gente», más abajo.
+
 ## Qué hay aquí
 
 | Pieza | Dónde |
@@ -26,6 +34,8 @@ cd /home/deploy/hybrid-fimi-radar
 .venv/bin/python scripts/fimi_accesos.py daily --todos       # regenera todo
 .venv/bin/python scripts/fimi_accesos.py stats               # por día
 .venv/bin/python scripts/fimi_accesos.py lectores             # histórico
+.venv/bin/python scripts/fimi_accesos.py origenes             # de dónde viene la gente
+.venv/bin/python scripts/fimi_accesos.py origenes --desde 2026-09-13
 .venv/bin/python scripts/fimi_accesos.py reset --confirmar   # rebaca
 ```
 
@@ -33,27 +43,54 @@ cd /home/deploy/hybrid-fimi-radar
 que se puede lanzar cada hora. Si rotó el log, el inodo cambia y se relee desde
 el principio; los `.gz` ya completos se saltan.
 
-## Las cinco categorías
+## Las seis categorías
 
-`INTERNAL` · `DUENO` · `API` · `BOT` · `HUMANO_PROBABLE`
+`INTERNAL` · `DUENO` · `API` · `BOT` · `ASISTENTE_IA` · `HUMANO_PROBABLE`
 
 - **INTERNAL** — canario propio, healthchecks, monitor. Nunca es un lector.
+  Incluye **las IPs del propio servidor, IPv4 e IPv6**: el canario y Uptime-Kuma
+  salen por la IPv6 y `es_internal` solo miraba `127.0.0.0/8` y `::1/128`, así
+  que cientos de peticiones de monitor propio entraban como "humano probable".
+  La IPv6 observada está en `IPS_PROPIAS_EXTRA` (y se puede ampliar sin tocar
+  código con `FIMI_IPS_PROPIAS`).
 - **DUENO** — tu navegador. Humano, pero no es lectura: se cuenta aparte para no
   inflar la cifra titular.
 - **API** — cualquier `/api/…`. Es una interfaz de máquinas aunque la pida una
   IP residencial. `/api.html` (la documentación) sí es de gente.
-- **BOT** — crawler, escáner, 404, o red de hosting.
+- **BOT** — crawler, escáner, 404, red de hosting, o un Chrome con la versión
+  mal formada (un Chrome real manda cuatro componentes: `Chrome/120.0.0.0`, no
+  `Chrome/120.0`). Incluye crawlers nombrados que antes se colaban como lectura
+  recurrente: `SkyWatch`, `UnifiedPaths`, `NuxtFyi`, `FlipboardProxy`.
+- **ASISTENTE_IA** — OpenAI, Anthropic, Perplexity, Google-Extended, CCBot…
+  **Nunca se cuenta sin desglosar** (ver abajo): hay dos cosas mezcladas.
 - **HUMANO_PROBABLE** — navegador, 200, IP que no es tuya ni una nube. **No es
   una persona probada**: es un candidato, y el daily separa los que sí leen.
+
+### ASISTENTE_IA: gente y crawlers, siempre por separado
+
+La categoría mezcla dos tráficos opuestos y sumarlos triplica el canal:
+
+- **gente con alguien detrás** — `Claude-User`, `ChatGPT-User`,
+  `Perplexity-User`: alguien preguntó a un asistente y el asistente vino a leer
+  el enlace. No es un "lector" (lo descarga la máquina) pero sí es la única vía
+  de entrada con público real. En 13→27/Sep: **23 aperturas** (11 IP).
+- **crawlers de IA** — `GPTBot`, `OAI-SearchBot`, `CCBot`, `ClaudeBot`… indexan
+  para sus modelos. En los mismos 15 días: **65 peticiones**. No son público.
+
+`es_ia_gente()` separa las dos; el daily y la CLI informan de ambas.
 
 ## Lector vs. candidato
 
 Un `GET /` no demuestra que haya alguien detrás. Solo cuenta como **LECTOR** si
-abre contenido, o si vuelve con calma:
+abre contenido **y** vuelve:
 
-- abrió contenido (`/research.html`, `/glosario.html`, `/c/<id>`, …), o
-- resolvió 3+ rutas distintas a lo largo de 2+ días, o
-- volvió 3+ días.
+- abrió contenido (`/research.html`, `/glosario.html`, `/c/<id>`, …) **y**
+- repitió: `req ≥ 2` o apareció en `dias ≥ 2`.
+
+Una sola página y un solo día **no es un lector**. En los datos reales ese
+patrón era siempre un crawler: 9 IP distintas, todas con la misma UA de iOS 13
+(diciembre de 2019) y una petición cada una, sin referer, recorriendo el
+sitemap. Antes contaba como 9 lectores.
 
 Se descartan antes:
 
@@ -73,6 +110,53 @@ Se descartan antes:
 La portada **no** cuenta, igual que en el blog: landing-sí, posts-no. Sin esto,
 en los primeros 15 días el 78 % de las "lecturas de contenido" (634 de 807) eran
 el canario, no gente.
+
+## De dónde viene la gente (el titular de verdad)
+
+Los pageviews de "humano probable" no valen como titular: sin referrer, una
+persona y un crawler que se disfraza son indistinguibles. El referrer se
+**guardaba en el log y la ingesta lo tiraba**; ahora se persiste en
+`accesos.referer` (con índice) y el daily titula por origen.
+
+`clasificar_origen()` agrupa por tipo y aplica tres abstenciones deliberadas,
+porque un referrer de plataforma NO es siempre una persona:
+
+- **previsualizadores** — `l.facebook.com`, `telegram.org`, `slack.com`,
+  `opengraph.io`, `embedly`… abren el enlace para enseñar la tarjeta. No se
+  cuentan. En cambio `t.co` (clic desde X) o `m.facebook.com` SÍ son gente: la
+  diferencia es el subdominio del que previsualiza.
+- **raíz de buscador** — `https://www.google.com` sin ruta es un
+  previsualizador; `google.com/search?q=…` es una búsqueda de verdad. Se
+  distinguen mirando la ruta entera.
+- **sitio propio** — `fimi.viajeinteligencia.com` navegando dentro de sí mismo
+  (eran 2.035 peticiones y 69 IP) y los CTA desde el blog/landing se cuentan
+  aparte, como "¿el blog alimenta al radar?", no como alcance ajeno.
+
+**Medido 13→27/Sep-2026** (9.051 peticiones):
+
+| Origen | Peticiones | IP |
+|---|---:|---:|
+| buscador (`google.com/search?q=viajeinteligencia`) | 16 | 14 |
+| red social (Facebook móvil, Bluesky) | 2 | 2 |
+| correo (app de Gmail) | 1 | 1 |
+| **orígenes externos** | **19** | |
+| sitio propio (blog + landing, CTA) | 20 | 13 |
+| raíz de buscador (previsualizador) | 11 | 7 |
+| asistentes de IA con alguien detrás | 23 | 11 |
+| crawlers de IA | 65 | |
+| conversiones (alta/confirmar/sugerir/clave) | 3 | |
+
+Lectura: la **búsqueda de marca** funciona (16 clics de 14 IP distintas) y los
+**asistentes** son una vía real (23), pero el volumen sigue siendo mínimo. Los
+11 de "raíz de buscador" y los previsualizadores se dejan fuera a propósito.
+
+### Trampa de conteo (corregida)
+
+`origenes_del_dia()` devuelve `ips` como **conjunto**, no como entero. Antes se
+metía el `COUNT(DISTINCT ip_pseudo)` por referer dentro de un set de enteros, así
+que el recuento era "cuántas magnitudes distintas hay", no cuántas direcciones:
+los 16 clics de Google desde 14 IP salían como **"1 IP"** y parecían un scraper.
+Eran personas. `test_referer_se_guarda_y_llega_al_daily` lo fija.
 
 ## Privacidad
 
