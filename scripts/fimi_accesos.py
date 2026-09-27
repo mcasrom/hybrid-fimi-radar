@@ -140,8 +140,8 @@ def cmd_daily(args):
             ]
             if not ext and not ia["gente"] and not len(led):
                 lineas.append("Sin gente. Todo esto fueron máquinas.")
-            _tg("\n".join(lineas))
-            enviados += 1
+            if _tg("\n".join(lineas)):
+                enviados += 1
     con.close()
     if args.tg and not args.no_tg:
         print(f"[accesos] daily enviado a Telegram ({enviados})")
