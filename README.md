@@ -118,7 +118,7 @@ muestra el valor vivo):
 - **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
 - **~133.000 eventos** y **933 clusters** (ventana de 90 días).
-- **72 feeds RSS** + 2 búsquedas de plataforma, 3 canales de Telegram público, 2 subreddits.
+- **72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
 
