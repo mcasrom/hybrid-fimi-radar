@@ -63,19 +63,51 @@ def _plurales(palabra):
     return v
 
 
+# --- Stemming ligero para ruso/ucraniano (cirílico) -------------------------
+# `_plurales` genera el plural ESPAÑOL (-s/-es); en ruso/ucraniano la morfología
+# (casos: Россия/России/России…) es rica y las formas flexionadas no casan con la
+# raíz. Para tokens cirílicos se recorta un sufijo frecuente (raíz >= 4 letras) y
+# se compara por RAÍZ. Solo afecta a tokens con cirílico: ES/EN no cambian.
+_CYR = re.compile(r"[\u0400-\u04FF]")
+_CYR_SUF = ("иями", "ями", "ами", "ией", "ей", "ой", "ий", "ый", "ия", "ии",
+            "ию", "ием", "ов", "ев", "ах", "ях", "ам", "ям", "ом", "ем",
+            "ую", "юю", "ая", "яя", "ы", "и", "а", "я", "у", "ю", "е", "о", "ь")
+
+
+def _is_cyr(s):
+    return bool(_CYR.search(s or ""))
+
+
+@lru_cache(maxsize=None)
+def _stem_cyr(w):
+    if not _is_cyr(w):
+        return w
+    for suf in _CYR_SUF:
+        if len(w) - len(suf) >= 4 and w.endswith(suf):
+            return w[:-len(suf)]
+    return w
+
+
 @lru_cache(maxsize=None)
 def _word_pat(kw_norm):
     """Regex \\b(?:variantes)\\b precompilada por keyword de 1 término.
 
     Antes se hacía `re.escape` + `re.search` (compila) en CADA llamada (~13 M
     compilaciones por generación). La keyword normalizada es vocabulario acotado.
+    Para keywords cirílicas (ru/uk) se compara la RAÍZ + cualquier terminación
+    (inflexión), porque el plural `-s/-es` no aplica a esas lenguas.
     """
+    if _is_cyr(kw_norm):
+        return re.compile(r"(?<!\w)" + re.escape(_stem_cyr(kw_norm)) + r"\w*")
     vars_ = sorted(_plurales(kw_norm), key=len, reverse=True)
     return re.compile(r"\b(?:" + "|".join(re.escape(v) for v in vars_) + r")\b")
 
 
 def _tok_present(t, texto_toks):
-    """¿El token `t` (o su plural/singular) está presente en el texto?"""
+    """¿El token `t` (o su variante) está presente en el texto?"""
+    if _is_cyr(t):
+        stem = _stem_cyr(t)
+        return any(x.startswith(stem) for x in texto_toks)
     return any(v in texto_toks for v in _plurales(t))
 
 

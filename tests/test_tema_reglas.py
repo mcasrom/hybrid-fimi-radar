@@ -45,3 +45,21 @@ def test_temas_activos_ignora_estado_desconocido():
     # estado ausente = produccion (fiel a capture/recompute); candidato/cerrado NO activos
     assert tr.temas_activos(cfg) == ["a", "d"]
     assert set(tr.temas_cerrados(cfg)) == {"b", "c"}
+
+
+def test_matcher_cirilico_flexiones():
+    """B1: el matcher cubre inflexiones ru/uk por RAÍZ (el plural -s/-es no aplica).
+    No debe cruzar idiomas ni romper el match español."""
+    from detection.tema_reglas import normalizar, _tokens, _matches
+
+    def m(kw, txt):
+        kn, kt = normalizar(kw), _tokens(kw)
+        tn = normalizar(txt)
+        tt = [t for t in tn.split() if len(t) > 2]
+        return _matches(kn, kt, tn, tt)
+
+    assert m("война", "последствия войны") is True      # война -> войны (caso)
+    assert m("Россия", "удары России по Украине") is True
+    assert m("дроны", "сбито дронов над городом") is True
+    assert m("propaganda", "difusión de propagandas") is True  # español intacto
+    assert m("propaganda", "война и дезинформация") is False    # sin cruce idioma
