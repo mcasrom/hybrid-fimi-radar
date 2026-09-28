@@ -35,7 +35,7 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas activos
 - **Pipeline**: captura + detección + scoring ejecutados por cron cada 6 h
   (`scripts/cron_every_6h.sh`).
 - **Catálogo de fuentes**: **67 feeds** RSS + 2 plataformas de búsqueda (bluesky, google-news)
-  + 3 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
+  + 8 canales de Telegram + 2 subreddits, cada feed con `bias`/`reliability`/`idioma`/`pais`/
   `analytical_relevance` y nota. El corpus activo ronda los **~104.000 eventos** y **~770 clusters**
   (ventana 90 d, 23/Sep/2026).
 - **Dashboard**: HTML estático generado por `detection/gen_fimi_html.py` y servido por

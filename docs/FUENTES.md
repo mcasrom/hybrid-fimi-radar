@@ -1,7 +1,7 @@
 # Fuentes y palabras clave — European Hybrid & FIMI Radar
 
 Todo se configura en `config.yaml`. Este documento es el inventario real + notas de
-fiabilidad editorial (**actualizado 24/09/2026**, generado desde `config.yaml`).
+fiabilidad editorial (**actualizado 27/09/2026**, generado desde `config.yaml`).
 
 ## Cómo añadir / eliminar
 
@@ -32,7 +32,7 @@ fiabilidad editorial (**actualizado 24/09/2026**, generado desde `config.yaml`).
 ## Resumen del catálogo (27/09/2026)
 
 - **72 feeds RSS** · idiomas: en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1
-- **2 plataformas** de búsqueda (bluesky, google-news) · **3 canales Telegram** · **2 subreddits** (spain, es).
+- **2 plataformas** de búsqueda (bluesky, google-news) · **8 canales Telegram** · **2 subreddits** (spain, es).
 - **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `defensa_espana` · Politico/NPR/Guardian US/PBS → `eeuu_politica` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia`.
 - **Novedad (27/09)**: fusión de `espana_amenazas_hibridas` en `defensa_espana` (renombrado «España —
   defensa y amenazas híbridas»); alta de 4 feeds US (`eeuu_politica`) + keywords `midterms`; arreglo del feed
@@ -163,11 +163,11 @@ Una fuente con corroboration BAJA y además fiabilidad `mixed`/`low` desbloquea 
 
 Bloque global `keywords:` agrupado por tema (el campo `tema:` asigna el evento; sin él, `frontera_sur`):
 
-- **defensa_espana** (23): fuerzas armadas, Eurofighter, Ministerio de Defensa, JEMAD, ejército español, industria de defensa, industria militar, gasto en defensa, presupuesto de defensa, submarino S-80, fragata, guerra híbrida, amenaza híbrida, ciberataque, sabotaje, espionaje, injerencia, ataque ruso, ataques rusos, ataque híbrido, ataques híbridos, drones rusos, gerbera
+- **defensa_espana** (19): fuerzas armadas, Eurofighter, Ministerio de Defensa, JEMAD, ejército español, industria de defensa, industria militar, gasto en defensa, presupuesto de defensa, submarino S-80, fragata, guerra híbrida, amenaza híbrida, ataque ruso, ataques rusos, ataque híbrido, ataques híbridos, drones rusos, gerbera
 - **eeuu_politica** (6): elecciones medio mandato EEUU 2026, election interference, desinformación elecciones EEUU, 2026 midterms interference, midterms, midterms 2026
 - **elecciones** (31): elecciones, electoral, campaña electoral, urnas, papeletas, fraude electoral, afd, midterms, medio mandato, election interference, sondeos, votantes, landtagswahl, bundestagswahl, europawahl, wahlkampf, wahlen, wähler, riksdag, riksdagsval, valet, väljare, rösta, valrörelse, выборы, госдума, vēlēšanas, saeima, izbori, eleições, избори
 - **energia** (10): petróleo, gas natural, Brent, OPEP, Sonatrach, Medgaz, gasoducto, precio de la luz, Ormuz, tarifa eléctrica
-- **espana_amenazas_hibridas** (CERRADO 27/Sep): fusionado en `defensa_espana`; sus keywords específicos (guerra/amenaza híbrida, ciberataque, sabotaje, espionaje, injerencia, ataque(s) ruso(s), ataque(s) híbrido(s), drones rusos, gerbera) pasaron a `defensa_espana`; los genéricos quedan inactivos.
+- **espana_amenazas_hibridas** (CERRADO 27/Sep): fusionado en `defensa_espana`. Solo pasaron los específicos (guerra/amenaza híbrida, ataque(s) ruso(s), ataque(s) híbrido(s), drones rusos, gerbera); los **genéricos** (ciberataque/sabotaje/espionaje/injerencia) se **descartaron** (matcheaban eventos globales).
 - **frontera_sur** (13): Ceuta, Melilla, frontera Marruecos, migración España, Ceuta Melilla frontera, migración Canarias, España Marruecos, migración, Ceuta crise, Maghreb, infiltration, inmigración irregular, soldados fantasma
 - **geopolitica_ue_marruecos** (4): relaciones España Marruecos diplomacia, acuerdo bilateral España Marruecos, política exterior UE Magreb, Marruecos Unión Europea relaciones
 - **inteligencia_artificial** (11): inteligencia artificial, artificial intelligence, OpenAI, ChatGPT, Gemini, Claude, Anthropic, deepfake, Nvidia, robot, algoritmo
@@ -177,9 +177,12 @@ Bloque global `keywords:` agrupado por tema (el campo `tema:` asigna el evento; 
 
 ## Canales Telegram
 
-- `elfarodeceuta`
-- `maldita_es`
-- `sahelbrut`
+- `elfarodeceuta` · `maldita_es` · `sahelbrut`
+- `PressTV` · `AlMayadeenEnglish` · `timesofisrael` · `i24NEWS_EN` (oriente_medio, EN)
+- `meduzalive` (defensa_espana)
+
+> **Retirados 27/Sep** (daban 0: contenido ru/uk sin keywords): `ukrpravda_news`, `rybar`,
+> `readovkanews`, `nexta_live`, `nexta_tv`, `bellingcat`, `OSINTtechnical`, `AnthropicAI`, `DeepMind`.
 
 ## Subreddits
 
