@@ -984,6 +984,21 @@ class H(BaseHTTPRequestHandler):
                 return self._send(403, {"error": "prohibido"})
             full = (q.get("full") or ["0"])[0].lower() in ("1", "true", "yes")
             return self._send(200, _api_admin_tendencias(full=full))
+        if path == "/api/admin/salud":
+            # Salud multi-tema (tabla + avisos) para el panel admin. Lee el JSON
+            # que deja el cron diario; con ?fresh=1 lo recalcula al vuelo.
+            # Read-only y solo el administrador.
+            if _clean_admin_header(self.headers.get("x-admin-secret", "")) != admin_secret():
+                return self._send(403, {"error": "prohibido"})
+            fresh = (q.get("fresh") or ["0"])[0].lower() in ("1", "true", "yes")
+            f = ROOT / "data" / "salud_temas.json"
+            try:
+                import salud_panel  # la API corre como script (sys.path[0]=detection/)
+                data = salud_panel.calcular() if (fresh or not f.exists()) \
+                    else json.loads(f.read_text(encoding="utf-8"))
+            except Exception as e:  # noqa: BLE001
+                return self._send(500, {"error": f"salud no disponible: {e}"})
+            return self._send(200, {"ok": True, **data})
         if path == "/api/export":
             # Evidencia por cluster (OSINT): devuelve cluster_events de un
             # cluster de la vista activa en CSV/JSON. Datos ya públicos en las
