@@ -5063,9 +5063,14 @@ Detalle completo (umbrales y variables configurables):
 {_kpi_alerta_html}
 
 <div class="card" id="licencia">
-<h3>Licencia: GNU AGPL-3.0 (código abierto)</h3>
+<h3>Licencia: datos CC BY 4.0 · código AGPL-3.0</h3>
 <p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
-Este proyecto se publica bajo la <b>GNU Affero General Public License v3.0</b> (AGPL-3.0), una licencia
+Los <b>datos</b> del observatorio (eventos, clusters, exportaciones y permalinks de la API) se publican
+bajo <b>Creative Commons Attribution 4.0 (CC BY 4.0)</b>: puedes reutilizarlos citando la fuente
+(<code>fimi.viajeinteligencia.com</code>).
+</p>
+<p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
+El <b>software</b> se publica bajo la <b>GNU Affero General Public License v3.0</b> (AGPL-3.0), una licencia
 de código abierto (FOSS) reconocida por la Free Software Foundation, con <b>copyleft de red</b>: quien
 modifique el software y lo ofrezca como servicio a través de una red (como este radar), debe poner el
 código fuente de su versión modificada a disposición de quien use ese servicio.
