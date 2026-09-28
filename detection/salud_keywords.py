@@ -478,6 +478,10 @@ def notify(res, dias=None, dry_run=False):
         except Exception:
             prev = {}
 
+    # Los temas CERRADOS no entran en `res`; se descartan del estado para que no
+    # queden como residuo (p. ej. politica_nacional aparecia en keywords_estado.json
+    # con su alerta antigua aunque ya no se comprueba).
+    prev = {t: v for t, v in prev.items() if t in res}
     primera_vez = not prev
     nuevos = []
     recuperados = []
