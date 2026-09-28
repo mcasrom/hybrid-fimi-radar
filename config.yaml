@@ -1726,22 +1726,28 @@ keywords:
 - palabra: Ejército del Aire y del Espacio
   plataformas: *id007
   tema: defensa_espana
-- palabra: Ministerio de Defensa
+- palabra: industria de defensa española
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: Aesmide
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: gasto militar España
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: presupuesto de defensa España
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: Ministerio de Defensa España
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: Armada española
   plataformas: *id007
   tema: defensa_espana
 - palabra: JEMAD
   plataformas: *id007
   tema: defensa_espana
 - palabra: ejército español
-  plataformas: *id007
-  tema: defensa_espana
-- palabra: industria de defensa
-  plataformas: *id007
-  tema: defensa_espana
-- palabra: industria militar
-  plataformas: *id007
-  tema: defensa_espana
-- palabra: gasto en defensa
   plataformas: *id007
   tema: defensa_espana
 - palabra: submarino S-80
