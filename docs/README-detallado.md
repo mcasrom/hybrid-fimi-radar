@@ -111,6 +111,47 @@ El radar opera en vivo en **`fimi.viajeinteligencia.com`** con **8 temas activos
   (INSERT OR IGNORE, aditivo y multi-tema) tras cambiar las keywords de un tema —
   **respetando el gate `filtro`** del tema (no reintroduce lo que el gate rechaza). El dial
   usa la señal **propia** (conservador) y el resumen ejecutivo el top view-clasificado.
+Additive vs. purga: los dos sentidos de `event_temas`
+----------------------------------------------------
+`backfill_tema_contenido.py` es **aditivo** (solo añade temas, por diseño
+multi-tema). Para el caso inverso —una keyword que **se mueve** de un tema a
+otro— hace falta `detection/purgar_tema_keyword.py`, que **quita** la etiqueta.
+
+Por qué importa: al mover `midterms` y `election interference` de `elecciones` a
+`eeuu_politica` (28/09/2026) los eventos ya etiquetados se habrían quedado con
+la etiqueta vieja, **contando dos veces** en el corpus de ambos temas
+(3.608 eventos de `elecciones` que en realidad son midterms de EE. UU.) y
+distorsionando clusters y diales. Los clusters se agrupan sobre el corpus
+**entero, sin ventana temporal**, así que «dejarlo para los próximos días» no
+arregla nada.
+
+Criterio **conservador**, a propósito. El pipeline etiqueta un evento por dos
+rutas: (a) **por contenido** (`temas_por_contenido` + gate `filtro`/`contexto`) y
+(b) **por consulta** (la búsqueda de bluesky/google-news arrastra el tema, así que
+un post puede llegar por la query `wahlen` sin decir literalmente «wahlen» y ser
+legítimamente de ese tema). Por eso la herramienta **no** recomputa la etiqueta
+desde cero —eso borraría la ruta (b) y perdería eventos válidos— sino que solo
+desetiqueta un evento si:
+
+1. matchea ≥1 keyword **retirada** (tenía el motivo), **y**
+2. **no** matchea ninguna keyword/`filtro`/`contexto` vigente (no tiene otro motivo).
+
+Lo que matchea una retirada *y* otra vigente se conserva. Si la retirada sigue
+en `keywords` de `config.yaml`, la herramienta lo **avisa** y la ignora como
+motivo vigente, en vez de no hacer nada en silencio.
+
+```bash
+# siempre en seco primero: sin --aplicar no escribe
+venv/bin/python detection/purgar_tema_keyword.py \
+    --tema elecciones --retiradas midterms "election interference"
+# revisado el desglose (intactos / a desetiquetar / fuera de ventana / sin texto):
+venv/bin/python detection/purgar_tema_keyword.py \
+    --tema elecciones --retiradas midterms "election interference" --aplicar
+```
+
+Mismo patrón que el resto del repo: **medir antes de tocar** y exigir un flag
+explícito para escribir. Test: `tests/test_purgar_tema_keyword.py`.
+
 - Principios: el sistema **no decide** cerrar/promover temas — solo observa, sugiere y
   avisa; la decisión editorial es siempre humana (ver **Gestión de temas**).
 
@@ -539,6 +580,7 @@ hybrid-fimi-radar/
 │   ├── check_ingesta.py    # alerta si el cron se salta la captura
 │   ├── salud_keywords.py   # ¿captura cada tema su ruido real? (patrón "tema ciego")
 │   ├── backfill_tema_contenido.py  # re-etiqueta por contenido tras cambiar keywords
+│   ├── purgar_tema_keyword.py     # desetiqueta lo que solo estaba por una keyword movida
 │   ├── gate_tema_contenido.py      # aplica el gate `filtro` de un tema al histórico
 │   ├── check_sistema.py    # check médico integral del pipeline (BD/config/frescura)
 │   ├── mantenimiento.py    # retención >90 d + backup gzip + VACUUM
