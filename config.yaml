@@ -1054,9 +1054,7 @@ temas:
     - urnas
     - papeletas
     - fraude electoral
-    - midterms
     - medio mandato
-    - election interference
     - sondeos
     - votantes
     # Términos electorales DE/SE (idiomas de los feeds del capítulo electoral):
@@ -1540,13 +1538,7 @@ keywords:
 - palabra: afd
   plataformas: *id004
   tema: elecciones
-- palabra: midterms
-  plataformas: *id004
-  tema: elecciones
 - palabra: medio mandato
-  plataformas: *id004
-  tema: elecciones
-- palabra: election interference
   plataformas: *id004
   tema: elecciones
 - palabra: sondeos
