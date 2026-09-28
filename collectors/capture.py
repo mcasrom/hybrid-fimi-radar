@@ -77,12 +77,27 @@ def grab_telegram(channel):
     return out
 
 
+_BSKY_JWT = None          # cache de sesion: 1 createSession por ciclo, no 1 por query
+_BSKY_JWT_TS = 0.0
+_BSKY_JWT_TTL = 50 * 60   # el accessJwt de Bluesky caduca ~60 min
+_BSKY_LOGGED_ERR = False
+
+
 def _bsky_login(env_path=None):
     """Login a Bluesky con credenciales del .env del social-poster.
 
     El endpoint público de búsqueda (public.api.bsky.app) da 403; la API
     autenticada (api.bsky.app) funciona con la cuenta del operador.
+
+    El JWT se cachea por proceso. Antes se abria una sesion nueva por CADA
+    query (134 keywords x 2 pasadas = 268 createSession por ciclo) y Bluesky
+    respondia 429, dejando el ciclo entero sin captura de Bluesky (~77 % del
+    corpus). Verificado 2026-09-28: 3 logins seguidos dan 200; el limite lo
+    dispara el volumen, no las credenciales.
     """
+    global _BSKY_JWT, _BSKY_JWT_TS, _BSKY_LOGGED_ERR
+    if _BSKY_JWT and (time.time() - _BSKY_JWT_TS) < _BSKY_JWT_TTL:
+        return _BSKY_JWT
     env_path = env_path or "/home/deploy/hybrid-fimi-radar/.bsky_creds.env"
     env = {}
     if Path(env_path).exists():
@@ -101,9 +116,14 @@ def _bsky_login(env_path=None):
                                      data=data, method="POST")
         req.add_header("Content-Type", "application/json")
         sess = json.loads(urllib.request.urlopen(req, timeout=30).read().decode())
-        return sess.get("accessJwt")
+        _BSKY_JWT = sess.get("accessJwt")
+        _BSKY_JWT_TS = time.time()
+        _BSKY_LOGGED_ERR = False
+        return _BSKY_JWT
     except Exception as e:
-        print(f"  bsky login error: {e}")
+        if not _BSKY_LOGGED_ERR:
+            print(f"  bsky login error: {e}")
+            _BSKY_LOGGED_ERR = True
         return None
 
 
