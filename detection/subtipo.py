@@ -46,9 +46,6 @@ MARKERS = {
         "gobierno", "ministerio", "ministerio del interior", "ministerio de defensa",
         "autoridades", "autoridad", "moncloa", "consejo de ministros", "policia",
         "guardia civil", "cni", "cnti", "europol", "comision europea",
-        "informe", "estrategia", "condena", "investigacion", "investiga",
-        "alerta", "alertado", "advertencia", "respuesta", "combate", "combatir",
-        "defensa", "desmentir", "desmentido", "verificacion", "verificado",
     ],
     "incident_report": [
         "ataque", "ciberataque", "ciberataques", "intrusion", "sabotaje",
