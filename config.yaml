@@ -1715,12 +1715,15 @@ keywords:
 - palabra: gerbera
   plataformas: *id006
   tema: espana_amenazas_hibridas
-- palabra: fuerzas armadas
+- palabra: Fuerzas Armadas españolas
   plataformas: &id007
   - bluesky
   - google-news
   tema: defensa_espana
-- palabra: Eurofighter
+- palabra: Eurofighter España
+  plataformas: *id007
+  tema: defensa_espana
+- palabra: Ejército del Aire y del Espacio
   plataformas: *id007
   tema: defensa_espana
 - palabra: Ministerio de Defensa
@@ -1741,9 +1744,6 @@ keywords:
 - palabra: gasto en defensa
   plataformas: *id007
   tema: defensa_espana
-- palabra: presupuesto de defensa
-  plataformas: *id007
-  tema: defensa_espana
 - palabra: submarino S-80
   plataformas: *id007
   tema: defensa_espana
@@ -1754,12 +1754,6 @@ keywords:
   plataformas: *id006
   tema: defensa_espana
 - palabra: amenaza híbrida
-  plataformas: *id006
-  tema: defensa_espana
-- palabra: ataque ruso
-  plataformas: *id006
-  tema: defensa_espana
-- palabra: ataques rusos
   plataformas: *id006
   tema: defensa_espana
 - palabra: ataque híbrido
