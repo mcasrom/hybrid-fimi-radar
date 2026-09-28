@@ -184,6 +184,21 @@ Bloque global `keywords:` agrupado por tema (el campo `tema:` asigna el evento; 
 > **Retirados 27/Sep** (daban 0: contenido ru/uk sin keywords): `ukrpravda_news`, `rybar`,
 > `readovkanews`, `nexta_live`, `nexta_tv`, `bellingcat`, `OSINTtechnical`, `AnthropicAI`, `DeepMind`.
 
+**Fiabilidad editorial de los canales** (a diferencia de los feeds RSS, los canales no llevan
+campos `bias/reliability`; se anotan aquí). El observatorio **mide forma** —coordinación/amplificación—
+y **no atribuye**; los canales de parte valen como **señal**, no como hechos:
+
+| Canal | Naturaleza | Uso |
+|---|---|---|
+| `elfarodeceuta` | prensa local (ES) | contexto |
+| `maldita_es` | verificadores (ES) | contexto/metodología |
+| `sahelbrut` | OSINT local (Sahel) | señal |
+| `meduzalive` | medio independiente ruso (exiliado) | señal/contexto |
+| `PressTV` | **estatal (IRIB, Irán)** | **fuente de parte** |
+| `AlMayadeenEnglish` | **alineada con el eje de la resistencia (Líbano)** | **fuente de parte** |
+| `timesofisrael` | prensa (IL) | contexto |
+| `i24NEWS_EN` | prensa (IL) | contexto |
+
 ## Subreddits
 
 - `spain`
