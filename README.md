@@ -112,13 +112,14 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 
 ## 4. Estado actual
 
-Snapshot del último run (27/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
+Snapshot del último run (29/Sep/2026, **v0.2**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
 - **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
-- **~133.000 eventos** y **933 clusters** (ventana de 90 días).
-- **72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
+- **~146.000 eventos** y **1.052 clusters** (ventana de 90 días), repartidos en
+  589 WATCH · 363 ANOMALOUS · 100 HIGH · 0 CRITICAL.
+- **~72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
 
@@ -137,6 +138,18 @@ muestra el valor vivo):
   ejecutada** todavía.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
   (coste/API o no público); falta análisis multimodal (imagen/vídeo).
+- **Qué cuenta hoy como "coordinación".** Medido sobre producción (29/Sep/2026): el
+  **100 % de los clusters HIGH son de una sola plataforma (Bluesky)** y en el **32 %**
+  la cuenta principal aporta más de la mitad de los eventos; el 23 % tiene 3 cuentas o
+  menos. Es decir, buena parte de HIGH es **una cuenta que repite enlaces** —más un par
+  de cuentas marginales que satisfacen el mínimo de 3— y no coordinación pluricuenta
+  repartida. El gate de banda (`band_gate`) comprueba el **número** de cuentas, no su
+  **peso relativo**. Está documentado, no resuelto.
+- **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
+  decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
+  NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score
+  59,2–59,96 que en realidad eran ANOMALOUS). No era un error de pesos, sino de asignación de
+  banda: `band_for()` ahora toma la última banda cuyo límite inferior sea ≤ score.
 
 Detalle completo en [`docs/ATRIBUCION-LIMITACIONES.md`](docs/ATRIBUCION-LIMITACIONES.md).
 El proyecto **documenta y corrige sus propios sesgos**: por ejemplo, el commit `aa5280f`
