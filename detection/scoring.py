@@ -24,11 +24,26 @@ def load_bands(config):
 
 
 def band_for(score, bands):
-    """Devuelve la etiqueta de banda para un score 0-100."""
-    for label, (lo, hi) in bands.items():
-        if lo <= score <= hi:
-            return label
-    return "NORMAL"
+    """Devuelve la etiqueta de banda para un score 0-100.
+
+    Los cortes de banda son enteros (0-19, 20-39, ...) pero los scores son
+    decimales, así que un score como 39.14 o 59.96 no cae en ninguna banda.
+    Con la comparación anterior esos valores caían en el `return "NORMAL"`
+    final y quedaban degradados en silencio (un 59.96 marcado NORMAL).
+
+    Aquí se toma la última banda cuyo `lo` es <= score, de modo que los
+    tramos decimales se asignan a la banda que los contiene y no existen
+    huecos. Un score por encima del último `hi` se recorta en la última banda.
+    """
+    if not bands:
+        return "NORMAL"
+    elegido = None
+    for label, (lo, _hi) in sorted(bands.items(), key=lambda kv: kv[1][0]):
+        if lo <= score:
+            elegido = label
+        else:
+            break
+    return elegido or "NORMAL"
 
 
 def _tema_weights(config, tema):

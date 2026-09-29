@@ -60,6 +60,16 @@ def test_band_for(score, banda):
     assert band_for(score, load_bands(_cfg())) == banda
 
 
+@pytest.mark.parametrize("score,banda", [
+    (19.5, "NORMAL"), (39.14, "WATCH"), (39.94, "WATCH"), (59.2, "ANOMALOUS"),
+    (59.96, "ANOMALOUS"), (79.92, "HIGH"), (100.5, "CRITICAL"),
+])
+def test_band_for_scores_decimales_sin_huecos(score, banda):
+    """Los cortes son enteros pero los scores son decimales: no debe haber
+    tramos que caigan fuera de toda banda (bug: 59.96 marcado NORMAL)."""
+    assert band_for(score, load_bands(_cfg())) == banda
+
+
 def test_compute_scores_global_y_override_por_tema():
     cfg = _cfg()
     comp = {"synchronization": 0, "content_similarity": 0, "amplification": 0,
