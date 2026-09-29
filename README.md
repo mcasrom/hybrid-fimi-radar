@@ -117,9 +117,10 @@ muestra el valor vivo):
 
 - **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
-- **~146.000 eventos** y **1.037 clusters de los 8 temas activos** (la tabla guarda además 15
-  clusters de temas cerrados, ya fuera del dashboard), repartidos en
-  576 WATCH · 374 ANOMALOUS · 87 HIGH · 0 CRITICAL.
+- **~146.000 eventos** y **1.050 clusters de los 8 temas activos** (la tabla guarda además
+  clusters de temas cerrados, ya fuera del dashboard), medido tras el ciclo del 29/Sep 12:56:
+  580 WATCH · 379 ANOMALOUS · 91 HIGH · 0 CRITICAL. **Estas cifras cambian en cada ciclo**
+  (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **~72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
@@ -135,12 +136,19 @@ muestra el valor vivo):
   **sintéticos** (ARI) y con capas curada/externa; **ninguna demuestra detección de FIMI
   real**. La validación humana **ciega** —con etiquetas separadas de *coordinación
   observable*, *comportamiento inauténtico/manipulativo* y *FIMI con evidencia externa
-  independiente*— está **preparada** (`auditoria_high --formato blind`) pero **no
-  ejecutada** todavía.
+  independiente*— **ya se ha ejecutado** (`auditoria_high --formato blind`): 40 clusters
+  HIGH etiquetados a mano el 29/Sep/2026 → **8,3 % de coordinación** (3 sí / 33 no /
+  4 dudoso), **0 de 40 FIMI**. Limitaciones: **un solo revisor** (sin κ, pendiente un
+  2.º revisor), definición de *coordinación* más exigente que la del muestreo previo
+  (por eso el 94,7 % de septiembre no es comparable) y muestreo de precisión, sin recall.
+  Ver `docs/README-detallado.md`.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
   (coste/API o no público); falta análisis multimodal (imagen/vídeo).
 - **Qué cuenta hoy como "coordinación" — y qué no.** Medido sobre producción
-  (29/Sep/2026 10:14 UTC, 1052 clusters, 20.016 eventos miembro):
+  (29/Sep/2026 10:14 UTC, snapshot de 1052 clusters, 20.016 eventos miembro; **los 100 HIGH
+  de ese snapshot incluyen 20 de temas cerrados** — para los 8 temas activos son 88). Verificado
+  de nuevo **después** del ciclo de las 12:56, ya con el filtro de temas activos:
+  **1.050 clusters · 91 HIGH · 0 CRITICAL**):
   - El grafo de coordinación **solo contiene cuentas sociales por diseño** (los medios se
     capturan, pero no son miembros de ningún cluster). Que HIGH sea Bluesky es una
     **tautología del corpus**, no un sesgo medido: las cuentas que clusterizan tienen
@@ -159,6 +167,13 @@ muestra el valor vivo):
     cuenta domine y excluir sindicación): HIGH **100 → 63**, y el único
     `cross_account_synchrony` se conserva. **No aplicado — decisión del dueño.**
   Medición completa y reproducible: [`docs/composicion-bandas-20260929.md`](docs/composicion-bandas-20260929.md).
+- **⚠️ Una banda alta NO es coordinación (medido a ciegas el 29/Sep/2026).** Sobre los 40
+  clusters HIGH de la muestra ciega, el etiquetado manual dio **8,3 %** de coordinación
+  (3 sí / 33 no / 4 dudoso) y **0 de 40 FIMI**. Los 33 «no» son sobre todo cobertura
+  orgánica de un tema caliente y killbait de fuente única. Consecuencia práctica: el
+  observatorio detecta y **mide amplificación con rigor**, pero **no debe leerse la banda
+  alta como «campaña»** ni como prueba de que exista una. El discriminador que falta es la
+  **ráfaga con ventana temporal real** (hoja §0.-3 de las notas de sprint).
 - **Qué mide el grafo, exactamente.** Reejecutando `build_edges()` sobre producción
   (29/Sep/2026): las aristas son **la misma URL republicada** (dominante) y **textos casi
   idénticos**, con mediana de 0,6-6 h entre las dos cuentas (72-94 % dentro de 24 h). La señal

@@ -136,6 +136,21 @@ def render_validacion_html():
         else:
             conclusion = (f"Muestra de <b>una sola banda ({'/'.join(cur['bandas'])})</b>: "
                           "no permite afirmar que la precisión suba con la banda.")
+            # Honestidad: si la unica banda medida sale baja, decirlo de forma
+            # explicita. «HIGH» sin mas criterio NO es lo mismo que
+            # «coordinacion» (29-Sep: 8,3 % en una muestra ciega de 40 HIGH).
+            # OJO: el valor viene del historial como STRING ('8.3'), no como
+            # float -> parsear antes de formatear (si no, :.1f revienta).
+            try:
+                _pb = float(cur["bandas"].get("/".join(cur["bandas"])))
+                if _pb < 25.0:
+                    conclusion += (
+                        f" <b style='color:#b91c1c'>Aviso: {_pb:.1f} % de precisión en esa banda "
+                        "significa que una banda alta NO equivale a coordinación</b> (el resto es "
+                        "cobertura orgánica, eco de prensa o killbait de fuente única).")
+            except (TypeError, ValueError) as exc:
+                print(f"[validacion_card] no se pudo evaluar la precisión de la "
+                      f"muestra {cur.get('muestra')!r}: {exc}", file=sys.stderr)
         filas.append(
             "<tr>"
             "<td style='padding:6px 10px;border-bottom:1px solid #e2e8f0'>🧪 <b>Curada</b> (ground truth)</td>"
@@ -178,6 +193,16 @@ def render_validacion_html():
             "<td style='text-align:center;padding:6px 10px;border-bottom:1px solid #e2e8f0'>—</td>"
             "<td style='padding:6px 10px;border-bottom:1px solid #e2e8f0'>Pendiente de ejecutar (job semanal).</td></tr>")
 
+    # Nota de estado de la capa ciega: dato derivado del historial, no texto fijo.
+    if cur:
+        _n = cur.get("n") or len(cur["bandas"]) * 8
+        ciega = (f"La validación <b>ciega</b> del modelo vigente <b>está ejecutada</b>: "
+                 f"{_n} clusters etiquetados a mano el {_fecha_muestra(cur['muestra'])}, "
+                 f"por <b>un solo revisor</b> (aún <b>sin κ</b>: falta un 2.º revisor "
+                 f"independiente). Es una <b>línea base de precisión en banda alta</b>.")
+    else:
+        ciega = "La validación ciega del modelo vigente está preparada y sin ejecutar."
+
     return f"""
 <div class="card" id="validacion">
 <h3>Validación del modelo</h3>
@@ -202,7 +227,7 @@ la ausencia de atribución es un resultado válido. Los ceros y los valores bajo
 <br><span style="font-size:.78rem;color:#78350f"><b>Ninguna de estas tres capas mide recall de campañas reales</b>
 ni demuestra que una señal alta sea una campaña: la capa externa solo puede dar <b>recall 0</b> porque su
 catálogo es histórico y de otro ámbito, y la capa curada es un muestreo de precisión sin denominador
-de positivos conocidos. La validación ciega del modelo vigente está preparada y sin ejecutar.</span>
+de positivos conocidos. {ciega}</span>
 <br><span style="font-size:.78rem;color:#78350f">Última validación externa: {fecha or 'pendiente'}.</span>
 </div>
 </div>

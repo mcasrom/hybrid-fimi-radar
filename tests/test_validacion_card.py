@@ -174,3 +174,41 @@ def test_fecha_muestra_descompuesta(card):
     assert v._fecha_muestra("muestra_high_20260921_1351.csv") == "21/09/2026"
     assert v._fecha_muestra("muestra_20260917_1805.csv") == "17/09/2026"
     assert v._fecha_muestra("algo_raro.csv") == "algo_raro.csv"
+
+
+def test_avisa_cuando_una_banda_alta_sale_baja(card):
+    """Regresión 5 (29-Sep): una banda alta con precisión baja NO es coordinación.
+
+    La card debe decirlo explícitamente, no solo mostrar el 8,3 % en una chip.
+    """
+    v, val = card
+    _historial(val, [
+        ["muestra_high_blind_20260929_postgate.csv", "HIGH", 40, 3, 33, 4, 8.3],
+    ])
+    html = v.render_validacion_html()
+    assert "Aviso: 8.3 %" in html
+    assert "NO equivale a coordinación" in html
+
+
+def test_no_traga_excepcion_si_la_precision_no_es_numero(card, capsys):
+    """El valor del historial llega como STRING ('8.3'): formatearlo con :.1f
+    reventaba con ValueError y un `except: pass` lo hacia invisible."""
+    v, val = card
+    (val / "historial.csv").write_text(
+        "muestra,banda,n,coord,no,dud,precision\n"
+        "muestra_x_20260929_postgate.csv,HIGH,40,3,33,4,no-es-un-numero\n",
+        encoding="utf-8")
+    html = v.render_validacion_html()          # no debe romperse
+    assert "Validación del modelo" in html
+    assert "no se pudo evaluar la precisión" in capsys.readouterr().err
+
+
+def test_nota_de_capa_ciega_refleja_el_estado_real(card):
+    v, val = card
+    _historial(val, [
+        ["muestra_high_blind_20260929_postgate.csv", "HIGH", 40, 3, 33, 4, 8.3],
+    ])
+    html = v.render_validacion_html()
+    assert "está ejecutada" in html
+    assert "sin κ" in html
+    assert "sin ejecutar" not in html
