@@ -138,13 +138,26 @@ muestra el valor vivo):
   ejecutada** todavía.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
   (coste/API o no público); falta análisis multimodal (imagen/vídeo).
-- **Qué cuenta hoy como "coordinación".** Medido sobre producción (29/Sep/2026): el
-  **100 % de los clusters HIGH son de una sola plataforma (Bluesky)** y en el **32 %**
-  la cuenta principal aporta más de la mitad de los eventos; el 23 % tiene 3 cuentas o
-  menos. Es decir, buena parte de HIGH es **una cuenta que repite enlaces** —más un par
-  de cuentas marginales que satisfacen el mínimo de 3— y no coordinación pluricuenta
-  repartida. El gate de banda (`band_gate`) comprueba el **número** de cuentas, no su
-  **peso relativo**. Está documentado, no resuelto.
+- **Qué cuenta hoy como "coordinación" — y qué no.** Medido sobre producción
+  (29/Sep/2026 10:14 UTC, 1052 clusters, 20.016 eventos miembro):
+  - El grafo de coordinación **solo contiene cuentas sociales por diseño** (los medios se
+    capturan, pero no son miembros de ningún cluster). Que HIGH sea Bluesky es una
+    **tautología del corpus**, no un sesgo medido: las cuentas que clusterizan tienen
+    27.624 eventos y **ninguno de prensa**. No debe citarse como hallazgo.
+  - En **27 de los 100 HIGH** una sola cuenta aporta ≥55 % de los eventos del cluster, y
+    esas cuentas son en su mayoría **agregadores/feeds** (`greasydump`, `news-flows-nl`,
+    `topnewsde`, `cnn-news`, `efe.com`, `worldnewsbriefly`, `afrique.rfi.fr`…). El **23 %**
+    tiene 3 cuentas o menos (mediana 6, media 13).
+  - Repartidos por su **primera explicación `supported`**: 37 `single_source_feed`,
+    25 `sustained_amplification`, 20 `unresolved`, 10 `syndicated_wire`, 4
+    `synchronized_without_operator`, 3 `automated_non_malicious` y **1 solo**
+    `cross_account_synchrony`. Es decir: **de 100 alertas HIGH, 1 cumple la definición
+    propia de ráfaga coordinada entre cuentas distintas.**
+  - Causa: `band_gate` comprueba el **número** de cuentas, no su **peso relativo**, así que
+    un feed con 3 bridged-cuentas satisface el mínimo. Gate B medido (exigir que ninguna
+    cuenta domine y excluir sindicación): HIGH **100 → 63**, y el único
+    `cross_account_synchrony` se conserva. **No aplicado — decisión del dueño.**
+  Medición completa y reproducible: [`docs/composicion-bandas-20260929.md`](docs/composicion-bandas-20260929.md).
 - **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
   decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
   NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score
