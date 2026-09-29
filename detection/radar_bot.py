@@ -67,17 +67,20 @@ def _short_id(canal: str, destino: str) -> str:
     return hashlib.sha256(f"{canal}:{destino}".encode()).hexdigest()[:20]
 
 
-def api_get(method: str, **params):
+def api_get(method: str, client_timeout: int = 20, **params):
     try:
-        r = requests.post(f"{API}/{method}", data=params, timeout=30)
+        r = requests.post(f"{API}/{method}", data=params, timeout=(10, client_timeout))
         return r.json()
     except Exception as e:
         print(f"[bot] api {method} error: {e}")
         return {"ok": False}
 
 
-def get_updates(offset: int, timeout: int = 30):
-    return api_get("getUpdates", offset=offset, timeout=timeout)
+def get_updates(offset: int, timeout: int = 25):
+    # El long-poll del servidor dura `timeout` s; el cliente debe esperar MÁS
+    # (timeout+20) o la lectura caduca justo antes de que Telegram responda.
+    # Bug 29-Sep: ambos eran 30 -> 0 mensajes procesados en 3 días.
+    return api_get("getUpdates", client_timeout=timeout + 20, offset=offset, timeout=timeout)
 
 
 def send(chat_id, text, reply_markup=None):
