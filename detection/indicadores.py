@@ -195,7 +195,7 @@ def _html(res):
     resumen = ind.get("resumen", {})
     _lbl = {"eco_1_pieza": ("eco de 1 pieza", "#7c3aed"),
             "rafaga": ("ráfaga", "#dc2626"),
-            "coordinacion_sostenida": ("coordinación sostenida", "#d97706")}
+            "coordinacion_sostenida": ("amplificación sostenida", "#d97706")}
     chips = ""
     for k, (lab, col) in _lbl.items():
         n = resumen.get(k, 0)
@@ -230,7 +230,7 @@ def _html(res):
         f"<p class='caption'>Los <b>ejes</b> son lentes que cruzan temas (un eje NO es un tema): "
         f"se cuenta el volumen reciente que usa su vocabulario, en cuántas fuentes y en qué temas "
         f"aterriza. Los <b>indicadores</b> resumen la forma de los clusters activos (separada del "
-        f"score): eco de una pieza, ráfaga o coordinación sostenida. Dato descriptivo, sin "
+        f"score): eco de una pieza, ráfaga o amplificación sostenida. Dato descriptivo, sin "
         f"atribución. Ventana: últimos {res.get('dias', 14)} días.</p>"
         f"{ind_rows}{eje_rows}"
         f"<p class='caption' style='margin-top:6px'>Un eje con volumen alto y multi-fuente es "

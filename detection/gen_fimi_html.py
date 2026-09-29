@@ -881,7 +881,7 @@ def _lectura_cluster(comps, n_cuentas=None, diver=None, ruido=False):
     if ruido or max(coord, anom, infra, dens) < 30:
         return ("❔ <b>Señal débil</b>: con estos datos no conviene extraer conclusiones. El radar "
                 "la muestra por transparencia, no como alerta.")
-    return ("🔎 <b>Difusión con coordinación moderada</b>: revisa de qué habla y la evidencia "
+    return ("🔎 <b>Difusión con solapamiento moderado</b>: revisa de qué habla y la evidencia "
             "antes de interpretar; no implica atribución a ningún actor.")
 
 
@@ -902,15 +902,15 @@ def _lectura_tema(mean, n=0, n_cuentas=0, n_ev=0, n_sost=0):
         _p = ("patrón <b>anómalo</b>: el comportamiento de las cuentas se aparta de lo normal "
               "en el tema")
     elif coord >= 60 and anom < 20:
-        _p = ("<b>difusión coordinada con patrón normal</b>: probable actividad legítima "
+        _p = ("<b>difusión simultánea con patrón normal</b>: probable actividad legítima "
               "(medios, activistas), no una operación inauténtica")
     elif coord >= 60 or infra >= 60:
-        _p = ("<b>coordinación e infraestructura altas</b> (patrón de red); la anomalía decide "
+        _p = ("<b>solapamiento e infraestructura altos</b> (patrón de red); la anomalía decide "
               "si es actividad legítima o inauténtica")
     elif max(coord, anom, infra, dens) < 30:
         _p = "<b>señal débil</b>: no conviene extraer conclusiones"
     else:
-        _p = "<b>coordinación moderada</b>"
+        _p = "<b>solapamiento moderado</b>"
     _sost = (str(int(n_sost)) + " narrativa" + ("" if int(n_sost) == 1 else "s") + " sostenida" + ("" if int(n_sost) == 1 else "s")) \
         if n_sost else "sin narrativas sostenidas"
     _ctx = (str(int(n)) + " clusters · " + str(int(n_cuentas)) + " cuentas"
@@ -1120,11 +1120,11 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
     _anom_v = comps.get("anomaly_score") or 0
     _alerta_chip = ""
     if band in ("HIGH", "CRITICAL") and _anom_v < 20:
-        _alerta_chip = ('<span title="La banda la sostiene la masa (coordinación/infraestructura); '
-                        'la anomalía es baja: es coordinación observada, no necesariamente una '
+        _alerta_chip = ('<span title="La banda la sostiene la masa (solapamiento/infraestructura); '
+                        'la anomalía es baja: es amplificación observada, no necesariamente una '
                         'desviación inusual." style="display:inline-block;font-size:.72rem;color:#1e3a8a;'
                         'border:1px dashed #93c5fd;background:#eff6ff;border-radius:999px;'
-                        'padding:1px 10px;font-weight:600">Coordinación alta · anomalía baja</span>')
+                        'padding:1px 10px;font-weight:600">Amplificación alta · anomalía baja</span>')
 
     # Aviso de SATURACIÓN: si los 3 componentes de MASA (coordinación,
     # infraestructura, densidad) están al máximo, no discriminan entre
@@ -1679,11 +1679,11 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
                     f"{n_src_reddit} subreddits). De los <b>{n_events}</b> eventos en ventana, "
                     f"{n_rss_ev} vienen de feeds (lectura ancilar de prensa) y {n_redes_ev} de redes/plataformas "
                     f"(cuentas sociales = el grafo de coordinación).")
-    _evidencia_txt = (f"En el ciclo actual el radar mantiene <b>{n_clusters}</b> cluster(s) de coordinación: "
+    _evidencia_txt = (f"En el ciclo actual el radar mantiene <b>{n_clusters}</b> cluster(s) de amplificación: "
                       f"{n_band.get('CRITICAL', 0)} CRITICAL · {n_band.get('HIGH', 0)} HIGH · "
                       f"{n_band.get('ANOMALOUS', 0)} ANOMALOUS · {n_band.get('WATCH', 0)} WATCH · "
                       f"{n_band.get('NORMAL', 0)} NORMAL. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
-                      f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;coordinación "
+                      f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;amplificación "
                       f"sostenida&quot; (la misma red vertiendo varias piezas a lo largo de &gt;1 día).")
     _tabs_temas = " · ".join(f"<a href='/#{t}'>#{t}</a>" for t in temas) or "/"
     _dataset_link = (f"/api/export?cluster={_top_label}&fmt=csv" if _top_label
