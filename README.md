@@ -158,6 +158,16 @@ muestra el valor vivo):
     cuenta domine y excluir sindicación): HIGH **100 → 63**, y el único
     `cross_account_synchrony` se conserva. **No aplicado — decisión del dueño.**
   Medición completa y reproducible: [`docs/composicion-bandas-20260929.md`](docs/composicion-bandas-20260929.md).
+- **Qué mide el grafo, exactamente.** Reejecutando `build_edges()` sobre producción
+  (29/Sep/2026): las aristas son **la misma URL republicada** (dominante) y **textos casi
+  idénticos**, con mediana de 0,6-6 h entre las dos cuentas (72-94 % dentro de 24 h). La señal
+  que debería distinguir una campaña de una noticia —ráfaga de publicación, `tight_timing`— es
+  **casi nula: 4, 11 y 0 aristas** en tres temas (de 937, 2.387 y 1.363). Y la estructura es
+  una **cadena de enlaces débiles** (mediana: 1 arista por cluster): el 96 % de WATCH y el 23 %
+  de HIGH no tienen ningún nodo de grado ≥3, es decir ninguna cuenta conectada con dos o más
+  cuentas del cluster. Por tanto el sistema mide **amplificación simultánea de una misma pieza**,
+  que es un hecho verificable; **la diferencia entre noticia y campaña no está implementada**.
+  Detalle: [`docs/grafo-coordinacion-20260929.md`](docs/grafo-coordinacion-20260929.md).
 - **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
   decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
   NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score
