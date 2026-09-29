@@ -1,16 +1,17 @@
-# Coordination and amplification signal observatory (FIMI domain)
+# Amplification observatory (FIMI domain)
 
 *English · [Español](README.md)*
 
 ## 1. What it is
 
-**Coordination and amplification signal observatory:** an OSINT system that detects, from
-public data, **observable patterns of synchronisation, content repetition and structural
-clustering** across social platforms and the press around a set of topics (southern
-border & Morocco, Middle East, elections, energy, AI, Sahel, defence and hybrid
+**Amplification observatory:** an OSINT system that measures, from
+public data, **patterns of amplification** —synchronisation, content repetition and
+structural clustering— across social platforms and the press around a set of topics
+(southern border & Morocco, Middle East, elections, energy, AI, Sahel, defence and hybrid
 threats…). It looks at **who pushes the same message, at the same time and in the same
-way**, to surface patterns potentially consistent with coordinated influence or
-manipulation activity (FIMI). FIMI is the **domain** being observed, not a detection: the
+way**, and publishes it as **measured amplification**. A high band does **not** equal
+coordination: in the blind validation of 29/Sep/2026 only **3 of 40** high-band cases
+(8.3%) showed coordination. FIMI is the **domain** being observed, not a detection: the
 observatory **does not** confirm campaigns or attribute actors.
 
 The tool **does not attribute an actor or confirm inauthenticity or a foreign campaign

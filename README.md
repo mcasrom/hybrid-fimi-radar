@@ -1,16 +1,17 @@
-# Observatorio de señales de coordinación y amplificación (ámbito FIMI)
+# Observatorio de amplificación (ámbito FIMI)
 
 *[English](README.en.md) · Español*
 
 ## 1. Qué es
 
-**Observatorio de señales de coordinación y amplificación:** sistema OSINT que detecta, con
-datos públicos, **patrones observables de sincronización, repetición de contenido y
-agrupación estructural** de la conversación en redes sociales y prensa sobre un conjunto
+**Observatorio de amplificación:** sistema OSINT que mide, con
+datos públicos, **patrones de amplificación** —sincronización, repetición de contenido y
+agrupación estructural— de la conversación en redes sociales y prensa sobre un conjunto
 de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
 defensa y amenazas híbridas…). Mira **quién empuja el mismo mensaje, a la vez
-y de la misma forma**, para señalar patrones potencialmente compatibles con actividades
-de influencia o manipulación coordinada (FIMI). FIMI es el **ámbito** que se observa,
+y de la misma forma**, y lo publica como **amplificación medida**. Una banda alta
+**no** equivale a coordinación: en la validación ciega del 29/Sep/2026 solo **3 de 40**
+casos de banda alta (8,3 %) mostraban coordinación. FIMI es el **ámbito** que se observa,
 no una detección: el observatorio **no** confirma campañas ni atribuye actores.
 
 La herramienta **no atribuye actor ni confirma inautenticidad o campaña extranjera por

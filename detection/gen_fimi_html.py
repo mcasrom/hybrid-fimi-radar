@@ -435,7 +435,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
             if _ac in ("", "NO_ATTRIBUTION", "UNKNOWN"):
                 _attr_chip = ('<span style="display:inline-block;font-size:.68rem;color:#475569;'
                               'border:1px dashed #cbd5e1;border-radius:999px;padding:1px 8px;margin-left:6px" '
-                              'title="El radar observa coordinación; no atribuye actor sin pruebas (UNKNOWN es un resultado válido)">'
+                              'title="El radar mide amplificación; no atribuye actor sin pruebas (UNKNOWN es un resultado válido)">'
                               '⚖️ atribución: sin determinar</span>')
             else:
                 _attr_chip = ('<span style="display:inline-block;font-size:.68rem;color:#7c2d12;background:#fff7ed;'
@@ -588,13 +588,13 @@ def _cluster_comps(c, a):
 
 
 def _sostenido_chip(diver):
-    """Clasifica un cluster como 'eco puntual de 1 pieza' vs 'coordinación
+    """Clasifica un cluster como 'eco puntual de 1 pieza' vs 'amplificación
     sostenida' según la diversidad de URLs y la ventana temporal (opción 3).
 
     diver: dict con {n_ev, n_urls, horas} o None. Criterios (solo lectura):
       - n_urls<=1 y n_ev>=2 -> eco puntual: varias cuentas comparten la MISMA
         pieza. No es patrón de larga duración.
-      - n_ev>=10 y horas>=24 y n_urls>=3 -> coordinación sostenida: una misma
+      - n_ev>=10 y horas>=24 y n_urls>=3 -> amplificación sostenida: una misma
         red vertiendo muchas piezas a lo largo del tiempo.
     Devuelve el HTML del chip o "" si no aplica. NO toca el scoring: es contexto
     de interpretación para que el analista no lea el eco de una pieza como una
@@ -611,7 +611,7 @@ def _sostenido_chip(diver):
     if n_ev >= 10 and horas >= 24 and n_urls >= 3:
         return ('<span style="display:inline-block;font-size:.72rem;color:#b45309;'
                 'border:1px solid #f59e0b;border-radius:999px;padding:1px 10px;'
-                'font-weight:600;background:#fffbeb;cursor:help" title="Coordinacion sostenida: una misma red (3+ cuentas) vertiendo muchas piezas (10+) durante 24+h. Coordinacion real y sostenida.">coordinación sostenida</span>')
+                'font-weight:600;background:#fffbeb;cursor:help" title="Amplificacion sostenida: una misma red (3+ cuentas) vierte muchas piezas (10+) durante 24+h. Patron sostenido de amplificacion; no implica por si solo coordinacion.">amplificación sostenida</span>')
     return ""
 
 
@@ -747,19 +747,20 @@ _GUIA_HTML = """
 <div class="card" id="como-leerlo">
 <h3 style="margin-bottom:6px">Cómo leer este radar (guía rápida)</h3>
 <div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #0ea5e9;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.82rem;color:#334155;line-height:1.55">
-  <b>Señal potencial de FIMI.</b> Se observan patrones de coordinación y amplificación.
-  La señal <b>sugiere posible actividad coordinada</b>, pero <b>no confirma atribución</b>
-  de actor, inautenticidad ni influencia extranjera sin evidencia adicional.
+  <b>Amplificación observada.</b> El radar mide <b>qué contenido repiten varias cuentas y en cuánto
+  tiempo</b>. Una banda alta indica <b>amplificación</b>, <b>no</b> coordinación confirmada: en la
+  validación ciega del 29/Sep solo <b>3 de 40</b> casos de banda alta (8,3 %) mostraban coordinación.
+  No confirma atribución de actor, inautenticidad ni influencia extranjera.
 </div>
 <ol style="font-size:.84rem;color:#334155;padding-left:20px;line-height:1.7;margin:6px 0">
-  <li><b>Qué es.</b> El radar <b>observa coordinación</b> en fuentes públicas (quién amplifica qué,
-      cómo y cuándo). No es un agregador de noticias ni un detector de mentiras.</li>
+  <li><b>Qué es.</b> El radar <b>mide amplificación</b> en fuentes públicas (qué contenido repiten
+      varias cuentas, cómo y cuándo). No es un agregador de noticias ni un detector de mentiras.</li>
   <li><b>Qué mide.</b> Cada <b>cluster</b> agrupa cuentas que amplifican lo mismo. Su
-      <b>score 0–100</b> combina 5 señales —coordinación, contenido similar, amplificación,
+      <b>score 0–100</b> combina 5 señales —solapamiento de cuentas, contenido similar, amplificación,
       infraestructura y anomalía— y se traduce a una banda:
       NORMAL · WATCH · ANOMALOUS · HIGH · CRITICAL. (La <b>densidad de red</b> se muestra como
       dato, pero <b>no pondera</b> en el score: es una transformación del mismo eje de
-      coordinación y se retiró para evitar doble conteo.)</li>
+      solapamiento y se retiró para evitar doble conteo.)</li>
   <li><b>Cómo se lee cada tarjeta.</b> Trae una <b>lectura en lenguaje llano</b> (qué tipo de señal
       es: eco de una pieza, amplificación inauténtica, difusión coordinada…) y una
       <b>cadena de evidencia</b> para comprobarlo tú mismo, con descarga en CSV/JSON.</li>
@@ -825,11 +826,11 @@ El radar <b>no ve todo internet</b>. Esto es lo que observa y lo que queda fuera
   <li><b>NORMAL</b> (0–19): sin señal relevante.</li>
   <li><b>WATCH</b> (20–39): señal débil o ruido de bajo volumen (a menudo 2-3 cuentas).</li>
   <li><b>ANOMALOUS</b> (40–59): patrón anómalo sin llegar a banda alta. <i>Aquí caen los ecos de prensa</i> (≥80% de dominios de medios establecidos).</li>
-  <li><b>HIGH</b> (60–79): coordinación sostenida con producción propia (dominios variados, no solo prensa). <b>Pista fuerte, no prueba de campaña.</b></li>
-  <li><b>CRITICAL</b> (80–100): coordinación anómala de alta masa. <i>No hay ninguno ahora</i> (el <code>band_gate</code> exige ≥10 cuentas y anomalía ≥40).</li>
+  <li><b>HIGH</b> (60–79): <b>amplificación alta</b> — varias cuentas distintas repiten el mismo contenido en una ventana corta. <b>No implica coordinación ni campaña</b> (solo 3 de 40 casos de banda alta, el 8,3 %, mostraron coordinación en la validación ciega del 29/Sep).</li>
+  <li><b>CRITICAL</b> (80–100): amplificación anómala de alta masa. <i>No hay ninguno ahora</i> (el <code>band_gate</code> exige ≥10 cuentas y anomalía ≥40).</li>
 </ul>
 <p class="caption" style="font-size:.8rem;color:#64748b;margin-top:6px">
-Recuerda: el radar mide <b>coordinación, no autoría</b>; <code>UNKNOWN</code> es un resultado válido.
+Recuerda: el radar mide <b>amplificación, no autoría ni coordinación</b>; <code>UNKNOWN</code> es un resultado válido.
 </p>
 </div>
 """
@@ -1696,13 +1697,13 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Observatorio · Research — pregunta, datos, método, evidencia e incertidumbre</title>
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/research.html">
-<meta name="description" content="Nota de investigación del observatorio: qué detecta, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
+<meta name="description" content="Nota de investigación del observatorio: qué mide, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:title" content="Observatorio · Research">
-<meta property="og:description" content="De la pregunta a la incertidumbre: cómo detecta el observatorio coordinación y amplificación, qué puede equivocarse y cómo repetirlo.">
+<meta property="og:description" content="De la pregunta a la incertidumbre: cómo mide el observatorio amplificación, qué puede equivocarse y cómo repetirlo.">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/research.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -1751,11 +1752,12 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 <main>
   <div class="hero">
     <h1>Observatorio · Research</h1>
-    <p class="sub">Notas de investigación del radar de señales de coordinación y amplificación:
-      lo que queremos detectar, los datos que observamos, cómo lo medimos, qué hemos
+    <p class="sub">Notas de investigación del observatorio de amplificación:
+      lo que queremos medir, los datos que observamos, cómo lo medimos, qué hemos
       encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
       puede descargar. Herramienta OSINT <b>agnóstica al actor</b>: nunca atribuimos
-      sin evidencia. Cifras del último ciclo — generado <b>{_gen}</b>.</p>
+      sin evidencia; una banda alta es amplificación, no coordinación confirmada.
+      Cifras del último ciclo — generado <b>{_gen}</b>.</p>
   </div>
 
   <div class="card">
@@ -1766,7 +1768,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
     <ul>
       <li>¿Cuándo una discusión es orgánica y cuándo parece orquestada?</li>
       <li>¿Qué cuentas amplifican qué piezas, con qué timing y qué estructura de red?</li>
-      <li>¿La señal es un <b>eco de una sola pieza</b> o una <b>coordinación sostenida</b>?</li>
+      <li>¿La señal es un <b>eco de una sola pieza</b> o una <b>amplificación sostenida</b>?</li>
     </ul>
     <p class="caption">Regla de oro: OBSERVACIÓN → ANOMALÍA → COORDINACIÓN → CLUSTER → CAMPAÑA
       → HIPÓTESIS DE ACTOR → ATRIBUCIÓN CON NIVEL DE CONFIANZA. Nunca al revés. Ver
@@ -1822,7 +1824,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
         <a href="{_top_link}">dashboard</a>.</li>
       <li><b>Ejemplos documentados de tipos de hallazgo:</b> el detector separa el
         <b>eco de una pieza</b> (misma URL repetida por varias cuentas) de la
-        <b>coordinación sostenida</b> (una red que vierte piezas durante días); ambos casos se
+        <b>amplificación sostenida</b> (una red que vierte piezas durante días); ambos casos se
         han producido sobre temas reales (p. ej. narrativas de frontera sur y pares de cuentas
         con volumen sostenido de una sola pieza, que la escala de masa deja en su banda correcta).</li>
       <li><b>Validación sintética:</b> <code>tests/generate_synthetic.py</code> mide que el pipeline
@@ -1976,11 +1978,11 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "  <channel>\n"
-        "    <title>Observatorio — Alertas de coordinación</title>\n"
+        "    <title>Observatorio — Alertas de amplificación</title>\n"
         f"    <link>{base_url}/</link>\n"
         f'    <atom:link href="{base_url}/alerts.xml" rel="self" type="application/rss+xml"/>\n'
-        "    <description>Señales de coordinación/amplificación en banda HIGH o CRITICAL (score ≥ 60). "
-        "El radar observa comportamiento, no atribuye actores (UNKNOWN es un resultado válido).</description>\n"
+        "    <description>Amplificación en banda alta (HIGH o CRITICAL, score ≥ 60). "
+        "El radar mide propagación, no confirma coordinación ni atribuye actores (UNKNOWN es un resultado válido).</description>\n"
         "    <language>es</language>\n"
         f"    <lastBuildDate>{now}</lastBuildDate>\n"
         + "\n".join(items) + "\n"
@@ -4658,12 +4660,12 @@ def main():
         '<script type="application/ld+json">'
         '{"@context": "https://schema.org", "@graph": ['
         '{"@type": "WebSite", "@id": "https://fimi.viajeinteligencia.com/#website", '
-        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de señales de coordinación y amplificación", "inLanguage": "es", '
-        '"description": "Observatorio OSINT agnóstico al actor que observa '
-        'coordinación, amplificación y anomalías en temas en español (ámbito FIMI). No detecta campañas ni atribuye."},'
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de amplificación (ámbito FIMI)", "inLanguage": "es", '
+        '"description": "Observatorio OSINT agnóstico al actor que mide '
+        'amplificación y anomalías en temas en español (ámbito FIMI). Mide propagación; no confirma coordinación ni atribuye."},'
         '{"@type": "Dataset", "@id": "https://fimi.viajeinteligencia.com/#dataset", '
-        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de señales de coordinación y amplificación — eventos y clusters", '
-        f'"description": "{n_events} eventos y {n_clusters} clusters de coordinación del ciclo actual (6h) del observatorio.", '
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de amplificación (ámbito FIMI) — eventos y clusters", '
+        f'"description": "{n_events} eventos y {n_clusters} clusters de amplificación del ciclo actual (6h) del observatorio.", '
         '"isAccessibleForFree": true, "inLanguage": "es", '
         '"license": "https://creativecommons.org/licenses/by/4.0/", '
         f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
@@ -4674,14 +4676,14 @@ def main():
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Observatorio de señales de coordinación y amplificación · ámbito FIMI</title>
- <meta name="description" content="Observatorio OSINT agnóstico al actor: coordinación, amplificación y anomalías (ámbito FIMI) en español. {n_events} eventos y {n_clusters} clusters señalados hoy. Señal, no atribución.">
-<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, coordinación de cuentas, amplificación de narrativas">
+<title>Observatorio de amplificación · ámbito FIMI</title>
+ <meta name="description" content="Observatorio OSINT agnóstico al actor: amplificación y anomalías (ámbito FIMI) en español. {n_events} eventos y {n_clusters} clusters de amplificación hoy. Mide propagación; no confirma coordinación ni atribuye.">
+<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  {_jsonld_html}
  <meta property="og:type" content="website">
- <meta property="og:title" content="Observatorio de señales de coordinación y amplificación ({n_events} eventos, {n_clusters} clusters)">
-<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, Oriente Medio, elecciones, inteligencia artificial). {n_clusters} clusters señalados hoy ({n_high} HIGH). Señal, no atribución.">
+ <meta property="og:title" content="Observatorio de amplificación ({n_events} eventos, {n_clusters} clusters)">
+<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, Oriente Medio, elecciones, inteligencia artificial). {n_clusters} clusters de amplificación hoy ({n_high} en banda alta). Mide propagación; no confirma coordinación ni atribuye.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
@@ -4689,8 +4691,8 @@ def main():
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Observatorio de señales de coordinación y amplificación">
-<meta name="twitter:description" content="{n_clusters} clusters de coordinación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
+<meta name="twitter:title" content="Observatorio de amplificación">
+<meta name="twitter:description" content="{n_clusters} clusters de amplificación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -4792,7 +4794,7 @@ a{{color:#c2410c}}
 <body>
 <header>
 <div class="fimi-brandbar">
-  <a class="brand" href="/" title="Observatorio de señales de coordinación y amplificación (ámbito FIMI)">
+  <a class="brand" href="/" title="Observatorio de amplificación (ámbito FIMI)">
     <span class="logo">📡</span> Observatorio
   </a>
   <a class="transp" href="/research.html" title="Investigación y validación del modelo">Research</a>
@@ -4816,18 +4818,19 @@ a{{color:#c2410c}}
 <div id="tabRadar" class="tab-panel active">
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
-    <span><span class="dot" style="background:#c2410c"></span>Observatorio · señales de coordinación y amplificación (ámbito FIMI)</span>
+    <span><span class="dot" style="background:#c2410c"></span>Observatorio · amplificación (ámbito FIMI)</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
-  <h1>Observatorio de señales de coordinación y amplificación</h1>
+  <h1>Observatorio de amplificación</h1>
   <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
-  para detectar <strong>patrones observables de coordinación y amplificación</strong> potencialmente
-  compatibles con actividades de influencia o manipulación informativa (FIMI). Observamos el
-  comportamiento en red; <strong>no confirmamos atribución de actor ni campaña</strong> sin evidencia adicional.</p>
+  para medir <strong>patrones de amplificación</strong> (qué contenido repiten varias cuentas, cómo y cuándo),
+  en el ámbito FIMI. Observamos el comportamiento en red; <strong>una banda alta es amplificación,
+  no coordinación confirmada</strong> (8,3 % en la validación ciega del 29/Sep) y
+  <strong>no confirmamos atribución de actor ni campaña</strong> sin evidencia adicional.</p>
   <div class="chain">
     <div class="step"><b><span class="ic">👁</span> OBSERVAR</b><span>captura de {n_sources} fuentes abiertas en {len(temas)} temas, sin prejuicio de actor.</span></div>
     <div class="arrow">→</div>
-    <div class="step"><b><span class="ic">📡</span> DETECTAR</b><span>señal de coordinación, amplificación y anomalías sobre {n_clusters} clusters activos.</span></div>
+    <div class="step"><b><span class="ic">📡</span> MEDIR</b><span>amplificación y anomalías sobre {n_clusters} clusters activos.</span></div>
     <div class="arrow">→</div>
     <div class="step"><b><span class="ic">⚖️</span> CONTRASTAR</b><span>las hipótesis se contrastan contra la evidencia. Una señal no es una atribución.</span></div>
   </div>
