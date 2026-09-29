@@ -31,6 +31,7 @@ VAL_DIR = ROOT / "data" / "validacion"
 HIST = VAL_DIR / "historial.csv"
 ESTADO = VAL_DIR / "curada_estado.json"
 ORDEN = ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH"]
+LABELS = {"coordinado", "no_coordinado", "dudoso"}
 
 
 def _info(msg):
@@ -74,14 +75,34 @@ def _leer(path):
         return []
 
 
+# Dos formatos de etiqueta de coordinación conviven en data/validacion/:
+#   - antiguo (export_validacion.py):  columna `label` con
+#     coordinado | no_coordinado | dudoso
+#   - nuevo (auditoria_high.py --formato blind): columna `label_coordinacion`
+#     con si | no | dudoso, y cuatro columnas más (inautenticidad, intención,
+#     dimensión extranjera, FIMI)
+# Sin normalizar, el formato nuevo salía entero como "sin etiquetar" y la
+# muestra se descartaba en silencio.
+_MAP_SI_NO = {"si": "coordinado", "no": "no_coordinado", "dudoso": "dudoso"}
+
+
+def _label_coord(row):
+    """Etiqueta de coordinación normalizada, o "" si la fila no está etiquetada."""
+    v = (row.get("label") or "").strip().lower()
+    if v in LABELS:
+        return v
+    v2 = (row.get("label_coordinacion") or "").strip().lower()
+    return _MAP_SI_NO.get(v2, "")
+
+
 def _completa(rows):
-    return bool(rows) and all((r.get("label") or "").strip() for r in rows)
+    return bool(rows) and all(_label_coord(r) for r in rows)
 
 
 def _metricas(rows):
     by = defaultdict(lambda: defaultdict(int))
     for r in rows:
-        lab = (r.get("label") or "").strip().lower()
+        lab = _label_coord(r)
         if lab:
             by[r.get("banda")][lab] += 1
     out = {}

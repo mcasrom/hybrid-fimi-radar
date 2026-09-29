@@ -458,20 +458,31 @@ idioma con **`--lang spanish`** (más comparable para un radar de contenido en c
 (`mundo.sputniknews.com`, `sputniknews.lat`) y RT en Español (`actualidad.rt.com`) — narrativa
 Ucrania/Rusia. El radar **sí captura RT en Español** (360 eventos) pero no Sputnik Mundo.
 
-Resultados reales sobre la vista activa (último snapshot **por tema**, 90 d):
+Resultados reales sobre la vista activa (último snapshot **por tema**, 90 d). **Última medición
+automática: 28/09/2026 07:15 UTC** (`data/validacion/auto_ultimo.json`):
 
-- **Precision 8.5%**: de los **199 clusters con score ≥ 60**, **17** amplifican al menos un
-  dominio documentado (`actualidad-rt.com`, `breitbart.com`, `counterpunch.org`, `freitag.de`,
-  `aa.com.tr`…). El resto amplifica prensa mainstream no documentada.
-- **Recall 0.0%**: hay **4 fuentes documentadas capturadas** (RIA Novosti, RT en Español,
-  SVT Nyheter, TASS; 400/567/143/267 eventos) y **ninguna** entra en una señal (narrativa o
-  cluster).
+- **Precision 15,6%** (global): de los **109 clusters con score ≥ 60** de ese ciclo, **17**
+  amplifican al menos un dominio documentado, sobre **14 dominios** distintos
+  (`actualidad-rt.com`, `breitbart.com`, `counterpunch.org`, `freitag.de`, `aa.com.tr`…).
+  El resto amplifica prensa mainstream no documentada. Con `--lang spanish`: **6,4%**
+  (7 de 109, 3 dominios).
+- **Recall 0,0%**: hay fuentes documentadas capturadas (RIA Novosti, RT en Español,
+  SVT Nyheter, TASS) y **ninguna** entra en una señal (narrativa o cluster):
+  `fuentes_doc_con_senal = 0`.
+
+> **Dos advertencias de interpretation, no de resultado.** (1) Esa medición es del **28/Sep**,
+> **anterior al gate de núcleo (k-core ≥2) del 29/Sep**: el sistema actual tiene **87 HIGH**, así
+> que el recuento de 109 señales **no es comparable uno a uno** con las cifras actuales. (2) El
+> dataset externo tenía **19,7 días** en esa corrida (`dataset_refrescado: false`): el script
+> refresca al superar 30 días, y este no los había alcanzado.
 
 > **Corrección (17/09/2026)**: hasta esta fecha la precisión se reportaba como **0.0%**. Era un
 > **bug**: la «vista activa» usaba `created_at = MAX(global)`, pero cada tema se procesa por
 > separado y `created_at` se escribe por cluster → solo capturaba el último tema/segundo. Ahora
-> se toma el **último snapshot por tema** (tolerancia 1 h). Con la vista correcta la precisión
-> real es **8.5%** (global) y **3.0%** con `--lang spanish`.
+> se toma el **último snapshot por tema** (tolerancia 1 h). Con la vista corregida la precisión
+> real del día 17 era **8,5%** (global) y **3,0%** con `--lang spanish`; la medición del 28/Sep
+> (post-cambio de banding) da **15,6% / 6,4%**. Ambas cifras son históricas: la vigente es la
+> del `auto_ultimo.json` y la publica la card del dashboard con su fecha.
 
 **Ejecución automática (sin intervención, sin claves):** `detection/validacion_auto.py`
 refresca el dataset si está viejo (>30 d), corre la validación en global y en castellano, guarda
@@ -499,9 +510,53 @@ y `tests/validacion_curada.py` calcula la **precisión por banda** (variante con
 
 Resultado (2 muestras, 17/09/2026): **CRITICAL 100% · HIGH 50-100% · ANOMALOUS 20-40% · WATCH 0%**
 → la precisión **sube con la banda** (el score ordena bien) y **WATCH (2 cuentas) es ruido**,
-justo el corte del `scale_floor`. El **historial** (`data/validacion/historial.csv`) acumula la
-serie; `detection/validacion_curada_auto.py` genera muestras nuevas y avisa (cron mensual). La
-card **«Validación del modelo»** del dashboard resume las **3 capas** y se recalcula cada ciclo.
+justo el corte del `scale_floor`.
+
+**Tercera muestra (21/09/2026), solo HIGH, 53 clusters etiquetados a mano:**
+**36 coordinados · 2 dudosos · 15 no coordinados** → **precisión 94,7%** excluyendo el dudoso
+(**67,9%** en la variante conservadora, `dudoso = negativo`). Es la medición con más peso
+de las tres capas, y la que sostiene que la banda alta agrupa coordinación observable.
+
+**Cuarta muestra — ciega, post-gate (29/09/2026), 40 clusters HIGH:** **3 `si` · 33 `no` ·
+4 `dudoso`** → **precisión 8,3 %** excluyendo el dudoso (**7,5 %** conservadora). Medida con
+`auditoria_high.py --formato blind` sobre la población **posterior al gate de núcleo**, con las
+cuatro etiquetas separadas (`coordinación` / `inautenticidad` / `intención` / `dimensión extranjera` /
+`FIMI`) y 40/40 con nota razonada. Los 3 `si` son los tres clusters de 3 cuentas y un solo dominio
+con **texto idéntico repetido** (`elecciones_cluster_045`, `energia_cluster_015`, `energia_cluster_019`),
+que el revisor marcó además como inauténticos.
+
+> **Lo que dice esta medición, y es el hallazgo más fuerte hasta ahora:** la banda HIGH **no es
+> coordinación**. 33 de 40 son cobertura orgánica (83 cuentas sobre un tema caliente, 71 cuentas
+> multi-dominio) o killbait automático de una sola fuente. Explica y confirma el diagnóstico del
+> grafo (`mainstream_echo` 71 % · 61/63 con ventana >72 h) y demuestra que **el gate de k-core no
+> basta**: filtra cadenas, no ecos.
+>
+> **Y explica la contradicción con la muestra del 21/Sep (94,7 %):** no es que el modelo hubiera
+> empeorado. Las dos pasadas usaban **definiciones distintas de «coordinación»** — la del 21/Sep
+> contaba como coordinada cualquier cluster con varias cuentas, la del 29/Sep exige sincronización
+> de contenido en ventana. Con la definición operativa nueva, la muestra antigua habría dado otro
+> número, no el 94,7 %: **esa cifra ya no debe citarse como medida comparable**, solo como
+> antecedente con otra definición.
+
+> ⚠️ **Las cifras curadas anteriores al banding vigente** (cambio D del 24/Sep y gate de núcleo
+> k-core ≥2 del 29/Sep) no son comparables con las de hoy. La serie del historial
+> (`data/validacion/historial.csv`) las conserva todas; cada fila lleva la fecha de su muestra, y
+> la card del dashboard marca en verde las medidas posteriores al gate y en ámbar las anteriores.
+
+El **historial** acumula la serie; `detection/validacion_curada_auto.py` genera muestras nuevas y
+avisa (cron mensual, día 1). La card **«Validación del modelo»** del dashboard resume las **3 capas**
+y es **dinámica**: se vuelve a renderizar en cada ciclo, pero **los datos los aporta cada capa con su
+propia cadencia** (la externa los lunes, la curada el día 1 del mes tras etiquetado manual) y cada
+cifra se publica **con su fecha de medición**.
+
+Acepta los dos formatos de etiqueta: el antiguo (`label`: `coordinado|no_coordinado|dudoso`) y el
+nuevo de la muestra ciega (`label_coordinacion`: `si|no|dudoso`, con las cuatro columnas derivadas).
+
+**Lo que ninguna de las tres capas mide:** *recall* de campañas reales. La capa externa solo puede
+devolver 0 (catálogo histórico de otro ámbito) y la curada es un muestreo de precisión sin
+denominador de positivos conocido. La validación **ciega** del modelo vigente, con la cadena de
+etiquetas separada, ya tiene su primera medición (8,3 %, n=40, un revisor): sirve como línea base
+del error, y **no** como cifra deconcordancia entre revisores — para eso hacen falta dos revisores y κ.
 
 ## Pruebas y CI
 

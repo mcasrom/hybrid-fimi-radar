@@ -25,6 +25,10 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# el script se ejecuta suelto (`python tests/validacion_curada.py`): sys.path
+# trae tests/, no la raíz, así que `detection` no era importable.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 LABELS = {"coordinado", "no_coordinado", "dudoso"}
 ORDEN = ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH"]
 
@@ -49,9 +53,12 @@ def main():
 
     by_band = defaultdict(lambda: defaultdict(int))
     sin_etiquetar = 0
+    # formato antiguo (`label`: coordinado|no_coordinado|dudoso) y nuevo
+    # (`label_coordinacion`: si|no|dudoso, de auditoria_high.py --formato blind)
+    from detection.validacion_curada_auto import _label_coord
     for r in rows:
-        lab = (r.get("label") or "").strip().lower()
-        if lab not in LABELS:
+        lab = _label_coord(r)
+        if not lab:
             sin_etiquetar += 1
             continue
         by_band[r.get("banda", "?")][lab] += 1
@@ -74,7 +81,8 @@ def main():
     print(f"Muestra: {path}")
     print(f"Clusters: {len(rows)}  ·  sin etiquetar: {sin_etiquetar}")
     if sin_etiquetar:
-        print("  (rellena la columna 'label' con: coordinado | no_coordinado | dudoso)")
+        print("  (rellena 'label' con: coordinado | no_coordinado | dudoso — "
+              "o 'label_coordinacion' con: si | no | dudoso)")
     print()
     print(f"{'BANDA':10s} {'n':>3s} {'coord':>5s} {'no':>4s} {'dud':>4s} {'prec':>7s} {'prec*':>7s}")
     for b in ORDEN:

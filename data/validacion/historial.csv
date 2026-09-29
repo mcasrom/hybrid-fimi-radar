@@ -1,0 +1,15 @@
+muestra,banda,n,coord,no,dud,precision
+muestra_20260917_1740.csv,CRITICAL,8,4,0,4,100.0
+muestra_20260917_1740.csv,HIGH,8,1,1,6,50.0
+muestra_20260917_1740.csv,ANOMALOUS,8,2,3,3,40.0
+muestra_20260917_1740.csv,WATCH,8,0,8,0,0.0
+muestra_20260917_1805.csv,CRITICAL,8,5,0,3,100.0
+muestra_20260917_1805.csv,HIGH,8,2,0,6,100.0
+muestra_20260917_1805.csv,ANOMALOUS,8,1,4,3,20.0
+muestra_20260917_1805.csv,WATCH,8,0,8,0,0.0
+muestra_high_20260921_1351.csv,HIGH,53,36,2,15,94.7
+muestra_20260918_1307.csv,CRITICAL,8,8,0,0,100.0
+muestra_20260918_1307.csv,HIGH,8,6,2,0,75.0
+muestra_20260918_1307.csv,ANOMALOUS,8,1,6,1,14.3
+muestra_20260918_1307.csv,WATCH,8,1,7,0,12.5
+muestra_high_blind_20260929_postgate.csv,HIGH,40,3,33,4,8.3
