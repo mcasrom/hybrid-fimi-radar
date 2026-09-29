@@ -250,17 +250,27 @@ def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls
     overall, es_eco = origen_unico_cap(overall, n_urls, events, config, tema)
     return overall, floored, es_eco
 
-def band_gate(overall, accounts, anomaly, config=None, tema=None):
+def band_gate(overall, accounts, anomaly, config=None, tema=None, kcore=0):
     """Gate de banda (S3, 'alerta quirúrgica'): una banda alta exige, además
-    del score, un mínimo de ANOMALÍA y de CUENTAS. Evita que el eco de medios
-    (masa sin anomalía) o las parejas (2 cuentas) griten HIGH/CRITICAL.
+    del score, un mínimo de ANOMALÍA, de CUENTAS y —desde 29/Sep— un NÚCLEO
+    MUTUO en el grafo (k-core >= 2). Evita que el eco de medios (masa sin
+    anomalía) o las parejas (2 cuentas) griten HIGH/CRITICAL.
+
+    `min_kcore` (29/Sep): el k-core es el mayor subgrafo en el que TODOS los
+    nodos tienen grado >= k (graph_metrics.kcore_subset). kcore>=2 exige que
+    las cuentas estén conectadas MUTUAMENTE (un ciclo), no solo encadenadas.
+    Sin él, una cadena de enlaces (mediana de 1 arista por cluster) llegaba a
+    HIGH por percolación: el gate midió 8 % de WATCH, 47 % de ANOMALOUS y 86 %
+    de HIGH con núcleo, o sea que discrimina de forma monótona en lugar de
+    recortar por gusto. Las cadenas (kcore=1) caen a ANOMALOUS.
+    Desactivable con min_kcore: 0 (o no definiendo la clave).
 
     Config: scoring.band_gate = {
-      'HIGH': {'min_accounts': 3, 'min_anomaly': 20},
-      'CRITICAL': {'min_accounts': 10, 'min_anomaly': 40}}
+      'HIGH': {'min_accounts': 3, 'min_anomaly': 20, 'min_kcore': 2},
+      'CRITICAL': {'min_accounts': 10, 'min_anomaly': 40, 'min_kcore': 2}}
     Sin config usa esos valores por defecto."""
-    gate = {"HIGH": {"min_accounts": 3, "min_anomaly": 20},
-            "CRITICAL": {"min_accounts": 10, "min_anomaly": 40}}
+    gate = {"HIGH": {"min_accounts": 3, "min_anomaly": 20, "min_kcore": 2},
+            "CRITICAL": {"min_accounts": 10, "min_anomaly": 40, "min_kcore": 2}}
     if config:
         gate.update((config.get("scoring", {}) or {}).get("band_gate", {}) or {})
     bands = load_bands(config)
@@ -269,7 +279,9 @@ def band_gate(overall, accounts, anomaly, config=None, tema=None):
     allowed = "ANOMALOUS"
     for b in ("HIGH", "CRITICAL"):
         req = gate.get(b, {}) or {}
-        if accounts >= req.get("min_accounts", 0) and anomaly >= req.get("min_anomaly", 0):
+        if (accounts >= req.get("min_accounts", 0)
+                and anomaly >= req.get("min_anomaly", 0)
+                and (kcore or 0) >= req.get("min_kcore", 0)):
             allowed = b
         else:
             break

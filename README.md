@@ -117,8 +117,9 @@ muestra el valor vivo):
 
 - **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
-- **~146.000 eventos** y **1.052 clusters** (ventana de 90 días), repartidos en
-  589 WATCH · 363 ANOMALOUS · 100 HIGH · 0 CRITICAL.
+- **~146.000 eventos** y **1.037 clusters de los 8 temas activos** (la tabla guarda además 15
+  clusters de temas cerrados, ya fuera del dashboard), repartidos en
+  576 WATCH · 374 ANOMALOUS · 87 HIGH · 0 CRITICAL.
 - **~72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - Última release: **v0.2**.
@@ -162,12 +163,19 @@ muestra el valor vivo):
   (29/Sep/2026): las aristas son **la misma URL republicada** (dominante) y **textos casi
   idénticos**, con mediana de 0,6-6 h entre las dos cuentas (72-94 % dentro de 24 h). La señal
   que debería distinguir una campaña de una noticia —ráfaga de publicación, `tight_timing`— es
-  **casi nula: 4, 11 y 0 aristas** en tres temas (de 937, 2.387 y 1.363). Y la estructura es
-  una **cadena de enlaces débiles** (mediana: 1 arista por cluster): el 96 % de WATCH y el 23 %
-  de HIGH no tienen ningún nodo de grado ≥3, es decir ninguna cuenta conectada con dos o más
-  cuentas del cluster. Por tanto el sistema mide **amplificación simultánea de una misma pieza**,
-  que es un hecho verificable; **la diferencia entre noticia y campaña no está implementada**.
+  **casi nula: 4, 11 y 0 aristas** en tres temas (de 937, 2.387 y 1.363). Y la estructura
+  mayoritaria es una **cadena de enlaces débiles** (mediana: 1 arista por cluster). Por tanto el
+  sistema mide **amplificación simultánea de una misma pieza**, que es un hecho verificable;
+  **la diferencia entre noticia y campaña no está implementada**.
   Detalle: [`docs/grafo-coordinacion-20260929.md`](docs/grafo-coordinacion-20260929.md).
+- **La banda alta exige ahora un núcleo de cuentas (29/Sep/2026, aplicado).** `band_gate`
+  incluye `min_kcore: 2` en HIGH y CRITICAL: las cuentas deben estar conectadas **mutuamente**
+  (k-core ≥ 2, un ciclo), no solo encadenadas. Sin esta condición, una cadena de enlaces
+  llegaba a HIGH por percolación. El k-core discrimina de forma **monótona** —lo tienen el
+  8 % de WATCH, el 47 % de ANOMALOUS y el 86 % de HIGH—, así que acompaña a la banda alta en
+  lugar de recortarla por gusto. Efecto real: HIGH **100 → 87**. Es el primer paso, no el
+  último: un núcleo grande tampoco convierte un eco de tres semanas en una campaña, y por eso
+  la ráfaga con ventana real sigue pendiente.
 - **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
   decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
   NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score

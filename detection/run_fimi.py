@@ -221,7 +221,28 @@ def main():
         # son medios establecidos, la coordinacion es compatible con cobertura
         # periodistica normal, no con una campana inautentica.
         overall, es_prensa = mainstream_cap(overall, _ms_frac.get(label, 0.0), cfg, tema=tema)
-        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
+
+        # k-core del grafo de coordinación del cluster: núcleo de cuentas
+        # mutuamente conectadas dentro del cluster. Se calcula ANTES de las
+        # hipótesis (H2, campaña doméstica estructurada, exige un núcleo MUTUO
+        # kcore>=2 de >=3 cuentas como evidencia de coordinación REAL: evita
+        # etiquetar eco de prensa de 1-2 cuentas, o cadenas/estrellas sin
+        # mutualidad, como "campaña coordinada doméstica") y ANTES del
+        # band_gate, que desde 29/Sep exige ese mismo núcleo (min_kcore) para
+        # dejar que un cluster sea HIGH: sin él, una cadena de enlaces llegaba
+        # a HIGH por percolación.
+        _kc, _kcs = 0, 0
+        try:
+            if sub_clustered is not None:
+                _mem_a = set(sub_clustered.loc[sub_clustered["cluster"] == label, "author"].astype(str))
+                _kc, _kcs = graph_metrics.kcore_subset(_adj, _mem_a)
+        except Exception:
+            _kc, _kcs = 0, 0
+        summary[label]["kcore_size"] = _kcs
+        summary[label]["kcore"] = _kc
+
+        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg,
+                            tema=tema, kcore=_kc)
         band = band_for(overall, bands)
         s["ruido_volumen"] = floored
         s["n_events"] = ev_counts.get(label, 0)
@@ -235,22 +256,6 @@ def main():
         # persist_findings_from_run(conn, narratives, summary, ...) lo persista
         # real (antes caia a 0 por .get("overall_score", 0)).
         summary[label]["overall_score"] = overall
-
-        # k-core del grafo de coordinación del cluster (descriptivo, no scoring):
-        # núcleo de cuentas mutuamente conectadas dentro del cluster. Se calcula
-        # ANTES de las hipótesis porque H2 (campaña doméstica estructurada) exige
-        # un núcleo MUTUO (kcore>=2) de >=3 cuentas (kcore_size>=3) como evidencia
-        # de coordinación REAL (evita etiquetar eco de prensa de 1-2 cuentas, o
-        # cadenas/estrellas sin mutualidad, como "campaña coordinada doméstica").
-        _kc, _kcs = 0, 0
-        try:
-            if sub_clustered is not None:
-                _mem_a = set(sub_clustered.loc[sub_clustered["cluster"] == label, "author"].astype(str))
-                _kc, _kcs = graph_metrics.kcore_subset(_adj, _mem_a)
-        except Exception:
-            _kc, _kcs = 0, 0
-        summary[label]["kcore_size"] = _kcs
-        summary[label]["kcore"] = _kc
 
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
                                    "n_urls": url_counts.get(label, 0),
@@ -485,7 +490,8 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
         overall, _, es_eco = solve_scale(
             overall, s.get("accounts", 0), s.get("n_events", 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=s.get("n_urls", 0))
-        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg, tema=tema)
+        overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg,
+                            tema=tema, kcore=s.get("kcore", 0))
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
                                    "n_urls": s.get("n_urls", 0),
                                    "kcore_size": s.get("kcore_size", 0),

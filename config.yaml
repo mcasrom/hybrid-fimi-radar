@@ -31,15 +31,21 @@ scoring:
     HIGH: 2
     CRITICAL: 10
   # Gate de banda (S3, 20/Sep): una banda alta exige, además del score, un
-  # minimo de ANOMALIA y de CUENTAS. Evita que el eco de medios (masa sin
-  # anomalia) o las parejas (2 cuentas) griten HIGH/CRITICAL.
+  # minimo de ANOMALIA, de CUENTAS y de NUCLEO MUTUO (k-core). Evita que el eco
+  # de medios (masa sin anomalia), las parejas (2 cuentas) o una cadena de
+  # enlaces sin ciclo griten HIGH/CRITICAL. min_kcore: 2 = las cuentas deben
+  # estar conectadas mutuamente (kcore), no solo encadenadas. Medido 29/Sep:
+  # 8 % de WATCH, 47 % de ANOMALOUS y 86 % de HIGH lo tienen -> discrimina de
+  # forma monotona. Poner 0 lo desactiva (no borra la clave, no redefine banda).
   band_gate:
     HIGH:
       min_accounts: 3
       min_anomaly: 20
+      min_kcore: 2
     CRITICAL:
       min_accounts: 10
       min_anomaly: 40
+      min_kcore: 2
   # Bonus por escala (05/Sep): a igualdad de componentes, más cuentas puntúan
   # más. Corrige el orden invertido (cluster de 2 cuentas >= cluster de 49).
   # bonus = min(cap, cuentas*per_account), acotado para no desbordar.

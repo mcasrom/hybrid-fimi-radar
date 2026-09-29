@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from detection.scoring import (  # noqa: E402
-    band_for, compute_scores, load_bands, origen_unico_cap, scale_bonus,
+    band_for, band_gate, compute_scores, load_bands, origen_unico_cap, scale_bonus,
     scale_cap, scale_floor, solve_scale,
 )
 from normalizer.clasificar import _matches, _tokens, temas_por_contenido  # noqa: E402
@@ -131,6 +131,47 @@ def test_origen_unico_cap():
     # 2 URLs -> no es eco
     overall2, eco2 = origen_unico_cap(90, n_urls=2, n_events=5, config=cfg)
     assert eco2 is False and overall2 == 90.0
+
+
+def test_band_gate_exige_nucleo_mutuo_para_HIGH():
+    """29/Sep: HIGH exige k-core >= 2 (cuentas conectadas MUTUAMENTE).
+
+    Sin este requisito, una cadena de enlaces (mediana de 1 arista por cluster)
+    llegaba a HIGH por percolación. Una cadena tiene kcore=1: cae a ANOMALOUS.
+    """
+    cfg = _cfg()
+    cfg["scoring"]["band_gate"] = {"HIGH": {"min_accounts": 3, "min_anomaly": 20,
+                                            "min_kcore": 2},
+                                   "CRITICAL": {"min_accounts": 10, "min_anomaly": 40,
+                                                "min_kcore": 2}}
+    # score 70 con 5 cuentas, anomalía 50 y núcleo -> HIGH (79 = tope de la banda)
+    assert band_gate(70, 5, 50, cfg, kcore=3) == 70.0
+    # mismo cluster pero CADENA (kcore=1) -> no puede ser HIGH
+    assert band_gate(70, 5, 50, cfg, kcore=1) == 59.0
+    # sin pasar kcore (0) -> tampoco (el default del gate en scoring.py es 2)
+    assert band_gate(70, 5, 50, cfg) == 59.0
+    # el DEFAULT del código también exige núcleo (regresión del 24/Sep, cuando
+    # config.yaml y scoring.py se desincronizaron y un peso se seguía sumando):
+    # si alguien baja el gate a 0 en config, aquí se ve que el código no cambia
+    # de definición por sorpresa; y si sube a 2, el test sigue exigiéndolo.
+    cfg0 = _cfg()
+    cfg0["scoring"]["band_gate"] = {"HIGH": {"min_accounts": 3, "min_anomaly": 20,
+                                             "min_kcore": 0}}
+    assert band_gate(70, 5, 50, cfg0, kcore=1) == 70.0
+    assert band_gate(70, 5, 50, _cfg(), kcore=1) == 59.0
+    # CRITICAL exige nucleus también: score 90, 12 cuentas, anomalía 60, kcore 2 -> CRITICAL
+    assert band_gate(90, 12, 60, cfg, kcore=2) == 90.0
+    # ... pero con cadena cae a ANOMALOUS (el requisito es el mismo en ambas
+    # bandas: HIGH ya falla, y el bucle se detiene ahí)
+    assert band_gate(90, 12, 60, cfg, kcore=1) == 59.0
+
+
+def test_band_gate_no_degrada_bajas():
+    """El gate solo baja banda: un WATCH sin anomalía no sube por tener núcleo."""
+    cfg = _cfg()
+    cfg["scoring"]["band_gate"] = {"HIGH": {"min_accounts": 3, "min_anomaly": 20,
+                                            "min_kcore": 2}}
+    assert band_gate(30, 50, 90, cfg, kcore=5) == 30.0
 
 
 def test_solve_scale_orden_completo():
