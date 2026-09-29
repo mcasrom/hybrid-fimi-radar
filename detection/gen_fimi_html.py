@@ -32,6 +32,34 @@ from detection import mainstream as _ms_mod  # noqa: E402
 _MAINSTREAM = _ms_mod.MAINSTREAM
 
 
+def _filtro_temas_activos(temas_cfg, col="tema_id"):
+    """Devuelve (where_sql, args) para quedarse SOLO con los clusters de los
+    temas activos del catálogo (estado produccion|piloto).
+
+    Por qué (29/Sep/2026): los temas cerrados ya no se renderizan en el radar
+    activo, pero sus clusters SIGUEN en la tabla `clusters` (se conservan para
+    trazabilidad en la tarjeta Bitácora). Contarlos en los KPIs hacía que la
+    portada dijera «1052 clusters activos» cuando 15 eran de temas cerrados, y
+    que el feed de alertas publicara temas que el producto ya cerró. Misma
+    fuente de verdad que usa el cron (config.yaml → temas.estado).
+
+    Catálogo vacío o ilegible -> sin filtro: preferimos mostrar de más a dejar
+    la página o el feed vacíos. Acepta la sección `temas` o el `config` entero
+    (si le pasaras el config sin desenvolver, el filtro sería
+    `tema_id IN ('temas')` y los KPIs quedarían a cero en silencio)."""
+    try:
+        cat = temas_cfg or {}
+        if isinstance(cat.get("temas"), dict) and "temas" in cat:
+            cat = cat["temas"]                      # config completo -> sección
+        act = [t for t, m in cat.items()
+               if isinstance(m, dict) and m.get("estado", "produccion") in ("produccion", "piloto")]
+    except Exception:
+        act = []
+    if not act:
+        return "", []
+    return " WHERE %s IN (%s)" % (col, ",".join("?" * len(act))), list(act)
+
+
 def _pl(n, sing, plur=None):
     """Pluraliza un contador: 1 -> singular, resto -> plural."""
     try:
@@ -1551,15 +1579,18 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
             _gen = datetime.fromtimestamp(_ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if _ts else "—"
         except Exception:
             _gen = "—"
-        _rows = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters").fetchall()
+        _w_act, _a_act = _filtro_temas_activos(temas_cfg)
+        _rows = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters"
+                           + _w_act, _a_act).fetchall()
         n_clusters = len(_rows)
         for _c in _rows:
             s = _c["overall_score"] or 0
             b = "CRITICAL" if s >= 80 else "HIGH" if s >= 60 else "ANOMALOUS" if s >= 40 \
                 else "WATCH" if s >= 20 else "NORMAL"
             n_band[b] = n_band.get(b, 0) + 1
-        top = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters"
-                         " ORDER BY overall_score DESC LIMIT 1").fetchone()
+        _top = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters"
+                          + _w_act + " ORDER BY overall_score DESC LIMIT 1", _a_act).fetchone()
+        top = _top
         if top and top["cluster_label"]:
             _top_label = top["cluster_label"]
         n_ecos = n_sost = 0
@@ -1901,11 +1932,15 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
     con = _sq.connect(str(db_path))
     con.row_factory = _sq.Row
     try:
+        # Solo temas activos (29/Sep): el feed es para seguir el radar vigente,
+        # no para reenviar alertas de temas que el producto ya cerró.
+        _w_act, _a_act = _filtro_temas_activos(temas_cfg, col="c.tema_id")
         rows = con.execute(
             "SELECT c.cluster_label, c.tema_id, c.overall_score, c.created_at,"
             " a.assessment FROM clusters c LEFT JOIN assessments a ON a.cluster_id=c.id"
-            " WHERE c.overall_score >= ? ORDER BY c.overall_score DESC LIMIT 40",
-            (_umbral,)).fetchall()
+            + _w_act +
+            " AND c.overall_score >= ? ORDER BY c.overall_score DESC LIMIT 40",
+            _a_act + [_umbral]).fetchall()
     finally:
         con.close()
 
@@ -2067,7 +2102,12 @@ def main():
 
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row  # acceso por nombre de columna (robusto al orden)
-    clusters = con.execute("SELECT * FROM clusters ORDER BY overall_score DESC").fetchall()
+    # SOLO los clusters de los temas activos del catálogo (29/Sep): los de temas
+    # cerrados se conservan en la tabla para la Bitácora, pero no cuentan para
+    # los KPIs ni las tarjetas del radar activo.
+    _w_act, _a_act = _filtro_temas_activos(temas_cfg)
+    clusters = con.execute("SELECT * FROM clusters" + _w_act +
+                           " ORDER BY overall_score DESC", _a_act).fetchall()
     assessments = con.execute("SELECT * FROM assessments").fetchall()
     # contenido real por cluster (cluster_events): cluster_id -> top titulares
     # agrupados por frecuencia, para mostrar DE QUÉ habla cada cluster.
