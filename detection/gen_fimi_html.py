@@ -1724,6 +1724,10 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 .fimi-brandbar a.nlink{{color:#475569;font-weight:700;font-size:.9rem;text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid transparent}}
 .fimi-brandbar a.nlink:hover{{color:#c2410c;background:#fff7ed}}
 .fimi-brandbar a.nlink.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
+.fimi-brandbar a.cta-ceuta{{background:#c2410c;color:#fff!important;border-color:#c2410c;font-weight:800;animation:pulseCeuta 2.2s ease-out infinite}}
+.fimi-brandbar a.cta-ceuta:hover{{background:#9a3412;border-color:#9a3412;color:#fff!important}}
+@keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
+@media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
 .fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 11px}}
 .fimi-brandbar .chip .dot{{width:7px;height:7px;border-radius:50%;background:#16a34a}}
@@ -1743,7 +1747,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       <a class="nlink" href="/">Radar</a>
       <a class="nlink" href="/#transparencia">Transparencia</a>
       <a class="nlink active" href="/research.html">Research</a>
-      <a class="nlink" href="/casos/ceuta/">Caso Ceuta</a>
+      <a class="nlink cta-ceuta" href="/casos/ceuta/">Caso Ceuta</a>
       <a class="nlink" href="/glosario.html">Glosario</a>
     </div>
     <div class="chips"><span class="chip"><span class="dot"></span> En producción</span></div>
@@ -3651,8 +3655,8 @@ def main():
                      color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;
                      padding:4px 12px">CÓMO LEER ESTE RADAR</span>
         <h2 id="funnelTitle" style="font-size:1.2rem;margin:.5rem 0 .2rem">Del ruido a la señal: el prisma analítico</h2>
-        <p style="color:#475569;font-size:.84rem;margin:.4rem 0 0;line-height:1.5">Detección de coordinación
-           y amplificación en el catálogo de temas monitorizados ({tema_lista_intro}).
+        <p style="color:#475569;font-size:.84rem;margin:.4rem 0 0;line-height:1.5">Medición de amplificación
+           en el catálogo de temas monitorizados ({tema_lista_intro}).
            Agnóstico al actor: primero se observa la anomalía, después se evalúan hipótesis;
            la atribución nunca se presume.</p>
         <p style="color:#64748b;font-size:.86rem;margin:.5rem 0 0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
@@ -4738,6 +4742,10 @@ a{{color:#c2410c}}
 .fimi-brandbar .logo{{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#c2410c,#9a3412);color:#fff;font-size:.95rem;box-shadow:0 1px 2px rgba(0,0,0,.15)}}
 .fimi-brandbar .transp{{color:#475569;font-weight:700;font-size:.92rem;text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid #e2e8f0;background:#f8fafc;transition:all .15s}}
 .fimi-brandbar .transp:hover{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
+.fimi-brandbar a.cta-ceuta{{background:#c2410c;color:#fff!important;border-color:#c2410c;font-weight:800;animation:pulseCeuta 2.2s ease-out infinite}}
+.fimi-brandbar a.cta-ceuta:hover{{background:#9a3412;border-color:#9a3412;color:#fff!important}}
+@keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
+@media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .transp.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
 .fimi-brandbar .chip{{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 11px}}
@@ -4800,7 +4808,7 @@ a{{color:#c2410c}}
   <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
   <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
   <a class="transp" href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos</a>
-  <a class="transp" href="/casos/ceuta/" title="Expediente: amplificación en la crisis de Ceuta 2026">Caso Ceuta</a>
+  <a class="transp cta-ceuta" href="/casos/ceuta/" title="Expediente: amplificación en la crisis de Ceuta 2026">Caso Ceuta</a>
   <a class="transp" href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
   <a class="transp" href="/apoyo.html" title="Apoyar el proyecto (Ko-fi)">Apoyo</a>
   <a class="transp" href="/glosario.html" title="Glosario: términos, conceptos y siglas del radar">Glosario</a>
