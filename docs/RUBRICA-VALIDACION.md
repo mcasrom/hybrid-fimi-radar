@@ -75,3 +75,20 @@ sola mano, no actores independientes). **No mezclar las capas.**
 - El **sistema** ya aplica criterios equivalentes (`cross_account_synchrony` + ventana + no
   dominante + señales de automatización/sindicación): la rúbrica **alinea al humano con el código**,
   que es lo que sube el κ.
+
+
+---
+
+## Aplicación mecánica (30-Sep) — resultado
+
+Aplicada por el propio sistema a los 40 de la muestra: **0 coordinación**. Acuerdo con rev1 **92 %**
+/ rev2 **86 %**, pero **κ=0,00 degenerado** (el sistema es constante → κ no informa). Los **únicos
+desacuerdos son los «sí» humanos**, que son **ventanas de 300-400 h y 1 dominio** (automatización/feed)
+→ la rúbrica los reclasifica a `no`.
+
+**Lectura:** bajo la rúbrica estricta, la banda HIGH **no contiene coordinación observable**; las
+ráfagas del corpus son **sindicación/automatización** (→ `inautenticidad`). Dos implicaciones:
+1. El criterio **ventana ≤24 h** es el que manda casi todo a `no`. Conviene separar dos etiquetas:
+   **`burst` (≤24 h)** vs **`sustained` (>72 h)** — no mezclarlas.
+2. El κ humano seguirá débil si la definición no se comparte; con la rúbrica, el desacuerdo se
+   concentra en la **capa** (coordinación vs automatización), no en el hecho.
