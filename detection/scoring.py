@@ -7,8 +7,6 @@ Bandas (configurables en config.yaml):
 Cada score muestra sus componentes (coordination, synchronization, content
 similarity, amplification, infrastructure, network density).
 """
-import yaml
-from pathlib import Path
 
 
 def load_bands(config):

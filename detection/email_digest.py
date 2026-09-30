@@ -11,7 +11,6 @@ Envía a cada suscriptor de email confirmado (confirmado=1) y con frecuencia
 Reutiliza radar_trend (misma fuente de verdad que el dashboard y el bot).
 """
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -21,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from schema_suscripciones import init as _init_schema  # noqa: E402
 from radar_trend import _cargar_temas_activos, NOMBRE_TEMA, texto_dial  # noqa: E402
-from email_api import send_email, load_env, short_id  # noqa: E402
+from email_api import send_email, load_env  # noqa: E402
 
 BASE_URL = "https://fimi.viajeinteligencia.com"
 

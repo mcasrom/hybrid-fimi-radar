@@ -15,13 +15,8 @@ Sin LLM. Señales:
 Salida honesta: "posible amplificación artificial de contenido", nunca
 "campaña de desinformación de <país/partido>".
 """
-from collections import defaultdict
 
-import numpy as np
-import pandas as pd
-from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 def _thresholded_adjacency(Xn, thresh, block=1024):
@@ -29,7 +24,6 @@ def _thresholded_adjacency(Xn, thresh, block=1024):
 
     Xn debe estar L2-normalizado. Producto por bloques + umbral al instante.
     Retorna lista de listas ady (solo triángulo superior simétrico expandido)."""
-    import scipy.sparse as sp
 
     n = Xn.shape[0]
     ady = [[] for _ in range(n)]

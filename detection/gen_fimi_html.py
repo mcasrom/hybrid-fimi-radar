@@ -1540,7 +1540,6 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
     tests/, /api/export) y a la BD (cifras vivas del último ciclo). Es una
     página independiente generada en el mismo run que el dashboard para que
     los números no se anticuen entre ciclos."""
-    import yaml
     _scr = (cfg or {}).get("scoring", {}) or {}
     _w_global = _scr.get("weights", {}) or {}
     _w_names = {
@@ -2519,7 +2518,6 @@ def main():
     # Métrica: nº de hallazgos del tema HOY vs hace 48h (2 días). Subiendo si
     # hoy > hace48, o hay cluster HIGH/CRITICAL nuevo hoy que no estaba hace 48h.
     # findings.tema_id ahora existe (migración); los anteriores son frontera_sur.
-    import datetime as _dtc
     from datetime import timedelta as _td
     _hoy_d = datetime.now(timezone.utc).date()
     _hace48 = _hoy_d - _td(days=2)

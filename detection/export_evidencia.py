@@ -10,10 +10,8 @@ Uso:
   .venv/bin/python detection/export_evidencia.py --cluster frontera_sur_cluster_000 [--fmt csv|json] [--out ruta]
 """
 import argparse
-import json
 import sqlite3
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

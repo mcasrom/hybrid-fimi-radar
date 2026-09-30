@@ -645,8 +645,7 @@ hybrid-fimi-radar/
 │   ├── notify_subs_telegram.py  # aviso Telegram on_change
 │   ├── notify_fuentes.py   # alerta si una fuente empeora
 │   ├── temas_cli.py        # alta/cierre/estado de temas (PILOTO→prod)
-│   ├── schema_suscripciones.py / schema_feedback.py / schema_bitacora.py
-│   └── pipeline.py         # (legacy, sin uso)
+│   └── schema_suscripciones.py / schema_feedback.py / schema_bitacora.py
 ├── tests/                  # generador sintético + validación
 ├── reports/                # informes Markdown (gitignored)
 └── docs/                   # TAXONOMIA.md, SCORING.md, ATRIBUCION-LIMITACIONES.md, TRAZABILIDAD.md, FUENTES.md

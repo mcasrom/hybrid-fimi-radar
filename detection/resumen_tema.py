@@ -11,7 +11,6 @@ PRINCIPIO del proyecto (agnóstico al actor): las frases describen estructura
 actores ni interpretación política. Mismo tono que "Interpreta con cautela"
 y "Sin evidencia concluyente".
 """
-import re
 
 # --- Reglas de veredicto según salud (0-100) y nº de narrativas sostenidas ---
 def _veredicto(salud_score, n_sost):

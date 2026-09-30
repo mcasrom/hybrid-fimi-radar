@@ -4,7 +4,6 @@ Salida: anomaly_score 0..1 por cuenta (más alto = más anómalo).
 Solo usa características observables, sin conocer ninguna cuenta/hashtag/URL previa.
 """
 import numpy as np
-import pandas as pd
 from sklearn.ensemble import IsolationForest
 
 

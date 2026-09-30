@@ -24,7 +24,6 @@ Uso:
 import argparse
 import datetime
 import gzip
-import os
 import shutil
 import sqlite3
 import sys

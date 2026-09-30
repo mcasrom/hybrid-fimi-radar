@@ -28,7 +28,7 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands, scale_cap, solve_scale, band_gate, mainstream_cap
+from detection.scoring import compute_scores, band_for, load_bands, solve_scale, band_gate, mainstream_cap
 from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics

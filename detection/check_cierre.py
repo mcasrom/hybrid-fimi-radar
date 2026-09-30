@@ -41,7 +41,6 @@ Los mismos nombres siguen disponibles por env (FIMI_CIERRE_*) como default.
 import hashlib
 import json
 import os
-import sqlite3
 import sys
 import time
 from pathlib import Path

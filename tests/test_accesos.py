@@ -274,7 +274,7 @@ def test_referer_se_guarda_y_llega_al_daily():
     import tempfile
     import os as _os
     from detection.accesos import (conectar, ingestar, daily_markdown,
-                                   origenes_del_dia, clasificar_origen)
+                                   origenes_del_dia)
     d = tempfile.mkdtemp()
     logs = _os.path.join(d, "logs")
     _os.makedirs(logs)

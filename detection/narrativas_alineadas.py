@@ -23,8 +23,6 @@ préstamos), NO la equivalencia semántica entre idiomas distintos (un texto en
 francés y otro en español sobre el mismo asunto no conectan si no comparten
 léxico). Es una capa de apoyo al analista, no un veredicto.
 """
-import math
-import sqlite3
 
 _UMBRAL = 0.18          # similitud coseno mínima para alinear dos clusters
 _MAX_GRUPOS = 8         # grupos que se muestran en el dashboard

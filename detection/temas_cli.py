@@ -51,7 +51,6 @@ DB = Path(os.environ.get("FIMI_DB", str(ROOT / "data" / "radar.db")))
 CONFIG = Path(os.environ.get("FIMI_CONFIG", str(ROOT / "config.yaml")))
 sys.path.insert(0, str(ROOT))
 
-from detection.schema_bitacora import init as _init_bitacora_tabla  # noqa: E402
 from detection.bitacora import registrar as bitacora_registrar  # noqa: E402
 
 ESTADOS = {"produccion", "piloto", "candidato_a_cierre", "cerrado"}

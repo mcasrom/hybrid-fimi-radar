@@ -19,8 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from detection.auditoria_high import (  # noqa: E402
-    BLIND_COLS, BLIND_FORBIDDEN, MISSING_EVIDENCE, auditar, evaluar_chain,
-    resumen, review_priority, seleccionar_muestra, to_blind_csv, to_csv,
+    BLIND_COLS, BLIND_FORBIDDEN, MISSING_EVIDENCE, auditar, resumen, review_priority, seleccionar_muestra, to_blind_csv, to_csv,
 )
 
 SCHEMA = """

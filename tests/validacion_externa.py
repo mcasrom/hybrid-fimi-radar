@@ -49,7 +49,7 @@ import sqlite3
 import sys
 import urllib.parse
 import urllib.request
-from collections import Counter, defaultdict
+from collections import Counter
 
 
 def load_documented_domains(csv_path, lang=None):
@@ -294,7 +294,6 @@ def _narrativas_amplificadas(con):
     ventana completa para saber qué sources participan. Devuelve (narrativas,
     Counter de eventos por source)."""
     try:
-        import io
         import sys
 
         sys.path.insert(0, ".")

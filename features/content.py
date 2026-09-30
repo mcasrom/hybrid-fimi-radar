@@ -6,8 +6,6 @@ import re
 from collections import Counter
 from urllib.parse import urlparse
 
-import numpy as np
-import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -90,7 +88,6 @@ def near_duplicate_ratio_all(df, config):
 
     Evita O(A·n) scans + A veces fit_transform + matriz densa mine×rest.
     Retorna dict author -> ratio."""
-    import scipy.sparse as sp
 
     threshold = config["thresholds"]["near_duplicate_threshold"]
     if df.empty:

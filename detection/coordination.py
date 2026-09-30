@@ -20,7 +20,6 @@ import itertools
 from collections import defaultdict
 
 import networkx as nx
-import numpy as np
 
 
 def build_edges(df, config):
@@ -37,7 +36,6 @@ def build_edges(df, config):
 
     from features.content import extract_domain, extract_hashtags
     from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
 
     # ---- filtro: solo redes sociales para grafo de coordinación ----
     SOCIAL_PREFIXES = ("bsky:", "tg:", "reddit:", "masto:")

@@ -16,7 +16,7 @@ import sys  # noqa: E402
 sys.path.insert(0, str(ROOT))
 
 from detection.auditoria_subtipos import (  # noqa: E402
-    agrupar, dominant, emitir_csv, seleccionar_muestra,
+    agrupar, emitir_csv, seleccionar_muestra,
 )
 
 SCHEMA = """

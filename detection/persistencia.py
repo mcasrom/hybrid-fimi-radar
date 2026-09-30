@@ -10,7 +10,6 @@ Así los "resultados positivos" NO se pierden cuando el tema deja de ser
 noticia: quedan en el historial consultable.
 """
 import json
-import sqlite3
 from datetime import datetime, timezone
 
 

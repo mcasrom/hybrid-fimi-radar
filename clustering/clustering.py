@@ -214,7 +214,7 @@ def cluster_evidence_details(df, cluster_label, members, edges_df):
     mem_set = set(members.index)
     ev = df[df["author"].isin(mem_set)]
 
-    from features.content import extract_domain, extract_hashtags
+    from features.content import extract_domain
 
     # URLs y dominios compartidos dentro del cluster
     urls = Counter()

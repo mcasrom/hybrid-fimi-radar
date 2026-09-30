@@ -13,11 +13,9 @@ Sin APIs de pago. Telegram vía t.me/s/ (canales públicos). Bluesky API públic
 """
 import argparse
 import json
-import sqlite3
 import sys
 import time
 import urllib.request
-from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -137,7 +135,7 @@ def grab_bluesky(query, n=50, sort=None):
         print("  bsky: sin credenciales disponibles (social-poster/.env)")
         return out
     try:
-        import urllib.parse, re
+        import urllib.parse
         url = ("https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?q="
                + urllib.parse.quote(query) + f"&limit={n}"
                + (f"&sort={sort}" if sort else ""))
@@ -573,7 +571,6 @@ def main():
 
     if not args.no_analyze:
         print("[analisis] ejecutando run_analysis sobre SQLite ...")
-        from scripts.run_analysis import main as analyze
         # reutilizar el pipeline con la BD
         import subprocess
         subprocess.run([sys.executable, str(ROOT / "scripts" / "run_analysis.py"),

@@ -20,7 +20,6 @@ La causa de la latencia alta está documentada: `load_sqlite` alimenta el
 pipeline con TODO el corpus del tema, sin ventana temporal, así que la
 pertenencia a un cluster incluye el histórico de sus cuentas.
 """
-import os
 import sqlite3
 import statistics
 import time
