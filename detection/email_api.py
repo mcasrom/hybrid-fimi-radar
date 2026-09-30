@@ -348,6 +348,32 @@ def _api_admin_tendencias(full=False):
             "ejes": ejes, "migraciones": migraciones}
 
 
+_NOTA_ATRIBUCION = ("No publicada. El observatorio mide amplificación; no atribuye ni "
+                    "identifica actores. Las hipótesis internas de atribución no forman "
+                    "parte de la señal pública.")
+
+
+import re as _re
+_HANDLE_RE = _re.compile(r"@[\w.\-]+")
+
+
+def _redact(s, n=280):
+    """Quita @handles y trunca (privacidad: no exponer cuentas ni textos largos)."""
+    if not s:
+        return s
+    s = _HANDLE_RE.sub("@\u2026", str(s))
+    return s[:n]
+
+
+def _anon_map(authors):
+    """Seudónimo por cluster (cuenta-1, cuenta-2…) para NO exponer handles."""
+    m = {}
+    for a in authors:
+        if a and a not in m:
+            m[a] = "cuenta-%d" % (len(m) + 1)
+    return m
+
+
 def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     """Exporta la evidencia (cluster_events) de un cluster de la vista activa.
 
@@ -384,7 +410,15 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
 
     cid = cluster_label
     fecha_snap = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(row["created_at"]))
+    anon = _anon_map([e["author"] for e in evs])
     lat = [dict(r) for r in evs]
+    for e in lat:
+        if e.get("author"):
+            e["author"] = anon.get(e["author"], "")
+        if e.get("text"):
+            e["text"] = _redact(e["text"])
+        if e.get("title"):
+            e["title"] = _redact(e["title"])
     replay = _replay_meta()
     banda = _band_of(row["overall_score"] or 0, replay["scoring"]["bands"])
     if fmt == "json":
@@ -397,7 +431,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
             "snapshot_iso": fecha_snap,
             "n_eventos": len(lat),
             "fuentes": sorted({e["source"] for e in lat}),
-            "autores": sorted({e["author"] for e in lat if e.get("author")}),
+            "n_autores": len(anon),
             "replay": replay,
         }
         if asm:
@@ -407,14 +441,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
                     "infrastructure_score", "network_density", "confidence",
                     "assessment", "missing_evidence")
                 if k in asm.keys()}
-            payload["attribution"] = {
-                k: asm[k] for k in (
-                    "attribution", "attribution_confidence", "attribution_evidence")
-                if k in asm.keys()}
-            try:
-                payload["hypotheses"] = json.loads(asm["hypotheses_json"]) if asm["hypotheses_json"] else []
-            except Exception:
-                payload["hypotheses"] = []
+            payload["atribucion_publica"] = _NOTA_ATRIBUCION
             payload["kcore"] = {
                 "kcore": asm["kcore"] if "kcore" in asm.keys() else None,
                 "kcore_size": asm["kcore_size"] if "kcore_size" in asm.keys() else None,
@@ -462,11 +489,11 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     w.writerow(["# explicaciones", "json",
                 json.dumps(_expl, ensure_ascii=False) if _expl else ""])
     w.writerow(["cluster_label", "tema", "overall_score", "banda", "ts_utc",
-                "source", "author", "title", "text", "url", "explicacion_principal"])
+                "source", "cuenta", "title", "text", "url", "explicacion_principal"])
     for e in evs:
         w.writerow([cid, row["tema_id"], row["overall_score"], banda,
                     time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(e["ts"])),
-                    e["source"], e["author"], e["title"], e["text"], e["url"],
+                    e["source"], anon.get(e["author"], ""), _redact(e["title"]), _redact(e["text"]), e["url"],
                     _expl_principal])
     body = buf.getvalue().encode("utf-8")
     return ("text/csv; charset=utf-8", body, f"fimi-evidence-{cid}.csv")
@@ -482,9 +509,9 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
 # ---------------------------------------------------------------------------
 API_SCHEMA = "v1"
 
-_DISCLAIMER_CLUSTER = ("Señal de comportamiento observable (coordinación/amplificación). "
-                       "No constituye atribución de FIMI ni identifica actores.")
-_DISCLAIMER_API = ("Datos públicos de un radar de coordinación. Señal, no atribución. "
+_DISCLAIMER_CLUSTER = ("Señal de amplificación observable. No constituye atribución "
+                       "ni identifica actores.")
+_DISCLAIMER_API = ("Datos públicos de un observatorio de amplificación. Señal, no atribución. "
                    "Los identificadores de cluster no son estables entre ciclos: cada "
                    "respuesta es una foto del último ciclo (meta.snapshot=true).")
 
@@ -618,12 +645,7 @@ def _cluster_obj(row, bands, tipo=None):
         "confidence": d.get("confidence"),
         "assessment": d.get("assessment"),
         "missing_evidence": d.get("missing_evidence"),
-        "attribution": {
-            "attribution": d.get("attribution") or "UNKNOWN",
-            "attribution_confidence": d.get("attribution_confidence"),
-            "attribution_evidence": d.get("attribution_evidence"),
-        },
-        "hypotheses": hyp,
+        "atribucion_publica": _NOTA_ATRIBUCION,
         "disclaimer": _DISCLAIMER_CLUSTER,
         "export": f"/api/export?cluster={label}&fmt=json",
     }
@@ -752,15 +774,8 @@ def _openapi_spec():
             "confidence": {"type": "string"},
             "assessment": {"type": "string"},
             "missing_evidence": {"type": "string"},
-            "attribution": {
-                "type": "object",
-                "properties": {
-                    "attribution": {"type": "string"},
-                    "attribution_confidence": {"type": "string"},
-                    "attribution_evidence": {"type": "string"},
-                },
-            },
-            "hypotheses": {"type": "array", "items": {"type": "object"}},
+            "atribucion_publica": {"type": "string",
+                "description": "Nota fija: la atribución no se publica (el observatorio mide amplificación)."},
             "disclaimer": {"type": "string"},
             "export": {"type": "string"},
         },
