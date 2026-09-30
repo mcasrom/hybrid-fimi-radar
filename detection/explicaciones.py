@@ -66,6 +66,8 @@ def para_cluster(
     dominant_domain_frac=0.0,
     ventana_horas=0.0,
     media_account_frac=0.0,
+    pds_network_count=0,
+    own_domain_syndication=0,
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
@@ -114,11 +116,14 @@ def para_cluster(
     # 2a. Sindicación de prensa: mismo titular, cada cuenta publica UNA vez y las
     # cuentas son MEDIOS (handles tipo dominio). No es coordinación: es un teletipo
     # republicado por una red de medios (p. ej. States Newsroom).
-    _synd = (content_similarity >= 70 and accounts >= 4 and media_account_frac >= 0.4
-             and dominant_account_frac < 0.6)
+    # Ampliado (30-Sep): también si el MISMO texto aparece en varios dominios NO
+    # mainstream (red de blogs propios: p. ej. elsindical/sociedadtam/elestadoprensa).
+    _synd = ((content_similarity >= 70 and accounts >= 4 and media_account_frac >= 0.4
+              and dominant_account_frac < 0.6) or own_domain_syndication >= 3)
     st = "supported" if _synd else "ruled_out"
     items.append(_item("syndicated_wire", st, {
         "media_account_fraction": round(float(media_account_frac), 2), "accounts": int(accounts),
+        "own_domain_syndication": int(own_domain_syndication),
     }))
 
     # 2b. Coordinación entre cuentas DISTINTAS, separando RÁFAGA de ECO SOSTENIDO.
@@ -181,7 +186,9 @@ def para_cluster(
     }))
 
     # 5. Automatización no maliciosa: plantilla común o contenido idéntico masivo.
-    if boilerplate_frac >= 0.5 and accounts >= 5:
+    # Ampliado (30-Sep): varias cuentas del MISMO PDS/handle (p. ej. *.pds.netasga)
+    # = red automatizada por locale; un bot lúdico (`ariesbluearies`/`…`) también.
+    if (boilerplate_frac >= 0.5 and accounts >= 5) or pds_network_count >= 3:
         st = "supported"
     elif boilerplate_frac >= 0.5 or (content_similarity >= 80 and accounts >= 5):
         st = "plausible"
@@ -191,6 +198,7 @@ def para_cluster(
         "boilerplate_fraction": round(float(boilerplate_frac), 2),
         "content_similarity": round(float(content_similarity), 1),
         "accounts": int(accounts),
+        "pds_network_count": int(pds_network_count),
     }))
 
     # 6. Movilización legítima: mensaje compartido, anomalía baja, sin infra densa.

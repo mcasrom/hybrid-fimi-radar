@@ -289,6 +289,7 @@ def main():
         # Concentración de fuente: ¿una sola cuenta o dominio domina el cluster?
         # (distingue un feed personal de verdadera coordinación entre cuentas).
         _dac, _ddc, _ven, _mac = 0.0, 0.0, 0.0, 0.0
+        _pdsn = _ownsynd = 0
         try:
             if sub_clustered is not None:
                 _sub = sub_clustered.loc[sub_clustered["cluster"] == label]
@@ -311,6 +312,30 @@ def main():
                 _med = sum(1 for _a in _auths
                            if "." in _a.split(":")[-1] and not _a.split(":")[-1].endswith(".social"))
                 _mac = _med / max(len(_auths), 1)
+                # (30-Sep) Dos señales objetivas de automatización/sindicación:
+                # (a) PDS/handle-domain: cuentas que comparten el dominio de su handle
+                #     (excluye el PDS universal *.bsky.social) -> red automatizada.
+                _hd = {}
+                for _a in _auths:
+                    _h = _a.split(":", 1)[-1]
+                    if "." in _h and not _h.endswith(".bsky.social"):
+                        _dom = ".".join(_h.split(".")[1:]).lower()
+                        if _dom:
+                            _hd[_dom] = _hd.get(_dom, 0) + 1
+                _pdsn = max(_hd.values()) if _hd else 0
+                # (b) sindicación: el MISMO texto aparece en >=3 dominios NO mainstream.
+                import re as _re2
+                _txtdom = {}
+                for _, _r in _sub.iterrows():
+                    _tx = _re2.sub(r"[\s]+", " ", _re2.sub(r"https?://\S+", " ",
+                                  str(_r.get("text") or ""))).strip().lower()[:120]
+                    if not _tx:
+                        continue
+                    _hh = tipologia._host(_r.get("url") or "")
+                    if not _hh or _hh in mainstream.MAINSTREAM:
+                        continue
+                    _txtdom.setdefault(_tx, set()).add(_hh)
+                _ownsynd = max((len(_v) for _v in _txtdom.values()), default=0)
         except Exception as e:
             print(f"      explicaciones: concentración falló ({e})", file=sys.stderr)
         _hyp_codes = [h["hypothesis"] for h in hyp] if hyp else []
@@ -326,7 +351,8 @@ def main():
             top_hypothesis=(_hyp_codes[0] if _hyp_codes else ""), hypotheses=_hyp_codes,
             narrative_role=rol["dominant"],
             dominant_account_frac=_dac, dominant_domain_frac=_ddc, ventana_horas=_ven,
-            media_account_frac=_mac)
+            media_account_frac=_mac,
+            pds_network_count=_pdsn, own_domain_syndication=_ownsynd)
         summary[label]["alternative_explanations"] = expl
         summary[label]["narrative_subtype"] = rol
 
