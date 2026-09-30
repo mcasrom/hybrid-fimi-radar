@@ -70,6 +70,15 @@ automatización no maliciosa, movilización legítima, artefacto del grafo y *si
 concluyente*. No es una clasificación de "la verdad": es material para la revisión humana,
 visible en el dashboard, la API y las exportaciones.
 
+**Señales objetivas de automatización/sindicación (30-Sep)**: dos patrones que se detectan de
+forma **objetiva** y que *no* deben leerse como «campaña» (alimentan la capa de explicaciones
+**sin tocar bandas ni score**):
+- **Mismo dominio de handle** (varias cuentas comparten el dominio de su handle; se excluye el
+  PDS universal `*.bsky.social`) → sube **`automated_non_malicious`** (red de bots por locale,
+  bots lúdicos…).
+- **Mismo texto repetido en varios dominios propios** (no prensa establecida) → sube
+  **`syndicated_wire`** (red de blogs con una misma mano).
+
 Cada cluster publica además un **rol narrativo** (`narrative_subtype`) que separa *hablar de
 FIMI* — `official_response` (respuesta oficial), `incident_report` (reporte de incidente),
 `meta_analysis` (análisis) — de *posible narrativa FIMI* (`potential_narrative`,
