@@ -79,6 +79,13 @@ forma **objetiva** y que *no* deben leerse como «campaña» (alimentan la capa 
 - **Mismo texto repetido en varios dominios propios** (no prensa establecida) → sube
   **`syndicated_wire`** (red de blogs con una misma mano).
 
+**Etiquetas de validación humana (30-Sep)**: para que el acuerdo entre revisores (**κ**) sea
+medible, la validación usa **dos etiquetas objetivas** en vez de la ambigua «coordinación»
+(rúbrica completa: [`docs/RUBRICA-VALIDACION.md`](docs/RUBRICA-VALIDACION.md)):
+- **`burst`** (≤24 h): la misma pieza en **≥2 cuentas distintas e independientes**;
+- **`sustained`** (>72 h **con volumen**: ≥10 eventos en ≥3 días) → eco sostenido.
+Se miden **por separado** (κ propio). En la banda alta apenas hay `burst` (≈1 %); dominan `no` (≈76 %) y `sustained` (≈21 %).
+
 Cada cluster publica además un **rol narrativo** (`narrative_subtype`) que separa *hablar de
 FIMI* — `official_response` (respuesta oficial), `incident_report` (reporte de incidente),
 `meta_analysis` (análisis) — de *posible narrativa FIMI* (`potential_narrative`,
