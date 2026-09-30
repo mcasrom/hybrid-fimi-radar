@@ -105,9 +105,15 @@ El criterio de ventana mezclaba dos fenómenos distintos. Se separan:
 (idealmente ≤6 h), **sin una sola mano** (no feed/sindicación/red de PDS/eco de prensa).
 → Corresponde a `cross_account_synchrony` en el sistema.
 
-### `sustained` — eco sostenido
-`si` si: mismo patrón (misma pieza, cuentas distintas) pero **ventana >72 h** (días/semanas),
-**sin una sola mano**. → Corresponde a `sustained_amplification`.
+### `sustained` — eco sostenido **con volumen** (definición cerrada 30-Sep)
+`si` si **TODO**:
+- **misma pieza o misma narrativa** (URL idéntica o texto ≥70 %) en **≥3 cuentas distintas e independientes**;
+- **ventana >72 h**, **sin una sola mano** (no feed/sindicación/red de PDS/eco de prensa);
+- **volumen sostenido**: **≥10 eventos repartidos en ≥3 días distintos** (ritmo ≥1/día).
+
+**No** es `sustained` «la misma pieza compartida una vez cada muchos días» (sin volumen): eso es
+**eco lento** → `no`. La diferencia es **flujo**, no persistencia. → Corresponde a
+`sustained_amplification` del sistema (que exige ≥5 cuentas + contenido similar + >72 h).
 
 ### Zona intermedia (24-72 h)
 → `dudoso` (o se etiqueta aparte como `intermedio`).
@@ -124,9 +130,12 @@ Luego: `validacion_kappa.py` un κ por columna.
 ### Resultado mecánico v2 (30-Sep)
 
 Clasificación objetiva por cluster (misma pieza + independencia + ventana):
-- **Muestra (40):** burst **0** · sustained **8 (20 %)** · no **32 (80 %)**.
-- **Banda HIGH (100):** burst **1 (1 %)** · sustained **22 (22 %)** · intermedio 1 · no **76 (76 %)**.
+Con `sustained` **cerrado por volumen** (≥10 eventos en ≥3 días distintos):
+- **Muestra (40):** burst **0** · sustained **6 (15 %)** · eco_lento **2 (5 %)** · no **32 (80 %)**.
+- **Banda HIGH (100):** burst **1 (1 %)** · sustained **21 (21 %)** · eco_lento 1 · intermedio 1 · no **76 (76 %)**.
   (El único «burst» — `elecciones_cluster_006` — es en realidad la **sindicación**.)
+- **Humano (una revisión):** burst **0** · sustained **0** → **acuerdo total en `burst`**; el humano
+  es **más estricto** en `sustained` (no considera «eco sostenido» ni 10-100 eventos repartidos en días).
 
 **Cruce con los humanos** (muestra): los dos «sí» que coinciden (`si|si`) son **`no` mecánico**
 (feeds de una sola fuente); el `sustained` mecánico son casi todos «no» para los humanos.
