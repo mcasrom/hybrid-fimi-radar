@@ -11,7 +11,7 @@ Reglas:
   findings             : purgar > RETENTION_EVENTS_DIAS (90) por fecha
   clusters/indicators/assessments/cluster_events : se reemplazan cada ciclo
       (DELETE+re-INSERT por tema en run_fimi) -> retención implícita.
-  raw JSON (data/raw)  : 30 días (lo gestiona cron_every_6h.sh)
+  raw JSON (data/raw)  : 14 días (lo gestiona cron_every_6h.sh)
   logs                : rotación 5 MB (la gestiona cron_every_6h.sh)
   VACUUM               : solo si hubo purgas/limpiezas (evita compactar en balde)
   backup BD            : gzip a {BASE_BACKUP}/radar-YYYYMMDD.db.gz, rotar a N=4
@@ -39,7 +39,7 @@ LOGS_DIR = ROOT / "logs"
 BASE_BACKUP = ROOT / "backups"
 
 RETENTION_EVENTS_DIAS = 90
-BACKUP_ROTACION = 4
+BACKUP_ROTACION = 2
 
 
 def _now() -> float:

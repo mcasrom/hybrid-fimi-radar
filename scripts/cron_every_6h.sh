@@ -29,8 +29,8 @@ done
 # 4b) Alerta proactiva de salud de fuentes: avisa al administrador SOLO cuando una fuente
 #    empeora (activa->baja/inactiva). Estado guardado => sin repeticiones.
 .venv/bin/python detection/notify_fuentes.py >> logs/fimi.log 2>&1
-# Politica de retencion: conservar solo los ultimos 30 dias de raw JSON
-find data/raw -name "*.json" -mtime +30 -delete 2>/dev/null
+# Politica de retencion: conservar solo los ultimos 14 dias de raw JSON
+find data/raw -name "*.json" -mtime +14 -delete 2>/dev/null
 # Rotar logs mayores de 5MB
 for f in logs/*.log; do [ -f "$f" ] && [ $(stat -c%s "$f") -gt 5242880 ] && tail -100 "$f" > "$f.tmp" && mv "$f.tmp" "$f"; done
 
