@@ -92,3 +92,46 @@ ráfagas del corpus son **sindicación/automatización** (→ `inautenticidad`).
    **`burst` (≤24 h)** vs **`sustained` (>72 h)** — no mezclarlas.
 2. El κ humano seguirá débil si la definición no se comparte; con la rúbrica, el desacuerdo se
    concentra en la **capa** (coordinación vs automatización), no en el hecho.
+
+
+---
+
+## Refinamiento v2 (30-Sep): **dos etiquetas** en vez de una
+
+El criterio de ventana mezclaba dos fenómenos distintos. Se separan:
+
+### `burst` — ráfaga coordinada
+`si` si: **misma pieza** en **≥2 cuentas distintas e independientes** y **ventana ≤24 h**
+(idealmente ≤6 h), **sin una sola mano** (no feed/sindicación/red de PDS/eco de prensa).
+→ Corresponde a `cross_account_synchrony` en el sistema.
+
+### `sustained` — eco sostenido
+`si` si: mismo patrón (misma pieza, cuentas distintas) pero **ventana >72 h** (días/semanas),
+**sin una sola mano**. → Corresponde a `sustained_amplification`.
+
+### Zona intermedia (24-72 h)
+→ `dudoso` (o se etiqueta aparte como `intermedio`).
+
+**Cada una se mide por separado** (κ propio). Una ráfaga es lo que parece: un pico en horas;
+el eco sostenido es otra cosa y no debe hundir el acuerdo de la ráfaga.
+
+### Protocolo de re-etiquetado
+La muestra gana **dos columnas** (`label_burst`, `label_sustained`, valores `si`/`no`/`dudoso`).
+El revisor **no** las deriva de mirar solo la ventana: comprueba **misma pieza + independencia**.
+Luego: `validacion_kappa.py` un κ por columna.
+
+
+### Resultado mecánico v2 (30-Sep)
+
+Clasificación objetiva por cluster (misma pieza + independencia + ventana):
+- **Muestra (40):** burst **0** · sustained **8 (20 %)** · no **32 (80 %)**.
+- **Banda HIGH (100):** burst **1 (1 %)** · sustained **22 (22 %)** · intermedio 1 · no **76 (76 %)**.
+  (El único «burst» — `elecciones_cluster_006` — es en realidad la **sindicación**.)
+
+**Cruce con los humanos** (muestra): los dos «sí» que coinciden (`si|si`) son **`no` mecánico**
+(feeds de una sola fuente); el `sustained` mecánico son casi todos «no» para los humanos.
+→ **El desacuerdo es de CAPA** (llamar «coordinación» a un feed/eco), **no de hecho**.
+→ Re-etiquetar con la rúbrica debe concentrar el acuerdo en `burst`/`sustained` **objetivos**.
+
+**Muestra nueva:** `data/validacion/muestra_high_blind_20260930_burstsustained.csv`
+(2 columnas `label_burst` / `label_sustained`, 40 filas, sin etiquetas).
