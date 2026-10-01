@@ -1747,6 +1747,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       <a class="nlink" href="/">Radar</a>
       <a class="nlink" href="/#transparencia">Transparencia</a>
       <a class="nlink active" href="/research.html">Research</a>
+      <a class="nlink" href="/metodo.html">Método</a>
       <a class="nlink cta-ceuta" href="/casos/ceuta/">Caso Ceuta</a>
       <a class="nlink" href="/glosario.html">Glosario</a>
     </div>
@@ -1913,7 +1914,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
   </div>
 
   <div class="footer">
-    Observatorio · <a href="/research.html">Research</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
+    Observatorio · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
     <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
     <a href="https://viajeinteligencia.com">viajeinteligencia.com</a>
   </div>
@@ -4805,6 +4806,7 @@ a{{color:#c2410c}}
     <span class="logo">📡</span> Observatorio
   </a>
   <a class="transp" href="/research.html" title="Investigación y validación del modelo">Research</a>
+  <a class="transp" href="/metodo.html" title="Método y validación (tasas de error y límites)">Método</a>
   <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
   <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
   <a class="transp" href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos</a>
@@ -5146,7 +5148,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="font-size:.85rem;color:#666;line-height:1.9">
         <b>Observatorio</b> · <a href="/research.html" style="color:#c2410c">Research</a> · <a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a> · <a href="/api.html" style="color:#c2410c">API</a>
- · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="/docs.html" style="color:#c2410c">Documentos</a> · <a href="/glosario.html" style="color:#c2410c">Glosario</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="/privacidad.html" style="color:#c2410c">Privacidad</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
+ · <a href="/operativa.html" style="color:#c2410c">Operativa</a> · <a href="/docs.html" style="color:#c2410c">Documentos</a> · <a href="/glosario.html" style="color:#c2410c">Glosario</a> · <a href="/metodo.html" style="color:#c2410c">Método</a> · <a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a> · <a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a> · <a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a> · <a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a> · <a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a> · <a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a> · <a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a> · <a href="/privacidad.html" style="color:#c2410c">Privacidad</a> · <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a> · <a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a> · <a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a> · <a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a> · <a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
