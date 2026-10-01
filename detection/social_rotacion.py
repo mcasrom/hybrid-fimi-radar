@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rotacion de posts del radar FIMI (distribucion semi-automatica).
+"""Rotacion de posts del radar FIMI (Mastodon+Bluesky automaticos, X manual).
 
 Elige el SIGUIENTE tema EN ROTACION que tenga senal (>=1 cluster HIGH/CRITICAL),
 prepara un post con el PNG del tema (radar-<tema>.png) y:
@@ -8,14 +8,10 @@ prepara un post con el PNG del tema (radar-<tema>.png) y:
   - con --publicar: publica en Mastodon + Bluesky (1 comando, sin tocar cada red).
   - siempre deja el borrador para X (publicacion manual).
 
+CRON (martes/jueves 07:15): RADAR_SOCIAL_MODO=auto -> --publicar.
 Modo SILENCIO: si NINGUN tema tiene senal, no publica nada (el silencio informa).
-Anti-repeticion: no repite el tema anterior.
-
-Uso:
-  python detection/social_rotacion.py            # borrador (revisar)
-  python detection/social_rotacion.py --publicar # publicar Mastodon+Bluesky
-  python detection/social_rotacion.py --tema X   # forzar un tema (pruebas)
-  python detection/social_rotacion.py --dry      # solo imprime (no escribe draft)
+Anti-repeticion: no repite el tema anterior; ademas hay candado por dia (--forzar lo salta).
+X NO se publica nunca de forma automatica: se avisa por Telegram con el texto listo.
 """
 import argparse
 import json
@@ -157,9 +153,21 @@ def main():
     ap.add_argument("--publicar", action="store_true", help="publica en Mastodon+Bluesky")
     ap.add_argument("--tema", help="forzar un tema (pruebas)")
     ap.add_argument("--dry", action="store_true", help="solo imprime")
+    ap.add_argument("--forzar", action="store_true",
+                    help="publica aunque ya haya today's post (ignora el candado)")
     args = ap.parse_args()
 
     st = _cargar_estado()
+    hoy = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    # candado anti-doble: si HOY ya se publico, no repetir (protege cron + reejecucion manual)
+    if args.publicar and not args.forzar:
+        ya = [p for p in st.get("publicados", []) if p.get("fecha") == hoy]
+        if ya:
+            temas_ya = ", ".join(p.get("tema", "?") for p in ya)
+            print(f"[candado] HOY ({hoy}) ya se publico: {temas_ya}. No se repite. "
+                  f"(usa --forzar para saltarlo)")
+            return
     temas = _temas_activos()
 
     # senal por tema
@@ -191,7 +199,7 @@ def main():
     top_txt = f"Top {d['top']} {d['score']:.0f}/100 {d['banda']}" if d["top"] else ""
     senales = f"{d['n']} señal" if d["n"] == 1 else f"{d['n']} señales"
     texto = plantilla.format(nombre=d["nombre"], n=d["n"], senales=senales, top=top_txt, tema=elegido, web=WEB)
-    texto += "\n\n⚖️ Señal de coordinación, no atribución."
+    texto += "\n\n⚖️ Amplificación medida, no atribución."
     if len(texto) > 300:  # limite Bluesky
         texto = texto[:296] + " …"
 
@@ -216,11 +224,24 @@ def main():
 
     if args.publicar:
         ok = _publicar(texto, img_url)
-        if any(ok):
+        # los dos canales deben salir bien: si uno falla, NO se da por publicado
+        if all(ok) and len(ok) == 2:
             st["ultimo_tema"] = elegido
             st.setdefault("publicados", []).append(
                 {"tema": elegido, "fecha": fecha, "ts": int(time.time())})
             _guardar_estado(st)
+            print(f"[pub] OK los dos canales · {elegido} · {fecha}")
+            # X es MANUAL: se manda el texto listo para copiar y pegar
+            _notify_telegram(
+                f"✅ <b>Publicado</b> — {elegido} ({d['banda']} {d['score']}) en "
+                f"Mastodon + Bluesky.\n\n📋 <b>Para X</b> (manual):\n\n{texto}",
+                img_path=f"/var/www/fimi/radar-{elegido}.png")
+        else:
+            print(f"[pub] FALLO parcial: mastodon={ok[0] if ok else '?'} "
+                  f"bluesky={ok[1] if len(ok) > 1 else '?'} · NO se marca como publicado")
+            _notify_telegram(
+                f"⚠️ <b>Fallo al publicar</b> el post de {elegido}. Mastodon/Bluesky: "
+                f"{ok}. Revisa logs/social_rotacion.log")
         print(f"\n[X-TEXTO]\n{texto}\n[/X-TEXTO]\n[X-IMG]{img_url}[/X-IMG]")
     else:
         print("[borrador] no publicado. Revisar y re-ejecutar con --publicar")
