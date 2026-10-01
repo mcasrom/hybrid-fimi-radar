@@ -983,6 +983,9 @@ Reparto real (755 clusters, 17/09/2026): **H2 364 · H4 152 · H5 140 · H6 94 �
 - **Orquestación**: `scripts/cron_every_6h.sh` es el único script
   orquestador del pipeline; su contenido es auto-documentado con
   comentarios por paso.
+- **Ciclo social**: `docs/SOCIAL.md` — cómo se publica un post del radar en
+  redes (martes/jueves 07:15), qué es automático (Mastodon + Bluesky tras tu
+  ✅), qué es manual (X siempre) y qué hace el watchdog de las 07:30.
 
 ## Seguridad del despliegue
 
