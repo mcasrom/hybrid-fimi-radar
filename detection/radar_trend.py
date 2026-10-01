@@ -35,7 +35,10 @@ def _cargar_temas_activos() -> list:
     try:
         import yaml
         cfg = yaml.safe_load(open(ROOT / "config.yaml"))
-        temas = list(cfg.get("temas", {}).keys())
+        # solo temas VIVOS: un tema "cerrado" no se ofrece ni se notifica
+        # (mismo criterio que social_rotacion._temas_activos)
+        temas = [t for t, d in cfg.get("temas", {}).items()
+                 if (d or {}).get("estado") in ("produccion", "piloto")]
         return temas or list(TEMAS_DEFAULT)
     except Exception:
         return list(TEMAS_DEFAULT)

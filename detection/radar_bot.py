@@ -274,7 +274,9 @@ def main():
                 data = cb.get("data", "")
                 cur = sel.get(chat_id, set())
                 if data.startswith("post:"):
+                    print(f"[bot] callback post: accion={data} chat_ok={chat_id == _owner()}", flush=True)
                     if chat_id != _owner():
+                        print("[bot] callback de un chat que NO es el dueño: ignorado", flush=True)
                         continue
                     _, accion, tema = data.split(":", 2)
                     if accion == "pub":
@@ -283,21 +285,31 @@ def main():
                         r = subprocess.run(
                             [str(ROOT / ".venv/bin/python"),
                              str(ROOT / "detection/social_rotacion.py"),
-                             "--tema", tema, "--publicar"],
+                             # --forzar: la aprobacion del dueño ES la autorizacion;
+                             # sin esto el candado diario puede cortar la publicacion
+                             "--tema", tema, "--publicar", "--forzar"],
                             capture_output=True, text=True, timeout=300, cwd=str(ROOT))
-                        ok = r.returncode == 0
+                        # rc=0 no basta: el script puede salir 0 sin publicar (candado,
+                        # silencio, fallo parcial). Se exige la marca de publicacion real.
+                        publicado = "OK los dos canales" in (r.stdout or "")
                         x_txt = ""
                         try:
                             if "[X-TEXTO]" in r.stdout:
                                 x_txt = r.stdout.split("[X-TEXTO]", 1)[1].split("[/X-TEXTO]", 1)[0].strip()
                         except Exception:
                             pass
-                        if ok:
+                        print(f"[bot] post:pub {tema} -> publicado={publicado} x_txt={bool(x_txt)}", flush=True)
+                        if publicado:
                             send(chat_id, f"✅ Publicado <b>{tema}</b> en Mastodon + Bluesky.")
                             if x_txt:
                                 send(chat_id, "📋 <b>Para X</b> (copia y pega):\n\n" + x_txt)
+                            else:
+                                send(chat_id, "⚠️ Publicado, pero no se pudo recuperar el "
+                                              "texto de X. Revisa el log.")
                         else:
-                            send(chat_id, f"⚠️ Falló la publicación de <b>{tema}</b>. Revisa el log.")
+                            det = (r.stdout or "")[-300:].strip() or (r.stderr or "")[-300:].strip()
+                            send(chat_id, f"⚠️ <b>No se pudo publicar</b> <b>{tema}</b>.\n\n"
+                                          f"<code>{det}</code>")
                     else:
                         send(chat_id, f"❌ Descartado <b>{tema}</b>. No se publica nada.")
                     continue

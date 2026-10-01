@@ -144,6 +144,12 @@ def _notify_telegram(texto, img_path=None, tema=None):
         if not _ok(r):
             print(f"[notify] fallo Telegram ({getattr(r, 'status_code', '?')}): "
                   f"{getattr(r, 'text', '')[:200]}", file=sys.stderr)
+        else:
+            # traza en exito: sin esto no habia forma de saber si el borrador
+            # llego al Telegram (fallo silencioso = eldueño no lo ve y no aprueba)
+            print(f"[notify] enviado a Telegram (chat {chat}) via "
+                  f"{'sendPhoto' if img_path and Path(img_path).exists() else 'sendMessage'}",
+                  flush=True)
     except Exception as e:
         print("[notify] error:", e, file=sys.stderr)
 
