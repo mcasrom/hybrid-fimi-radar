@@ -210,6 +210,17 @@ muestra el valor vivo):
   lugar de recortarla por gusto. Efecto real: HIGH **100 → 87**. Es el primer paso, no el
   último: un núcleo grande tampoco convierte un eco de tres semanas en una campaña, y por eso
   la ráfaga con ventana real sigue pendiente.
+- **El feed de una sola fuente ya no llega a banda alta (2/Oct/2026, aplicado).** Un clúster
+  **pequeño** (≤5 cuentas) en el que **una cuenta o un dominio concentra casi todo**
+  (`dominant_account_frac ≥ 0,55` o `dominant_domain_frac ≥ 0,8` — los mismos umbrales con
+  que `explicaciones.py` marca `single_source_feed` como `supported`) es la amplificación de
+  **una sola voz** (radio, periódico, blog propio, agregador), no una coordinación entre
+  actores distintos: `single_source_feed_cap` lo topa a ANOMALOUS. Con masa (más cuentas) no
+  aplica, porque una fuente dominante puede ser una campaña multicuenta que sí merece banda
+  alta. Es una versión estrecha del "Gate B" medido arriba, limitada a clústeres pequeños.
+  Efecto real (regen 2/Oct): HIGH **108 → 79** (ningún CRITICAL perdido, todo a ANOMALOUS);
+  el caso Ceuta queda intacto —su hallazgo es amplificación sostenida— y solo baja el eco de
+  prensa alemana, coherente con la tesis del propio caso.
 - **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
   decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
   NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score

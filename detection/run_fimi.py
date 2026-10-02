@@ -28,7 +28,8 @@ from detection.anomaly import detect_anomalies
 from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
-from detection.scoring import compute_scores, band_for, load_bands, solve_scale, band_gate, mainstream_cap
+from detection.scoring import (compute_scores, band_for, load_bands, solve_scale,
+                               band_gate, mainstream_cap, single_source_feed_cap)
 from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics
@@ -217,10 +218,39 @@ def main():
         overall, floored, es_eco = solve_scale(
             overall, s.get("accounts", 0), ev_counts.get(label, 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=url_counts.get(label, 0))
+        # Concentración de fuente (una sola cuenta/dominio dominando el cluster):
+        # se usa para el cap "feed de una sola fuente" y para las explicaciones.
+        _dac, _ddc, _ven, _mac = 0.0, 0.0, 0.0, 0.0
+        _pdsn = _ownsynd = 0
+        try:
+            if sub_clustered is not None:
+                _sub = sub_clustered.loc[sub_clustered["cluster"] == label]
+                _n = max(len(_sub), 1)
+                _ac = _sub["author"].dropna().astype(str).value_counts()
+                _dc = {}
+                for _u in _sub["url"].dropna().astype(str):
+                    _h = tipologia._host(_u)
+                    if _h:
+                        _dc[_h] = _dc.get(_h, 0) + 1
+                _dac = float(_ac.iloc[0]) / _n if len(_ac) else 0.0
+                _ddc = (max(_dc.values()) / _n) if _dc else 0.0
+                _tcol = next((c for c in ("ts", "timestamp") if c in _sub.columns), None)
+                if _tcol is not None:
+                    _tvv = _sub[_tcol].dropna()
+                    if len(_tvv):
+                        _ven = float(max(_tvv) - min(_tvv)) / 3600.0
+        except Exception as e:
+            print(f"      feed_cap: concentración falló ({e})", file=sys.stderr)
         # Tope "eco de prensa" (21/Sep): si la mayoria de dominios amplificados
         # son medios establecidos, la coordinacion es compatible con cobertura
         # periodistica normal, no con una campana inautentica.
         overall, es_prensa = mainstream_cap(overall, _ms_frac.get(label, 0.0), cfg, tema=tema)
+        # Tope "feed de una sola fuente" (2-Oct, auditoría externa): cluster
+        # PEQUEÑO con una cuenta/dominio dominante = feed de una voz (radio,
+        # periódico, blog propio), no coordinación entre actores. Mismo umbral
+        # que explicaciones.single_source_feed:supported.
+        overall, es_feed = single_source_feed_cap(
+            overall, s.get("accounts", 0), _dac, _ddc, cfg, tema=tema)
 
         # k-core del grafo de coordinación del cluster: núcleo de cuentas
         # mutuamente conectadas dentro del cluster. Se calcula ANTES de las
@@ -249,6 +279,9 @@ def main():
         s["n_urls"] = url_counts.get(label, 0)
         s["origen_unico"] = es_eco
         s["eco_prensa"] = es_prensa
+        s["feed_cap"] = es_feed
+        s["dominant_account_frac"] = _dac
+        s["dominant_domain_frac"] = _ddc
 
         # FIX: el historial (tabla findings) debe guardar el score que tenia el
         # cluster EN EL MOMENTO de deteccion, no su valor actual. cluster_summary
@@ -286,28 +319,13 @@ def main():
             rol = subtipo.dominante(_txts)
         except Exception as e:
             print(f"      subtipo: falló ({e})", file=sys.stderr)
-        # Concentración de fuente: ¿una sola cuenta o dominio domina el cluster?
-        # (distingue un feed personal de verdadera coordinación entre cuentas).
-        _dac, _ddc, _ven, _mac = 0.0, 0.0, 0.0, 0.0
+        # _dac/_ddc/_ven ya calculados arriba (feed_cap). Aquí solo la fracción de
+        # cuentas MEDIA, la red de PDS compartida y la sindicación multi-dominio:
+        _mac = 0.0
         _pdsn = _ownsynd = 0
         try:
             if sub_clustered is not None:
                 _sub = sub_clustered.loc[sub_clustered["cluster"] == label]
-                _n = max(len(_sub), 1)
-                _ac = _sub["author"].dropna().astype(str).value_counts()
-                _dc = {}
-                for _u in _sub["url"].dropna().astype(str):
-                    _h = tipologia._host(_u)
-                    if _h:
-                        _dc[_h] = _dc.get(_h, 0) + 1
-                _dac = float(_ac.iloc[0]) / _n if len(_ac) else 0.0
-                _ddc = (max(_dc.values()) / _n) if _dc else 0.0
-                _tcol = next((c for c in ("ts", "timestamp") if c in _sub.columns), None)
-                if _tcol is not None:
-                    _tvv = _sub[_tcol].dropna()
-                    if len(_tvv):
-                        _ven = float(max(_tvv) - min(_tvv)) / 3600.0
-                # Fracción de cuentas que son MEDIOS (handle tipo dominio, no *.social).
                 _auths = _sub["author"].dropna().astype(str)
                 _med = sum(1 for _a in _auths
                            if "." in _a.split(":")[-1] and not _a.split(":")[-1].endswith(".social"))
@@ -383,7 +401,8 @@ def main():
              f"Cluster {label} con {s.get('accounts',0)} cuentas, banda {band}."
              + (" Posible ruido de bajo volumen." if floored else "")
              + (" Eco de 1 pieza (misma URL)." if es_eco else "")
-             + (" Eco de prensa (dominios de medios establecidos)." if es_prensa else ""),
+             + (" Eco de prensa (dominios de medios establecidos)." if es_prensa else "")
+             + (" Feed de una sola fuente (cuenta/dominio dominante con pocas cuentas)." if es_feed else ""),
              json.dumps(hyp, ensure_ascii=False), att["actor"], att["confidence"],
              att["evidence"], att["missing_evidence"], _kc, _kcs))
         # eventos miembros del cluster -> contenido real (para la UI)
@@ -445,7 +464,8 @@ def main():
     # --- REPORT ---
     _ts = time.time()
     print("[7/7] Informe")
-    report = _build_report(df, summary, details, bands, amp, cascades, narratives, time.time() - t0, cfg, tema)
+    report = _build_report(df, summary, details, bands, amp, cascades, narratives,
+                           time.time() - t0, cfg, tema, ms_frac=_ms_frac)
     rep_path = ROOT / "reports" / f"fimi_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.md"
     rep_path.write_text(report, encoding="utf-8")
 
@@ -484,7 +504,7 @@ def _infra_score(detail):
     return min(100, n * 15)
 
 
-def _build_report(df, summary, details, bands, amp, cascades, narratives, elapsed, cfg=None, tema=None):
+def _build_report(df, summary, details, bands, amp, cascades, narratives, elapsed, cfg=None, tema=None, ms_frac=None):
     lines = []
     lines.append("# European Hybrid & FIMI Radar — Informe")
     lines.append("")
@@ -516,6 +536,11 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
         overall, _, es_eco = solve_scale(
             overall, s.get("accounts", 0), s.get("n_events", 0),
             comp["infrastructure"], cfg, tema=tema, n_urls=s.get("n_urls", 0))
+        overall, es_prensa = mainstream_cap(overall, (ms_frac or {}).get(label, 0.0), cfg, tema=tema)
+        overall, es_feed = single_source_feed_cap(
+            overall, s.get("accounts", 0),
+            s.get("dominant_account_frac", 0.0), s.get("dominant_domain_frac", 0.0),
+            cfg, tema=tema)
         overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg,
                             tema=tema, kcore=s.get("kcore", 0))
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),

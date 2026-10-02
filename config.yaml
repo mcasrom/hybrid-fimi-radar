@@ -79,6 +79,21 @@ scoring:
   mainstream_cap:
     frac_min: 0.8
     cap_band: ANOMALOUS
+  # Tope por "feed de una sola fuente" (2-Oct, auditoría externa): si el cluster
+  # es PEQUEÑO (<= max_accounts) y UNA cuenta o UN dominio concentra casi todo
+  # el contenido (>= min_account_frac o >= min_domain_frac), lo observado es la
+  # amplificación de una sola voz/feed (p. ej. una radio reposteando su web, un
+  # blog propio, un agregador), no coordinación entre actores distintos: se topa
+  # a cap_band (ANOMALOUS=59). Con masa (más cuentas) no aplica: la concentración
+  # de una fuente puede ser una campaña multicuenta que sí merece banda alta.
+  # Usa los MISMOS umbrales que detection/explicaciones.py marca
+  # `single_source_feed` como supported, para no divergir del propio detector.
+  # Configurable por tema en temas.<tema>.scoring.single_source_feed_cap.
+  single_source_feed_cap:
+    max_accounts: 5
+    min_account_frac: 0.55
+    min_domain_frac: 0.8
+    cap_band: ANOMALOUS
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7

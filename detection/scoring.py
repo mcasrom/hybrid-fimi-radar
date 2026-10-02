@@ -223,6 +223,45 @@ def mainstream_cap(overall, mainstream_frac, config=None, tema=None):
     return overall, es_eco
 
 
+def single_source_feed_cap(overall, accounts, dominant_account_frac, dominant_domain_frac,
+                           config=None, tema=None):
+    """Tope por "feed de una sola fuente" (2-Oct, auditoría externa): si el
+    cluster es PEQUEÑO y UNA cuenta o UNA red de dominio concentra casi todo el
+    contenido, lo observado es un feed/agregador individual (radio, periódico,
+    blog propio), no coordinación entre actores distintos: se topa a cap_band
+    (ANOMALOUS) igual que mainstream_cap/origen_unico.
+
+    Usa los MISMOS umbrales que `detection/explicaciones.py` marca la explicación
+    `single_source_feed` como supported, para no divergir del propio detector
+    (regla: el cap y la explicación deben hablar el mismo idioma):
+      - dominant_account_frac >= min_account_frac  (0.55 por defecto)
+      - O dominant_domain_frac >= min_domain_frac   (0.8 por defecto)
+    Solo aplica con pocas cuentas (<= max_accounts): con masa, la concentración
+    de una fuente puede ser una campaña multicuenta que SÍ merece banda alta.
+
+    Config: scoring.single_source_feed_cap = {max_accounts, min_account_frac,
+    min_domain_frac, cap_band}, con override por tema en temas.<tema>.scoring.
+    Devuelve (overall, es_feed)."""
+    p = _tema_scale(config, tema, "single_source_feed_cap",
+                    {"max_accounts": 5, "min_account_frac": 0.55,
+                     "min_domain_frac": 0.8, "cap_band": "ANOMALOUS"})
+    try:
+        daf = float(dominant_account_frac)
+    except Exception:
+        daf = 0.0
+    try:
+        ddf = float(dominant_domain_frac)
+    except Exception:
+        ddf = 0.0
+    es_feed = (accounts <= int(p["max_accounts"])
+               and (daf >= float(p["min_account_frac"])
+                    or ddf >= float(p["min_domain_frac"])))
+    if es_feed:
+        bands = load_bands(config)
+        overall = min(float(overall), float(bands[p["cap_band"]][1]))
+    return overall, es_feed
+
+
 def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls=0):
     """Aplica la escala completa del cluster (orden correcto):
     1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima;

@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT))
 
 from detection.scoring import (  # noqa: E402
     band_for, band_gate, compute_scores, load_bands, origen_unico_cap, scale_bonus,
-    scale_cap, scale_floor, solve_scale,
+    scale_cap, scale_floor, single_source_feed_cap, solve_scale,
 )
 from normalizer.clasificar import _matches, _tokens, temas_por_contenido  # noqa: E402
 from clustering.clustering import _label_prefix, cluster_by_components  # noqa: E402
@@ -131,6 +131,40 @@ def test_origen_unico_cap():
     # 2 URLs -> no es eco
     overall2, eco2 = origen_unico_cap(90, n_urls=2, n_events=5, config=cfg)
     assert eco2 is False and overall2 == 90.0
+
+
+def test_single_source_feed_cap():
+    """2-Oct: un cluster PEQUEÑO dominado por una sola cuenta/dominio es un
+    feed de una voz (radio, periódico, blog propio), no coordinación entre
+    actores; se topa a ANOMALOUS. Mismos umbrales que explicaciones.py
+    (dominant_account_frac>=0.55 o dominant_domain_frac>=0.8)."""
+    cfg = _cfg()
+    cfg["scoring"]["single_source_feed_cap"] = {
+        "max_accounts": 5, "min_account_frac": 0.55,
+        "min_domain_frac": 0.8, "cap_band": "ANOMALOUS"}
+    # pocas cuentas + una cuenta domina -> tope ANOMALOUS (59) y flag
+    overall, es_feed = single_source_feed_cap(70, 4, 0.64, 0.0, cfg)
+    assert es_feed is True and overall == 59.0
+    # dominio dominante (>=0.8) con pocas cuentas -> también
+    overall, es_feed = single_source_feed_cap(70, 3, 0.2, 0.9, cfg)
+    assert es_feed is True and overall == 59.0
+    # muchas cuentas: NO aplica (con masa, la fuente dominante puede ser una
+    # campaña multicuenta que sí merece banda alta)
+    overall, es_feed = single_source_feed_cap(70, 12, 0.66, 0.0, cfg)
+    assert es_feed is False and overall == 70.0
+    # pocas cuentas pero sin fuente dominante -> no aplica
+    overall, es_feed = single_source_feed_cap(70, 4, 0.30, 0.4, cfg)
+    assert es_feed is False and overall == 70.0
+    # no degrada por debajo del tope (ya estaba más bajo)
+    overall, es_feed = single_source_feed_cap(45, 3, 0.7, 0.0, cfg)
+    assert es_feed is True and overall == 45.0
+    # override por tema: con max_accounts=2, un cluster de 4 cuentas ya no cae
+    cfg["temas"] = {"x": {"scoring": {"single_source_feed_cap": {"max_accounts": 2}}}}
+    overall, es_feed = single_source_feed_cap(70, 4, 0.64, 0.0, cfg, tema="x")
+    assert es_feed is False and overall == 70.0
+    # default del código (sin config): mismo umbral documentado
+    overall, es_feed = single_source_feed_cap(70, 4, 0.64, 0.0, _cfg())
+    assert es_feed is True and overall == 59.0
 
 
 def test_band_gate_exige_nucleo_mutuo_para_HIGH():
