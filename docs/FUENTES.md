@@ -1,7 +1,7 @@
 # Fuentes y palabras clave — European Hybrid & FIMI Radar
 
 Todo se configura en `config.yaml`. Este documento es el inventario real + notas de
-fiabilidad editorial (**actualizado 27/09/2026**, generado desde `config.yaml`).
+fiabilidad editorial (**actualizado 2/10/2026**, generado desde `config.yaml`).
 
 ## Cómo añadir / eliminar
 
@@ -29,14 +29,57 @@ fiabilidad editorial (**actualizado 27/09/2026**, generado desde `config.yaml`).
 4. Para **eliminar**: quitar la entrada. El cron 6h lo aplica en el siguiente ciclo.
 5. Guardar y el cron lo recoge automáticamente (no hace falta reiniciar nada).
 
-## Resumen del catálogo (27/09/2026)
+## Resumen del catálogo (2/10/2026)
 
 - **72 feeds RSS** · idiomas: en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1
-- **2 plataformas** de búsqueda (bluesky, google-news) · **8 canales Telegram** · **2 subreddits** (spain, es).
+- **2 plataformas** de búsqueda (bluesky, google-news) · **6 canales Telegram** (de 8, 2 aparcados el 2-10) · **0 subreddits** (2 aparcados el 2-10: Reddit devuelve 429).
 - **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `defensa_espana` · Politico/NPR/Guardian US/PBS → `eeuu_politica` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia`.
 - **Novedad (27/09)**: fusión de `espana_amenazas_hibridas` en `defensa_espana` (renombrado «España —
   defensa y amenazas híbridas»); alta de 4 feeds US (`eeuu_politica`) + keywords `midterms`; arreglo del feed
   AIB Burkina (`?feed=rss2`).
+
+## Dependencia real del corpus (medido 2-oct-2026)
+
+De 47.470 eventos de los últimos 7 días, **45.282 (95,4 %) vienen de dos
+plataformas**: Bluesky (36.443) y Google News (8.839). El RSS aporta 1.739
+(3,7 %), Telegram 449 (0,9 %) y Reddit 0. Por tema, la dependencia de
+Bluesky+Google va del 60 % al 92 % (`frontera_sur` 60 · `oriente_medio` 85 ·
+`defensa_espana` 87 · `sahel` 92 · `eeuu_politica` 78 · `elecciones` 75 ·
+`energia` 67 · `inteligencia_artificial` 84).
+
+Qué significa y qué no:
+
+- **Significa** que el corpus **no es un agregador neutro**: refleja lo que esas
+  dos plataformas indexan. Si cambian de API o de política, el radar se queda sin
+  materia prima.
+- **No significa** que el RSS «no sirva»: 72 feeds aportan de forma transversal y
+  son la capa donde vive la fuente primaria (el medio, el organismo). El problema
+  no es su volumen, es que el volume de las dos plataformas ahoga su señal.
+- **Estado por fuente** (`health_fuentes.py`, 2-oct): 84 fuentes · 70 activas ·
+  12 sin eventos en 7 d · 2 nunca han aportado. 14 sin actividad en 7 d.
+- `defensa_espana` acumula 4.552 eventos en 14 d y aun así 0 sincronías y 0
+  narrativas posibles: volumen alto sin señal (lo que la banda mide no aparece).
+- Lectura sesgada inevitable: `PressTV` está entre los mayores productores de
+  Telegram. Es una de las fuentes que el radar debe *medir*, no una que sirva para
+  sostener nada.
+
+## Fuentes aparcadas (2-oct-2026)
+
+Mismo criterio que los 9 canales RU/UK del 27-09: **si una fuente se lee y nunca
+aporta, es ruido que solo cuesta tiempo**. Se aparcan comentados en
+`config.yaml`, no se borran (reactivar = descomentar).
+
+| Fuente | Motivo | Cómo revivirla |
+|---|---|---|
+| `telegram:timesofisrael` | 0 eventos desde el alta (27-09): su inglés no matchea las keywords de los 8 temas | medir cobertura de keywords en inglés con su muestra real antes de volver |
+| `telegram:i24NEWS_EN` | ídem | ídem |
+| `reddit:spain`, `reddit:es` | `HTTP Error 429` en cada llamada y 0 eventos desde el 12-09 (162 en 90 d) | cliente HTTP con UA de navegador + verificar el 429, y medir si aporta algo que no entre ya por Bluesky/Google |
+
+Los errores de captura ya **no se repiten línea a línea**: `collectors/capture.py`
+acumula los fallos y al final del ciclo imprime **una línea por
+combinación (fuente, mensaje)** con el número de repeticiones. Antes Reddit
+devolvía dos líneas idénticas por ciclo y un fallo de Bluesky habría salido 134
+veces seguidas, tapando el resto del log.
 
 ## Metadata editorial aplicada
 

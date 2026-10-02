@@ -421,18 +421,25 @@ CREATE TABLE IF NOT EXISTS ip_raw (
     ultima    TEXT
 );
 
--- Cursor de lectura incremental por fichero (rotación por inodo).
+-- Cursor de lectura incremental con clave primaria **INODO** (2-oct).
+-- La rotación de nginx RENOMBRA (`access.log` -> `access.log.1`) sin cambiar el
+-- inodo y luego REUSA la ruta `access.log`: con la clave en `fichero` el
+-- `ON CONFLICT` sobrescribía la fila del inodo viejo con el nuevo y el día
+-- volvía a leerse entero (doble conteo medido: 29-Sep 990 filas/748 únicas).
+-- Una fila por inodo: si el inodo ya se consumió, no se relee ni comprimido.
+-- `bytes` detecta reutilización de inodo (fichero que mengua = contenido nuevo).
 -- `leidas`/`ok` no son decorativos: si un fichero trae líneas y no parsea
 -- ninguna, es que el parser se ha roto (cambió el log_format) y hay que
 -- loudly avisar en vez de advancing el cursor en silencio.
 CREATE TABLE IF NOT EXISTS cursor_log (
-    fichero   TEXT PRIMARY KEY,
-    ino       INTEGER,
+    ino       INTEGER PRIMARY KEY,
+    fichero   TEXT,
     offset    INTEGER NOT NULL DEFAULT 0,
     completo  INTEGER NOT NULL DEFAULT 0,
     leido_ts  TEXT,
     leidas    INTEGER NOT NULL DEFAULT 0,
-    ok        INTEGER NOT NULL DEFAULT 0
+    ok        INTEGER NOT NULL DEFAULT 0,
+    bytes     INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS meta (
@@ -446,10 +453,37 @@ def _migrar(con):
     """Añade columnas nuevas a tablas existentes (CREATE TABLE no las mete)."""
     for tabla, col, decl in (("cursor_log", "leidas", "INTEGER DEFAULT 0"),
                              ("cursor_log", "ok", "INTEGER DEFAULT 0"),
+                             ("cursor_log", "bytes", "INTEGER DEFAULT 0"),
                              ("accesos", "referer", "TEXT")):
         cols = {f["name"] for f in con.execute(f"PRAGMA table_info({tabla})")}
         if col not in cols:
             con.execute(f"ALTER TABLE {tabla} ADD COLUMN {col} {decl}")
+    # Reubica la clave primaria del cursor: debe ser el INODO (ver el
+    # COMMENT del CREATE TABLE). Tablas antiguas con PK en `fichero` se
+    # reconstruyen; de cada inodo se queda la fila más reciente.
+    pk = [c["name"] for c in con.execute("PRAGMA table_info(cursor_log)") if c["pk"]]
+    if pk and pk[0] != "ino":
+        con.executescript(
+            """
+            DROP TABLE IF EXISTS cursor_log_nueva;
+            CREATE TABLE cursor_log_nueva (
+                ino       INTEGER PRIMARY KEY,
+                fichero   TEXT,
+                offset    INTEGER NOT NULL DEFAULT 0,
+                completo  INTEGER NOT NULL DEFAULT 0,
+                leido_ts  TEXT,
+                leidas    INTEGER NOT NULL DEFAULT 0,
+                ok        INTEGER NOT NULL DEFAULT 0,
+                bytes     INTEGER NOT NULL DEFAULT 0
+            );
+            INSERT OR REPLACE INTO cursor_log_nueva
+                (ino, fichero, offset, completo, leido_ts, leidas, ok, bytes)
+            SELECT ino, fichero, offset, completo, MAX(leido_ts), leidas, ok, bytes
+              FROM cursor_log WHERE ino IS NOT NULL GROUP BY ino;
+            DROP TABLE cursor_log;
+            ALTER TABLE cursor_log_nueva RENAME TO cursor_log;
+            """
+        )
     con.execute("CREATE INDEX IF NOT EXISTS ix_accesos_ref ON accesos(referer)")
     con.commit()
 
@@ -534,7 +568,18 @@ def _abrir(f):
 
 
 def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False):
-    """Lee solo lo nuevo de cada fichero. Idempotente vía cursor (ino, offset)."""
+    """Lee solo lo nuevo de cada fichero.
+
+    Idempotencia por **inodo**, no por nombre (2-oct, bug de doble conteo). La
+    rotación de nginx *renombra* el fichero (`access.log` -> `access.log.1`) sin
+    cambiar su inodo, así que indexando el cursor por ruta el mismo día se leía
+    dos veces: la parcial de la mañana como `access.log` y la completa al día
+    siguiente como `access.log.1`. Medido: 29-Sep 990 filas (748 únicas), 30-Sep
+    1.659 (1.205) y el día en curso siempre corto (1-Oct: 248 de 835 reales).
+    Con el cursor por inodo, un inodo ya consumido no se vuelve a leer, y su
+    versión comprimida (.gz) se salta siempre. `bytes` protege del caso raro de
+    reutilización de inodo: si el fichero mengua, es contenido nuevo.
+    """
     salt = _salt()
     anadidas = 0
     salt_obj = con.cursor()
@@ -544,19 +589,27 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
         except OSError as exc:
             print(f"[accesos] AVISO: no puedo stat {f}: {exc}", flush=True)
             continue
+        # El cursor se busca por INODO: al rotar, nginx renombra el fichero y el
+        # mismo inodo aparece con otro nombre. Buscar por ruta lleva a releer el
+        # día entero (bug del doble conteo, 2-oct).
         fila = con.execute(
-            "SELECT ino, offset, completo, leidas, ok FROM cursor_log"
-            " WHERE fichero=?", (f,)
+            "SELECT fichero, ino, offset, completo, leidas, ok, bytes"
+            " FROM cursor_log WHERE ino=? ORDER BY leido_ts DESC LIMIT 1",
+            (st.st_ino,)
         ).fetchone()
         previo_offset = 0
         gz = f.endswith(".gz")
         if fila:
-            if gz and fila["completo"]:
+            if gz:
+                # Ya consumimos este inodo cuando estaba en claro (o ya lo
+                # leímos comprimido): no se vuelve a leer jamás.
                 continue
-            if fila["ino"] == st.st_ino and not gz:
-                previo_offset = min(fila["offset"], st.st_size)
-            elif fila["ino"] == st.st_ino and gz:
+            # Reutilización de inodo (raro, pero posible): el fichero mengua,
+            # luego es contenido nuevo y hay que releerlo desde el principio.
+            if fila["bytes"] and fila["bytes"] > st.st_size:
                 previo_offset = 0
+            else:
+                previo_offset = min(fila["offset"], st.st_size)
         if not gz and previo_offset >= st.st_size and st.st_size > 0:
             continue
 
@@ -614,16 +667,26 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
         anadidas += len(lote)
 
         offset = st.st_size if not gz else 0
+        # Clave primaria = inodo. La ruta se REUTILIZA al rotar (`access.log`),
+        # así que no puede ser la clave: sobrescribiría la fila del inodo viejo
+        # y el rotado volvería a leerse entero (el bug que esto arregla).
         con.execute(
-            "INSERT INTO cursor_log (fichero, ino, offset, completo, leido_ts,"
-            " leidas, ok) VALUES (?,?,?,?,?,?,?)"
-            " ON CONFLICT(fichero) DO UPDATE SET"
-            " ino=excluded.ino, offset=excluded.offset, completo=excluded.completo,"
-            " leido_ts=excluded.leido_ts, leidas=excluded.leidas, ok=excluded.ok",
-            (f, st.st_ino, offset, 1 if gz else 0,
+            "INSERT INTO cursor_log (ino, fichero, offset, completo, leido_ts,"
+            " leidas, ok, bytes) VALUES (?,?,?,?,?,?,?,?)"
+            " ON CONFLICT(ino) DO UPDATE SET fichero=excluded.fichero,"
+            " offset=excluded.offset, completo=excluded.completo,"
+            " leido_ts=excluded.leido_ts, leidas=excluded.leidas, ok=excluded.ok,"
+            " bytes=excluded.bytes",
+            (st.st_ino, f, offset, 1 if gz else 0,
              time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-             len(lineas), len(lote)),
+             len(lineas), len(lote), st.st_size),
         )
+        con.commit()
+        # Poda: un inodo por fichero y quedan pocos, pero sin poda crecería sin
+        # límite. 60 días deja margen de sobra para cualquier rotación.
+        con.execute("DELETE FROM cursor_log WHERE leido_ts IS NULL OR leido_ts<?",
+                    (time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                   time.gmtime(time.time() - 60 * 86400)),))
         con.commit()
         # Umbral de 50 líneas: por debajo es ruido. Sin él, el aviso salta en
         # falso cada vez que nginx rota (el access.log nuevo tiene unas pocas

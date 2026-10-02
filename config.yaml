@@ -1779,11 +1779,19 @@ telegram_canales:
 - meduzalive
 - AlMayadeenEnglish
 - PressTV
-- timesofisrael
-- i24NEWS_EN
-subreddits:
-- spain
-- es
+# APARCADOS 2-oct: `timesofisrael` e `i24NEWS_EN` se leen en cada ciclo y NO
+# matchean ninguna keyword de los 8 temas -> 0 eventos desde el alta (27-Sep),
+# verificado en `health_fuentes.py` (n90=0, last_ts=null). Mismo criterio que los
+# 9 canales RU/UK apartados el 27-Sep. Para revivir: añadir el canal y, antes,
+# medir cobertura de keywords en inglés con su muestra real.
+# - timesofisrael
+# - i24NEWS_EN
+subreddits: []
+# APARCADO 2-oct: Reddit devuelve HTTP 429 en cada llamada (log repetido) y da
+# 0 eventos desde el 12-Sep (162 en 90 d). No es que «el producto se haya
+# callado»: la fuente no responde. Para revivirlo: cliente HTTP con UA de
+# navegador y verificar el 429, y medir si r/spain y r/es aportan algo que no
+# entre ya por Bluesky o Google News.
 
 # Auditoría ligera y reproducible de clusters HIGH/CRITICAL
 # (detection/auditoria_high.py). Solo lectura; no toca scoring/bandas/atribución.

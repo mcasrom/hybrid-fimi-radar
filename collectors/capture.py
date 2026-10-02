@@ -37,6 +37,33 @@ MAX_PER_SOURCE = 100
 # clusters de alarma montados sobre datos viejos que la purga borra despues.
 CAPTURE_WINDOW_DAYS = 90
 
+# --- Errores de captura: agrupados, no 134 líneas idénticas (2-oct) -----------
+# Reddit devolvía 429 en sus 2 subreddits y el log repetía la línea idéntica;
+# con 134 keywords de Bluesky, un fallo repetido salía como 134 líneas y tapaba
+# todo lo demás. Se acumulan aquí y se resume al final del ciclo: una línea por
+# combinación fuente+mensaje, con el número de repeticiones (regla 17).
+_ERRORES = {}
+
+
+def err(familia, exc):
+    """Registra un fallo de una fuente. No imprime aquí."""
+    msg = str(exc)[:200]
+    por_msg = _ERRORES.setdefault(familia, {})
+    por_msg[msg] = por_msg.get(msg, 0) + 1
+
+
+def resumen_errores():
+    """Una línea por (fuente, mensaje). Vacía el acumulador para el siguiente ciclo."""
+    if not _ERRORES:
+        return
+    fallos = sum(sum(v.values()) for v in _ERRORES.values())
+    distintos = sum(len(v) for v in _ERRORES.values())
+    print(f"  errores de captura: {fallos} en {distintos} combinación(es)")
+    for familia in sorted(_ERRORES):
+        for msg, n in sorted(_ERRORES[familia].items(), key=lambda kv: -kv[1]):
+            print(f"    {familia} error x{n}: {msg}")
+    _ERRORES.clear()
+
 
 def http_get(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
@@ -71,7 +98,7 @@ def grab_telegram(channel):
                         "source": f"telegram:{channel}"})
         out = out[:MAX_PER_SOURCE]
     except Exception as e:
-        print(f"  telegram:{channel} error: {e}")
+        err(f"telegram:{channel}", e)
     return out
 
 
@@ -120,7 +147,7 @@ def _bsky_login(env_path=None):
         return _BSKY_JWT
     except Exception as e:
         if not _BSKY_LOGGED_ERR:
-            print(f"  bsky login error: {e}")
+            err("bluesky:login", e)
             _BSKY_LOGGED_ERR = True
         return None
 
@@ -183,7 +210,7 @@ def grab_bluesky(query, n=50, sort=None):
                         "reply_count": post.get("replyCount", 0)})
         out = out[:n]
     except Exception as e:
-        print(f"  bsky:{query} error: {e}")
+        err("bluesky", e)
     return out
 
 
@@ -267,7 +294,7 @@ def refresh_bsky_engagement(days=7, cap=300):
                      post.get("replyCount", 0), post.get("uri")))
                 n += 1
         except Exception as e:
-            print(f"  bsky refresh error: {e}")
+            err("bluesky:refresh", e)
     con.commit()
     con.close()
     return n
@@ -293,7 +320,7 @@ def grab_google_news(query, n=50):
                         "text": title.group(1).strip(), "url": link.group(1).strip() if link else "",
                         "hashtags": "", "mentions": "", "action": "post", "source": "google-news"})
     except Exception as e:
-        print(f"  google-news:{query} error: {e}")
+        err("google-news", e)
     return out
 
 
@@ -315,7 +342,7 @@ def grab_reddit_rss(subreddit, n=50):
                         "text": title.group(1).strip(), "url": "", "hashtags": "", "mentions": "",
                         "action": "post", "source": f"reddit:{subreddit}"})
     except Exception as e:
-        print(f"  reddit:{subreddit} error: {e}")
+        err("reddit", e)
     return out
 
 
@@ -335,7 +362,7 @@ def grab_mastodon(query, instance="mastodon.social", n=50):
                         "url": s.get("url", ""), "hashtags": tags, "mentions": "",
                         "action": "post", "source": f"mastodon:{instance}"})
     except Exception as e:
-        print(f"  mastodon:{query} error: {e}")
+        err("mastodon", e)
     return out
 
 
@@ -354,7 +381,7 @@ def grab_rss_feed(name, url, n=40):
                         "url": link, "hashtags": "", "mentions": "",
                         "action": "post", "source": f"rss:{name}", "summary": summary})
     except Exception as e:
-        print(f"  rss:{name} error: {e}")
+        err(f"rss:{name}", e)
     return out
 
 
@@ -417,7 +444,7 @@ def main():
                 e["_temas"] = {tema}
                 events.append(e)
         except Exception as _e:
-            print(f"  bluesky/{q} top error: {_e}")
+            err("bluesky:top", _e)
     for q, tema in news_q:
         print(f"  google-news/{q} (tema={tema}) ...")
         for e in grab_google_news(q):
@@ -443,6 +470,11 @@ def main():
             for e in grab_rss_feed(name, url):
                 e["_temas"] = {tema} if tema else set()
                 events.append(e)
+
+    # Errores agrupados: una línea por (fuente, mensaje), con el número de
+    # repeticiones. Se imprimen aquí, antes de los contadores, para que un fallo
+    # de captura nunca pase inadvertido aunque el ciclo «termine bien».
+    resumen_errores()
 
     # Guard: timestamps FUTUROS (p.ej. Bluesky createdAt lo pone el cliente con
     # reloj adelantado). Se recortan a "ahora" para no envenenar MAX(events.timestamp)

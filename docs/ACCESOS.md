@@ -10,8 +10,14 @@ perdía, así que no había forma de responder "¿cuánta gente ha leído esto?"
 > en 15 días". Era falso: casi todo era tráfico de previsualizadores y
 > rastreadores. El titular correcto no son los pageviews sino **de dónde viene
 > la gente** (`scripts/fimi_accesos.py origenes`), y el referrer es la única
-> señal que separa un clic de un rastreo. Los números honestos de 13→27/Sep
-> están en «De dónde viene la gente», más abajo.
+> señal que separa un clic de un rastreo. Los números honestos están en «De dónde
+> viene la gente», más abajo (medidos el 2-oct sobre la base reindexada).
+>
+> **Segunda corrección (2-oct-2026): doble conteo en la ingesta.** Las cifras de
+> la tabla de orígenes estaban infladas ~25 % porque el cursor de lectura estaba
+> indexado por nombre de fichero y la rotación de nginx renombra el log sin
+> cambiar su contenido. Base reindexada; los totales por día ahora cuadran
+> exactamente con las líneas de nginx. Detalle en «Uso».
 
 ## Qué hay aquí
 
@@ -39,9 +45,27 @@ cd /home/deploy/hybrid-fimi-radar
 .venv/bin/python scripts/fimi_accesos.py reset --confirmar   # rebaca
 ```
 
-`ingest` es **idempotente**: guarda un cursor por fichero `(inodo, offset)`, así
-que se puede lanzar cada hora. Si rotó el log, el inodo cambia y se relee desde
-el principio; los `.gz` ya completos se saltan.
+`ingest` es **idempotente**: el cursor está indexado por **inodo** (clave
+primaria `cursor_log.ino`), con `offset` y `bytes` dentro de ese inodo. Se puede
+lanzar cada hora sin duplicar nada.
+
+> **Doble conteo corregido (2-oct-2026).** El cursor estaba indexado por
+> `fichero`. nginx rota **renombrando** (`access.log` → `access.log.1`, mismo
+> inodo) y luego **reutiliza** la ruta `access.log`: al releer el día entero con
+> el nuevo nombre y volver a insertar con `ON CONFLICT(fichero)`, el día se
+> contaba dos veces y la fila del inodo viejo además se sobrescribía.
+> Medido contra nginx: 29-Sep 990 filas en la base frente a 762 reales (748
+> únicas); 30-Sep 1.659 frente a 1.237; 1-Oct 248 frente a 835 (día a medio
+> ingestar). Base reindexada el 2-oct: **11.392 peticiones = exactamente las
+> 11.392 líneas `host=fimi…` de los 15 logs conservados**, día a día idéntico.
+> Un `ingest` repetido añade solo lo nuevo. Regresión fija en
+> `test_rotacion_no_duplicatea_el_dia` (renombrado + compresión `.gz`) y
+> `test_migracion_rehace_el_cursor_con_clave_inodo`.
+>
+> Lección: una clave de cursor sobre algo **mutable** (una ruta) no es una
+> clave. Y una migración de esquema necesita su propio test: la rama de
+> migración no se ejercita en una instalación nueva, así que un `INSERT` mal
+> escrito falló en producción con «9 values for 8 columns» y dejó la base vacía.
 
 ## Las seis categorías
 
@@ -73,9 +97,10 @@ La categoría mezcla dos tráficos opuestos y sumarlos triplica el canal:
 - **gente con alguien detrás** — `Claude-User`, `ChatGPT-User`,
   `Perplexity-User`: alguien preguntó a un asistente y el asistente vino a leer
   el enlace. No es un "lector" (lo descarga la máquina) pero sí es la única vía
-  de entrada con público real. En 13→27/Sep: **23 aperturas** (11 IP).
+  de entrada con público real. En 18-Sep→02-Oct (base reindexada): **38
+  aperturas** (20 IP).
 - **crawlers de IA** — `GPTBot`, `OAI-SearchBot`, `CCBot`, `ClaudeBot`… indexan
-  para sus modelos. En los mismos 15 días: **65 peticiones**. No son público.
+  para sus modelos. En los mismos 15 días: **68 peticiones**. No son público.
 
 `es_ia_gente()` separa las dos; el daily y la CLI informan de ambas.
 
@@ -132,23 +157,26 @@ porque un referrer de plataforma NO es siempre una persona:
   (eran 2.035 peticiones y 69 IP) y los CTA desde el blog/landing se cuentan
   aparte, como "¿el blog alimenta al radar?", no como alcance ajeno.
 
-**Medido 13→27/Sep-2026** (9.051 peticiones):
+**Medido 18-Sep→02-Oct-2026** (11.396 peticiones, base **reindexada** el 2-oct;
+antes esta tabla salía con el doble conteo y daba cifras ~25 % más altas):
 
 | Origen | Peticiones | IP |
 |---|---:|---:|
-| buscador (`google.com/search?q=viajeinteligencia`) | 16 | 14 |
+| raíz de buscador (previsualizador/bot) | 59 | 54 |
 | red social (Facebook móvil, Bluesky) | 2 | 2 |
-| correo (app de Gmail) | 1 | 1 |
-| **orígenes externos** | **19** | |
-| sitio propio (blog + landing, CTA) | 20 | 13 |
-| raíz de buscador (previsualizador) | 11 | 7 |
-| asistentes de IA con alguien detrás | 23 | 11 |
-| crawlers de IA | 65 | |
-| conversiones (alta/confirmar/sugerir/clave) | 3 | |
+| **orígenes externos** (personas de fuera, con referrer) | **2** | 2 |
+| sitio propio (blog + landing, CTA) | 64 | 14 |
+| asistentes de IA con alguien detrás | 38 | 20 |
+| crawlers de IA | 68 | |
+| conversiones (alta/confirmar/sugerir/clave) | 4 | |
 
-Lectura: la **búsqueda de marca** funciona (16 clics de 14 IP distintas) y los
-**asistentes** son una vía real (23), pero el volumen sigue siendo mínimo. Los
-11 de "raíz de buscador" y los previsualizadores se dejan fuera a propósito.
+Lectura: el volumen real de público externo es **mínimo pero no nulo** (2 clics
+identificables en 14 días, 4 conversiones acumuladas, 38 aperturas de asistente
+de IA con alguien detrás). Lo que no se sostiene, tras reindexar, es la
+conclusión anterior de que «la búsqueda de marca funciona» con 16 clics desde 14
+IP: al deduplicar, los clicks de buscador quedan casi todos como
+previsualizadores/bots y los 2 orígenes externos son redes sociales. Búsqueda de
+marca: **por medir con Search Console, no con el log**.
 
 ### Trampa de conteo (corregida)
 

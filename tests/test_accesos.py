@@ -317,6 +317,99 @@ def test_referer_se_guarda_y_llega_al_daily():
     con.close()
 
 
+def test_rotacion_no_duplicatea_el_dia():
+    """La rotación de nginx RENOMBRA el fichero (mismo inodo, otro nombre).
+
+    Con el cursor indexado por ruta, el día se leía dos veces: la parcial de la
+    mañana como `access.log` y la completa al día siguiente como `access.log.1`.
+    Medido en producción: 29-Sep 990 filas (748 únicas) y 30-Sep 1.659 (1.205).
+    El cursor va por INODO: un inodo consumido no se relee, tampoco comprimido.
+    """
+    import tempfile
+    import os as _os
+    import gzip as _gzip
+    from detection.accesos import conectar, ingestar
+    d = tempfile.mkdtemp()
+    logs = _os.path.join(d, "logs")
+    _os.makedirs(logs)
+    ip = "88.13.206.136"
+    dia = [_linea(ip, f"29/Sep/2026:1{i}:00:00", "/research.html") for i in range(6)]
+    log = _os.path.join(logs, "access.log")
+    with open(log, "w") as fh:
+        fh.write("\n".join(dia[:3]) + "\n")
+
+    con = conectar(_os.path.join(d, "t.db"))
+    assert ingestar(con, log_dir=logs) == 3
+
+    # Rotación: el fichero pasa a .1 (mismo inodo) y nginx abre uno nuevo que
+    # solo trae líneas nuevas, como en producción.
+    _os.rename(log, _os.path.join(logs, "access.log.1"))
+    with open(log, "w") as fh:
+        fh.write("\n".join(dia[3:]) + "\n")
+    # Segunda pasada del mismo día: lee solo lo nuevo del log vivo.
+    assert ingestar(con, log_dir=logs) == 3, "solo las 3 líneas nuevas"
+
+    # Al día siguiente el rotado se comprime y se vuelve a barrer todo.
+    with open(_os.path.join(logs, "access.log.1")) as fh:
+        contenido = fh.read()
+    _os.remove(_os.path.join(logs, "access.log.1"))
+    with _gzip.open(_os.path.join(logs, "access.log.2.gz"), "wt") as fh:
+        fh.write(contenido)
+    ingestar(con, log_dir=logs)
+
+    total = con.execute("SELECT COUNT(*) c FROM accesos").fetchone()["c"]
+    assert total == 6, f"sin duplicados: 6 filas, hay {total}"
+    unicas = con.execute("SELECT COUNT(DISTINCT ts||ruta||ip_pseudo) c"
+                         " FROM accesos").fetchone()["c"]
+    assert unicas == 6, f"sin duplicados exactos: 6, hay {unicas}"
+    filas_cursor = con.execute("SELECT COUNT(*) c FROM cursor_log").fetchone()["c"]
+    assert filas_cursor <= 3, f"una fila de cursor por inodo, hay {filas_cursor}"
+    con.close()
+
+
+def test_migracion_rehace_el_cursor_con_clave_inodo():
+    """La BD en producción tenía `cursor_log` con PK en `fichero`.
+
+    Al migrar a PK=inodo hay que reconstruir la tabla, y esa rama no se ejercita
+    en un install nuevo (ahí el CREATE TABLE ya trae la clave buena). Sin este
+    test el SQL de la migración se rompio en silencio: la reindexación del 2-oct
+    falló con «9 values for 8 columns» y la base quedó vacía.
+    """
+    import tempfile
+    import os as _os
+    import sqlite3 as _sqlite3
+    from detection.accesos import conectar
+    p = _os.path.join(tempfile.mkdtemp(), "t.db")
+    legacy = _sqlite3.connect(p)
+    legacy.executescript(
+        """
+        CREATE TABLE cursor_log (
+            fichero   TEXT PRIMARY KEY,
+            ino       INTEGER,
+            offset    INTEGER NOT NULL DEFAULT 0,
+            completo  INTEGER NOT NULL DEFAULT 0,
+            leido_ts  TEXT
+        );
+        INSERT INTO cursor_log (fichero, ino, offset, leido_ts) VALUES
+            ('/l/access.log', 4242, 500, '2026-10-01T07:00:00Z'),
+            ('/l/access.log.1', 4242, 500, '2026-10-02T07:00:00Z'),
+            ('/l/viejo.log', NULL, 10, NULL);
+        """
+    )
+    legacy.commit()
+    legacy.close()
+
+    con = conectar(p)   # debe migrar sin reventar
+    pk = [c["name"] for c in con.execute("PRAGMA table_info(cursor_log)") if c["pk"]]
+    assert pk == ["ino"], f"la clave primaria debe ser el inodo, es {pk}"
+    filas = con.execute("SELECT ino, fichero, leido_ts FROM cursor_log").fetchall()
+    assert len(filas) == 1, f"un inodo = una fila (la NULL se descarta): {filas}"
+    assert filas[0]["fichero"] == "/l/access.log.1", \
+        f"debe quedarse la fila más reciente del inodo: {dict(filas[0])}"
+    assert filas[0]["leido_ts"] == "2026-10-02T07:00:00Z"
+    con.close()
+
+
 def test_previsualizadores_no_son_origen():
     """Slack, WhatsApp y Facebook abren enlaces para la vista previa. Vienen con
     referrer propio, pero no son una persona: contarlos inflaba el alcance.
