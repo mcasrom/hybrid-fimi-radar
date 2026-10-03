@@ -519,7 +519,7 @@ def render_radar_share_svg(nombre, mean, top, n=0, top_label="", top_score=0, to
              'font-family="Liberation Sans, DejaVu Sans, sans-serif">' % (W, H, W, H))
     p.append('<rect width="%d" height="%d" fill="#0f172a"/>' % (W, H))
     p.append('<text x="40" y="50" font-size="26" font-weight="700" fill="#f8fafc">RADAR DE COMPONENTES</text>')
-    p.append('<text x="40" y="74" font-size="13" fill="#94a3b8">Señal de comportamiento coordinado anómalo — no implica actor extranjero</text>')
+    p.append('<text x="40" y="74" font-size="13" fill="#94a3b8">Señal de amplificación anómala — no implica actor extranjero</text>')
     p.append('<text x="1080" y="50" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="end">%s</text>' % _esc(nombre))
     for frac in (0.25, 0.5, 0.75, 1.0):
         pts = " ".join("%.1f,%.1f" % _pt(i, frac * 100) for i in range(4))
