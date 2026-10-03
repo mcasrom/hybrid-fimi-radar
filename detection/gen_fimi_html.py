@@ -77,9 +77,9 @@ BAND_COLORS = {
 # quien no conoce el motor entienda la tarjeta sin códigos internos.
 HYPOTHESIS_ES = {
     "H1": {"t": "Viralización orgánica", "d": "muchas cuentas distintas lo difunden sin pauta coordinada clara"},
-    "H2": {"t": "Campaña coordinada doméstica (con estructura)", "d": "coordinación dentro del país CON núcleo de cuentas interconectadas (kcore ≥ 3)"},
-    "H2b": {"t": "Sincronización sin atribución de operador", "d": "alta sincronía temporal sin evidencia de estructura organizada (no atribuye operador)"},
-    "H3": {"t": "Operación de influencia extranjera", "d": "coordinación + infraestructura común + narrativa que cruza países"},
+    "H2": {"t": "Posible coordinación doméstica (con estructura)", "d": "hipótesis: coordinación dentro del país con núcleo de cuentas interconectadas (kcore ≥ 3)"},
+    "H2b": {"t": "Posible sincronización sin atribución de operador", "d": "hipótesis: alta sincronía temporal sin evidencia de estructura organizada (no atribuye operador)"},
+    "H3": {"t": "Posible operación de influencia extranjera", "d": "hipótesis: coordinación + infraestructura común + narrativa que cruza países"},
     "H4": {"t": "Amplificación mediática", "d": "el eco lo dan medios establecidos, no cuentas anónimas coordinadas"},
     "H5": {"t": "Sincronía sostenida (sin estructura)", "d": "alta sincronía y contenido diverso sin estructura; NO implica campaña política"},
     "H6": {"t": "Sin evidencia concluyente", "d": "no hay señal suficiente para distinguir entre las anteriores"},

@@ -4,7 +4,7 @@
 Distinto de `email_digest.py` (digest de datos). Cuenta una historia, sin over-claim:
   1. KPIs del mes.
   2. Mini-gráfico: cómo se reparte lo que el observatorio ve (feed vs coordinación vs eco...).
-  3. Caso del mes: reproducción coordinada entre cuentas (prefiriendo ventana corta).
+  3. Caso del mes: amplificación entre cuentas (mismo contenido repetido; prefiriendo ventana corta).
   4. Descarte del mes: feed de una sola fuente (etiquetado benigno).
   5. Límites + CTA.
 
@@ -163,11 +163,11 @@ def html_boletin(d, baja_url="#"):
         '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
         'max-width:620px;margin:0 auto;color:#1e293b;line-height:1.55">'
         '<h2 style="margin:0 0 4px">📡 Observatorio · Boletín mensual</h2>'
-        '<p style="color:#64748b;margin:0 0 10px">Señales de coordinación y amplificación (ámbito FIMI). '
+        '<p style="color:#64748b;margin:0 0 10px">Señales de amplificación (ámbito FIMI). '
         'Mide <b>cómo se mueve algo</b>, no si es verdad ni quién está detrás.</p>'
         + _kpis(d)
         + '<h3 style="margin:14px 0 2px">📊 El mes en datos</h3>' + _grafico(d)
-        + '<h3 style="margin:16px 0 4px;border-top:1px solid #e2e8f0;padding-top:10px">🔎 Caso del mes: reproducción coordinada</h3>'
+        + '<h3 style="margin:16px 0 4px;border-top:1px solid #e2e8f0;padding-top:10px">🔎 Caso del mes: amplificación entre cuentas</h3>'
         + _bloque_caso(d["caso"])
         + '<p style="color:#475569;font-size:.9rem">Varias cuentas <b>distintas</b>, ninguna dominante, con el '
         '<b>mismo contenido</b> en poco tiempo. Es una <b>señal</b> que merece revisión; <b>no</b> prueba de campaña ni atribución.</p>'

@@ -41,8 +41,8 @@ def _interpreta_cluster(cc):
 
     alta = 60
     if coord >= alta and infra >= alta and dens >= alta:
-        return ("patrón compatible con red coordinada con infraestructura "
-                "compartida", cuentas)
+        return ("patrón compatible con cuentas que comparten infraestructura",
+                cuentas)
     if coord >= alta and infra < alta and dens < alta:
         return ("cuentas distintas repitiendo contenido, sin infraestructura "
                 "técnica común evidente", cuentas)
@@ -126,7 +126,7 @@ def generar_resumen_tema(tema_id, nombre, salud, cluster_top, sostenidas_tema,
         _n = dominante.get("n") or 0
         _tot = dominante.get("total") or 0
         _h3 = dominante.get("h3") or 0
-        _lab = {"H1": "viralización orgánica", "H2": "campaña coordinada doméstica",
+        _lab = {"H1": "viralización orgánica", "H2": "posible coordinación doméstica",
                 "H2b": "sincronización sin atribución de operador", "H3": "operación de influencia extranjera",
                 "H4": "amplificación mediática", "H5": "sincronía sostenida (sin estructura)",
                 "H6": "sin evidencia concluyente"}.get(_h, _h)
