@@ -10,7 +10,7 @@ agrupación estructural— de la conversación en redes sociales y prensa sobre 
 de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
 defensa y amenazas híbridas…). Mira **quién empuja el mismo mensaje, a la vez
 y de la misma forma**, y lo publica como **amplificación medida**. Una banda alta
-**no** equivale a coordinación: en la validación ciega del 29/Sep/2026 solo **3 de 40**
+**no** equivale a coordinación: en la validación ciega del 29/Sep/2026 solo **3 de 36** evaluables
 casos de banda alta (8,3 %) mostraban coordinación. FIMI es el **ámbito** que se observa,
 no una detección: el observatorio **no** confirma campañas ni atribuye actores.
 

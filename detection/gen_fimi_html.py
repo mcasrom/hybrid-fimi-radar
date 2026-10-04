@@ -773,7 +773,7 @@ _GUIA_HTML = """
 <div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #0ea5e9;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.82rem;color:#334155;line-height:1.55">
   <b>Amplificación observada.</b> El radar mide <b>qué contenido repiten varias cuentas y en cuánto
   tiempo</b>. Una banda alta indica <b>amplificación</b>, <b>no</b> coordinación confirmada: en la
-  validación ciega del 29/Sep solo <b>3 de 40</b> casos de banda alta (8,3 %) mostraban coordinación.
+  validación ciega del 29/Sep solo <b>3 de 36</b> evaluables mostraban coordinación (8,3 %; 7,5 % si los dudosos cuentan como «no»).
   No confirma atribución de actor, inautenticidad ni influencia extranjera.
 </div>
 <ol style="font-size:.84rem;color:#334155;padding-left:20px;line-height:1.7;margin:6px 0">
@@ -850,7 +850,7 @@ El radar <b>no ve todo internet</b>. Esto es lo que observa y lo que queda fuera
   <li><b>NORMAL</b> (0–19): sin señal relevante.</li>
   <li><b>WATCH</b> (20–39): señal débil o ruido de bajo volumen (a menudo 2-3 cuentas).</li>
   <li><b>ANOMALOUS</b> (40–59): patrón anómalo sin llegar a banda alta. <i>Aquí caen los ecos de prensa</i> (≥80% de dominios de medios establecidos).</li>
-  <li><b>HIGH</b> (60–79): <b>amplificación alta</b> — varias cuentas distintas repiten el mismo contenido en una ventana corta. <b>No implica coordinación ni campaña</b> (solo 3 de 40 casos de banda alta, el 8,3 %, mostraron coordinación en la validación ciega del 29/Sep).</li>
+  <li><b>HIGH</b> (60–79): <b>amplificación alta</b> — varias cuentas distintas repiten el mismo contenido en una ventana corta. <b>No implica coordinación ni campaña</b> (solo 3 de 36 evaluables, el 8,3 %, mostraron coordinación en la validación ciega del 29/Sep).</li>
   <li><b>CRITICAL</b> (80–100): amplificación anómala de alta masa. <i>No hay ninguno ahora</i> (el <code>band_gate</code> exige ≥10 cuentas y anomalía ≥40).</li>
 </ul>
 <p class="caption" style="font-size:.8rem;color:#64748b;margin-top:6px">
@@ -1650,7 +1650,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>"
         for b, (lo, hi) in _bandas.items())
     _b_html += ("<div style='font-size:.74rem;color:#92400e;margin-top:6px;line-height:1.35'>"
-                "Banda <b>HIGH</b>: en la validación ciega del 29-Sep, solo <b>3 de 40</b> casos "
+                "Banda <b>HIGH</b>: en la validación ciega del 29-Sep, solo <b>3 de 36</b> evaluables "
                 "(<b>8,3 %</b>) mostraron coordinación; el resto es <b>amplificación sin "
                 "coordinación confirmada</b>. Una banda alta no implica campaña ni actor.</div>")
     _sma = _scr.get("scale_min_accounts", {}) or {}
