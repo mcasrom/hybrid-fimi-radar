@@ -20,6 +20,11 @@ análisis contextual y evidencia organizativa. No dictamina "qué es verdad o me
 Está pensado para periodistas, investigadores y ciudadanía que quieran comprobar los
 datos por sí mismos.
 
+La **portada** está pensada para leerse **sin jerga**: abre con **«¿Qué es esto?»** (aclara que
+no dice si hay una campaña) y **«Para periodistas»** (qué se puede citar y qué no); y las
+**bandas** se muestran en lenguaje llano —**Amplificación alta**, **Amplificación anómala**…—
+con el código interno (**HIGH**/**CRITICAL**) entre paréntesis para trazabilidad.
+
 ## 2. Qué NO hace
 
 - **No es un detector de FIMI.** No demuestra que exista una campaña: produce
