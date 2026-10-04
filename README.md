@@ -140,8 +140,11 @@ muestra el valor vivo):
   (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **~72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
-- **Caso documentado (expediente vivo):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
-  (V1 30-jul→21-sep: 13.442 eventos vs 24 en el control; 150 URLs compartidas vs 0; dominado por eco de prensa).
+- **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
+  La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por
+  `event_temas` y el clúster sostenido del caso) se **auto-inyectan cada 6 h** desde la BD
+  (`detection/update_caso_ceuta_live.py`, en el cron de 6 h). Análisis **V1** 30-jul→21-sep
+  (snapshot 1-oct): 13.442 eventos · 150 URLs compartidas, dominado por eco de prensa.
 - Última release: **v0.2**.
 
 ## 5. Limitaciones conocidas
