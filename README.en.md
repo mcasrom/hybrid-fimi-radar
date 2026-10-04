@@ -129,6 +129,7 @@ the live value):
   evidence isn't enough to attribute.
 - **The score is a behavioural signal, not a verdict:** a HIGH band means anomalous
   coordinated behaviour, not proof of orchestration.
+- **Coverage *about* disinformation and single-domain echoes no longer reach the high band (4/Oct/2026).** `meta_coverage_cap` caps a cluster whose dominant narrative role is `meta_analysis` (it analyses or explains disinformation rather than producing it) to ANOMALOUS; `single_domain_cap` caps a cluster where **≥90 % of links point to a single domain** (a feed/aggregator echo) to ANOMALOUS, **mass included**. Both are configurable and reversible in `config.yaml`. Real effect: HIGH **93 → 76** (18 capped). The dashboard also adds a **dead zone** in the trend (<10 % = "Stable"), stars the **dominant hypothesis** (not always H3) and surfaces the **blind-validation precision (8.3 %)** next to the high band.
 - **Honest, experimental validation.** Group separation is measured with **synthetic** data
   (ARI) and curated/external layers; **none proves real FIMI detection**. Human **blind**
   validation —with separate labels for *observable coordination*, *inauthentic/manipulative

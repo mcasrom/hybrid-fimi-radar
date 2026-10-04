@@ -221,6 +221,11 @@ muestra el valor vivo):
   Efecto real (regen 2/Oct): HIGH **108 → 79** (ningún CRITICAL perdido, todo a ANOMALOUS);
   el caso Ceuta queda intacto —su hallazgo es amplificación sostenida— y solo baja el eco de
   prensa alemana, coherente con la tesis del propio caso.
+- **La cobertura *sobre* desinformación y el eco de un solo dominio ya no llegan a banda alta (4/Oct/2026, aplicado).** Dos topes nuevos, de la misma familia que los anteriores:
+  - `meta_coverage_cap`: si el **rol narrativo dominante** del clúster es `meta_analysis` (analiza o explica la desinformación, no la produce; `detection/subtipo.py`), es **cobertura sobre el fenómeno**, no una narrativa FIMI → máximo ANOMALOUS.
+  - `single_domain_cap`: si **≥90 % de los enlaces** del clúster apuntan a **un mismo dominio**, es amplificación de una fuente o agregador, no coordinación entre actores distintos → máximo ANOMALOUS, **también con masa** (cambio de política deliberado: una campaña multicuenta suele diversificar dominios). Ambos son configurables y revertibles en `config.yaml` (`scoring.meta_coverage_cap`, `scoring.single_domain_cap`).
+
+  Efecto real (4/Oct): HIGH **93 → 76** (18 topados: 10 `meta_analysis` + 8 dominio único). En el dashboard, además: **zona muerta** en la tendencia (un cambio de volumen <10 % se lee como «Estable»), la **⭐ marca la hipótesis dominante** (no siempre H3) y la **precisión de la validación ciega (8,3 %)** aparece junto a la banda alta. Los títulos de clúster ya no muestran URLs crudas.
 - **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
   decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
   NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score
