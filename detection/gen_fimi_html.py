@@ -4863,6 +4863,9 @@ a{{color:#c2410c}}
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
   <h1>Observatorio de amplificación</h1>
+  <div style="margin:12px 0 6px;padding:12px 16px;background:#fff7ed;border:1px solid #fdba74;border-left:5px solid #c2410c;border-radius:10px;font-size:.95rem;color:#334155;line-height:1.5">
+    <b>¿Qué es esto?</b> No dice si hay una campaña. Mide <b>cuándo varias cuentas publican lo mismo a la vez</b> —amplificación— y lo muestra con los límites a la vista. El «no» (no hay coordinación medible aquí) también es un resultado.
+  </div>
   <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
   para medir <strong>patrones de amplificación</strong> (qué contenido repiten varias cuentas, cómo y cuándo),
   en el ámbito FIMI. Observamos el comportamiento en red; <strong>una banda alta es amplificación,
@@ -4879,6 +4882,10 @@ a{{color:#c2410c}}
     <a href="#estado" class="primary" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Ver estado por tema →</a>
   </div>
 </section>
+
+  <div style="margin:10px 0 4px;padding:11px 16px;background:#f8fafc;border:1px solid #cbd5e1;border-left:5px solid #64748b;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
+    <b>Para periodistas.</b> <b>Se puede citar:</b> el patrón —amplificación, <b>eco de prensa</b> dominante, <b>0 coordinación confirmada</b>— con enlace a los datos. <b>No citar como:</b> «campaña coordinada», «FIMI ruso» u «operación confirmada»: <b>no está medido</b>. <b>Datos:</b> <a href="/api/v1/temas">API JSON</a> · <a href="/metodo.html">método y límites</a> · <a href="/casos/ceuta/">caso Ceuta</a>.
+  </div>
 
  {resumen_html}
 
