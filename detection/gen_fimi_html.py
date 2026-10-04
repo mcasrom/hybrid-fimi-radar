@@ -72,6 +72,12 @@ BAND_COLORS = {
     "NORMAL": "#16a34a", "WATCH": "#0891b2", "ANOMALOUS": "#eab308",
     "HIGH": "#f97316", "CRITICAL": "#dc2626",
 }
+# Nombre en lenguaje llano de cada banda (para no depender de HIGH/CRITICAL).
+BAND_ES = {
+    "NORMAL": "Normal", "WATCH": "En observación",
+    "ANOMALOUS": "Amplificación anómala", "HIGH": "Amplificación alta",
+    "CRITICAL": "Amplificación muy alta",
+}
 
 # Traducción de hipótesis H1-H6 (attribution.py) a español natural, para que
 # quien no conoce el motor entienda la tarjeta sin códigos internos.
@@ -185,7 +191,7 @@ def render_bubble_chart(rows, temas, temas_cfg, width=1120):
             p.append(
                 f"<circle cx='{_x:.0f}' cy='{_y:.0f}' r='{_r:.1f}' fill='{col}' "
                 f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1'>"
-                f"<title>{r['label']} · {r['score']:.0f}/100 {r['banda']} · "
+                f"<title>{r['label']} · {r['score']:.0f}/100 {BAND_ES.get(r['banda'], r['banda'])} · "
                 f"{_pl(r['cuentas'],'cuenta','cuentas')}</title></circle>")
     # leyenda de tamaño (abajo-izquierda)
     ly = top + n * row_h + 40
@@ -1230,7 +1236,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
     if band in ("HIGH", "CRITICAL"):
         h += (f'<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;'
               f'border-radius:8px;padding:6px 12px;margin:4px 0 8px;font-size:.74rem;line-height:1.35">'
-              f'<b>Interpreta con cautela:</b> {band} = señal de <b>comportamiento coordinado '
+              f'<b>Interpreta con cautela:</b> {BAND_ES.get(band, band)} = señal de <b>comportamiento coordinado '
               f'anómalo</b> entre estas cuentas. <b>No</b> implica por sí solo un actor extranjero '
               f'ni una campaña orquestada: revisa el contenido, la atribución (a menudo '
               f'UNKNOWN/NO_ATTRIBUTION) y las hipótesis alternativas antes de concluir.</div>')
@@ -1647,7 +1653,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         "HIGH": [60, 79], "CRITICAL": [80, 100]}
     _b_html = "".join(
         f"<span style='display:inline-block;margin:2px;padding:2px 8px;"
-        f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>"
+        f"border:1px solid #e2e8f0;border-radius:12px'>{BAND_ES.get(b, b)} <span style='color:#94a3b8'>({b})</span> {lo}–{hi}</span>"
         for b, (lo, hi) in _bandas.items())
     _b_html += ("<div style='font-size:.74rem;color:#92400e;margin-top:6px;line-height:1.35'>"
                 "Banda <b>HIGH</b>: en la validación ciega del 29-Sep, solo <b>3 de 36</b> evaluables "
@@ -1707,7 +1713,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
                     f"{n_rss_ev} vienen de feeds (lectura ancilar de prensa) y {n_redes_ev} de redes/plataformas "
                     f"(cuentas sociales = el grafo de coordinación).")
     _evidencia_txt = (f"En el ciclo actual el radar mantiene <b>{n_clusters}</b> cluster(s) de amplificación: "
-                      f"{n_band.get('CRITICAL', 0)} CRITICAL · {n_band.get('HIGH', 0)} HIGH · "
+                      f"{n_band.get('CRITICAL', 0)} muy alta (CRITICAL) · {n_band.get('HIGH', 0)} alta (HIGH) · "
                       f"{n_band.get('ANOMALOUS', 0)} ANOMALOUS · {n_band.get('WATCH', 0)} WATCH · "
                       f"{n_band.get('NORMAL', 0)} NORMAL. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
                       f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;amplificación "
@@ -2808,7 +2814,7 @@ def main():
                     _bc = BAND_COLORS.get(_bd, "#94a3b8")
                     chip_banda = (f"<span style='display:inline-block;font-size:.68rem;font-weight:700;"
                                   f"color:{_bc};border:1px solid {_bc};border-radius:999px;"
-                                  f"padding:0 6px;margin-left:6px'>{_bd}</span>")
+                                  f"padding:0 6px;margin-left:6px'>{BAND_ES.get(_bd, _bd)}</span>")
                 # contexto persistido (nuevo formato) o lookup por id (antiguo)
                 if " | " in det:
                     _builtin = det.split(" | ", 1)[1]
@@ -3396,7 +3402,7 @@ def main():
             _delta_txt, _delta_color = "—", "#94a3b8"
         _gauges_t = "".join([
             _mini_dial("Score top", _max_score, _max_color,
-                       f"{_max_banda} · <span style='color:{_delta_color};font-weight:700'>{_delta_txt}</span> vs hace 48h"),
+                       f"{BAND_ES.get(_max_banda, _max_banda)} · <span style='color:{_delta_color};font-weight:700'>{_delta_txt}</span> vs hace 48h"),
             _mini_dial("En alerta", _n_alerta, "#dc2626" if _n_alerta else "#94a3b8",
                        f"{_pct_alerta}% · {_n_alerta} de {_n_tot} clusters ≥60"),
             _mini_dial("Anomalía máx", _anom_max, _anom_color,
@@ -4115,7 +4121,7 @@ def main():
     for b in _band_order:
         lo, hi = _bandas.get(b, [0, 0])
         _b_chips.append(f"<span style='display:inline-block;margin:2px;padding:2px 8px;"
-                        f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>")
+                        f"border:1px solid #e2e8f0;border-radius:12px'>{BAND_ES.get(b, b)} <span style='color:#94a3b8'>({b})</span> {lo}–{hi}</span>")
     _b_html = "".join(_b_chips)
     # escala global
     _sma = _scr.get("scale_min_accounts", {}) or {}
