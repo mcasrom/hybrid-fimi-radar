@@ -94,6 +94,20 @@ scoring:
     min_account_frac: 0.55
     min_domain_frac: 0.8
     cap_band: ANOMALOUS
+  # Tope por "cobertura SOBRE desinformación" (4-Oct, auditoría externa): si el
+  # rol narrativo dominante del cluster es `meta_analysis` (analiza/explica la
+  # desinformación, no la produce) es COBERTURA sobre el fenómeno, no narrativa
+  # FIMI -> máx cap_band. Coherente con detection/subtipo.py.
+  meta_coverage_cap:
+    subtypes: [meta_analysis]
+    cap_band: ANOMALOUS
+  # Tope por "eco de un solo dominio" (4-Oct): si >= min_domain_frac de los
+  # enlaces del cluster apuntan a UN mismo dominio, es amplificación de una
+  # fuente/agregador, no coordinación entre actores -> máx cap_band, también con
+  # masa (cambio de política deliberado; una campaña suele diversificar dominios).
+  single_domain_cap:
+    min_domain_frac: 0.9
+    cap_band: ANOMALOUS
 detection:
   tight_timing_seconds: 60
   near_duplicate_threshold: 0.7

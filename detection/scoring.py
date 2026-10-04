@@ -262,6 +262,50 @@ def single_source_feed_cap(overall, accounts, dominant_account_frac, dominant_do
     return overall, es_feed
 
 
+def meta_coverage_cap(overall, subtype, config=None, tema=None):
+    """Tope por "cobertura SOBRE desinformación" (auditoría externa 4-Oct): un
+    cluster cuyo rol narrativo dominante es `meta_analysis` (analiza/explica la
+    desinformación, no la produce) es COBERTURA sobre el fenómeno, no una
+    narrativa FIMI: se topa a cap_band (ANOMALOUS). Coherente con subtipo.py.
+
+    Config: scoring.meta_coverage_cap = {subtypes: ["meta_analysis"], cap_band}.
+    Devuelve (overall, es_meta)."""
+    p = _tema_scale(config, tema, "meta_coverage_cap",
+                    {"subtypes": ["meta_analysis"], "cap_band": "ANOMALOUS"})
+    st = str(subtype or "")
+    es = st in (p.get("subtypes") or ["meta_analysis"])
+    if es:
+        bands = load_bands(config)
+        overall = min(float(overall), float(bands[p["cap_band"]][1]))
+    return overall, es
+
+
+def single_domain_cap(overall, dominant_domain_frac, config=None, tema=None):
+    """Tope por "eco de un solo dominio" (auditoría externa 4-Oct): si ~todos los
+    enlaces del cluster apuntan a UN mismo dominio (>= min_domain_frac), lo
+    observado es amplificación de una fuente/agregador, no coordinación entre
+    actores distintos: se topa a cap_band (ANOMALOUS) aunque haya masa.
+
+    NOTA de diseño: a diferencia de `single_source_feed_cap`, aquí NO se exige un
+    nº pequeño de cuentas; es un cambio de política deliberado (una campaña
+    multicuenta suele diversificar dominios; un único dominio dominante es más
+    compatible con un feed/agregador). Revertible en scoring.single_domain_cap.
+
+    Config: scoring.single_domain_cap = {min_domain_frac, cap_band}.
+    Devuelve (overall, es_1dom)."""
+    p = _tema_scale(config, tema, "single_domain_cap",
+                    {"min_domain_frac": 0.9, "cap_band": "ANOMALOUS"})
+    try:
+        ddf = float(dominant_domain_frac)
+    except Exception:
+        ddf = 0.0
+    es = ddf >= float(p["min_domain_frac"])
+    if es:
+        bands = load_bands(config)
+        overall = min(float(overall), float(bands[p["cap_band"]][1]))
+    return overall, es
+
+
 def solve_scale(overall, accounts, events, infra, config=None, tema=None, n_urls=0):
     """Aplica la escala completa del cluster (orden correcto):
     1) bonus por masa; 2) piso híbrido; 3) cap CRITICAL/HIGH por masa mínima;

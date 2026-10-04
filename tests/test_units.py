@@ -25,8 +25,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from detection.scoring import (  # noqa: E402
-    band_for, band_gate, compute_scores, load_bands, origen_unico_cap, scale_bonus,
-    scale_cap, scale_floor, single_source_feed_cap, solve_scale,
+    band_for, band_gate, compute_scores, load_bands, meta_coverage_cap,
+    origen_unico_cap, scale_bonus, scale_cap, scale_floor, single_domain_cap,
+    single_source_feed_cap, solve_scale,
 )
 from normalizer.clasificar import _matches, _tokens, temas_por_contenido  # noqa: E402
 from clustering.clustering import _label_prefix, cluster_by_components  # noqa: E402
@@ -165,6 +166,32 @@ def test_single_source_feed_cap():
     # default del código (sin config): mismo umbral documentado
     overall, es_feed = single_source_feed_cap(70, 4, 0.64, 0.0, _cfg())
     assert es_feed is True and overall == 59.0
+
+
+def test_meta_coverage_cap():
+    """4-Oct: si el rol narrativo dominante es `meta_analysis` (cobertura SOBRE
+    desinformación, no producción) -> máx ANOMALOUS; otros roles no se tocan."""
+    cfg = _cfg()
+    overall, es = meta_coverage_cap(70, "meta_analysis", cfg)
+    assert es is True and overall == 59.0
+    overall, es = meta_coverage_cap(70, "potential_narrative", cfg)
+    assert es is False and overall == 70.0
+    overall, es = meta_coverage_cap(70, "", cfg)
+    assert es is False and overall == 70.0
+    overall, es = meta_coverage_cap(45, "meta_analysis", cfg)
+    assert es is True and overall == 45.0
+
+
+def test_single_domain_cap():
+    """4-Oct: si ~todo el cluster apunta a UN dominio (>=0.9) es eco de una
+    fuente/agregador -> máx ANOMALOUS, también con masa."""
+    cfg = _cfg()
+    overall, es = single_domain_cap(70, 0.95, cfg)
+    assert es is True and overall == 59.0
+    overall, es = single_domain_cap(70, 0.6, cfg)
+    assert es is False and overall == 70.0
+    overall, es = single_domain_cap(45, 1.0, cfg)
+    assert es is True and overall == 45.0
 
 
 def test_band_gate_exige_nucleo_mutuo_para_HIGH():

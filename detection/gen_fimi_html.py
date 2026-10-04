@@ -94,6 +94,28 @@ COMPONENT_ES = {
     "network_density": "Qué conectadas están entre sí las cuentas del cluster",
 }
 
+# Token-URL (con o sin esquema, con o sin ruta) para limpiar titulares mostrados.
+_TOKEN_URL = re.compile(r'^(?:https?://\S+|www\.\S+|[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/\S*)?)[.,;:)\]]?$', re.I)
+
+
+def _sans_url(t):
+    """Quita tokens-URL del inicio/fin de un texto para que el titular mostrado
+    sea legible (muchos posts son «URL + titular» concatenados). Si tras limpiar
+    no queda texto, devuelve el dominio. Solo presentación; no toca los datos."""
+    s = str(t or "").strip()
+    if not s:
+        return ""
+    parts = s.split()
+    while parts and _TOKEN_URL.match(parts[0]):
+        parts.pop(0)
+    while parts and _TOKEN_URL.match(parts[-1]):
+        parts.pop()
+    s2 = " ".join(parts).strip(" ·-|–—:,")
+    if s2:
+        return s2
+    m = re.match(r'^(?:https?://)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)', s, re.I)
+    return m.group(1) if m else s
+
 
 def band_of(score):
     if score >= 80: return "CRITICAL"
@@ -408,6 +430,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
             _hyps = sorted(top_hyps, key=lambda x: -(x.get("score") or 0))
             _h3 = next((x for x in _hyps if x.get("hypothesis") == "H3"), None)
             _h3p = int(round((_h3.get("score") or 0) * 100)) if _h3 else 0
+            _top_code = _hyps[0].get("hypothesis") if _hyps else None
             _rows = ""
             for _x in _hyps:
                 _code = _x.get("hypothesis", "?")
@@ -421,7 +444,7 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
                     _col = "#f59e0b"
                 else:
                     _col = "#94a3b8"
-                _star = " ⭐" if _code == "H3" else ""
+                _star = " ⭐" if _code == _top_code else ""
                 _rows += ('<div style="display:flex;align-items:center;gap:8px;margin:3px 0">'
                           '<span style="width:172px;font-size:.72rem;color:#475569" title="' + _es["d"] + '">'
                           '<b>' + _code + '</b> · ' + _es["t"] + _star + '</span>'
@@ -430,7 +453,8 @@ def render_radar_componentes(mean, top, n=0, top_label="", top_score=0, top_hyps
                           '<span style="width:36px;text-align:right;font-size:.72rem;font-weight:700;color:#334155">'
                           + str(_pct) + '%</span></div>')
             _nota = ("Hipótesis NO concluyente (señal de comportamiento, no atribución)."
-                     if _h3p < 50 else "H3 destacada.")
+                     if (not _hyps or int(round((_hyps[0].get("score") or 0) * 100)) < 50)
+                     else "Hipótesis dominante destacada.")
             _ac = str(top_conf or "").upper()
             if _ac in ("", "NO_ATTRIBUTION", "UNKNOWN"):
                 _attr_chip = ('<span style="display:inline-block;font-size:.68rem;color:#475569;'
@@ -1238,7 +1262,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
         import html as _html_esc
         list_items = ""
         for item in contenido[:3]:
-            txt = _html_esc.escape(str(item.get("text", "")))[:180]
+            txt = _html_esc.escape(_sans_url(str(item.get("text", ""))))[:180]
             url = _html_esc.escape(str(item.get("url", "")))
             freq = item.get("n", 1)
             url_html = (f' · <a href="{url}" target="_blank" rel="noopener noreferrer" '
@@ -1308,7 +1332,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                     _es = HYPOTHESIS_ES.get(_code, {"t": _x.get("label", _code), "d": ""})
                     _pct = int(round((_x.get("score") or 0) * 100))
                     _col = "#b91c1c" if _code == "H3" else "#94a3b8"
-                    _star = " ⭐" if _code == "H3" else ""
+                    _star = " ⭐" if _code == _tc else ""
                     rows += (f'<div style="display:flex;align-items:center;gap:8px;margin:2px 0">'
                              f'<span style="width:215px;font-size:.72rem;color:#475569" title="{_es["d"]}">'
                              f'<b>{_code}</b> · {_es["t"]}{_star}</span>'
@@ -1340,7 +1364,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                 _t_utc = time.strftime("%d %b %H:%M UTC", time.gmtime(r.get("ts") or 0))
                 _src = _ev_esc.escape(str(r.get("source") or "?"))
                 _auth = _ev_esc.escape(str(r.get("author") or ""))
-                _title = _ev_esc.escape(str(r.get("title") or r.get("text") or ""))[:110]
+                _title = _ev_esc.escape(_sans_url(str(r.get("title") or r.get("text") or "")))[:110]
                 _url = _ev_esc.escape(str(r.get("url") or ""))
                 _l = (f' <a href="{_url}" target="_blank" rel="noopener noreferrer" '
                       f'style="color:#c2410c;font-size:.7rem">↗</a>' if _url else "")
@@ -1625,6 +1649,10 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         f"<span style='display:inline-block;margin:2px;padding:2px 8px;"
         f"border:1px solid #e2e8f0;border-radius:12px'>{b} {lo}–{hi}</span>"
         for b, (lo, hi) in _bandas.items())
+    _b_html += ("<div style='font-size:.74rem;color:#92400e;margin-top:6px;line-height:1.35'>"
+                "Banda <b>HIGH</b>: en la validación ciega del 29-Sep, solo <b>3 de 40</b> casos "
+                "(<b>8,3 %</b>) mostraron coordinación; el resto es <b>amplificación sin "
+                "coordinación confirmada</b>. Una banda alta no implica campaña ni actor.</div>")
     _sma = _scr.get("scale_min_accounts", {}) or {}
     _s_f = _scr.get("scale_floor", {}) or {}
     _s_b = _scr.get("scale_bonus", {}) or {}
@@ -2543,17 +2571,20 @@ def main():
                 "SELECT COUNT(*) FROM findings WHERE tema_id=? AND tipo='cluster'"
                 " AND date(fecha,'unixepoch')=? AND intensidad>=60",
                 (_t, _hace48.isoformat())).fetchone()[0]
-            # decidir tendencia
+            # decidir tendencia, con ZONA MUERTA: un cambio de volumen <10 % se
+            # lee como "estable" (evita que 292 vs 293 salga como "bajando").
+            _base = max(_h48_n, 1)
+            _rel = abs(_hoy_n - _h48_n) / _base
             if _hoy_n == 0 and _h48_n == 0 and _high_hoy == 0 and _high_48 == 0:
                 estado = "recopilando"
-            elif _high_hoy > _high_48:
+            elif (_high_hoy - _high_48) >= 2 and _rel >= 0.10:
                 estado = "subiendo"
+            elif _rel < 0.10:
+                estado = "estable"
             elif _hoy_n > _h48_n:
                 estado = "subiendo"
-            elif _hoy_n < _h48_n:
-                estado = "bajando"
             else:
-                estado = "estable"
+                estado = "bajando"
             tendencias[_t] = {
                 "estado": estado,
                 "hoy": _hoy_n, "hace48": _h48_n,

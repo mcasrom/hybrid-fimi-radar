@@ -29,7 +29,8 @@ from detection.coordination import build_edges
 from detection.fakenews import detect_cascades, amplification_signal, detect_narrative_amplification
 from clustering.clustering import cluster_by_components, cluster_summary, cluster_evidence_details
 from detection.scoring import (compute_scores, band_for, load_bands, solve_scale,
-                               band_gate, mainstream_cap, single_source_feed_cap)
+                               band_gate, mainstream_cap, single_source_feed_cap,
+                               meta_coverage_cap, single_domain_cap)
 from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics
@@ -251,6 +252,20 @@ def main():
         # que explicaciones.single_source_feed:supported.
         overall, es_feed = single_source_feed_cap(
             overall, s.get("accounts", 0), _dac, _ddc, cfg, tema=tema)
+        # Topes por FORMA (auditoría externa 4-Oct): cobertura SOBRE desinformación
+        # (rol meta_analysis) y eco de UN solo dominio no se leen como banda alta.
+        _txts_cap = []
+        try:
+            if sub_clustered is not None:
+                _txts_cap = (sub_clustered.loc[sub_clustered["cluster"] == label, "text"]
+                             .dropna().astype(str).tolist())
+        except Exception:
+            _txts_cap = []
+        _rol_cap = subtipo.dominante(_txts_cap) if _txts_cap else {"dominant": "", "counts": {}, "label": ""}
+        overall, es_meta = meta_coverage_cap(overall, _rol_cap.get("dominant", ""), cfg, tema=tema)
+        overall, es_1dom = single_domain_cap(overall, _ddc, cfg, tema=tema)
+        s["meta_coverage_cap"] = es_meta
+        s["single_domain_cap"] = es_1dom
 
         # k-core del grafo de coordinación del cluster: núcleo de cuentas
         # mutuamente conectadas dentro del cluster. Se calcula ANTES de las
@@ -541,6 +556,15 @@ def _build_report(df, summary, details, bands, amp, cascades, narratives, elapse
             overall, s.get("accounts", 0),
             s.get("dominant_account_frac", 0.0), s.get("dominant_domain_frac", 0.0),
             cfg, tema=tema)
+        _subdom = ""
+        try:
+            _ns = s.get("narrative_subtype")
+            _ns = json.loads(_ns) if isinstance(_ns, str) else _ns
+            _subdom = (_ns or {}).get("dominant", "")
+        except Exception:
+            _subdom = ""
+        overall, _ = meta_coverage_cap(overall, _subdom, cfg, tema=tema)
+        overall, _ = single_domain_cap(overall, s.get("dominant_domain_frac", 0.0), cfg, tema=tema)
         overall = band_gate(overall, s.get("accounts", 0), comp["anomaly"], cfg,
                             tema=tema, kcore=s.get("kcore", 0))
         hyp = classify_hypotheses({**comp, "accounts": s.get("accounts", 0),
