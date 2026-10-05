@@ -331,3 +331,23 @@ def test_cluster_by_components_no_parte_componente_pequeno():
     out = cluster_by_components(feat, edges, cfg, tema="t")
     assert out.at["bsky:a", "cluster_label"] == "t_cluster_000"
     assert out.at["bsky:b", "cluster_label"] == "t_cluster_000"
+
+
+def test_verifica_solape_topico():
+    from detection import verifica as v
+    top = {"elecciones", "electoral", "gobierno", "calendario"}
+    ov = v.solape(top, "Estas son las fechas clave del calendario electoral tras la convocatoria")
+    assert v.cumple(ov)
+
+
+def test_verifica_filtra_generico():
+    from detection import verifica as v
+    top = {"reino", "unido", "impuesto", "coches"}
+    ov = v.solape(top, "Reino Unido anuncia nuevas medidas")
+    assert ov == ["reino", "unido"]
+    assert not v.cumple(ov)
+
+
+def test_verifica_bandas():
+    from detection import verifica as v
+    assert (v.banda(85), v.banda(65), v.banda(45), v.banda(10)) == ("CRITICAL", "HIGH", "ANOMALOUS", "NORMAL")

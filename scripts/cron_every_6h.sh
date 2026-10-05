@@ -16,6 +16,9 @@ print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in (
   echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
   .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" >> logs/fimi.log 2>&1
 done
+# 2a) Contraste con verificadores (Maldita/Newtral -> posible_bulos; solo lectura
+#     del corpus + sus tablas propias; la tarjeta la renderiza el dashboard).
+.venv/bin/python detection/verifica.py >> logs/fimi.log 2>&1
 # 2b) Bitacora: sembrar la entrada 'inicio' de cada tema con findings (idempotente;
 #     no duplica). Cubre los temas creados editando config.yaml (no via
 #     temas_cli.py alta), que si no se quedan sin registro de inicio en la tarjeta

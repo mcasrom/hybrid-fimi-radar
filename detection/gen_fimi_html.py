@@ -4435,6 +4435,40 @@ def main():
         auditoria_html = ("<div class='card' id='auditoria-descarte'><h3>Auditoría de descarte</h3>"
                           "<p class='caption'>No disponible: " + str(_e_ad) + "</p></div>")
 
+    # --- Posibles bulos contrastados (Maldita/Newtral) ---
+    # Cruce cluster <-> pieza de verificador (verifica.py, cada ciclo). Es contraste,
+    # no veredicto: no atribuye actor ni confirma bulo; el humano juzga con los enlaces.
+    try:
+        import html as _pb_esc
+        _pb_con = sqlite3.connect(DB, timeout=30)
+        try:
+            _pb_rows = _pb_con.execute(
+                "SELECT tema_id, cluster_label, banda, verifica_fuente,"
+                " verifica_titulo, verifica_url, solape, cycle_ts"
+                " FROM posible_bulos ORDER BY cycle_ts DESC, tema_id LIMIT 30").fetchall()
+        finally:
+            _pb_con.close()
+        if _pb_rows:
+            _pb_lis = "".join(
+                "<tr><td>" + _pb_esc.escape(r[0]) + "</td><td><code>" + _pb_esc.escape(r[1]) + "</code></td>"
+                "<td>" + _pb_esc.escape(r[2]) + "</td>"
+                "<td><a href='" + _pb_esc.escape(r[5]) + "'>" + _pb_esc.escape((r[4] or "")[:110]) + "</a>"
+                " <span class='mut'>(" + _pb_esc.escape(r[3]) + ")</span></td></tr>"
+                for r in _pb_rows)
+            _pb_tbl = ("<div class='tablewrap'><table><thead><tr><th>Tema</th><th>Clúster</th>"
+                       "<th>Banda</th><th>Contraste en verificador</th></tr></thead><tbody>"
+                       + _pb_lis + "</tbody></table></div>")
+        else:
+            _pb_tbl = "<p class='caption'>Sin contrastes en este ciclo.</p>"
+        posibles_bulos_html = (
+            "<div class='card' id='posibles-bulos'><h3>Posibles bulos contrastados</h3>"
+            "<p class='caption'>Clusters en banda alta/anómala que comparten tema con una pieza "
+            "reciente de verificador (Maldita/Newtral, 14d; se muestran los 30 recientes). Es "
+            "<b>contraste, no veredicto</b>: no atribuye actor ni confirma bulo.</p>" + _pb_tbl + "</div>")
+    except Exception as _e_pb:
+        posibles_bulos_html = ("<div class='card' id='posibles-bulos'><h3>Posibles bulos contrastados</h3>"
+                               "<p class='caption'>No disponible: " + str(_e_pb) + "</p></div>")
+
     # --- Salud del sistema (check médico integral) ---
     # Auto-chequeo estructural del pipeline: frescura de captura, snapshots por
     # tema, integridad BD y coherencia config. Complementa a los checkers
@@ -5182,6 +5216,8 @@ Detalle completo (umbrales y variables configurables):
 
 {auditoria_html}
 
+{posibles_bulos_html}
+
 {sistema_html}
 
 {_salud_temas_html}
@@ -5479,7 +5515,7 @@ if ('serviceWorker' in navigator) {{
   }};
 
   // Footer anchors that point to Transparencia content: open that tab
-  var _transAnchors=['que-es-fimi','como-leerlo','cobertura','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','auditoria-descarte','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
+  var _transAnchors=['que-es-fimi','como-leerlo','cobertura','metodologia','fuentes','salud-fuentes','salud-keywords','sistema','salud-temas','auditoria-descarte','posibles-bulos','bitacora','seguridad','gobernanza','ciclo-vida','licencia','transparencia'];
   document.querySelectorAll('a[href^="#"]').forEach(function(a){{
     var h=a.getAttribute('href').replace('#','');
     if(_transAnchors.indexOf(h)!==-1){{
