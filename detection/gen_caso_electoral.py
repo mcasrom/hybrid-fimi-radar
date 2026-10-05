@@ -23,6 +23,7 @@ OUT = "/var/www/fimi/casos/electoral/index.html"
 OUTDIR = os.path.dirname(OUT)
 TEMA = "elecciones"
 DIAS = 30
+UMBRAL_COBERTURA = 100   # por debajo: cobertura de feeds baja (no ausencia de actividad)
 
 BAND_ES = {"NORMAL": "Normal", "WATCH": "En observación",
            "ANOMALOUS": "Amplificación anómala", "HIGH": "Amplificación alta",
@@ -173,15 +174,23 @@ def main():
     except Exception as e:  # noqa: BLE001
         print("elecciones.yaml:", e)
 
-    filas_p = "".join(
-        f"<tr><td>{html.escape(p['pais'])}</td><td>{html.escape(p['nombre'])}</td>"
-        f"<td>{p['fecha']}</td>"
-        f"<td class='num'>{'' if p['dias'] is None else (str(p['dias']) + ' d')}</td>"
-        f"<td{' class=fase' if p['fase'] == 'fase' else ''}>{FASE_TXT.get(p['fase'], p['fase'])}</td>"
-        f"<td class='num'><b>{n(p['ev'])}</b></td><td class='num'>{n(p['au'])}</td>"
-        f"<td class='num'>{n(p['likes'])}</td>"
-        f"<td>{fmt_bandas(p['bandas'])}</td></tr>"
-        for p in procs)
+    filas_p = ""
+    for p in procs:
+        baja = p["ev"] < UMBRAL_COBERTURA
+        chip = ('<span class="chip tema" title="Datos del tema dedicado: eventos etiquetados y clústeres reales">tema</span>'
+                if p.get("tema") else
+                '<span class="chip apx" title="Coincidencia con las palabras del proceso (aproximado, no eventos clusterizados)">palabras</span>')
+        row = '<tr class="low">' if baja else "<tr>"
+        filas_p += (
+            row
+            + f"<td>{html.escape(p['pais'])}</td><td>{html.escape(p['nombre'])}</td>"
+            + f"<td>{p['fecha']}</td>"
+            + f"<td class='num'>{'' if p['dias'] is None else (str(p['dias']) + ' d')}</td>"
+            + f"<td{' class=fase' if p['fase'] == 'fase' else ''}>{FASE_TXT.get(p['fase'], p['fase'])}</td>"
+            + f"<td class='num'><b>{n(p['ev'])}</b></td><td class='num'>{n(p['au'])}</td>"
+            + f"<td class='num'>{n(p['likes'])}</td>"
+            + f"<td>{chip}{fmt_bandas(p['bandas'])}</td></tr>"
+        )
     filas_c = "".join(
         f"<tr><td><code>{html.escape(t['cluster_label'])}</code></td>"
         f"<td>{BAND_ES.get(band(t['overall_score'] or 0), '')} "
@@ -237,6 +246,10 @@ def main():
  th,td{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}}
  th{{background:#f8fafc;color:var(--mut);font-size:.72rem;text-transform:uppercase;white-space:nowrap;vertical-align:bottom}}
  .num{{text-align:right}} .mut{{color:#94a3b8}} .fase{{color:#c2410c;font-weight:700}}
+ .chip{{display:inline-block;font-size:.66rem;padding:1px 6px;border-radius:999px;margin-right:6px;vertical-align:middle;text-transform:lowercase;letter-spacing:.02em;font-weight:600}}
+ .chip.tema{{background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc}}
+ .chip.apx{{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}}
+ tr.low td{{color:#94a3b8}} tr.low td b{{color:#94a3b8}}
  #map{{height:400px;border:1px solid var(--line);border-radius:10px;background:#e6f0fb}}
  .pie{{color:var(--mut);font-size:.8rem;border-top:1px solid var(--line);margin-top:20px;padding-top:10px}}
  a{{color:var(--acc)}}
@@ -267,7 +280,12 @@ def main():
 <table><thead><tr><th>País</th><th>Proceso</th><th>Fecha</th><th class="num">Días</th><th>Estado</th><th class="num">Menciones</th><th class="num">Autores</th><th class="num" title="Σ likes de Bluesky (engagement persistido), no coordinación">Interés ❤</th><th>Clústeres</th></tr></thead>
 <tbody>{filas_p or '<tr><td colspan=9>Sin procesos activos.</td></tr>'}</tbody></table>
 </div>
-<p class="mut" style="font-size:.78rem">«Menciones»/«autores» = publicaciones (30 d). En procesos con <b>tema dedicado</b> (p. ej. España) cuentan los eventos <b>etiquetados</b> y sus <b>clústeres reales</b>; en el resto, coincidencia con las <b>palabras del proceso</b> sobre el tema ancho <code>elecciones</code>. «Interés» = Σ <b>likes de Bluesky</b> (engagement, no coordinación). Cobertura <b>depende de los feeds</b> (idioma/país). <a href="/casos/electoral/procesos.csv">CSV</a>.</p>
+<p class="mut" style="font-size:.78rem">
+ <span class="chip tema">tema</span> = datos del <b>tema dedicado</b> (eventos etiquetados y clústeres reales);
+ <span class="chip apx">palabras</span> = coincidencia con las <b>palabras del proceso</b> sobre el tema ancho <code>elecciones</code> (aproximado).
+ «Menciones»/«autores» = publicaciones (30 d). <b>Filas en gris</b>: menos de {UMBRAL_COBERTURA} menciones → <b>cobertura de feeds baja</b> (no ausencia de actividad).
+ «Interés ❤» = Σ <b>likes de Bluesky</b> (engagement): <b>no</b> es comparable entre países (depende del idioma y del volumen de publicaciones). Cobertura <b>depende de los feeds</b>. <a href="/casos/electoral/procesos.csv">CSV</a>.
+</p>
 
 <h2 style="font-size:1.1rem">Clústeres de mayor señal (tema <code>elecciones</code>)</h2>
 <div class="tablewrap">
