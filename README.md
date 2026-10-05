@@ -152,6 +152,10 @@ muestra el valor vivo):
   `event_temas` y el clúster sostenido del caso) se **auto-inyectan cada 6 h** desde la BD
   (`detection/update_caso_ceuta_live.py`, en el cron de 6 h). Análisis **V1** 30-jul→21-sep
   (snapshot 1-oct): 13.442 eventos · 150 URLs compartidas, dominado por eco de prensa.
+- **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
+  (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
+  **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →
+  https://fimi.viajeinteligencia.com/casos/electoral/
 - Última release: **v0.2**.
 
 ## 5. Limitaciones conocidas
