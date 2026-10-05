@@ -21,9 +21,11 @@ Está pensado para periodistas, investigadores y ciudadanía que quieran comprob
 datos por sí mismos.
 
 La **portada** está pensada para leerse **sin jerga**: abre con **«¿Qué es esto?»** (aclara que
-no dice si hay una campaña) y **«Para periodistas»** (qué se puede citar y qué no); y las
-**bandas** se muestran en lenguaje llano —**Amplificación alta**, **Amplificación anómala**…—
-con el código interno (**HIGH**/**CRITICAL**) entre paréntesis para trazabilidad.
+no dice si hay una campaña), **«Para periodistas»** (qué se puede citar y qué no) y
+**«Así se lee esto»** (un ejemplo real, el caso Ceuta); incluye una **FAQ corta** y las
+**bandas** en lenguaje llano —**Amplificación alta**, **Amplificación anómala**…— con el código
+interno (**HIGH**/**CRITICAL**) entre paréntesis. El **glosario** (`/glosario.html`) añade un
+resumen **«En 5 palabras»** (amplificación · banda · clúster · eco de prensa · actor).
 
 ## 2. Qué NO hace
 
