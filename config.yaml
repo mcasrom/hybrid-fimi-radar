@@ -932,20 +932,6 @@ temas:
   geopolitica_ue_marruecos:
     estado: cerrado
     nombre: Geopolítica UE-Marruecos
-  politica_nacional:
-    estado: cerrado
-    nombre: Política nacional
-    # Tuning por tema: la coordinación humano/partidista legítima tiene
-    # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
-    # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,
-    # evitando marcar ruido político ordinario como amenaza.
-    scoring:
-      weights:
-        synchronization: 0.1667
-        content_similarity: 0.1667
-        amplification: 0.1111
-        infrastructure: 0.1111
-        anomaly: 0.4444
   eeuu_politica:
     estado: produccion
     nombre: Política y desinformación EEUU
@@ -1298,6 +1284,20 @@ temas:
   defensa_espana:
     estado: piloto
     nombre: España — defensa y amenazas híbridas
+  espana_elecciones:
+    estado: piloto
+    nombre: España — elecciones generales
+    # Tuning por tema: la coordinación humano/partidista legítima tiene
+    # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
+    # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,
+    # evitando marcar ruido político ordinario como amenaza.
+    scoring:
+      weights:
+        synchronization: 0.1667
+        content_similarity: 0.1667
+        amplification: 0.1111
+        infrastructure: 0.1111
+        anomaly: 0.4444
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -1363,48 +1363,6 @@ keywords:
 - palabra: Marruecos Unión Europea relaciones
   tema: geopolitica_ue_marruecos
   plataformas:
-  - google-news
-# === Keywords politica_nacional (tema nuevo, estado piloto) ===
-# Riesgo alto de falsos positivos por coordinacion partidista legitima
-# (gabinetes de prensa, movilizacion militante): por eso el tema es PILOTO.
-- palabra: gobierno España oposición
-  tema: politica_nacional
-  plataformas:
-  - google-news
-- palabra: partidos políticos España
-  tema: politica_nacional
-  plataformas:
-  - google-news
-- palabra: congreso senado España
-  tema: politica_nacional
-  plataformas:
-  - google-news
-- palabra: política España elecciones
-  tema: politica_nacional
-  plataformas:
-  - bluesky
-  - google-news
-# Termino institucional sin nombre propio (criterio: no sesgar con lideres)
-- palabra: crisis de gobierno
-  tema: politica_nacional
-  plataformas:
-  - google-news
-# === Keywords FAS / defensa (plegadas 17-sep-2026; SIN tema propio, ver AGENTS) ===
-# Criterio: terminos institucionales, sin nombres propios (no sesgar con lideres).
-- palabra: fuerzas armadas
-  tema: politica_nacional
-  plataformas:
-  - bluesky
-  - google-news
-- palabra: JEMAD
-  tema: politica_nacional
-  plataformas:
-  - bluesky
-  - google-news
-- palabra: Ministerio de Defensa
-  tema: politica_nacional
-  plataformas:
-  - bluesky
   - google-news
 - palabra: elecciones medio mandato EEUU 2026
   plataformas: &id001
@@ -1801,6 +1759,52 @@ keywords:
 - palabra: gerbera
   plataformas: *id006
   tema: defensa_espana
+# === Keywords espana_elecciones (renombrado de politica_nacional; 29-N 2026) ===
+- palabra: elecciones generales españa
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: elecciones generales 2026
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: campaña electoral españa
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: elecciones 29 de noviembre
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: pedro sánchez
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: feijóo
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: vox
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: moncloa
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
+- palabra: spain general election
+  plataformas:
+  - bluesky
+  - google-news
+  tema: espana_elecciones
 telegram_canales:
 - elfarodeceuta
 - maldita_es
@@ -1842,7 +1846,7 @@ vigilancia:
   factor_escalada: 1.5     # avisa si sube >= 50% respecto a la última ejecución
   delta_escalada: 10       # ...y al menos +10 eventos
   narrativas:
-    - id: drones_ceuta_melilla
-      nombre: "Drones (Marruecos) sobre Ceuta/Melilla"
-      requeridos: [dron]                          # dron/drones (subcadena normalizada)
-      contexto: [ceuta, melilla, marruecos]
+  - id: drones_ceuta_melilla
+    nombre: "Drones (Marruecos) sobre Ceuta/Melilla"
+    requeridos: [dron]                            # dron/drones (subcadena normalizada)
+    contexto: [ceuta, melilla, marruecos]
