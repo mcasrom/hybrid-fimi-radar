@@ -35,7 +35,7 @@ from attribution.attribution import classify_hypotheses, attribution
 from detection import lineage
 from detection import graph_metrics
 from detection import mainstream
-from detection import explicaciones, tipologia, subtipo
+from detection import explicaciones, tipologia, subtipo, copypasta
 
 
 def load_config(path=None):
@@ -372,6 +372,16 @@ def main():
         except Exception as e:
             print(f"      explicaciones: concentración falló ({e})", file=sys.stderr)
         _hyp_codes = [h["hypothesis"] for h in hyp] if hyp else []
+        # Copypasta textual entre cuentas distintas (solo lectura; no toca score).
+        _cp = {"n_pares": 0, "n_textos": 0, "n_autores": 0}
+        try:
+            if sub_clustered is not None:
+                _sub2 = sub_clustered.loc[sub_clustered["cluster"] == label]
+                _cp = copypasta.resumen_pares(
+                    [(str(t or ""), str(a or ""))
+                     for t, a in zip(_sub2["text"], _sub2["author"])])
+        except Exception as e:
+            print(f"      explicaciones: copypasta falló ({e})", file=sys.stderr)
         expl = explicaciones.para_cluster(
             accounts=s.get("accounts", 0), n_events=ev_counts.get(label, 0),
             n_urls=url_counts.get(label, 0),
@@ -385,7 +395,9 @@ def main():
             narrative_role=rol["dominant"],
             dominant_account_frac=_dac, dominant_domain_frac=_ddc, ventana_horas=_ven,
             media_account_frac=_mac,
-            pds_network_count=_pdsn, own_domain_syndication=_ownsynd)
+            pds_network_count=_pdsn, own_domain_syndication=_ownsynd,
+            copypasta_pares=_cp["n_pares"], copypasta_textos=_cp["n_textos"],
+            copypasta_autores=_cp["n_autores"])
         summary[label]["alternative_explanations"] = expl
         summary[label]["narrative_subtype"] = rol
 

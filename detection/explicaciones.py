@@ -33,6 +33,7 @@ CODES = [
     ("automated_non_malicious", "Automatización no maliciosa"),
     ("legitimate_mobilization", "Movilización legítima"),
     ("graph_artifact", "Artefacto del grafo"),
+    ("copypasta_textual", "Texto repetido entre cuentas"),
     ("unresolved", "Sin explicación concluyente"),
 ]
 _LABEL = dict(CODES)
@@ -68,6 +69,9 @@ def para_cluster(
     media_account_frac=0.0,
     pds_network_count=0,
     own_domain_syndication=0,
+    copypasta_pares=0,
+    copypasta_textos=0,
+    copypasta_autores=0,
 ):
     """Devuelve la lista de explicaciones alternativas (todas, con estado + evidencia).
 
@@ -224,6 +228,24 @@ def para_cluster(
     items.append(_item("graph_artifact", st, {
         "accounts": int(accounts), "kcore_size": int(kcore_size),
         "infrastructure": round(float(infrastructure), 1),
+    }))
+
+    # 7b. Copypasta textual: el MISMO texto (o casi-idéntico por simhash) en
+    # cuentas DISTINTAS y en ráfaga. Versión textual de cross_account_synchrony:
+    # no mira URLs ni dominios (eso ya lo cubren single_piece_echo/syndicated_wire).
+    # Exige >=2 parejas (un eco aislado no basta) y una sola cuenta no dominante.
+    if (int(copypasta_pares) >= 2 and ventana_horas <= 24
+            and dominant_account_frac < 0.5):
+        st = "supported"
+    elif int(copypasta_pares) >= 1 and ventana_horas <= 72:
+        st = "plausible"
+    else:
+        st = "ruled_out"
+    items.append(_item("copypasta_textual", st, {
+        "pares": int(copypasta_pares),
+        "textos_repetidos": int(copypasta_textos),
+        "autores_implicados": int(copypasta_autores),
+        "ventana_horas": round(float(ventana_horas), 1),
     }))
 
     # 8. Sin explicación concluyente: supported si ninguna otra encaja.

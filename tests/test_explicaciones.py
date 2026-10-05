@@ -153,3 +153,34 @@ def test_single_source_feed_es_benigno():
 def test_cross_account_synchrony_prioridad_alta():
     from detection.auditoria_high import review_priority
     assert review_priority("HIGH", 10, [{"code": "cross_account_synchrony", "status": "supported"}]) == "high"
+
+
+def test_copypasta_soportado_en_rafaga():
+    comp = _base(accounts=6, dominant_account_frac=0.2, dominant_domain_frac=0.2,
+                 content_similarity=60.0, ventana_horas=5,
+                 copypasta_pares=3, copypasta_textos=2, copypasta_autores=3)
+    items = _by_code(para_cluster(**comp))
+    assert items["copypasta_textual"]["status"] == "supported"
+    assert items["copypasta_textual"]["evidence"]["pares"] == 3
+
+
+def test_copypasta_plausible_con_una_pareja():
+    comp = _base(copypasta_pares=1, copypasta_textos=1, copypasta_autores=2,
+                 ventana_horas=10)
+    assert _by_code(para_cluster(**comp))["copypasta_textual"]["status"] == "plausible"
+
+
+def test_copypasta_descartado_sin_pares():
+    assert _by_code(para_cluster(**_base()))["copypasta_textual"]["status"] == "ruled_out"
+
+
+def test_copypasta_no_cambia_principal_existente():
+    comp = _base(accounts=9, dominant_account_frac=0.11, dominant_domain_frac=0.11,
+                 content_similarity=100.0, copypasta_pares=5, copypasta_textos=3,
+                 copypasta_autores=5)
+    assert principal(para_cluster(**comp)) == "cross_account_synchrony"
+
+
+def test_copypasta_prioridad_alta():
+    from detection.auditoria_high import review_priority
+    assert review_priority("WATCH", 10, [{"code": "copypasta_textual", "status": "supported"}]) == "high"

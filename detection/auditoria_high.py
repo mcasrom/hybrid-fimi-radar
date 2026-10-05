@@ -101,7 +101,9 @@ def review_priority(band, anomaly, items, cfg=None):
     benign = any(it.get("status") == "supported" and it.get("code") in BENIGN_SUPPORTED
                  for it in (items or []))
     # Señal de coordinación real entre cuentas distintas -> prioridad alta siempre.
-    if any(it.get("code") == "cross_account_synchrony" and it.get("status") == "supported"
+    # (incluye su versión textual: mismo texto en cuentas distintas y en ráfaga)
+    if any(it.get("code") in ("cross_account_synchrony", "copypasta_textual")
+           and it.get("status") == "supported"
            for it in (items or [])):
         return "high"
     p = {"CRITICAL": "high", "HIGH": "medium"}.get(band, "low")
