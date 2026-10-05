@@ -66,8 +66,9 @@ it separates two situations that **must not be confused**:
   content**. This is the pattern that **does deserve human review** → **high priority**.
 
 Plus mainstream echo, single-piece echo, organic virality, synchronisation without an operator,
-non-malicious automation, legitimate mobilisation, graph artefact and *no conclusive
-explanation*. It is not a "truth" classifier: it is material for human review, shown in the
+non-malicious automation, legitimate mobilisation, graph artefact, **text repeated across accounts**
+(`copypasta_textual`, 5-Oct: same or near-identical simhash text across distinct accounts in a burst)
+and *no conclusive explanation*. It is not a "truth" classifier: it is material for human review, shown in the
 dashboard, the API and the exports.
 
 Each cluster also publishes a **narrative role** (`narrative_subtype`) separating *talking about
@@ -120,6 +121,10 @@ the live value):
 - **~133,000 events** and **933 clusters** (90-day window).
 - **77 RSS feeds** (5 Spanish ones with `tema: espana_elecciones` since 5 Oct: ElDiario.es, ABC Nacional, 20Minutos, RTVE España, El País España) + 2 platform searches, 6 public Telegram channels (2 parked), subreddits parked (429).
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
+- **Open datasets by topic** (5-Oct): `/datos/<tema>/clusters.{csv,json}` per cluster
+  (no texts or authors) + `datapackage.json` (CC BY 4.0) + freshness `status.json`.
+- **Contrast-checked possible hoaxes** (5-Oct): card crossing high/anomalous-band clusters with
+  recent fact-checker pieces (Maldita/Newtral); **contrast, not verdict**.
 - Latest release: **v0.2**.
 
 ## 5. Known limitations

@@ -73,8 +73,9 @@ entre otras, dos situaciones que **no deben confundirse**:
   revisión humana** → **prioridad alta**.
 
 Y también eco de prensa, eco de una sola pieza, viralidad orgánica, sincronización sin operador,
-automatización no maliciosa, movilización legítima, artefacto del grafo y *sin explicación
-concluyente*. No es una clasificación de "la verdad": es material para la revisión humana,
+automatización no maliciosa, movilización legítima, artefacto del grafo, **texto repetido entre
+cuentas** (`copypasta_textual`, 5-oct: mismo texto o casi-idéntico por simhash en cuentas distintas
+y en ráfaga) y *sin explicación concluyente*. No es una clasificación de "la verdad": es material para la revisión humana,
 visible en el dashboard, la API y las exportaciones.
 
 **Señales objetivas de automatización/sindicación (30-Sep)**: dos patrones que se detectan de
@@ -156,6 +157,11 @@ muestra el valor vivo):
   (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
   **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →
   https://fimi.viajeinteligencia.com/casos/electoral/
+- **Datasets abiertos por tema** (5-oct): `/datos/<tema>/clusters.{csv,json}` por cluster
+  (sin textos ni autores) + `datapackage.json` (CC BY 4.0) + `status.json` de frescura →
+  https://fimi.viajeinteligencia.com/datos/index.json
+- **Posibles bulos contrastados** (5-oct): tarjeta que cruza clusters en banda alta/anómala con
+  piezas recientes de verificadores (Maldita/Newtral); **contraste, no veredicto**.
 - Última release: **v0.2**.
 
 ## 5. Limitaciones conocidas
