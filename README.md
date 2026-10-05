@@ -145,7 +145,7 @@ muestra el valor vivo):
   clusters de temas cerrados, ya fuera del dashboard), medido tras el ciclo del 29/Sep 12:56:
   580 WATCH · 379 ANOMALOUS · 91 HIGH · 0 CRITICAL. **Estas cifras cambian en cada ciclo**
   (el corpus crece): el dashboard muestra siempre el valor vivo.
-- **~72 feeds RSS** + 2 búsquedas de plataforma, 8 canales de Telegram público, 2 subreddits.
+- **77 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct: ElDiario.es, ABC Nacional, 20Minutos, RTVE España, El País España) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
   La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por

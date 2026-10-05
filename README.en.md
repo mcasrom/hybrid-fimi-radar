@@ -118,7 +118,7 @@ the live value):
 - **8 active topics** (6 in production + 2 pilot: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` was merged into `defensa_espana` on 27 Sep (renamed "Spain — defence and hybrid threats").
 - **~133,000 events** and **933 clusters** (90-day window).
-- **72 RSS feeds** + 2 platform searches, 8 public Telegram channels, 2 subreddits.
+- **77 RSS feeds** (5 Spanish ones with `tema: espana_elecciones` since 5 Oct: ElDiario.es, ABC Nacional, 20Minutos, RTVE España, El País España) + 2 platform searches, 6 public Telegram channels (2 parked), subreddits parked (429).
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - Latest release: **v0.2**.
 
