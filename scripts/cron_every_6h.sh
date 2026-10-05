@@ -25,6 +25,8 @@ done
 .venv/bin/python detection/gen_fimi_html.py >> logs/fimi.log 2>&1
 .venv/bin/python detection/update_caso_ceuta_live.py >> logs/fimi.log 2>&1
 .venv/bin/python detection/gen_caso_electoral.py >> logs/fimi.log 2>&1
+# 3b) Datasets abiertos por tema (CSV+JSON por cluster + datapackage/status; solo lectura)
+.venv/bin/python detection/gen_datasets.py >> logs/fimi.log 2>&1
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
 #    Sin FIMI_TELEGRAM_BOT_TOKEN no envía nada; idempotente, sin spam.
 .venv/bin/python detection/notify_subs_telegram.py >> logs/fimi.log 2>&1
