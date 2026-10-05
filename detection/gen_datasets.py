@@ -60,6 +60,16 @@ def iso(ts) -> str:
         return ""
 
 
+def estados() -> dict:
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(os.path.join(ROOT, "config.yaml"), encoding="utf-8"))
+        return {t: (m or {}).get("estado", "") for t, m in (cfg.get("temas") or {}).items()}
+    except Exception as e:
+        print(f"  aviso: no se pudo leer estado de temas ({e})", file=sys.stderr)
+        return {}
+
+
 def principal_of(raw: str) -> str:
     try:
         from detection import explicaciones
@@ -75,6 +85,7 @@ def main() -> int:
     con.row_factory = sqlite3.Row
     temas = [r[0] for r in con.execute("SELECT DISTINCT tema_id FROM clusters ORDER BY tema_id")]
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    est = estados()
     os.makedirs(OUT, exist_ok=True)
     catalog = []
     status_files = {}
@@ -139,8 +150,8 @@ def main() -> int:
                     w.writerows(recs)
             else:
                 with open(tmp, "w", encoding="utf-8") as fh:
-                    json.dump({"tema": tema, "updated_at": now, "clusters": recs,
-                               "licencia": LICENSE}, fh, ensure_ascii=False, indent=1)
+                    json.dump({"tema": tema, "estado": est.get(tema, ""), "updated_at": now,
+                               "clusters": recs, "licencia": LICENSE}, fh, ensure_ascii=False, indent=1)
             os.replace(tmp, fp)
             with open(fp, "rb") as fh:
                 blob = fh.read()
@@ -149,7 +160,7 @@ def main() -> int:
                 "sha256": hashlib.sha256(blob).hexdigest(), "updated_at": now,
                 "tipo": ctype,
             }
-        catalog.append({"tema": tema, "clusters": len(recs),
+        catalog.append({"tema": tema, "estado": est.get(tema, ""), "clusters": len(recs),
                         "eventos": sum(r["eventos"] for r in recs), "updated_at": now})
         print(f"tema {tema}: {len(recs)} clusters")
     pkg = {"name": "fimi-observatorio-amplificacion",
