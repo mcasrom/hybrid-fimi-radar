@@ -232,9 +232,10 @@ def main():
  .kpis{{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}}
  .kpi{{flex:1 1 120px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-align:center}}
  .kpi b{{display:block;font-size:1.5rem;color:var(--acc)}} .kpi span{{font-size:.76rem;color:var(--mut)}}
+ .tablewrap{{overflow-x:auto;-webkit-overflow-scrolling:touch}}
  table{{border-collapse:collapse;width:100%;font-size:.85rem;margin:8px 0 18px}}
- th,td{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}}
- th{{background:#f8fafc;color:var(--mut);font-size:.76rem;text-transform:uppercase}}
+ th,td{{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}}
+ th{{background:#f8fafc;color:var(--mut);font-size:.72rem;text-transform:uppercase;white-space:nowrap;vertical-align:bottom}}
  .num{{text-align:right}} .mut{{color:#94a3b8}} .fase{{color:#c2410c;font-weight:700}}
  #map{{height:400px;border:1px solid var(--line);border-radius:10px;background:#e6f0fb}}
  .pie{{color:var(--mut);font-size:.8rem;border-top:1px solid var(--line);margin-top:20px;padding-top:10px}}
@@ -262,12 +263,16 @@ def main():
 <p class="mut" style="font-size:.78rem">Un punto por proceso (tamaño = menciones; color = <span style="color:#c2410c">fase electoral</span> · <span style="color:#2563eb">próximo</span> · <span style="color:#64748b">pasado</span>). Muestra <b>dónde</b> se habla, no de dónde sale una campaña.</p>
 
 <h2 style="font-size:1.1rem">Procesos electorales (ordenado por señal)</h2>
-<table><thead><tr><th>País</th><th>Proceso</th><th>Fecha</th><th class="num">Días</th><th>Estado</th><th class="num">Menciones</th><th class="num">Autores</th><th class="num">Interés (Σ ❤)</th><th>Clústeres (banda)</th></tr></thead>
+<div class="tablewrap">
+<table><thead><tr><th>País</th><th>Proceso</th><th>Fecha</th><th class="num">Días</th><th>Estado</th><th class="num">Menciones</th><th class="num">Autores</th><th class="num" title="Σ likes de Bluesky (engagement persistido), no coordinación">Interés ❤</th><th>Clústeres</th></tr></thead>
 <tbody>{filas_p or '<tr><td colspan=9>Sin procesos activos.</td></tr>'}</tbody></table>
+</div>
 <p class="mut" style="font-size:.78rem">«Menciones»/«autores» = publicaciones (30 d). En procesos con <b>tema dedicado</b> (p. ej. España) cuentan los eventos <b>etiquetados</b> y sus <b>clústeres reales</b>; en el resto, coincidencia con las <b>palabras del proceso</b> sobre el tema ancho <code>elecciones</code>. «Interés» = Σ <b>likes de Bluesky</b> (engagement, no coordinación). Cobertura <b>depende de los feeds</b> (idioma/país). <a href="/casos/electoral/procesos.csv">CSV</a>.</p>
 
 <h2 style="font-size:1.1rem">Clústeres de mayor señal (tema <code>elecciones</code>)</h2>
+<div class="tablewrap">
 <table><thead><tr><th>Clúster</th><th>Banda</th><th class="num">Score</th><th class="num">Anomalía</th><th class="num">Cuentas</th></tr></thead><tbody>{filas_c or '<tr><td colspan=5>Sin clústeres.</td></tr>'}</tbody></table>
+</div>
 
 <h2 style="font-size:1.1rem">Qué es y qué no</h2>
 <ul>
