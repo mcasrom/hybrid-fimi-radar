@@ -4896,11 +4896,7 @@ a{{color:#c2410c}}
   <a class="brand" href="/" title="Observatorio de amplificación (ámbito FIMI)">
     <span class="logo">📡</span> Observatorio
   </a>
-  <a class="transp" href="/research.html" title="Investigación y validación del modelo">Research</a>
-  <a class="transp" href="/metodo.html" title="Método y validación (tasas de error y límites)">Método</a>
-  <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
-  <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
-  <a class="transp" href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos</a>
+  <a class="transp" href="/" title="Panel del radar (inicio)">Radar</a>
   <details class="navmenu">
     <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
     <div class="navmenu-panel">
@@ -4908,15 +4904,27 @@ a{{color:#c2410c}}
       <a href="/casos/electoral/">Electoral 2026 (panorama)</a>
     </div>
   </details>
-  <a class="transp" href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
-  <a class="transp" href="/apoyo.html" title="Apoyar el proyecto (Ko-fi)">Apoyo</a>
-  <a class="transp" href="/glosario.html" title="Glosario: términos, conceptos y siglas del radar">Glosario</a>
-  <a class="transp" href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
-  <div class="chips">
-    <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
-    <a class="chip" href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" title="Licencia AGPL-3.0 del proyecto" style="text-decoration:none"><span class="dot" style="background:#0284c7"></span>Open Source</a>
-    <span class="chip prod"><span class="dot"></span>En producción</span>
-  </div>
+  <details class="navmenu">
+    <summary class="transp" title="Metodología, documentos y datos">Documentos ▾</summary>
+    <div class="navmenu-panel">
+      <a href="/research.html" title="Investigación y validación del modelo">Research</a>
+      <a href="/metodo.html" title="Método y validación (tasas de error y límites)">Método</a>
+      <a href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos (biblioteca)</a>
+      <a href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
+      <a href="/api.html" title="API pública (datos en JSON)">API</a>
+      <a href="/costes.html" title="Costes y sostenibilidad del proyecto">Costes</a>
+      <a href="/glosario.html" title="Glosario: términos, conceptos y siglas del radar">Glosario</a>
+    </div>
+  </details>
+  <details class="navmenu">
+    <summary class="transp" title="El proyecto y la transparencia">Acerca ▾</summary>
+    <div class="navmenu-panel">
+      <a href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
+      <a href="/apoyo.html" title="Apoyar el proyecto (Ko-fi)">Apoyo</a>
+      <a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
+      <a href="/privacidad.html" title="Privacidad y datos">Privacidad</a>
+    </div>
+  </details>
   <a class="gh-link" href="/suscribirse.html" title="Newsletter semanal del radar">📬 Suscribirse</a>
   <a class="gh-link" href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
 </div>
@@ -5270,6 +5278,11 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
     <div><b>Documentos</b><br><a href="/metodo.html" style="color:#c2410c">Método</a><br><a href="/glosario.html" style="color:#c2410c">Glosario</a><br><a href="/operativa.html" style="color:#c2410c">Operativa</a><br><a href="/docs.html" style="color:#c2410c">Documentos</a><br><a href="/costes.html" style="color:#c2410c">Costes</a><br><a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a></div>
     <div><b>En esta página</b><br><a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a><br><a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a><br><a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a><br><a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a><br><a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#posibles-bulos" style="color:#c2410c">Posibles bulos</a><br><a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a><br><a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a><br><a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a></div>
     <div><b>Proyecto</b><br><a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a><br><a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a><br><a href="/privacidad.html" style="color:#c2410c">Privacidad</a><br><a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a><br><a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a></div>
+  </div>
+  <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+    <span class="chip"><span class="dot" style="background:#64748b"></span>Proyecto independiente</span>
+    <a class="chip" href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" title="Licencia AGPL-3.0 del proyecto" style="text-decoration:none"><span class="dot" style="background:#0284c7"></span>Open Source</a>
+    <span class="chip prod"><span class="dot"></span>En producción</span>
   </div>
   <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer"
      style="display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:#fff;background:#13C3A5;border-radius:7px;padding:11px 18px;margin-top:14px;text-decoration:none">☕ Invítame a un café</a>
