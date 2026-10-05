@@ -66,6 +66,33 @@ def proc_signal(con, kws, since):
     return row[0], row[1], row[2]
 
 
+def tema_signal(con, tema, since):
+    """Señal REAL de un proceso con tema dedicado: eventos etiquetados en
+    event_temas (regla 7), no coincidencia de palabras sobre el tema ancho."""
+    row = con.execute(
+        "SELECT COUNT(*), COUNT(DISTINCT e.author), COALESCE(SUM(e.bsky_likes),0) "
+        "FROM events e JOIN event_temas et ON et.event_id=e.id "
+        "WHERE et.tema_id=? AND e.timestamp>=?", (tema, since)).fetchone()
+    return row[0], row[1], row[2]
+
+
+def tema_bandas(con, tema):
+    """Reparto de bandas de los clústeres del tema dedicado."""
+    rows = con.execute("SELECT overall_score FROM clusters WHERE tema_id=?", (tema,)).fetchall()
+    if not rows:
+        return None
+    scs = [r[0] or 0 for r in rows]
+    orden = ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH", "NORMAL"]
+    rep = {b: sum(1 for s in scs if band(s) == b) for b in orden}
+    return {"n": len(scs), "max": max(band(s) for s in scs), "rep": {b: c for b, c in rep.items() if c}}
+
+
+def fmt_bandas(b):
+    if not b:
+        return "— <span class='mut'>(palabras)</span>"
+    return f"{b['n']} · {BAND_ES.get(b['max'], b['max'])}"
+
+
 def timeline_svg(procs, hoy):
     d0, d1 = date(2026, 9, 1), date(2026, 11, 30)
     W, x0, x1 = 860, 60, 820
@@ -132,10 +159,16 @@ def main():
             fase = "—"
             if dias is not None:
                 fase = "fase" if -3 <= dias <= 30 else ("pasado" if dias < -3 else "proximo")
-            pev, pau, plikes = proc_signal(con, r.get("keywords"), since)
+            tk = str(r.get("tema") or "").strip()
+            if tk:
+                pev, pau, plikes = tema_signal(con, tk, since)
+            else:
+                pev, pau, plikes = proc_signal(con, r.get("keywords"), since)
             procs.append({"pais": r.get("pais", ""), "nombre": r.get("nombre", ""),
                           "fecha": f, "dias": dias, "fase": fase, "ev": pev, "au": pau,
-                          "likes": plikes, "coord": coord(r.get("pais", ""), r.get("nombre", ""))})
+                          "likes": plikes, "tema": tk,
+                          "bandas": tema_bandas(con, tk) if tk else None,
+                          "coord": coord(r.get("pais", ""), r.get("nombre", ""))})
         procs.sort(key=lambda x: -x["ev"])
     except Exception as e:  # noqa: BLE001
         print("elecciones.yaml:", e)
@@ -146,7 +179,8 @@ def main():
         f"<td class='num'>{'' if p['dias'] is None else (str(p['dias']) + ' d')}</td>"
         f"<td{' class=fase' if p['fase'] == 'fase' else ''}>{FASE_TXT.get(p['fase'], p['fase'])}</td>"
         f"<td class='num'><b>{n(p['ev'])}</b></td><td class='num'>{n(p['au'])}</td>"
-        f"<td class='num'>{n(p['likes'])}</td></tr>"
+        f"<td class='num'>{n(p['likes'])}</td>"
+        f"<td>{fmt_bandas(p['bandas'])}</td></tr>"
         for p in procs)
     filas_c = "".join(
         f"<tr><td><code>{html.escape(t['cluster_label'])}</code></td>"
@@ -157,7 +191,8 @@ def main():
         f"<td class='num'>{n(t['cuentas'])}</td></tr>"
         for t in top)
     puntos = [{"lat": p["coord"][0], "lon": p["coord"][1], "pais": p["pais"],
-               "nombre": p["nombre"], "fase": p["fase"], "ev": p["ev"]}
+               "nombre": p["nombre"], "fase": p["fase"], "ev": p["ev"],
+               "tema": p.get("tema", "")}
               for p in procs if p["coord"]]
     puntos_js = json.dumps(puntos, ensure_ascii=False)
     tl = timeline_svg(procs, hoy)
@@ -167,11 +202,12 @@ def main():
         os.makedirs(OUTDIR, exist_ok=True)
         with open(os.path.join(OUTDIR, "procesos.csv"), "w", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow(["pais", "proceso", "fecha", "dias", "fase", "menciones", "autores", "likes_bluesky"])
+            w.writerow(["pais", "proceso", "fecha", "dias", "fase", "menciones", "autores", "likes_bluesky", "senal"])
             for p in procs:
                 w.writerow([p["pais"], p["nombre"], p["fecha"],
                             "" if p["dias"] is None else p["dias"],
-                            FASE_TXT.get(p["fase"], p["fase"]), p["ev"], p["au"], p["likes"]])
+                            FASE_TXT.get(p["fase"], p["fase"]), p["ev"], p["au"], p["likes"],
+                            ("tema:" + p["tema"]) if p.get("tema") else "palabras"])
         print("CSV", os.path.join(OUTDIR, "procesos.csv"))
     except Exception as e:  # noqa: BLE001
         print("CSV:", e)
@@ -226,9 +262,9 @@ def main():
 <p class="mut" style="font-size:.78rem">Un punto por proceso (tamaño = menciones; color = <span style="color:#c2410c">fase electoral</span> · <span style="color:#2563eb">próximo</span> · <span style="color:#64748b">pasado</span>). Muestra <b>dónde</b> se habla, no de dónde sale una campaña.</p>
 
 <h2 style="font-size:1.1rem">Procesos electorales (ordenado por señal)</h2>
-<table><thead><tr><th>País</th><th>Proceso</th><th>Fecha</th><th class="num">Días</th><th>Estado</th><th class="num">Menciones</th><th class="num">Autores</th><th class="num">Interés (Σ ❤)</th></tr></thead>
-<tbody>{filas_p or '<tr><td colspan=8>Sin procesos activos.</td></tr>'}</tbody></table>
-<p class="mut" style="font-size:.78rem">«Menciones»/«autores» = publicaciones (30 d) que coinciden con las <b>palabras del proceso</b>. «Interés» = suma de <b>likes de Bluesky</b> (engagement, no coordinación). Cobertura <b>depende de los feeds</b> (idioma/país). <a href="/casos/electoral/procesos.csv">CSV</a>.</p>
+<table><thead><tr><th>País</th><th>Proceso</th><th>Fecha</th><th class="num">Días</th><th>Estado</th><th class="num">Menciones</th><th class="num">Autores</th><th class="num">Interés (Σ ❤)</th><th>Clústeres (banda)</th></tr></thead>
+<tbody>{filas_p or '<tr><td colspan=9>Sin procesos activos.</td></tr>'}</tbody></table>
+<p class="mut" style="font-size:.78rem">«Menciones»/«autores» = publicaciones (30 d). En procesos con <b>tema dedicado</b> (p. ej. España) cuentan los eventos <b>etiquetados</b> y sus <b>clústeres reales</b>; en el resto, coincidencia con las <b>palabras del proceso</b> sobre el tema ancho <code>elecciones</code>. «Interés» = Σ <b>likes de Bluesky</b> (engagement, no coordinación). Cobertura <b>depende de los feeds</b> (idioma/país). <a href="/casos/electoral/procesos.csv">CSV</a>.</p>
 
 <h2 style="font-size:1.1rem">Clústeres de mayor señal (tema <code>elecciones</code>)</h2>
 <table><thead><tr><th>Clúster</th><th>Banda</th><th class="num">Score</th><th class="num">Anomalía</th><th class="num">Cuentas</th></tr></thead><tbody>{filas_c or '<tr><td colspan=5>Sin clústeres.</td></tr>'}</tbody></table>
@@ -249,8 +285,9 @@ def main():
 (function(){{
   var P = {puntos_js};
   var map = L.map('map', {{scrollWheelZoom:false, attributionControl:false}});
+  map.createPane('base'); map.getPane('base').style.zIndex = 200;
   fetch('/assets/world.geo.json').then(function(r){{return r.json();}}).then(function(g){{
-    L.geoJSON(g, {{style:{{color:'#94a3b8', weight:.5, fillColor:'#f1f5f9', fillOpacity:1}}}}).addTo(map);
+    L.geoJSON(g, {{pane:'base', style:{{color:'#94a3b8', weight:.5, fillColor:'#f1f5f9', fillOpacity:1}}}}).addTo(map);
   }}).catch(function(){{}});
   var COL = {{'fase':'#c2410c','proximo':'#2563eb','pasado':'#64748b'}};
   var max = Math.max.apply(null, P.map(function(p){{return p.ev;}}).concat([1]));
@@ -259,10 +296,12 @@ def main():
     L.circleMarker([p.lat, p.lon], {{radius:r, color:COL[p.fase]||'#64748b',
       fillColor:COL[p.fase]||'#64748b', fillOpacity:.6, weight:1.5}})
      .bindTooltip(p.pais, {{direction:'top', offset:[0,-4]}})
-     .bindPopup('<b>'+p.pais+'</b><br>'+p.nombre+'<br>Menciones: <b>'+p.ev+'</b>')
+     .bindPopup('<b>'+p.pais+'</b><br>'+p.nombre+'<br>Menciones: <b>'+p.ev+'</b>'
+       +'<br><span style="color:#64748b">'+(p.tema?('tema '+p.tema):'palabras')+'</span>')
      .addTo(map);
   }});
   if (P.length) {{
+    map.invalidateSize();
     var _b = L.latLngBounds(P.map(function(p){{return [p.lat, p.lon];}}));
     map.fitBounds(_b, {{padding:[36, 36], maxZoom:4}});
   }} else {{
