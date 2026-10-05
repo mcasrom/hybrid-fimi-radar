@@ -31,7 +31,7 @@ FASE_TXT = {"fase": "fase electoral", "pasado": "pasado", "proximo": "próximo",
 MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 COORD = {"Brasil": (-15.8, -47.9), "EEUU": (38.9, -77.0), "Suecia": (59.3, 18.1),
          "Rusia": (55.75, 37.6), "Letonia": (56.9, 24.1), "Bosnia y Herzegovina": (43.9, 18.4),
-         "Serbia": (44.8, 20.5), "Bulgaria": (42.7, 23.3)}
+         "Serbia": (44.8, 20.5), "Bulgaria": (42.7, 23.3), "España": (40.4, -3.7)}
 
 
 def coord(pais, nombre):
@@ -248,7 +248,7 @@ def main():
 <script>
 (function(){{
   var P = {puntos_js};
-  var map = L.map('map', {{scrollWheelZoom:false, attributionControl:false}}).setView([22, 5], 2);
+  var map = L.map('map', {{scrollWheelZoom:false, attributionControl:false}});
   fetch('/assets/world.geo.json').then(function(r){{return r.json();}}).then(function(g){{
     L.geoJSON(g, {{style:{{color:'#94a3b8', weight:.5, fillColor:'#f1f5f9', fillOpacity:1}}}}).addTo(map);
   }}).catch(function(){{}});
@@ -262,6 +262,12 @@ def main():
      .bindPopup('<b>'+p.pais+'</b><br>'+p.nombre+'<br>Menciones: <b>'+p.ev+'</b>')
      .addTo(map);
   }});
+  if (P.length) {{
+    var _b = L.latLngBounds(P.map(function(p){{return [p.lat, p.lon];}}));
+    map.fitBounds(_b, {{padding:[36, 36], maxZoom:4}});
+  }} else {{
+    map.setView([22, 5], 2);
+  }}
 }})();
 </script>
 </body></html>"""
