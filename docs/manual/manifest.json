@@ -1,0 +1,17 @@
+{
+  "titulo": "Manual de Operación — Observatorio de amplificación (FIMI)",
+  "subtitulo": "Qué mide, cómo lo mide, cómo se gobierna, se valida y se opera",
+  "capitulos": [
+    { "titulo": "1. Presentación y encuadre", "fuentes": ["docs/manual/00-presentacion.md", "README.md"] },
+    { "titulo": "2. Especificación técnica y scoring", "fuentes": ["docs/SCORING.md"] },
+    { "titulo": "3. Fuentes y cobertura", "fuentes": ["docs/FUENTES.md"] },
+    { "titulo": "4. Taxonomía y roles", "fuentes": ["docs/TAXONOMIA.md"] },
+    { "titulo": "5. Gobernanza y ciclo de vida de temas", "fuentes": ["docs/GOBERNANZA.md"] },
+    { "titulo": "6. Validación y rúbrica", "fuentes": ["docs/RUBRICA-VALIDACION.md"] },
+    { "titulo": "7. Atribución y limitaciones", "fuentes": ["docs/ATRIBUCION-LIMITACIONES.md"] },
+    { "titulo": "8. Trazabilidad y reproducibilidad", "fuentes": ["docs/TRAZABILIDAD.md"] },
+    { "titulo": "9. Operación (runbook)", "fuentes": ["docs/RUNBOOK.md", "docs/SOCIAL.md", "docs/ACCESOS.md"] },
+    { "titulo": "10. Costes y sostenibilidad", "fuentes": ["docs/COSTES.md"] },
+    { "titulo": "11. Glosario", "fuentes": ["docs/manual/99-glosario.md"] }
+  ]
+}
