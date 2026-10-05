@@ -1760,6 +1760,13 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 .fimi-brandbar a.nlink.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
 .fimi-brandbar a.cta-ceuta{{background:#c2410c;color:#fff!important;border-color:#c2410c;font-weight:800;animation:pulseCeuta 2.2s ease-out infinite}}
 .fimi-brandbar a.cta-ceuta:hover{{background:#9a3412;border-color:#9a3412;color:#fff!important}}
+.fimi-brandbar details.navmenu{{position:relative}}
+.fimi-brandbar details.navmenu>summary{{list-style:none;cursor:pointer}}
+.fimi-brandbar details.navmenu>summary::-webkit-details-marker{{display:none}}
+.fimi-brandbar details.navmenu>summary::marker{{content:""}}
+.fimi-brandbar .navmenu-panel{{position:absolute;top:40px;left:0;z-index:300;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.14);padding:6px;min-width:240px}}
+.fimi-brandbar .navmenu-panel a{{display:block;padding:9px 12px;border-radius:8px;color:#334155;font-weight:700;font-size:.86rem;text-decoration:none;white-space:nowrap}}
+.fimi-brandbar .navmenu-panel a:hover{{background:#fff7ed;color:#c2410c}}
 @keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
 @media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
@@ -1782,7 +1789,13 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       <a class="nlink" href="/#transparencia">Transparencia</a>
       <a class="nlink active" href="/research.html">Research</a>
       <a class="nlink" href="/metodo.html">Método</a>
-      <a class="nlink cta-ceuta" href="/casos/ceuta/">Caso Ceuta</a>
+      <details class="navmenu">
+        <summary class="nlink cta-ceuta">Casos ▾</summary>
+        <div class="navmenu-panel">
+          <a href="/casos/ceuta/">Ceuta / Frontera Sur</a>
+          <a href="/casos/electoral/">Electoral 2026 (panorama)</a>
+        </div>
+      </details>
       <a class="nlink" href="/glosario.html">Glosario</a>
     </div>
     <div class="chips"><span class="chip"><span class="dot"></span> En producción</span></div>
@@ -4782,6 +4795,13 @@ a{{color:#c2410c}}
 .fimi-brandbar .transp:hover{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
 .fimi-brandbar a.cta-ceuta{{background:#c2410c;color:#fff!important;border-color:#c2410c;font-weight:800;animation:pulseCeuta 2.2s ease-out infinite}}
 .fimi-brandbar a.cta-ceuta:hover{{background:#9a3412;border-color:#9a3412;color:#fff!important}}
+.fimi-brandbar details.navmenu{{position:relative}}
+.fimi-brandbar details.navmenu>summary{{list-style:none;cursor:pointer}}
+.fimi-brandbar details.navmenu>summary::-webkit-details-marker{{display:none}}
+.fimi-brandbar details.navmenu>summary::marker{{content:""}}
+.fimi-brandbar .navmenu-panel{{position:absolute;top:40px;left:0;z-index:300;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.14);padding:6px;min-width:240px}}
+.fimi-brandbar .navmenu-panel a{{display:block;padding:9px 12px;border-radius:8px;color:#334155;font-weight:700;font-size:.86rem;text-decoration:none;white-space:nowrap}}
+.fimi-brandbar .navmenu-panel a:hover{{background:#fff7ed;color:#c2410c}}
 @keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
 @media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .transp.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
@@ -4847,7 +4867,13 @@ a{{color:#c2410c}}
   <a class="transp" href="/api.html" title="API pública (datos en JSON)">API</a>
   <a class="transp" href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
   <a class="transp" href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos</a>
-  <a class="transp cta-ceuta" href="/casos/ceuta/" title="Expediente: amplificación en la crisis de Ceuta 2026">Caso Ceuta</a>
+  <details class="navmenu">
+    <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
+    <div class="navmenu-panel">
+      <a href="/casos/ceuta/">Ceuta / Frontera Sur</a>
+      <a href="/casos/electoral/">Electoral 2026 (panorama)</a>
+    </div>
+  </details>
   <a class="transp" href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
   <a class="transp" href="/apoyo.html" title="Apoyar el proyecto (Ko-fi)">Apoyo</a>
   <a class="transp" href="/glosario.html" title="Glosario: términos, conceptos y siglas del radar">Glosario</a>
