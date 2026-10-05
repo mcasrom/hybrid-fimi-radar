@@ -4893,6 +4893,19 @@ a{{color:#c2410c}}
     <b>Para periodistas.</b> <b>Se puede citar:</b> el patrón —amplificación, <b>eco de prensa</b> dominante, <b>0 coordinación confirmada</b>— con enlace a los datos. <b>No citar como:</b> «campaña coordinada», «FIMI ruso» u «operación confirmada»: <b>no está medido</b>. <b>Datos:</b> <a href="/api/v1/temas">API JSON</a> · <a href="/metodo.html">método y límites</a> · <a href="/casos/ceuta/">caso Ceuta</a>.
   </div>
 
+  <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
+    <b>Así se lee esto.</b> Un caso real: en el <b>caso Ceuta</b>, de 150 enlaces compartidos por ≥2 cuentas, <b>75 % eran de medios</b> (eco de prensa), y la validación ciega dio <b>0 coordinación confirmada</b>. Mucha <b>amplificación</b>, sin <b>coordinación</b> probada. <a href="/casos/ceuta/">Ver el caso paso a paso →</a>
+  </div>
+
+  <details style="margin:10px 0 4px">
+    <summary style="cursor:pointer;font-weight:700;font-size:.9rem;color:#0f172a">Preguntas frecuentes</summary>
+    <div style="font-size:.85rem;color:#334155;line-height:1.6;margin-top:6px">
+      <p><b>¿Esto prueba una campaña?</b> No. Mide <b>amplificación</b>: cuándo varias cuentas repiten lo mismo a la vez. Una banda alta <b>no</b> es coordinación confirmada.</p>
+      <p><b>¿Quién está detrás?</b> No se atribuye. La identidad y la intención <b>no se miden</b>; el resultado por defecto es <b>UNKNOWN</b>. Se describe comportamiento, no autoría.</p>
+      <p><b>¿Puedo citarlo?</b> Sí, con el matiz: «amplificación medida; 0 coordinación confirmada». Datos en la <a href="/api/v1/temas">API</a>, método en <a href="/metodo.html">/metodo.html</a> y el caso en <a href="/casos/ceuta/">/casos/ceuta/</a>.</p>
+    </div>
+  </details>
+
  {resumen_html}
 
  {funnel_html}
