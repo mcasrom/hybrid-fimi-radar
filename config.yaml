@@ -925,6 +925,64 @@ feeds:
   analytical_relevance: alta
   tema: eeuu_politica
   note: politica EEUU
+# Alta 5-oct-2026 (sonda staging): RSS españoles para espana_elecciones.
+# Medido: eldiario 28/110, abc_nacional 7/20, 20minutos 7/199, rtve-espana 6/180,
+# elpais-espana 4/19. Ratings bias/reliability provisionales: revisar con MBFC/Ad Fontes.
+- nombre: ElDiario.es
+  url: https://www.eldiario.es/rss/
+  tipo: media
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  tema: espana_elecciones
+  note: 'Prensa digital española; alta cobertura 29-N en sonda 5-oct.'
+  analytical_relevance: alta
+- nombre: ABC Nacional
+  url: https://www.abc.es/rss/feeds/abc_nacional.xml
+  tipo: media
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  tema: espana_elecciones
+  note: 'Prensa española; alta densidad electoral en sonda 5-oct.'
+  analytical_relevance: alta
+- nombre: 20Minutos
+  url: https://www.20minutos.es/rss/
+  tipo: media
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  tema: espana_elecciones
+  note: 'Prensa gratuita española, alto volumen; vigilar ruido.'
+  analytical_relevance: media
+- nombre: RTVE España
+  url: https://www.rtve.es/rss/temas_espana.xml
+  tipo: media
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: high
+  transparency: high
+  tema: espana_elecciones
+  note: 'Ente público español, sección España.'
+  analytical_relevance: media
+- nombre: El Pais Espana (seccion)
+  url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/espana/portada
+  tipo: media
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: high
+  transparency: high
+  tema: espana_elecciones
+  note: 'Seccion Espana via MRSS (el /marcador/rss/ da 403 desde Hetzner).'
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion
