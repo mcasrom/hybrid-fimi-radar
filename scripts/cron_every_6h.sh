@@ -7,6 +7,11 @@ cd /home/deploy/hybrid-fimi-radar
 #    Se salta los temas cerrados (estado != produccion|piloto) — su pipeline se
 #    detiene al cerrarlos con temas_cli.py, y los datos quedan exportados.
 #    La ausencia de senal en un tema es un resultado valido.
+#    Ventana 60d (6-oct-2026): el pipeline solo ve eventos de los últimos 60
+#    días (medido neutro en los 9 temas: ningún HIGH perdido salvo 3 bordes
+#    <1pto en eeuu). Acota memoria/tiempo por ciclo; las señales viejas
+#    caducan (política documentada en /metodo.html). El almacenamiento sigue
+#    con retención 90d en mantenimiento.py.
 for tema in $(.venv/bin/python -c "
 import yaml
 c = yaml.safe_load(open('config.yaml'))
@@ -14,7 +19,7 @@ temas = c.get('temas', {}) or {}
 print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in ('produccion', 'piloto')))
 "); do
   echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
-  .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" >> logs/fimi.log 2>&1
+  .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" --ventana-dias 60 >> logs/fimi.log 2>&1
 done
 # 2a) Contraste con verificadores (Maldita/Newtral -> posible_bulos; solo lectura
 #     del corpus + sus tablas propias; la tarjeta la renderiza el dashboard).
