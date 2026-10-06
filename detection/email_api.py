@@ -723,6 +723,89 @@ def _api_tema(slug):
     }
 
 
+def _api_serie_tema(slug, dias=30):
+    """Serie diaria de un tema para periodistas: eventos/autores/fuentes por día.
+
+    Solo agregados (sin textos ni autores). dias en 1..90, por defecto 30.
+    """
+    cat = {t["tema"]: t for t in _temas_catalogo()}
+    if slug not in cat:
+        return None
+    try:
+        dias = max(1, min(90, int(dias)))
+    except (TypeError, ValueError):
+        dias = 30
+    desde = int(time.time()) - dias * 86400
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT date(e.timestamp,'unixepoch') AS d, COUNT(*) AS eventos, "
+            "COUNT(DISTINCT e.author) AS autores, COUNT(DISTINCT e.source) AS fuentes "
+            "FROM events e JOIN event_temas et ON et.event_id=e.id "
+            "WHERE et.tema_id=? AND e.timestamp>=? GROUP BY d ORDER BY d",
+            (slug, desde)).fetchall()
+    finally:
+        conn.close()
+    return {
+        "meta": _api_meta(),
+        "tema": slug,
+        "dias": dias,
+        "serie": [{"fecha": r["d"], "eventos": r["eventos"],
+                   "autores": r["autores"], "fuentes": r["fuentes"]} for r in rows],
+        "disclaimer": _DISCLAIMER_API,
+    }
+
+
+def _api_buscar(q, tema=None, limite=10):
+    """Busca clusters por texto en titulares (fragmentos redactados, máx 2 por cluster).
+
+    No devuelve autores ni textos completos. q mínimo 3 caracteres; limite 1..20.
+    """
+    q = (q or "").strip()
+    if len(q) < 3:
+        return {"error": "consulta minima de 3 caracteres"}
+    cat = {t["tema"] for t in _temas_catalogo()}
+    if tema and tema not in cat:
+        return {"error": f"tema no monitorizado: {tema}"}
+    try:
+        limite = max(1, min(20, int(limite)))
+    except (TypeError, ValueError):
+        limite = 10
+    like = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        sql = ("SELECT c.cluster_label, c.tema_id, c.overall_score, ce.title "
+               "FROM cluster_events ce JOIN clusters c ON c.id=ce.cluster_id "
+               "WHERE (ce.title LIKE ? ESCAPE '\\' OR ce.text LIKE ? ESCAPE '\\')")
+        params = [like, like]
+        if tema:
+            sql += " AND c.tema_id=?"
+            params.append(tema)
+        sql += " ORDER BY c.overall_score DESC LIMIT ?"
+        params.append(limite * 5)
+        rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+    bands = _replay_meta()["scoring"]["bands"]
+    vistos = {}
+    for r in rows:
+        lab = r["cluster_label"]
+        if lab not in vistos:
+            if len(vistos) >= limite:
+                break
+            vistos[lab] = {"cluster_label": lab, "tema": r["tema_id"],
+                           "overall_score": r["overall_score"],
+                           "banda": _band_of(r["overall_score"] or 0, bands),
+                           "fragmentos": []}
+        if len(vistos[lab]["fragmentos"]) < 2 and r["title"]:
+            vistos[lab]["fragmentos"].append(_redact(r["title"], 160))
+    return {"meta": _api_meta(), "q": q, "tema": tema,
+            "resultados": list(vistos.values())[:limite],
+            "disclaimer": _DISCLAIMER_API}
+
+
 def _openapi_spec():
     """Especificación OpenAPI 3.0.3 de la API pública v1."""
     v = _replay_meta()["version"]
@@ -815,6 +898,18 @@ def _openapi_spec():
                 "parameters": [{"name": "label", "in": "path", "required": True, "schema": {"type": "string"},
                                 "example": "frontera_sur_cluster_000"}],
                 "responses": {"200": {"description": "OK"}, "404": {"description": "Cluster no encontrado"}}}},
+            "/api/v1/tema/{slug}/serie": {"get": {"summary": "Serie diaria de un tema (eventos/autores/fuentes por día)",
+                "parameters": [{"name": "slug", "in": "path", "required": True, "schema": {"type": "string"}},
+                                {"name": "dias", "in": "query", "required": False,
+                                 "schema": {"type": "integer", "default": 30, "minimum": 1, "maximum": 90}}],
+                "responses": {"200": {"description": "OK"}, "404": {"description": "Tema no monitorizado"}}}},
+            "/api/v1/buscar": {"get": {"summary": "Busca clusters por texto en titulares (fragmentos redactados)",
+                "parameters": [{"name": "q", "in": "query", "required": True,
+                                 "schema": {"type": "string", "minLength": 3}},
+                                {"name": "tema", "in": "query", "required": False, "schema": {"type": "string"}},
+                                {"name": "limite", "in": "query", "required": False,
+                                 "schema": {"type": "integer", "default": 10, "minimum": 1, "maximum": 20}}],
+                "responses": {"200": {"description": "OK"}, "400": {"description": "Consulta invalida"}}}},
             "/api/v1/health": {"get": {"summary": "Estado del servicio",
                 "responses": {"200": {"description": "OK"}}}},
             "/c/{lineage_id}": {"get": {"summary": "Permalink de una campana sostenida (ID estable entre ciclos)",
@@ -1068,6 +1163,8 @@ class H(BaseHTTPRequestHandler):
                 "endpoints": [
                     {"path": "/api/v1/temas", "desc": "Resumen de temas monitorizados (snapshot actual)"},
                     {"path": "/api/v1/tema/<slug>", "desc": "Clusters de un tema con componentes, confianza y atribución"},
+                    {"path": "/api/v1/tema/<slug>/serie?dias=30", "desc": "Serie diaria del tema (eventos/autores/fuentes por día)"},
+                    {"path": "/api/v1/buscar?q=<texto>[&tema=<slug>][&limite=10]", "desc": "Busca clusters por texto (fragmentos redactados)"},
                     {"path": "/api/v1/cluster/<label>", "desc": "Cluster completo + evidencia (eventos)"},
                     {"path": "/api/v1/openapi.json", "desc": "Especificación OpenAPI 3.0"},
                     {"path": "/api/v1/health", "desc": "Estado del servicio"},
@@ -1081,12 +1178,29 @@ class H(BaseHTTPRequestHandler):
         if path == "/api/v1/openapi.json":
             return self._send(200, _openapi_spec())
         if path.startswith("/api/v1/tema/"):
-            slug = path[len("/api/v1/tema/"):].strip("/")
-            if not re.match(r"^[a-z0-9_]+$", slug):
+            rest = path[len("/api/v1/tema/"):].strip("/")
+            parts = rest.split("/")
+            if len(parts) == 2 and parts[1] == "serie":
+                if not re.match(r"^[a-z0-9_]+$", parts[0]):
+                    return self._send(400, {"error": "tema invalido"})
+                d = _api_serie_tema(parts[0], (q.get("dias") or ["30"])[0])
+                if d is None:
+                    return self._send(404, {"error": f"tema no monitorizado: {parts[0]}"})
+                return self._send(200, d)
+            slug = rest
+            if len(parts) != 1 or not re.match(r"^[a-z0-9_]+$", slug):
                 return self._send(400, {"error": "tema invalido"})
             d = _api_tema(slug)
             if d is None:
                 return self._send(404, {"error": f"tema no monitorizado: {slug}"})
+            return self._send(200, d)
+        if path == "/api/v1/buscar":
+            qq = ((q.get("q") or [""])[0] or "").strip()
+            tt = ((q.get("tema") or [""])[0] or "").strip() or None
+            ll = ((q.get("limite") or ["10"])[0] or "10")
+            d = _api_buscar(qq, tt, ll)
+            if "error" in d:
+                return self._send(400, d)
             return self._send(200, d)
         if path.startswith("/api/v1/cluster/"):
             cid = path[len("/api/v1/cluster/"):].strip("/")

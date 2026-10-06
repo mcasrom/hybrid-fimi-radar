@@ -136,19 +136,32 @@ def analizar(dias=None):
 
     # Una sola pasada: por evento se normaliza el texto UNA vez y se evalúan
     # todas las keywords contra esos tokens (antes se re-normalizaba 45×).
+    # Caché entre ciclos (match_cache): los textos son inmutables, así que solo
+    # se calculan los eventos nuevos para esta config; el resto se reutiliza.
+    from detection import match_cache as _mc
+    _mc.ensure(con)
+    _cfg = _mc.hash_cfg(por_tema, filtros, contextos)
     match_por_evento = {}     # event_id -> set(temas)
     kw_matches = Counter()    # palabra -> nº de eventos que matchea
+    _cached_temas, _cached_kw = _mc.cargar(con, _cfg, [e["id"] for e in eventos])
+    for _eid, _ts in _cached_temas.items():
+        match_por_evento[_eid] = set(_ts)
+    kw_matches.update(_cached_kw)
+    _nuevos = {}
     for e in eventos:
+        if e["id"] in match_por_evento:
+            continue
         txt = ((e["title"] or "") + " " + (e["text"] or "")).strip()
         if not txt:
             continue
         nt = normalizar(txt)
         ntok = [t for t in nt.split() if len(t) > 2 and t not in STOP]
         temas_hit = set()
+        pals_hit = set()
         for palabra, tema, kw_norm, kw_toks in kws_meta:
             if _matches(kw_norm, kw_toks, nt, ntok):
                 temas_hit.add(tema)
-                kw_matches[palabra] += 1
+                pals_hit.add(palabra)
         # Gate `filtro`: un tema con filtro solo cuenta como "ámbito" si el texto
         # contiene >=1 término del filtro (igual que capture.py / gate / backfill).
         if temas_hit:
@@ -162,6 +175,11 @@ def analizar(dias=None):
                     temas_hit.discard(_t)
         if temas_hit:
             match_por_evento[e["id"]] = temas_hit
+            kw_matches.update(pals_hit)
+            _nuevos[e["id"]] = (temas_hit, pals_hit)
+    if _nuevos:
+        _mc.guardar(con, _cfg, _nuevos)
+    _mc.podar(con, _cfg, [e["id"] for e in eventos])
 
     resultado = {}
     for tema, pals in por_tema.items():

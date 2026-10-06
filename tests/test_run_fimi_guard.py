@@ -29,3 +29,27 @@ def test_generate_synthetic_respeta_out_dir(tmp_path):
     assert r.returncode == 0, r.stderr
     assert (tmp_path / "events.csv").exists()
     assert (tmp_path / "ground_truth.csv").exists()
+
+
+def test_load_sqlite_ventana_desde(tmp_path):
+    """load_sqlite(desde=) filtra eventos viejos; sin desde trae todo."""
+    import sqlite3
+    import time
+    sys.path.insert(0, str(ROOT))
+    from normalizer.ingest import load_sqlite
+    db = tmp_path / "mini.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE events(id INTEGER PRIMARY KEY, timestamp INTEGER,"
+                " source TEXT, author TEXT, title TEXT, url TEXT, text TEXT, language TEXT)")
+    now = int(time.time())
+    con.execute("INSERT INTO events(timestamp,source,author,title,url,text,language)"
+                " VALUES (?,?,?,?,?,?,?)", (now - 100 * 86400, "bsky:x", "a", "viejo", "u", "t", "es"))
+    con.execute("INSERT INTO events(timestamp,source,author,title,url,text,language)"
+                " VALUES (?,?,?,?,?,?,?)", (now - 5 * 86400, "bsky:y", "b", "nuevo", "u", "t", "es"))
+    con.commit()
+    con.close()
+    todo = load_sqlite(str(db))
+    assert len(todo) == 2
+    ventana = load_sqlite(str(db), desde=now - 30 * 86400)
+    assert len(ventana) == 1
+    assert ventana.iloc[0]["text"] == "t" and ventana.iloc[0]["author"] == "b"

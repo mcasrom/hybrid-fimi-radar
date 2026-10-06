@@ -84,13 +84,16 @@ def normalize(df):
     return df
 
 
-def load_sqlite(db_path, tema=None, excluir_otros=False):
+def load_sqlite(db_path, tema=None, excluir_otros=False, desde=None):
     """Lee la tabla events de la BD del radar y la normaliza a formato Event.
 
     El author se lee de la columna author si existe; si no, se deriva de source.
     Si tema se indica, devuelve SOLO los eventos de ese tema (many-to-many via
     event_temas). Si la tabla event_temas no existe (BD vieja), filtra por la
     columna legacy events.tema_id.
+    Si desde se indica (epoch), solo eventos con timestamp>=desde (ventana
+    temporal: frena el crecimiento del input del pipeline; por defecto None =
+    todo el corpus, comportamiento histórico).
     """
     import sqlite3
     con = sqlite3.connect(db_path)
@@ -98,6 +101,10 @@ def load_sqlite(db_path, tema=None, excluir_otros=False):
     sel_base = "timestamp, source, author, title, url, text, language"
     if "author" not in cols:
         sel_base = "timestamp, source, title, url, text, language"
+    conds, params = [], []
+    if desde:
+        conds.append("timestamp>=?")
+        params.append(int(desde))
     # filtro por tema (multi-tema): event_temas si existe, si no events.tema_id
     tema_ids = None
     if tema:
@@ -120,10 +127,14 @@ def load_sqlite(db_path, tema=None, excluir_otros=False):
             df = pd.DataFrame(columns=["timestamp", "source", "author", "title", "url", "text", "language"])
         else:
             ph = ",".join("?" * len(tema_ids))
-            df = pd.read_sql(f"SELECT {sel_base} FROM events WHERE id IN ({ph})", con,
-                             params=tema_ids)
+            where = f"WHERE id IN ({ph})"
+            if conds:
+                where += " AND " + " AND ".join(conds)
+            df = pd.read_sql(f"SELECT {sel_base} FROM events {where}", con,
+                             params=tema_ids + params)
     else:
-        df = pd.read_sql(f"SELECT {sel_base} FROM events", con)
+        where = ("WHERE " + " AND ".join(conds)) if conds else ""
+        df = pd.read_sql(f"SELECT {sel_base} FROM events {where}", con, params=params)
     if "author" not in df.columns:
         df["author"] = df["source"]
     con.close()

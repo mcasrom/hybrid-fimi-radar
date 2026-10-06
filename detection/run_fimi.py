@@ -80,6 +80,9 @@ def main():
     ap.add_argument("--db", default=str(ROOT / "data" / "radar.db"))
     ap.add_argument("--config", default=None)
     ap.add_argument("--tema", default=None, help="Tema/dominio (frontera_sur, geopolitica_ue_marruecos, politica_nacional). Default: frontera_sur")
+    ap.add_argument("--ventana-dias", type=int, default=None,
+                    help="Ventana temporal del input: solo eventos de los últimos N días. "
+                         "Por defecto None = todo el corpus (comportamiento histórico).")
     args = ap.parse_args()
 
     # Guarda: no seguir si el input no existe (evita crear/clusterizar en vacío).
@@ -99,9 +102,12 @@ def main():
     # --- INGEST + NORMALIZE ---
     from normalizer.ingest import load, normalize, load_sqlite
     _ts = time.time()
-    print(f"[1/7] Ingest {args.input} (tema={tema})")
+    _vent = getattr(args, "ventana_dias", None)
+    _desde = int(time.time()) - int(_vent) * 86400 if _vent else None
+    print(f"[1/7] Ingest {args.input} (tema={tema}" + (f", ventana={_vent}d" if _vent else "") + ")")
     if str(args.input).endswith(".db"):
-        df = load_sqlite(args.input, tema=tema, excluir_otros=(tema == "frontera_sur"))
+        df = load_sqlite(args.input, tema=tema, excluir_otros=(tema == "frontera_sur"),
+                         desde=_desde)
     else:
         raw = load(args.input)
         df = normalize(raw)
