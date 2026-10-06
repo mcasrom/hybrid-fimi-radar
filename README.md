@@ -165,6 +165,14 @@ muestra el valor vivo):
   en la portada (tras las tarjetas de temas), **feed RSS** (`/datos/bulos.xml`) y **JSON** (`/datos/bulos.json`),
   accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
   Es **contraste, no veredicto**: no atribuye actor ni confirma bulo.
+- **Ventana de observación 60 días** (6-oct): el pipeline solo ve eventos de los últimos 60 d
+  (`run_fimi --ventana-dias`; medido neutro en los 9 temas); las señales viejas caducan.
+  El almacenamiento conserva 90 d (`mantenimiento.py`).
+- **API para periodistas** (6-oct): serie diaria por tema (`/api/v1/tema/<slug>/serie?dias=30`,
+  solo agregados) y búsqueda de clusters (`/api/v1/buscar?q=&tema=&limite=`, fragmentos
+  redactados, sin autores). Documentadas en `/api.html` y el OpenAPI.
+- **Sitemap con `/casos/electoral/`** (6-oct, 15 URLs) + `/api/v1/openapi.json` servido tras
+  excepción nginx (antes lo tragaba la regla de extensiones → 404).
 - Última release: **v0.2**.
 
 ## 5. Limitaciones conocidas
@@ -185,7 +193,9 @@ muestra el valor vivo):
   (por eso el 94,7 % de septiembre no es comparable) y muestreo de precisión, sin recall.
   Ver `docs/README-detallado.md`.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
-  (coste/API o no público); falta análisis multimodal (imagen/vídeo).
+  (coste/API o no público); falta análisis multimodal (imagen/vídeo). El corpus depende
+  en ~95 % de Bluesky + Google News. **Ventana de observación 60 días**: lo anterior
+  caduca y deja de puntuar (ver Método).
 - **Qué cuenta hoy como "coordinación" — y qué no.** Medido sobre producción
   (29/Sep/2026 10:14 UTC, snapshot de 1052 clusters, 20.016 eventos miembro; **los 100 HIGH
   de ese snapshot incluyen 20 de temas cerrados** — para los 8 temas activos son 88). Verificado

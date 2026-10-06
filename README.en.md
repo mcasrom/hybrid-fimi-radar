@@ -128,6 +128,14 @@ the live value):
   dashboard (after the topic cards), **RSS feed** (`/datos/bulos.xml`) and **JSON** (`/datos/bulos.json`)
   under the **"Bulos ▾"** nav menu, plus a **social card** `/bulos-og.png`. **Contrast, not verdict**:
   it attributes no actor and confirms no hoax.
+- **60-day observation window** (6-Oct): the pipeline only sees events from the last 60 d
+  (`run_fimi --ventana-dias`; measured neutral across all 9 topics); old signals expire.
+  Storage keeps 90 d (`mantenimiento.py`).
+- **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
+  aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
+  no authors). Documented in `/api.html` and the OpenAPI spec.
+- **Sitemap with `/casos/electoral/`** (6-Oct, 15 URLs) + `/api/v1/openapi.json` served after
+  an nginx exception (the extension rule swallowed it → 404 before).
 - Latest release: **v0.2**.
 
 ## 5. Known limitations
@@ -144,7 +152,9 @@ the live value):
   behaviour* and *FIMI with independent external evidence*— is **prepared**
   (`auditoria_high --formato blind`) but **not yet run**.
 - **Limited coverage:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp are not observed
-  (API cost or not public); multimodal analysis (image/video) is missing.
+  (API cost or not public); multimodal analysis (image/video) is missing. The corpus
+  depends ~95 % on Bluesky + Google News. **60-day observation window**: older signals
+  expire and stop scoring (see Method).
 
 Full detail in [`docs/ATRIBUCION-LIMITACIONES.md`](docs/ATRIBUCION-LIMITACIONES.md). The
 project **documents and fixes its own biases**: for instance, commit `aa5280f` split

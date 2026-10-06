@@ -4733,9 +4733,9 @@ def main():
             + "<p class='caption' style='font-size:.8rem;color:#94a3b8'>"
             "<b>Qué mide y qué NO:</b> mide cuánto tiempo lleva activa una alerta <b>dentro del "
             "radar</b>, no el «lead time» frente a una campaña real (exigiría verdad de referencia "
-            "externa que no tenemos). El pipeline alimenta el clustering con <b>todo el corpus del "
-            "tema, sin ventana temporal</b>, por lo que un cluster incluye el histórico de sus "
-            "cuentas: por eso la edad del evento más antiguo es alta.</p></div>")
+            "externa que no tenemos). El pipeline alimenta el clustering con los eventos del tema "
+            "de los <b>últimos 60 días (ventana de observación)</b>: las señales viejas caducan y "
+            "dejan de puntuar (ver <a href='/metodo.html'>método</a>).</p></div>")
     else:
         _kpi_alerta_html = ""
 

@@ -130,7 +130,7 @@ def main():
                          "tienen espacios)")
     ap.add_argument("--dias", type=int, default=7300,
                     help="ventana hacia atrás (default: todo el histórico; el "
-                         "pipeline agrupa el corpus sin ventana temporal)")
+                         "pipeline agrupa con ventana de 60 días desde 6-oct-2026)")
     ap.add_argument("--db", default=str(ROOT / "data" / "radar.db"))
     ap.add_argument("--aplicar", action="store_true",
                     help="ESCRIBE los cambios; sin esto es dry")

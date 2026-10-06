@@ -16,9 +16,10 @@ Tres medidas honestas y distintas, que NO son "lead time frente al mundo"
 3. `recencia`: porcentaje de eventos del cluster alerta que son de los últimos
    7 días. Si es bajo, el cluster es sobre todo memoria, no actividad viva.
 
-La causa de la latencia alta está documentada: `load_sqlite` alimenta el
-pipeline con TODO el corpus del tema, sin ventana temporal, así que la
-pertenencia a un cluster incluye el histórico de sus cuentas.
+La causa de la latencia alta está documentada: hasta el 6-oct-2026 `load_sqlite`
+alimentaba el pipeline con TODO el corpus del tema, sin ventana temporal; desde
+entonces el pipeline ve los últimos 60 días (ventana de observación) y las
+señales viejas caducan.
 """
 import sqlite3
 import statistics

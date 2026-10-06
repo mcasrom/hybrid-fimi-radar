@@ -141,7 +141,7 @@ def _grafico(d):
                  f'<td style="width:44px;text-align:right;font-size:.78rem;color:#475569">{n}</td></tr>')
     return ('<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin:8px 0">'
             '<div style="font-size:.74rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">'
-            'Qué ve el observatorio (todo el corpus)</div>'
+             'Qué ve el observatorio (ventana de 60 días)</div>'
             f'<table style="border-collapse:collapse;width:100%">{rows}</table>'
             '<div style="font-size:.7rem;color:#94a3b8;margin-top:4px">La barra naranja es la señal que merece revisión; '
             'las grises son difusión/eco (benignas).</div></div>')
