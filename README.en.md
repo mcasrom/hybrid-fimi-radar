@@ -123,8 +123,11 @@ the live value):
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - **Open datasets by topic** (5-Oct): `/datos/<tema>/clusters.{csv,json}` per cluster
   (no texts or authors) + `datapackage.json` (CC BY 4.0) + freshness `status.json`.
-- **Contrast-checked possible hoaxes** (5-Oct): card crossing high/anomalous-band clusters with
-  recent fact-checker pieces (Maldita/Newtral); **contrast, not verdict**.
+- **Contrast-checked possible hoaxes** (5-Oct, expanded 6-Oct): crosses high/anomalous-band clusters
+  with recent **fact-checker** pieces (Maldita/Newtral, 14 d). Offered as a **KPI mini-card** on the
+  dashboard (after the topic cards), **RSS feed** (`/datos/bulos.xml`) and **JSON** (`/datos/bulos.json`)
+  under the **"Bulos ▾"** nav menu, plus a **social card** `/bulos-og.png`. **Contrast, not verdict**:
+  it attributes no actor and confirms no hoax.
 - Latest release: **v0.2**.
 
 ## 5. Known limitations

@@ -160,8 +160,11 @@ muestra el valor vivo):
 - **Datasets abiertos por tema** (5-oct): `/datos/<tema>/clusters.{csv,json}` por cluster
   (sin textos ni autores) + `datapackage.json` (CC BY 4.0) + `status.json` de frescura →
   https://fimi.viajeinteligencia.com/datos/index.json
-- **Posibles bulos contrastados** (5-oct): tarjeta que cruza clusters en banda alta/anómala con
-  piezas recientes de verificadores (Maldita/Newtral); **contraste, no veredicto**.
+- **Posibles bulos contrastados** (5-oct, ampliado 6-oct): cruza clusters en banda alta/anómala con
+  piezas recientes de **verificadores** (Maldita/Newtral, 14 d). Se ofrece como **mini-tarjeta con KPIs**
+  en la portada (tras las tarjetas de temas), **feed RSS** (`/datos/bulos.xml`) y **JSON** (`/datos/bulos.json`),
+  accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
+  Es **contraste, no veredicto**: no atribuye actor ni confirma bulo.
 - Última release: **v0.2**.
 
 ## 5. Limitaciones conocidas

@@ -267,3 +267,18 @@ y **no atribuye**; los canales de parte valen como **señal**, no como hechos:
   aportan cobertura/eco («narrativa amplificada»), no clusters.
 - Cabeceras marroquíes (Le Desk, Telquel, Medias24, Le360…) devuelven **403 Cloudflare**;
   accesibles: **Yabiladi** y **Hespress (FR/AR)**.
+
+## Verificadores (contraste de posibles bulos, 5-6-oct-2026)
+
+Fuentes de **contraste**, no de captura: **`detection/verifica.py`** las ingiere en la tabla
+`verifica_items` (dedup por URL, poda 30 d) y las cruza con clusters en banda alta/anómala, sin
+entrar al corpus ni al grafo de coordinación y **sin tocar score/bandas**. Resultado: tabla
+`posible_bulos` → mini-tarjeta `#bulos-resumen`, feed `/datos/bulos.{xml,json}` y tarjeta social
+`/bulos-og.png`. Es **contraste, no veredicto**.
+
+| Fuente | URL | Estado |
+|---|---|---|
+| Maldita.es | `https://maldita.es/feed` | activa (volumen alto) |
+| Newtral | `https://www.newtral.es/feed/` | activa (poco volumen) |
+| VerificaRTVE | sin feed dedicado en el índice de RTVE | no usar como RSS (alternativa: Google News `site:`) |
+| EFE Verifica | `efe.com` → 403 a Hetzner | no usar |
