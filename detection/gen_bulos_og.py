@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """gen_bulos_og.py — tarjeta social 1200x630 de "Posibles bulos contrastados".
-Lee data/radar.db (posible_bulos) y escribe /var/www/fimi/bulos-og.png.
-Contraste, no veredicto: no atribuye actor ni confirma bulo.
+Paleta CLARA (como las tarjetas de tema del dashboard): fondo blanco, borde suave,
+numeros en color de acento. Lee data/radar.db (posible_bulos) -> /var/www/fimi/bulos-og.png.
 """
 import sqlite3
 import sys
@@ -13,9 +13,18 @@ W, H = 1200, 630
 FD = "/home/deploy/.local/lib/python3.12/site-packages/matplotlib/mpl-data/fonts/ttf"
 BOLD = FD + "/DejaVuSans-Bold.ttf"
 REG = FD + "/DejaVuSans.ttf"
-TOP, BOT = (11, 18, 32), (21, 35, 74)
-CYAN, AMBER, PURPLE, TEAL = (56, 189, 248), (245, 158, 11), (167, 139, 250), (45, 212, 191)
-WHITE, SLATE, MUT = (255, 255, 255), (203, 213, 225), (148, 163, 184)
+BG = (255, 255, 255)
+LINE = (226, 232, 240)
+TILE = (248, 250, 252)
+INK = (15, 23, 42)
+SUB = (71, 85, 105)
+MUT = (148, 163, 184)
+LBL = (100, 116, 139)
+ORANGE = (194, 65, 12)
+RED = (220, 38, 38)
+PURPLE = (124, 58, 237)
+TEAL = (15, 118, 110)
+AMBER = (217, 119, 6)
 
 
 def F(path, size):
@@ -36,61 +45,59 @@ def main():
     fuentes = Counter(r[3] for r in rows)
     mx = max([n for _, n in temas] or [1])
 
-    img = Image.new("RGB", (W, H), TOP)
+    img = Image.new("RGB", (W, H), BG)
     d = ImageDraw.Draw(img)
-    for y in range(H):
-        t = y / (H - 1)
-        d.line([(0, y), (W, y)], fill=tuple(int(TOP[i] + (BOT[i] - TOP[i]) * t) for i in range(3)))
+    # barra de acento superior (estilo casa)
+    d.rectangle([0, 0, W, 10], fill=ORANGE)
+    # marco suave
+    d.rounded_rectangle([24, 24, W - 24, H - 24], 16, outline=LINE, width=2)
 
-    d.text((60, 42), "RADAR FIMI  ·  CONTRASTE CON VERIFICADORES", font=F(BOLD, 18), fill=CYAN)
-    d.text((60, 84), "Posibles bulos contrastados", font=F(BOLD, 50), fill=WHITE)
-    d.text((60, 148), "Clusters en banda alta o anómala que comparten tema con una", font=F(REG, 18), fill=SLATE)
-    d.text((60, 172), "pieza reciente de Maldita o Newtral (14 días).", font=F(REG, 18), fill=SLATE)
+    d.text((60, 56), "RADAR FIMI  ·  CONTRASTE CON VERIFICADORES", font=F(BOLD, 18), fill=ORANGE)
+    d.text((60, 96), "Posibles bulos contrastados", font=F(BOLD, 50), fill=INK)
+    d.text((60, 160), "Clusters en banda alta o anómala que comparten tema con una", font=F(REG, 18), fill=SUB)
+    d.text((60, 184), "pieza reciente de Maldita o Newtral (14 días).", font=F(REG, 18), fill=SUB)
 
     def tile(x, y, w, h, val, label, color):
-        d.rounded_rectangle([x, y, x + w, y + h], 14, fill=(12, 20, 38), outline=color, width=2)
-        fv = F(BOLD, 50)
-        d.text((x + w / 2, y + h / 2 - 6), str(val), font=fv, fill=color, anchor="mm")
-        d.text((x + w / 2, y + h - 22), label, font=F(REG, 16), fill=SLATE, anchor="mm")
+        d.rounded_rectangle([x, y, x + w, y + h], 12, fill=TILE, outline=LINE, width=2)
+        d.text((x + w / 2, y + 44), str(val), font=F(BOLD, 50), fill=color, anchor="mm")
+        d.text((x + w / 2, y + h - 20), label.upper(), font=F(REG, 14), fill=LBL, anchor="mm")
 
     tw, th, g = 270, 104, 20
-    tile(60, 210, tw, th, total, "contrastes", CYAN)
-    tile(60 + tw + g, 210, tw, th, clusters, "clusters", TEAL)
-    tile(60, 210 + th + g, tw, th, high, "banda HIGH", AMBER)
-    tile(60 + tw + g, 210 + th + g, tw, th, anom, "ANOMALOUS", PURPLE)
+    tile(60, 220, tw, th, total, "contrastes", ORANGE)
+    tile(60 + tw + g, 220, tw, th, clusters, "clusters", TEAL)
+    tile(60, 220 + th + g, tw, th, high, "banda HIGH", RED)
+    tile(60 + tw + g, 220 + th + g, tw, th, anom, "ANOMALOUS", PURPLE)
 
-    # barras por tema (derecha)
-    bx, by, bw = 690, 226, 450
-    d.text((bx, by - 22), "CLUSTERS POR TEMA", font=F(BOLD, 15), fill=MUT)
+    bx, by, bw = 690, 236, 450
+    d.text((bx, by - 24), "CLUSTERS POR TEMA", font=F(BOLD, 15), fill=LBL)
     for i, (t, n) in enumerate(temas):
         yy = by + i * 40
-        d.text((bx, yy), t, font=F(REG, 18), fill=SLATE)
-        d.rounded_rectangle([bx + 200, yy + 3, bx + 200 + bw - 240, yy + 21], 5, fill=(30, 41, 59))
+        d.text((bx, yy), t, font=F(REG, 18), fill=SUB)
+        d.rounded_rectangle([bx + 200, yy + 3, bx + 200 + bw - 240, yy + 21], 5, fill=(241, 245, 249))
         wpx = max(6, int((bw - 240) * n / mx))
-        d.rounded_rectangle([bx + 200, yy + 3, bx + 200 + wpx, yy + 21], 5, fill=CYAN)
-        d.text((bx + bw - 8, yy), str(n), font=F(BOLD, 18), fill=WHITE, anchor="ra")
+        d.rounded_rectangle([bx + 200, yy + 3, bx + 200 + wpx, yy + 21], 5, fill=ORANGE)
+        d.text((bx + bw - 8, yy), str(n), font=F(BOLD, 18), fill=INK, anchor="ra")
 
-    # panel de lectura (2 contrastes)
-    d.rounded_rectangle([60, 448, 1140, 574], 14, fill=(16, 26, 51), outline=(51, 65, 85), width=2)
-    d.text((84, 462), "LECTURA", font=F(BOLD, 15), fill=(251, 191, 36))
+    d.rounded_rectangle([60, 452, 1140, 566], 12, fill=TILE, outline=LINE, width=2)
+    d.text((84, 466), "LECTURA", font=F(BOLD, 15), fill=AMBER)
     pick = sorted(rows, key=lambda r: 0 if r[2] == "HIGH" else 1)[:2]
     for i, r in enumerate(pick):
-        yy = 490 + i * 44
-        d.ellipse([86, yy + 6, 98, yy + 18], fill=(251, 191, 36))
+        yy = 494 + i * 42
+        d.ellipse([86, yy + 6, 96, yy + 16], fill=AMBER)
         tit = (r[4] or "").strip()
-        if len(tit) > 78:
-            tit = tit[:77] + "…"
-        d.text((112, yy), tit, font=F(REG, 19), fill=SLATE)
-        d.text((112, yy + 22), f"{r[0]} · {r[2]} · {r[3]}", font=F(REG, 14), fill=MUT)
+        if len(tit) > 80:
+            tit = tit[:79] + "…"
+        d.text((110, yy), tit, font=F(REG, 19), fill=SUB)
+        d.text((110, yy + 21), f"{r[0]} · {r[2]} · {r[3]}", font=F(REG, 14), fill=MUT)
 
-    d.text((60, 590), "Es contraste por tema, no veredicto: no atribuye actor ni confirma bulo.",
-           font=F(BOLD, 18), fill=AMBER)
+    d.text((60, 586), "Es contraste por tema, no veredicto: no atribuye actor ni confirma bulo.",
+           font=F(BOLD, 17), fill=(154, 52, 18))
     ftxt = "  ·  ".join(f"{f}: {n}" for f, n in fuentes.most_common())
-    d.text((60, 614), f"fimi.viajeinteligencia.com  ·  {total} contrastes · {clusters} clusters  ·  {ftxt}",
+    d.text((60, 610), f"fimi.viajeinteligencia.com  ·  {total} contrastes · {clusters} clusters  ·  {ftxt}",
            font=F(REG, 14), fill=MUT)
 
     img.save("/var/www/fimi/bulos-og.png", "PNG", optimize=True)
-    print("OK /var/www/fimi/bulos-og.png", img.size, "| total", total, "clusters", clusters)
+    print("OK /var/www/fimi/bulos-og.png (claro)", img.size, "| total", total, "clusters", clusters)
 
 
 if __name__ == "__main__":
