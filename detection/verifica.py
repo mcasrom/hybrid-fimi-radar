@@ -188,7 +188,8 @@ def exportar_feed() -> dict:
                    "licencia": "CC-BY-4.0",
                    "metodo": "https://fimi.viajeinteligencia.com/metodo.html",
                    "aviso": "Contraste, no veredicto: no atribuye actor ni confirma bulo.",
-                   "total": len(items), "items": items}, fh, ensure_ascii=False, indent=1)
+                   "total": len(items), "items": items,
+                   "og": "https://fimi.viajeinteligencia.com/bulos-og.png"}, fh, ensure_ascii=False, indent=1)
     def esc(s):
         return sax.escape(str(s or ""))
     last = formatdate(timeval=now, localtime=False, usegmt=True)
@@ -207,6 +208,9 @@ def exportar_feed() -> dict:
            "<description>Clusters en banda alta/anómala que comparten tema con una pieza reciente "
            "de verificador (Maldita/Newtral). Contraste, no veredicto.</description>"
            "<language>es</language>"
+           "<image><url>https://fimi.viajeinteligencia.com/bulos-og.png</url>"
+           "<title>Posibles bulos contrastados</title>"
+           "<link>https://fimi.viajeinteligencia.com/#posibles-bulos</link></image>"
            "<lastBuildDate>" + last + "</lastBuildDate>"
            "<ttl>360</ttl>" + few + "</channel></rss>")
     with open(OUT_RSS, "w", encoding="utf-8") as fh:

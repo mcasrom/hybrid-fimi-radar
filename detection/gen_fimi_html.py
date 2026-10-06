@@ -3580,7 +3580,64 @@ def main():
         '<b>⚠️ Este radar está en fase de calibración</b> — el volumen de coordinación '
         'legítima en política es alto y el sistema aún está ajustando umbrales. '
         'Trata los scores de este tema con más cautela que los de frontera sur.</div></div>')
+    def _bulos_mini_card():
+        import html as _esc
+        from collections import Counter as _cnt
+        try:
+            _cn = sqlite3.connect(DB, timeout=30)
+            try:
+                _rr = _cn.execute(
+                    "SELECT tema_id, cluster_label, banda, verifica_fuente FROM posible_bulos"
+                    " ORDER BY cycle_ts DESC, tema_id").fetchall()
+            finally:
+                _cn.close()
+        except Exception:
+            return ""
+        if not _rr:
+            return ""
+        _tot = len(_rr)
+        _cl = len({r[1] for r in _rr})
+        _hi = sum(1 for r in _rr if r[2] == "HIGH")
+        _an = sum(1 for r in _rr if r[2] == "ANOMALOUS")
+        _tm = _cnt(r[0] for r in _rr).most_common(4)
+        _mx = max([n for _, n in _tm] or [1])
+
+        def _t(v, lab, col):
+            return ("<div style='flex:1 1 110px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"
+                    "padding:10px 12px;text-align:center'><div style='font-size:1.5rem;font-weight:800;color:"
+                    + col + "'>" + str(v) + "</div><div style='font-size:.72rem;color:#64748b'>" + lab + "</div></div>")
+        _bars = "".join(
+            "<div style='display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.82rem'>"
+            "<span style='width:130px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"
+            + _esc.escape(t) + "</span>"
+            "<span style='flex:1;background:#e2e8f0;border-radius:5px;height:14px;overflow:hidden'>"
+            "<span style='display:block;height:100%;width:" + str(int(100 * n / _mx)) + "%;background:#c2410c'></span></span>"
+            "<b style='width:28px;text-align:right;color:#0f172a'>" + str(n) + "</b></div>"
+            for t, n in _tm)
+        _b = ("font-size:.8rem;font-weight:700;text-decoration:none;color:#c2410c;"
+              "border:1px solid #fdba74;background:#fff7ed;border-radius:999px;padding:6px 12px")
+        return (
+            "<div class='card' id='bulos-resumen' style='margin-top:16px'>"
+            "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'>"
+            "<h3 style='margin:0'>Posibles bulos contrastados "
+            "<span class='caption' style='font-weight:400'>(contraste, no veredicto)</span></h3>"
+            "<div style='display:flex;gap:8px;flex-wrap:wrap'>"
+            "<a href='#posibles-bulos' style='" + _b + "'>Ver detalle</a>"
+            "<a href='/datos/bulos.xml' style='" + _b + "'>RSS</a>"
+            "<a href='/datos/bulos.json' style='" + _b + "'>JSON</a></div></div>"
+            "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con piezas "
+            "recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
+            "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
+            + _t(_tot, "contrastes", "#c2410c") + _t(_cl, "clusters", "#0f172a")
+            + _t(_hi, "banda HIGH", "#dc2626") + _t(_an, "ANOMALOUS", "#7c3aed") + "</div>"
+            "<div style='margin:6px 0 2px'><b style='font-size:.8rem;color:#64748b'>Por tema</b>" + _bars + "</div>"
+            "<img src='/bulos-og.png' alt='Resumen de posibles bulos contrastados' loading='lazy' "
+            "style='width:100%;max-width:680px;display:block;margin:10px auto 0;border:1px solid #e2e8f0;border-radius:10px'>"
+            "</div>")
+
+    bulos_card_html = _bulos_mini_card()
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
+               f"{bulos_card_html}"
                f"{piloto_banner}"
                f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
                f"Cada pestaña muestra un dominio del catálogo. Las secciones de narrativas, historial y "
@@ -5043,8 +5100,6 @@ a{{color:#c2410c}}
 <script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
  {tabs_ui}
-
- {bulos_card_html}
 
 <details style="margin:26px 0 4px">
 <summary style="cursor:pointer;border-top:2px solid #e2e8f0;padding-top:12px;font-size:.84rem;color:#c2410c;font-weight:700">
