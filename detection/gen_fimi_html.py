@@ -3637,7 +3637,6 @@ def main():
 
     bulos_card_html = _bulos_mini_card()
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
-               f"{bulos_card_html}"
                f"{piloto_banner}"
                f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
                f"Cada pestaña muestra un dominio del catálogo. Las secciones de narrativas, historial y "
@@ -4379,6 +4378,7 @@ def main():
         f"</div>"
          f"<div id='estado' style='display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:6px'>"
          f"{dial_cards}</div>"
+        f"{bulos_card_html}"
         f"{_share_resumen_buttons}"
         f"{newsletter_form}"
         f"{sugerir_form}"
