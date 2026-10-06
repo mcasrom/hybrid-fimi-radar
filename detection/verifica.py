@@ -14,17 +14,22 @@ del corpus + escritura en sus dos tablas propias.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import sqlite3
 import sys
 import time
+import xml.sax.saxutils as sax
 from collections import Counter
 from datetime import datetime, timezone
+from email.utils import formatdate
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 DB = os.path.join(ROOT, "data", "radar.db")
+OUT_JSON = "/var/www/fimi/datos/bulos.json"
+OUT_RSS = "/var/www/fimi/datos/bulos.xml"
 
 FUENTES = [
     ("maldita", "https://maldita.es/feed"),
@@ -146,9 +151,67 @@ def contrastar() -> dict:
             "INSERT INTO posible_bulos(cluster_label,tema_id,banda,verifica_fuente,"
             "verifica_titulo,verifica_url,solape,cycle_ts) VALUES (?,?,?,?,?,?,?,?)", out)
         con.commit()
-        return {"items": len(items), "clusters": len(cls), "contrastes": len(out)}
+        res = {"items": len(items), "clusters": len(cls), "contrastes": len(out)}
     finally:
         con.close()
+    res["feed"] = exportar_feed()
+    return res
+
+
+def exportar_feed() -> dict:
+    """Feed publico (JSON + RSS 2.0) del contraste cluster <-> verificador."""
+    con = sqlite3.connect(DB, timeout=30)
+    con.row_factory = sqlite3.Row
+    try:
+        rows = con.execute(
+            "SELECT pb.tema_id, pb.banda, pb.cluster_label, pb.verifica_fuente,"
+            " pb.verifica_titulo, pb.verifica_url, pb.solape, pb.cycle_ts,"
+            " vi.published_ts FROM posible_bulos pb"
+            " LEFT JOIN verifica_items vi ON vi.url=pb.verifica_url"
+            " ORDER BY pb.cycle_ts DESC, pb.tema_id").fetchall()
+    finally:
+        con.close()
+    now = int(time.time())
+    items = []
+    for r in rows:
+        ts = r["published_ts"] or r["cycle_ts"] or now
+        items.append({
+            "fecha_utc": datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d"),
+            "tema": r["tema_id"], "banda": r["banda"], "cluster": r["cluster_label"],
+            "verificador": r["verifica_fuente"], "titular": r["verifica_titulo"],
+            "url": r["verifica_url"], "solape": r["solape"],
+            "ficha": f"/#posibles-bulos",
+        })
+    os.makedirs(os.path.dirname(OUT_JSON), exist_ok=True)
+    with open(OUT_JSON, "w", encoding="utf-8") as fh:
+        json.dump({"updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+                   "licencia": "CC-BY-4.0",
+                   "metodo": "https://fimi.viajeinteligencia.com/metodo.html",
+                   "aviso": "Contraste, no veredicto: no atribuye actor ni confirma bulo.",
+                   "total": len(items), "items": items}, fh, ensure_ascii=False, indent=1)
+    def esc(s):
+        return sax.escape(str(s or ""))
+    last = formatdate(timeval=now, localtime=False, usegmt=True)
+    few = "".join(
+        "<item><title>" + esc(i["titular"]) + "</title>"
+        "<link>" + esc(i["url"]) + "</link>"
+        "<guid isPermaLink=\"false\">" + esc(i["cluster"] + "|" + i["url"]) + "</guid>"
+        "<category>" + esc(i["tema"]) + "</category>"
+        "<description>" + esc(f"{i['tema']} · {i['banda']} · clúster {i['cluster']} · "
+                              f"verificador {i['verificador']} · solape: {i['solape']}") + "</description>"
+        "</item>" for i in items)
+    rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+           "<rss version=\"2.0\"><channel>"
+           "<title>Posibles bulos contrastados — Observatorio de amplificación</title>"
+           "<link>https://fimi.viajeinteligencia.com/#posibles-bulos</link>"
+           "<description>Clusters en banda alta/anómala que comparten tema con una pieza reciente "
+           "de verificador (Maldita/Newtral). Contraste, no veredicto.</description>"
+           "<language>es</language>"
+           "<lastBuildDate>" + last + "</lastBuildDate>"
+           "<ttl>360</ttl>" + few + "</channel></rss>")
+    with open(OUT_RSS, "w", encoding="utf-8") as fh:
+        fh.write(rss)
+    return {"json": OUT_JSON, "rss": OUT_RSS, "n": len(items)}
 
 
 if __name__ == "__main__":
