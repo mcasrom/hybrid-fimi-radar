@@ -351,3 +351,31 @@ def test_verifica_filtra_generico():
 def test_verifica_bandas():
     from detection import verifica as v
     assert (v.banda(85), v.banda(65), v.banda(45), v.banda(10)) == ("CRITICAL", "HIGH", "ANOMALOUS", "NORMAL")
+
+
+def _api_band_of():
+    import importlib.util
+    det = str(ROOT / "detection")
+    if det not in sys.path:
+        sys.path.insert(0, det)
+    spec = importlib.util.spec_from_file_location(
+        "email_api_bandtest", str(ROOT / "detection" / "email_api.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod._band_of
+
+
+def test_api_band_of_limite_inferior():
+    # Los cortes son enteros y los scores decimales: un 59.02 no está en
+    # [40,59] ni en [60,79]; con `<=` doble caía por el hueco y salía NORMAL.
+    bof = _api_band_of()
+    bands = {"NORMAL": [0, 19], "WATCH": [20, 39], "ANOMALOUS": [40, 59],
+             "HIGH": [60, 79], "CRITICAL": [80, 100]}
+    assert bof(59.02, bands) == "ANOMALOUS"
+    assert bof(19.5, bands) == "NORMAL"
+    assert bof(39.7, bands) == "WATCH"
+    assert bof(79.9, bands) == "HIGH"
+    assert bof(65.76, bands) == "HIGH"
+    assert bof(82.8, bands) == "CRITICAL"
+    assert bof(5, bands) == "NORMAL"
+    assert bof(None, bands) == "NORMAL"

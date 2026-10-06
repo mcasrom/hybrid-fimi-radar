@@ -256,13 +256,28 @@ def _replay_meta():
 
 
 def _band_of(score, bands):
-    """Asigna banda según el dict de bandas de config.yaml (NORMAL/WATCH/...)."""
+    """Asigna banda por LIMITE INFERIOR (igual que band_for del dashboard).
+
+    Los cortes de config.yaml son enteros y los scores decimales: un 59.02 no
+    está en [40,59] ni en [60,79]; con el `<=` doble caía por el hueco y salía
+    NORMAL. Por límite inferior, 59.02 es ANOMALOUS.
+    """
     if not isinstance(bands, dict) or not bands:
         return "NORMAL"
+    try:
+        s = float(score)
+    except (TypeError, ValueError):
+        return "NORMAL"
+    mejor, mejor_lo = "NORMAL", None
     for _b, _rango in bands.items():
-        if len(_rango) == 2 and _rango[0] <= score <= _rango[1]:
-            return _b
-    return "NORMAL"
+        if len(_rango) == 2:
+            try:
+                lo = float(_rango[0])
+            except (TypeError, ValueError):
+                continue
+            if lo <= s and (mejor_lo is None or lo > mejor_lo):
+                mejor, mejor_lo = _b, lo
+    return mejor
 
 
 def _cargar_modulo(nombre):
