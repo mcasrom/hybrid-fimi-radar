@@ -149,8 +149,12 @@ the live value):
 - **Honest, experimental validation.** Group separation is measured with **synthetic** data
   (ARI) and curated/external layers; **none proves real FIMI detection**. Human **blind**
   validation —with separate labels for *observable coordination*, *inauthentic/manipulative
-  behaviour* and *FIMI with independent external evidence*— is **prepared**
-  (`auditoria_high --formato blind`) but **not yet run**.
+  behaviour* and *FIMI with independent external evidence*— **has already run**
+  (`auditoria_high --formato blind`): 40 HIGH clusters hand-labelled on 29/Sep/2026 →
+  **8.3 % coordination** (3 yes / 33 no / 4 doubtful), **0 of 40 FIMI**. Limitations:
+  **a single reviewer** (no κ; a 2nd reviewer pending), a stricter definition of
+  *coordination* than the earlier sampling (so September's 94.7 % is not comparable),
+  and precision sampling with no recall. See `docs/README-detallado.md`.
 - **Limited coverage:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp are not observed
   (API cost or not public); multimodal analysis (image/video) is missing. The corpus
   depends ~95 % on Bluesky + Google News. **60-day observation window**: older signals
