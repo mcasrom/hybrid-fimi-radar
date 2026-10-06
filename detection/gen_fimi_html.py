@@ -4440,15 +4440,17 @@ def main():
     # no veredicto: no atribuye actor ni confirma bulo; el humano juzga con los enlaces.
     try:
         import html as _pb_esc
+        from collections import Counter as _pb_counter
         _pb_con = sqlite3.connect(DB, timeout=30)
         try:
-            _pb_rows = _pb_con.execute(
+            _pb_all = _pb_con.execute(
                 "SELECT tema_id, cluster_label, banda, verifica_fuente,"
                 " verifica_titulo, verifica_url, solape, cycle_ts"
-                " FROM posible_bulos ORDER BY cycle_ts DESC, tema_id LIMIT 30").fetchall()
+                " FROM posible_bulos ORDER BY cycle_ts DESC, tema_id").fetchall()
         finally:
             _pb_con.close()
-        if _pb_rows:
+        _pb_rows = _pb_all[:30]
+        if _pb_all:
             _pb_lis = "".join(
                 "<tr><td>" + _pb_esc.escape(r[0]) + "</td><td><code>" + _pb_esc.escape(r[1]) + "</code></td>"
                 "<td>" + _pb_esc.escape(r[2]) + "</td>"
@@ -4465,9 +4467,57 @@ def main():
             "<p class='caption'>Clusters en banda alta/anómala que comparten tema con una pieza "
             "reciente de verificador (Maldita/Newtral, 14d; se muestran los 30 recientes). Es "
             "<b>contraste, no veredicto</b>: no atribuye actor ni confirma bulo.</p>" + _pb_tbl + "</div>")
+
+        # --- Mini-tarjeta de resumen (preview) que va tras las tarjetas de temas ---
+        _pb_total = len(_pb_all)
+        _pb_clusters = len({r[1] for r in _pb_all})
+        _pb_high = sum(1 for r in _pb_all if r[2] == "HIGH")
+        _pb_anom = sum(1 for r in _pb_all if r[2] == "ANOMALOUS")
+        _pb_temas = _pb_counter(r[0] for r in _pb_all).most_common(4)
+        _pb_fuentes = _pb_counter(r[3] for r in _pb_all).most_common(3)
+        _pb_max = max([n for _, n in _pb_temas] or [1])
+
+        def _btile(v, label, color):
+            return ("<div style='flex:1 1 110px;background:#f8fafc;border:1px solid #e2e8f0;"
+                    "border-radius:10px;padding:10px 12px;text-align:center'>"
+                    "<div style='font-size:1.5rem;font-weight:800;color:" + color + "'>" + str(v) + "</div>"
+                    "<div style='font-size:.72rem;color:#64748b'>" + label + "</div></div>")
+
+        _pb_bars = "".join(
+            "<div style='display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.82rem'>"
+            "<span style='width:130px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"
+            + _pb_esc.escape(t) + "</span>"
+            "<span style='flex:1;background:#e2e8f0;border-radius:5px;height:14px;overflow:hidden'>"
+            "<span style='display:block;height:100%;width:" + str(int(100 * n / _pb_max)) + "%;background:#c2410c'></span></span>"
+            "<b style='width:28px;text-align:right;color:#0f172a'>" + str(n) + "</b></div>"
+            for t, n in _pb_temas)
+        _pb_fuente_txt = " · ".join(f"{f}: {n}" for f, n in _pb_fuentes)
+        _pb_btn = ("font-size:.8rem;font-weight:700;text-decoration:none;color:#c2410c;"
+                   "border:1px solid #fdba74;background:#fff7ed;border-radius:999px;padding:6px 12px")
+        bulos_card_html = (
+            "<div class='card' id='bulos-resumen' style='margin-top:16px'>"
+            "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap'>"
+            "<h3 style='margin:0'>Posibles bulos contrastados "
+            "<span class='caption' style='font-weight:400'>(contraste, no veredicto)</span></h3>"
+            "<div style='display:flex;gap:8px;flex-wrap:wrap'>"
+            "<a href='#posibles-bulos' style='" + _pb_btn + "'>Ver detalle</a>"
+            "<a href='/datos/bulos.xml' style='" + _pb_btn + "'>RSS</a>"
+            "<a href='/datos/bulos.json' style='" + _pb_btn + "'>JSON</a></div></div>"
+            "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con "
+            "piezas recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
+            "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
+            + _btile(_pb_total, "contrastes", "#c2410c") + _btile(_pb_clusters, "clusters", "#0f172a")
+            + _btile(_pb_high, "banda HIGH", "#dc2626") + _btile(_pb_anom, "ANOMALOUS", "#7c3aed")
+            + "</div>"
+            + ("<div style='margin:6px 0 2px'><b style='font-size:.8rem;color:#64748b'>Por tema</b>"
+               + _pb_bars + "</div>" if _pb_temas else "")
+            + (f"<p class='caption' style='margin-top:2px'>Fuentes: {_pb_esc.escape(_pb_fuente_txt)}</p>"
+               if _pb_fuente_txt else "")
+            + "</div>")
     except Exception as _e_pb:
         posibles_bulos_html = ("<div class='card' id='posibles-bulos'><h3>Posibles bulos contrastados</h3>"
                                "<p class='caption'>No disponible: " + str(_e_pb) + "</p></div>")
+        bulos_card_html = ""
 
     # --- Salud del sistema (check médico integral) ---
     # Auto-chequeo estructural del pipeline: frescura de captura, snapshots por
@@ -4918,7 +4968,14 @@ a{{color:#c2410c}}
       <a href="/manual.pdf" title="Manual de Operación completo (PDF)">Manual (PDF)</a>
     </div>
   </details>
-  <a class="transp" href="/datos/bulos.xml" title="Feed RSS de posibles bulos contrastados (Maldita/Newtral)">Feed de bulos</a>
+  <details class="navmenu">
+    <summary class="transp" title="Posibles bulos contrastados: panel, feed y datos">Bulos ▾</summary>
+    <div class="navmenu-panel">
+      <a href="#posibles-bulos" title="Panel de contrastes en la portada">Posibles bulos contrastados</a>
+      <a href="/datos/bulos.xml" title="Feed RSS (Maldita/Newtral)">Feed (RSS)</a>
+      <a href="/datos/bulos.json" title="Datos en JSON (CC BY 4.0)">Datos (JSON)</a>
+    </div>
+  </details>
   <details class="navmenu">
     <summary class="transp" title="El proyecto y la transparencia">Acerca ▾</summary>
     <div class="navmenu-panel">
@@ -4986,6 +5043,8 @@ a{{color:#c2410c}}
 <script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
  {tabs_ui}
+
+ {bulos_card_html}
 
 <details style="margin:26px 0 4px">
 <summary style="cursor:pointer;border-top:2px solid #e2e8f0;padding-top:12px;font-size:.84rem;color:#c2410c;font-weight:700">
