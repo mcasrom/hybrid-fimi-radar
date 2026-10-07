@@ -1797,6 +1797,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
         </div>
       </details>
       <a class="nlink" href="/glosario.html">Glosario</a>
+      <a class="nlink" href="/demo.html">Demo</a>
     </div>
     <div class="chips"><span class="chip"><span class="dot"></span> En producción</span></div>
   </div>
@@ -1961,7 +1962,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
   </div>
 
   <div class="footer">
-    Observatorio · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
+    Observatorio · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
     <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
     <a href="https://viajeinteligencia.com">viajeinteligencia.com</a>
   </div>
@@ -5391,7 +5392,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:center;text-align:left;font-size:.85rem;color:#666;line-height:2;max-width:920px;margin:0 auto">
-    <div><b>Observatorio</b><br><a href="/research.html" style="color:#c2410c">Research</a><br><a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a><br><a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a><br><a href="/api.html" style="color:#c2410c">API</a></div>
+    <div><b>Observatorio</b><br><a href="/research.html" style="color:#c2410c">Research</a><br><a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a><br><a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a><br><a href="/api.html" style="color:#c2410c">API</a><br><a href="/demo.html" style="color:#c2410c">Demo (69 s)</a></div>
     <div><b>Documentos</b><br><a href="/metodo.html" style="color:#c2410c">Método</a><br><a href="/glosario.html" style="color:#c2410c">Glosario</a><br><a href="/manual.pdf" style="color:#c2410c">Manual (PDF)</a><br><a href="/datos/bulos.xml" style="color:#c2410c">Feed de bulos (RSS)</a><br><a href="/operativa.html" style="color:#c2410c">Operativa</a><br><a href="/docs.html" style="color:#c2410c">Documentos</a><br><a href="/costes.html" style="color:#c2410c">Costes</a><br><a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a></div>
     <div><b>En esta página</b><br><a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a><br><a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a><br><a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a><br><a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a><br><a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#posibles-bulos" style="color:#c2410c">Posibles bulos</a><br><a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a><br><a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a><br><a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a></div>
     <div><b>Proyecto</b><br><a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a><br><a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a><br><a href="/privacidad.html" style="color:#c2410c">Privacidad</a><br><a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a><br><a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a></div>
