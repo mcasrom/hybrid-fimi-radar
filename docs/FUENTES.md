@@ -29,11 +29,12 @@ fiabilidad editorial (**actualizado 2/10/2026**, generado desde `config.yaml`).
 4. Para **eliminar**: quitar la entrada. El cron 6h lo aplica en el siguiente ciclo.
 5. Guardar y el cron lo recoge automáticamente (no hace falta reiniciar nada).
 
-## Resumen del catálogo (2/10/2026)
+## Resumen del catálogo (7/10/2026)
 
-- **72 feeds RSS** · idiomas: en 29 · fr 17 · es 14 · de 3 · sv 3 · ar 1 · ru 1
+- **78 feeds RSS** · idiomas: en 33 · es 20 · fr 17 · de 3 · sv 3 · ar 1 · ru 1 (72 el 2/10 + 5 ES con tema el 5/10 + Menéame el 7/10)
 - **2 plataformas** de búsqueda (bluesky, google-news) · **6 canales Telegram** (de 8, 2 aparcados el 2-10) · **0 subreddits** (2 aparcados el 2-10: Reddit devuelve 429).
-- **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `defensa_espana` · Politico/NPR/Guardian US/PBS → `eeuu_politica` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia`.
+- **Feeds con `tema` asignado** (pasan por el `filtro` del tema): El Mundo Internacional → `defensa_espana` · Politico/NPR/Guardian US/PBS → `eeuu_politica` · EIA Today in Energy (EN) → `energia` · Energy Monitor (EN) → `energia` · 5 ES (ElDiario/ABC/20Minutos/RTVE/ElPaís) → `espana_elecciones`.
+- **Novedad (7/10)**: alta de `Meneame Portada` (agregador ES con voto/karma/comentarios por historia, **sin `tema`**: decide el gate por contenido). Medido: RSS 200, 50 items, **22 % match electoral** estricto; 1.ª ingesta: 7 eventos (Gaza→`oriente_medio`, encuestas→`elecciones`+`espana_elecciones`, Anthropic→`inteligencia_artificial`), 0 ruido. Titulares editorializados por usuarios; URLs deduplicadas con medios.
 - **Novedad (27/09)**: fusión de `espana_amenazas_hibridas` en `defensa_espana` (renombrado «España —
   defensa y amenazas híbridas»); alta de 4 feeds US (`eeuu_politica`) + keywords `midterms`; arreglo del feed
   AIB Burkina (`?feed=rss2`).

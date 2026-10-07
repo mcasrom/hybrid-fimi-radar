@@ -983,6 +983,16 @@ feeds:
   tema: espana_elecciones
   note: 'Seccion Espana via MRSS (el /marcador/rss/ da 403 desde Hetzner).'
   analytical_relevance: media
+- nombre: Meneame Portada
+  url: https://www.meneame.net/rss
+  tipo: rss
+  idioma: es
+  pais: ES
+  bias: left
+  reliability: mixed
+  transparency: medium
+  note: 'Agregador espanol con voto (meneos), karma y comentarios por historia. Titulares editorializados por usuarios; 22 % match electoral medido 7-oct-2026. Sin tema: decide el gate por contenido.'
+  analytical_relevance: alta
 temas:
   frontera_sur:
     estado: produccion
