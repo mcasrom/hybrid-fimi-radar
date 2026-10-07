@@ -291,6 +291,8 @@ scoring, atribución, dashboard, salud), `tests/`, `docs/`. Modelo de datos en S
 Documentación en [`docs/`](docs/): `TAXONOMIA.md`, `SCORING.md`, `ATRIBUCION-LIMITACIONES.md`,
 `TRAZABILIDAD.md`, `GOBERNANZA.md`, `RUNBOOK.md`, `FUENTES.md`, `EIPD-DPIA.md`. Versión
 detallada de este README (histórico): [`docs/README-detallado.md`](docs/README-detallado.md).
+Mapa del sistema en una página (A4): [`docs/fimi-wallchart-A4.png`](docs/fimi-wallchart-A4.png) ·
+demo en vídeo (69 s): https://fimi.viajeinteligencia.com/demo.html.
 
 ## 7. Licencia y contacto
 
