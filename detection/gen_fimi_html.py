@@ -5074,6 +5074,11 @@ a{{color:#c2410c}}
     <a href="#estado" class="primary" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Ver estado por tema →</a>
   </div>
 </section>
+  <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
+    <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
+    <a href="/fimi-wallchart-A4.png">ver a tamaño completo</a> · <a href="/demo.html">ver la demo de 69 s</a>.
+    <img src='/fimi-wallchart-web.webp' alt='Diagrama del Observatorio de amplificación: captura de fuentes abiertas, medición de amplificación y anomalías por clúster, y contraste de hipótesis sin atribuir actor' loading='lazy' style='width:100%;max-width:680px;display:block;margin:10px auto 0;border:1px solid #e2e8f0;border-radius:10px'>
+  </div>
 
   <div style="margin:10px 0 4px;padding:11px 16px;background:#f8fafc;border:1px solid #cbd5e1;border-left:5px solid #64748b;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>Para periodistas.</b> <b>Se puede citar:</b> el patrón —amplificación, <b>eco de prensa</b> dominante, <b>0 coordinación confirmada</b>— con enlace a los datos. <b>No citar como:</b> «campaña coordinada», «FIMI ruso» u «operación confirmada»: <b>no está medido</b>. <b>Datos:</b> <a href="/api/v1/temas">API JSON</a> · <a href="/metodo.html">método y límites</a> · <a href="/casos/ceuta/">caso Ceuta</a>.
