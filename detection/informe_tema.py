@@ -437,7 +437,7 @@ def main():
         '<h2>Anómala alta (55–59,9) — ficha completa</h2>%s'
         '<h2>Anómala &lt;55 — resumen</h2>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Clúster — narrativa</th><th>Score</th><th>Aut.</th>'
+        '<tr><th>Clúster — narrativa</th><th>Score</th><th>Autores</th>'
         '<th>Explicación</th></tr>%s</table>'
         '<p style="color:#64748b">%s clusters clavados en techos de banda '
         '(39,0/59,0): topes aplicados, no señales independientes. '
