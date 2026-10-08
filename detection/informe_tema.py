@@ -157,12 +157,13 @@ def main():
         if isinstance(expl, dict):
             items = expl.items()
         elif isinstance(expl, list):
-            items = [(e.get('id', e) if isinstance(e, dict) else e, e)
+            items = [((e.get('code') or e.get('id') or e)
+                      if isinstance(e, dict) else e, e)
                      for e in expl]
         else:
             return []
         return [k for k, v in items
-                if (isinstance(v, dict) and v.get('estado') == 'supported')]
+                if (isinstance(v, dict) and v.get('status') == 'supported')]
 
     info = []
     try:
@@ -411,10 +412,17 @@ def main():
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<title>Informe semanal %s · %s · Observatorio de amplificación</title>'
+        '<meta property="og:image" content="https://fimi.viajeinteligencia.com'
+        '/informes/%s/og-%s.png">'
         '</head><body style="font-family:system-ui,sans-serif;max-width:760px;'
         'margin:0 auto;padding:16px;color:#0f172a">'
         '<p><a href="/casos/electoral/">← panorama electoral</a></p>'
         '<h1>Informe semanal: %s <span style="color:#64748b">%s</span></h1>'
+        '<p><a href="./%s.png"><img src="./%s.png" alt="Resumen visual del '
+        'informe semanal %s: cifras, mapa de clusters y narrativas" '
+        'loading="lazy" style="width:100%%;max-width:680px;display:block;'
+        'margin:10px auto;border:1px solid #e2e8f0;border-radius:10px"></a>'
+        '<a href="./%s.png" download>Descargar imagen</a></p>'
         '<p style="color:#64748b">%s · %s eventos · %s autores · %s clusters · '
         '%s en banda alta · <a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'
@@ -441,7 +449,8 @@ def main():
         '<h2>Qué vigilar la próxima semana</h2><ul>%s</ul>'
         '<h2>Qué no se sabe</h2><ul>%s</ul>'
         '</body></html>' % (
-            html.escape(a.tema), semana, html.escape(a.tema), semana,
+            html.escape(a.tema), semana, a.tema, semana,
+            html.escape(a.tema), semana, semana, semana, semana, semana,
             informe['generado_utc'], informe['kpis']['eventos'],
             informe['kpis']['autores'], informe['kpis']['clusters'], n_high,
             semana, html.escape(concl),
