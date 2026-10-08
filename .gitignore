@@ -63,3 +63,5 @@ data/auditoria_subtipos_*.csv
 data/auditoria_subtipos_*.md
 data/caso_ceuta/
 data/owner_ips.txt
+
+data/informes/
