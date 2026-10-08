@@ -293,6 +293,7 @@ Documentación en [`docs/`](docs/): `TAXONOMIA.md`, `SCORING.md`, `ATRIBUCION-LI
 detallada de este README (histórico): [`docs/README-detallado.md`](docs/README-detallado.md).
 Mapa del sistema en una página (A4): [`docs/fimi-wallchart-A4.png`](docs/fimi-wallchart-A4.png) · [`docs/fimi-wallchart-A4.pdf`](docs/fimi-wallchart-A4.pdf) (para imprimir/adjuntar) ·
 demo en vídeo (69 s): https://fimi.viajeinteligencia.com/demo.html.
+La portada lo resume en una tarjeta («El sistema en una imagen», WebP 63 KB lazy) que enlaza al A4 y a la demo.
 
 ## 7. Licencia y contacto
 
