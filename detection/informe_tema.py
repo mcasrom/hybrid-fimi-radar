@@ -139,9 +139,10 @@ def main():
     os.makedirs(ddir, exist_ok=True)
     with open(os.path.join(ddir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
-
     wdir = os.path.join(a.web, a.tema)
     os.makedirs(wdir, exist_ok=True)
+    with open(os.path.join(wdir, semana + '.json'), 'w') as f:
+        json.dump(informe, f, ensure_ascii=False, indent=1)
     filas_top = ''.join(
         '<tr><td><code>%s</code></td><td>%s</td>'
         '<td style="text-align:right">%s</td>'
