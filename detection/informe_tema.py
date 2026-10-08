@@ -22,6 +22,7 @@ import glob
 import html
 import json
 import os
+import re
 import sqlite3
 import sys
 from collections import Counter
@@ -35,6 +36,9 @@ BANDAS = [(0, 'NORMAL'), (20, 'WATCH'), (40, 'ANOMALOUS'), (60, 'HIGH'),
 BAND_ES = {'NORMAL': 'Normal', 'WATCH': 'En observación',
            'ANOMALOUS': 'Amplificación anómala', 'HIGH': 'Amplificación alta',
            'CRITICAL': 'Amplificación muy alta'}
+STOP = set('''de la el en y que los del se las una por con para al como más pero sus este esta estos estas eso esa ese ser son fue han hay entre sobre todo también tras ante bajo cuyo cuya cuyos cuyas cual cuales donde cuando porque pues sino aunque según cada dos tres día días vez veces año años hoy ayer anteayer aquí ahí allí entonces pues tan tanto mucha mucho muchas muchos poca poco este esta eso esa aquel aquella aquello ello ello lo le les me te se nos os mi mis tu tus su sus nuestro nuestra nuestros nuestras este esta estos estas estas hay está están estoy estamos eres es son sea sean sido siendo tener tiene tienen hacer hace hacen decir dice dicen poder puede pueden haber hay van ver vez gran grandes nuevo nueva nuevos nuevas primer primera primeros primeras mismo misma mismos mismas otro otra otros otras tanto tanta tantos tantas todo toda todos todas cada cual quien quienes cuyo cuya cuyos cuyas donde como cuando cuanto cuanta cuantos cuantas porque pues sino mas si no ni o u e y'''.split())
+
+CURADO_PATH = os.path.join(BASE, 'data', 'narrativas.json')
 LIMITES = [
     'Una banda alta es amplificación medida, nunca coordinación confirmada '
     '(8,3 % en la validación ciega del 29/Sep/2026).',
@@ -104,6 +108,33 @@ def main():
                 c[dom] += 1
         return ['%s (%d)' % x for x in c.most_common(n)]
 
+    def contenido(cid):
+        """Capa semántica determinista (sin LLM): título más repetido,
+        top textos y términos. Reproducible y citable."""
+        try:
+            tit = con.execute(
+                'SELECT title, COUNT(*) n FROM cluster_events '
+                'WHERE cluster_id=? AND title IS NOT NULL AND title<>"" '
+                'GROUP BY title ORDER BY n DESC LIMIT 3',
+                (cid,)).fetchall()
+            txt = con.execute(
+                'SELECT text FROM cluster_events WHERE cluster_id=? '
+                'AND text IS NOT NULL AND text<>"" LIMIT 400',
+                (cid,)).fetchall()
+        except Exception:
+            return {'titulos': [], 'terminos': [], 'resumen': ''}
+        toks = Counter()
+        for r in txt:
+            for w in re.sub(r'[^a-záéíóúñü ]', ' ',
+                            (r[0] or '').lower()).split():
+                if len(w) >= 4 and w not in STOP:
+                    toks[w] += 1
+        titulos = [(r[0][:160], r[1]) for r in tit]
+        resumen = titulos[0][0] if titulos else ''
+        return {'titulos': titulos,
+                'terminos': [w for w, _ in toks.most_common(8)],
+                'resumen': resumen}
+
     def fmt_ts(ts):
         if not ts:
             return '—'
@@ -134,15 +165,31 @@ def main():
                 if (isinstance(v, dict) and v.get('estado') == 'supported')]
 
     info = []
+    try:
+        with open(CURADO_PATH, encoding='utf-8') as f:
+            curado = (json.load(f).get(a.tema, {}))
+    except (OSError, ValueError):
+        curado = {}
     for c in cls:
         sc = round(c['overall_score'] or 0, 1)
+        cont = contenido(c['id'])
+        nar = curado.get(c['cluster_label'])
+        if not nar:
+            nar = ' · '.join(cont['terminos'][:3]) or 'sin etiquetar'
         info.append({'label': c['cluster_label'], 'score': sc,
                      'banda': band(c['overall_score']),
                      'eventos': c['nev'], 'autores': c['nau'],
                      'ventana': '%s–%s' % (fmt_ts(c['t0']), fmt_ts(c['t1'])),
                      'subtipo': subtype(c), 'exp': supported(c)[:3],
                      'anomalia': round(c['anomaly_score'] or 0, 1),
-                     'dominios': dominios(c['id']) if sc >= 55 else []})
+                     'dominios': dominios(c['id']) if sc >= 55 else [],
+                     'narrativa': nar,
+                     'narrativa_curada': bool(curado.get(c['cluster_label'])),
+                     'resumen': cont['resumen'],
+                     'atribucion': 'UNKNOWN',
+                     'hipotesis': supported(c)[:3],
+                     'titulos_top': cont['titulos'],
+                     'terminos': cont['terminos'][:8]})
     rep = {name: 0 for _, name in BANDAS}
     for t in info:
         rep[t['banda']] += 1
@@ -162,22 +209,34 @@ def main():
 
     bulos = [dict(r) for r in con.execute(
         'SELECT cluster_label, banda, verifica_fuente, verifica_titulo, '
-        'verifica_url FROM posible_bulos WHERE tema_id=? '
+        'verifica_url, solape FROM posible_bulos WHERE tema_id=? '
         'ORDER BY cycle_ts DESC LIMIT 30', (a.tema,)).fetchall()]
     nbulos = con.execute(
         'SELECT COUNT(*) FROM posible_bulos WHERE tema_id=?',
         (a.tema,)).fetchone()[0]
     cl_by_label = {t['label']: t for t in info}
+
+    def norm(s):
+        return re.sub(r'[^a-záéíóúñü ]', ' ', (s or '').lower())
+
     cruce = []
     for b in bulos:
         t = cl_by_label.get(b['cluster_label'])
+        toks = [x.strip().lower() for x in (b.get('solape') or '').split(',')
+                if x.strip()]
+        rep_txt = norm(t['resumen']) if t else ''
+        rel = ('MATCH' if t and len(toks) >= 2
+               and sum(1 for x in toks if x and x in rep_txt) >= 2
+               else 'THEMATIC')
         cruce.append({'fuente': b['verifica_fuente'],
                       'titular': (b['verifica_titulo'] or '')[:110],
                       'url': b['verifica_url'],
                       'cluster': b['cluster_label'],
+                      'relacion': rel,
                       'score': t['score'] if t else None,
                       'banda': t['banda'] if t else b['banda'],
-                      'autores': t['autores'] if t else None})
+                      'autores': t['autores'] if t else None,
+                      'narrativa': t['narrativa'] if t else ''})
 
     # Comparativa con el informe anterior (si existe)
     ddir = os.path.join(a.datos, a.tema)
@@ -256,47 +315,96 @@ def main():
     with open(os.path.join(wdir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
 
+    def guia(t):
+        g = []
+        if t['autores'] <= 5 and t['eventos'] >= 50:
+            g.append('volumen concentrado en pocos autores: vigilar si se '
+                     'diversifica o aparece sincronización entre independientes')
+        if t['dominios']:
+            g.append('repetición en %s: vigilar si diversifica fuentes' %
+                     t['dominios'][0].split(' (')[0])
+        if t['banda'] in ('HIGH', 'CRITICAL'):
+            g.append('banda alta sostenida: vigilar cambios de volumen y banda')
+        if not g:
+            g.append('vigilar evolución de volumen, autores y banda')
+        return g
+
     def ficha(t):
-        # Ficha completa: primero lo observado, luego el patrón, al final
-        # las hipótesis compatibles. Señal, no atribución.
+        # Ficha: QUÉ (narrativa+contenido), CÓMO (conducta), QUÉ SIGNIFICA.
         bulos_t = [c for c in cruce
                    if c['cluster'] == t['label']][:3]
         lb = ''.join(
-            '<li>%s — <a href="%s">%s</a></li>' % (
+            '<li>%s — <a href="%s">%s</a> [%s]</li>' % (
                 html.escape(b['fuente'] or ''), html.escape(b['url'] or ''),
-                html.escape(b['titular'][:80])) for b in bulos_t)
+                html.escape(b['titular'][:80]), b['relacion']) for b in bulos_t)
+        num = t['label'].split('_cluster_')[-1]
         return (
             '<div style="border:1px solid #e2e8f0;border-radius:10px;'
             'padding:10px 12px;margin:8px 0">'
-            '<code>%s</code> · <b>%s</b> %s · %s autores · %s eventos · %s'
-            '<br>Se observa: %s.'
-            '<br>Patrón: rol %s; anomalía %s.'
-            '<br>Hipótesis compatibles: %s. '
-            '<a href="/api/v1/cluster/%s">API</a>%s</div>' % (
-                html.escape(t['label']), BAND_ES[t['banda']], t['score'],
-                t['autores'], t['eventos'], t['ventana'],
-                html.escape(', '.join(t['dominios']) or 'sin dominios'),
-                html.escape(str(t['subtipo'])), t['anomalia'],
+            '<h3 style="margin:0 0 6px">%s — %s</h3>'
+            '<p style="color:#64748b;margin:0 0 6px"><b>%s</b> · %s · '
+            '%s autores · %s eventos · %s</p>'
+            '<p><b>Qué circula:</b> %s</p>'
+            '<p><b>Qué detecta el radar:</b> %s autores repiten contenido '
+            '(%s) con anomalía %s; rol conductual %s.</p>'
+            '<p><b>Qué no permite concluir:</b> coordinación ni atribución '
+            '(hipótesis compatibles: %s; atribución UNKNOWN).</p>'
+            '<p style="color:#64748b">Dominios: %s · '
+            '<a href="/api/v1/cluster/%s">API</a>%s</p></div>' % (
+                html.escape(num), html.escape(t['narrativa']),
+                BAND_ES[t['banda']], t['score'], t['autores'], t['eventos'],
+                t['ventana'], html.escape(t['resumen'][:220] or '—'),
+                t['autores'],
+                html.escape(', '.join(t['dominios'][:3]) or 'sin dominios'),
+                t['anomalia'], html.escape(str(t['subtipo'])),
                 html.escape(', '.join(t['exp'])
                             or 'sin explicación concluyente'),
+                html.escape(', '.join(t['dominios'][:3]) or '—'),
                 html.escape(t['label']),
                 ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else ''))
 
     fichas_high = ''.join(ficha(t) for t in high)
     fichas_pre = ''.join(ficha(t) for t in watch_alto)
     filas_anom = ''.join(
-        '<tr><td><code>%s</code></td>'
+        '<tr><td><code>%s</code> — %s</td>'
         '<td style="text-align:right">%s</td>'
         '<td style="text-align:right">%s</td>'
         '<td>%s</td></tr>' % (
-            html.escape(t['label']), t['score'], t['autores'],
+            html.escape(t['label'].split('_cluster_')[-1]),
+            html.escape(t['narrativa'][:70]),
+            t['score'], t['autores'],
             html.escape(', '.join(t['exp'][:2]) or '—'))
         for t in info if t['banda'] == 'ANOMALOUS' and t['score'] < 55)
+    prio = high + watch_alto
+    curadas = {t['label'] for t in info if t['narrativa_curada']}
+    agg = {}
+    for t in prio:
+        agg.setdefault(t['narrativa'], {'clusters': [], 'ev': 0,
+                                         'cur': False})
+        agg[t['narrativa']]['clusters'].append(
+            t['label'].split('_cluster_')[-1])
+        agg[t['narrativa']]['ev'] += t['eventos']
+        agg[t['narrativa']]['cur'] = agg[t['narrativa']]['cur'] or (
+            t['label'] in curadas)
+    filas_narr = ''.join(
+        '<tr><td>%s%s</td><td style="text-align:right">%s</td>'
+        '<td style="text-align:right">%s</td></tr>' % (
+            html.escape(nar[:80]),
+            '' if v['cur'] else ' <span style="color:#64748b">(auto)</span>',
+            len(v['clusters']), v['ev'])
+        for nar, v in sorted(agg.items(), key=lambda x: -x[1]['ev'])[:12])
+    filas_watch = ''.join(
+        '<li><b>%s — %s</b> (%s autores / %s eventos): %s.</li>' % (
+            html.escape(t['label'].split('_cluster_')[-1]),
+            html.escape(t['narrativa'][:70]), t['autores'], t['eventos'],
+            html.escape('; '.join(guia(t))))
+        for t in watch_alto[:10])
     filas_cruce = ''.join(
         '<tr><td>%s</td><td><a href="%s">%s</a></td>'
-        '<td style="text-align:right">%s</td></tr>' % (
+        '<td>%s</td><td style="text-align:right">%s</td></tr>' % (
             html.escape(c['fuente'] or ''), html.escape(c['url'] or ''),
-            html.escape(c['titular']), c['score'] if c['score'] is not None
+            html.escape(c['titular']), c['relacion'],
+            c['score'] if c['score'] is not None
             else '—') for c in cruce[:10])
     n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
@@ -311,20 +419,26 @@ def main():
         '%s en banda alta · <a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
+        '<h2>Narrativas de la semana</h2><p>Agregado de los clusters '
+        'prioritarios. <span style="color:#64748b">(auto)</span> = etiqueta '
+        'automática por términos, sin curar; el resto, curadas a mano.</p>'
+        '<table border="1" cellpadding="4" cellspacing="0">'
+        '<tr><th>Narrativa</th><th>Clusters</th><th>Ev.</th></tr>%s</table>'
         '<h2>Banda alta — ficha completa</h2>%s'
         '<h2>Anómala alta (55–59,9) — ficha completa</h2>%s'
         '<h2>Anómala &lt;55 — resumen</h2>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Clúster</th><th>Score</th><th>Aut.</th>'
+        '<tr><th>Clúster — narrativa</th><th>Score</th><th>Aut.</th>'
         '<th>Explicación</th></tr>%s</table>'
         '<p style="color:#64748b">%s clusters clavados en techos de banda '
         '(39,0/59,0): topes aplicados, no señales independientes. '
         'WATCH+NORMAL (%s): solo estadística agregada, detalle en el JSON.</p>'
         '<h2>Cruce con verificadores</h2><p>%s contrastes (contraste, no '
-        'veredicto), cruzados con score y autores del clúster.</p>'
+        'veredicto): MATCH = el titular verificado circula en el clúster; '
+        'THEMATIC = coincidencia temática.</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Fuente</th><th>Titular</th><th>Score</th></tr>%s</table>'
-        '<h2>Qué vigilar la próxima semana</h2><p>%s</p>'
+        '<tr><th>Fuente</th><th>Titular</th><th>Relación</th><th>Score</th></tr>%s</table>'
+        '<h2>Qué vigilar la próxima semana</h2><ul>%s</ul>'
         '<h2>Qué no se sabe</h2><ul>%s</ul>'
         '</body></html>' % (
             html.escape(a.tema), semana, html.escape(a.tema), semana,
@@ -333,10 +447,10 @@ def main():
             semana, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)
                        for k, v in sorted(rep.items()) if v),
+            filas_narr,
             fichas_high or '<p>Ninguno esta semana.</p>',
             fichas_pre or '<p>Ninguno esta semana.</p>', filas_anom,
-            len(topados), n_watch, nbulos, filas_cruce,
-            html.escape(', '.join(informe['vigilar_proxima'][:5]) or '—'),
+            len(topados), n_watch, nbulos, filas_cruce, filas_watch,
             ''.join('<li>%s</li>' % html.escape(x) for x in LIMITES)))
     with open(os.path.join(wdir, semana + '.html'), 'w') as f:
         f.write(body)
