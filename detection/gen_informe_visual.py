@@ -39,7 +39,8 @@ def clase_de(exp):
     return GRIS
 
 
-TITULO = {'espana_elecciones': 'Elecciones generales 29-N'}
+TITULO = {'espana_elecciones': 'Elecciones generales 29-N',
+          'frontera_sur': 'Frontera Sur'}
 
 
 def main():
