@@ -449,6 +449,13 @@ def main():
         '<tr><th>Fuente</th><th>Titular</th><th>Relación</th><th>Score</th></tr>%s</table>'
         '<h2>Qué vigilar la próxima semana</h2><ul>%s</ul>'
         '<h2>Qué no se sabe</h2><ul>%s</ul>'
+        '<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0">'
+        '<p style="color:#64748b;font-size:.85rem"><a href="./index.html">'
+        'Todos los informes del tema</a> · '
+        '<a href="/casos/electoral/">panorama electoral</a> · '
+        '<a href="/">radar</a> · '
+        '<a href="/metodo.html">método y límites</a> · '
+        'Observatorio de amplificación (ámbito FIMI).</p>'
         '</body></html>' % (
             html.escape(a.tema), semana, a.tema, semana,
             html.escape(a.tema), semana, semana, semana, semana, semana,
@@ -467,10 +474,27 @@ def main():
     hist = sorted(f for f in os.listdir(ddir) if f.endswith('.json'))
     idx = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<title>Informes semanales · %s</title></head>'
         '<body style="font-family:system-ui,sans-serif;max-width:760px;'
-        'margin:0 auto;padding:16px">'
-        '<h1>Informes semanales: %s</h1><ul>%s</ul></body></html>' % (
+        'margin:0 auto;padding:16px;color:#0f172a">'
+        '<p><a href="/casos/electoral/">← panorama electoral</a> · '
+        '<a href="/">radar</a></p>'
+        '<h1>Informes semanales: %s</h1>'
+        '<p>En esta página se publican cada lunes los informes del tema: '
+        'una foto fija de las señales de amplificación de esa semana '
+        '(qué ocurre, qué cambia, qué persiste, qué se sabe y qué no se '
+        'sabe), cada uno con su JSON descargable. La serie construye la '
+        'línea base del proceso electoral: sin baseline no hay delta que '
+        'medir en campaña.</p>'
+        '<ul>%s</ul>'
+        '<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0">'
+        '<p style="color:#64748b;font-size:.85rem">Observatorio de '
+        'amplificación (ámbito FIMI) · '
+        '<a href="/metodo.html">método y límites</a> · '
+        '<a href="/api/v1/temas">API</a> · '
+        'una banda alta es amplificación, no coordinación confirmada.</p>'
+        '</body></html>' % (
             html.escape(a.tema), html.escape(a.tema),
             ''.join('<li><a href="./%s.html">%s</a> (<a href="./%s.json">JSON</a>)</li>'
                     % (h[:-5], h[:-5], h[:-5]) for h in sorted(hist, reverse=True))))
