@@ -50,6 +50,147 @@ EXP_ES = {'single_source_feed': 'feed de una sola fuente',
           'graph_artifact': 'artefacto del grafo',
           'unresolved': 'sin explicación concluyente'}
 TECHOS = (39.0, 59.0)
+ROL_ES = {'official_response': 'respuesta oficial',
+          'incident_report': 'reporte de incidente',
+          'meta_analysis': 'cobertura sobre desinformación',
+          'coordination_signal': 'señal de coordinación',
+          'potential_narrative': 'posible narrativa'}
+# Privacidad (revisión 8-oct, urgente): el informe NUNCA publica particulares.
+# Figuras públicas / instituciones / lugares / medios (lista cerrada): se nombran.
+# Cualquier otro Nombre Apellido, @cuenta o amenaza/insulto: se redacta y cuenta.
+FIGURAS = {
+    'pedro sánchez', 'alberto núñez feijóo', 'núñez feijóo',
+    'isabel díaz ayuso', 'yolanda díaz', 'pablo iglesias', 'íñigo errejón',
+    'alberto garzón', 'santiago abascal', 'macarena olona',
+    'cayetana álvarez', 'teresa ribera', 'margarita robles',
+    'fernando grande marlaska', 'maría jesús montero', 'carlos cuerpo',
+    'óscar lópez', 'pilar alegría', 'elma saiz', 'patxi lópez', 'aitana mas',
+    'gabriel rufián', 'marta lois', 'verónica barbero', 'emiliano garcía page',
+    'javier lambán', 'juanma moreno', 'maría guardiola', 'alfonso rueda',
+    'carlos mazón', 'lópez miras', 'rocío monasterio', 'nuria riera',
+    'rafael hernando', 'javier maroto', 'teodoro garcía egea', 'pablo casado',
+    'soraya sáenz santamaría', 'cristina cifuentes', 'esperanza aguirre',
+    'josé luis ábalos', 'santos cerdán', 'koldo garcía', 'salvador illa',
+    'pere aragonès', 'carles puigdemont', 'oriol junqueras', 'quim torra',
+    'laura borràs', 'josep rull', 'jordi turull', 'dolors bassa', 'raül romeva',
+    'meritxell serret', 'carme forcadell', 'anna gabriel', 'arnaldo otegi',
+    'pello urizar', 'andoni ortuzar', 'aitor esteban', 'uxue barkos',
+    'maría chivite', 'javier esparza', 'yolanda barcina', 'miguel sanz',
+    'guillermo fernández vara', 'olga garcía', 'elías bendodo',
+    'fernando miranda', 'santiago romero', 'jaume asens', 'aina vidal',
+    'gerardo pisarello', 'rafa mayoral', 'txema guijarro', 'andrea fernández',
+    'lara hernández', 'isabel franco', 'maría salmerón', 'raquel pérez',
+    'javier sánchez', 'sergio gutiérrez', 'ignacio urquizu', 'héctor gómez',
+    'felipe gonzález', 'josé luis rodríguez zapatero', 'josé maría aznar',
+    'mariano rajoy', 'alfredo pérez rubalcaba', 'pepiño blanco', 'bibiana aído',
+    'leire pajín', 'cristina narbona', 'rosa aguilar', 'beatriz corredor',
+    'elena espinosa', 'cristina garmendia', 'mercedes cabrera',
+    'trinidad jiménez', 'diego lópez garrido', 'bernardino león',
+    'miguel ángel moratinos', 'elena salgado', 'pedro solbes', 'ximo puig',
+    'francesc antich', 'marga ferrer', 'francina armengol',
+    'iñigo sáenz ugarte', 'sáenz ugarte', 'ramón pérez maura', 'edurne uriarte',
+    'federico jiménez losantos', 'césar vidal', 'luis del pino',
+    'hermann tertsch', 'javier marías', 'arturo pérez reverte', 'javier cercas',
+    'elvira lindo', 'almudena grandes', 'manuel vilas', 'rosa montero',
+    'juan josé millás', 'manuel rivas', 'manuel jabois', 'ignacio escolar',
+    'fernando garea', 'paco marhuenda', 'eduardo inda', 'ana rosa quintana',
+    'susanna griso', 'carlos herrera', 'arcadi espada', 'ana pastor',
+    'jordi évole', 'vicente vallés', 'angels barceló', 'gemma nierga',
+    'josé ribagorda', 'matías prat', 'felipe vi', 'mohamed vi',
+    'frente amplio', 'instituto juan march', 'jorge buxadé', 'ester muñoz',
+    'pepa millán', 'ortega smith', 'ignacio garriga', 'juan vivas',
+    'instituto juan',
+}
+# Palabras comunes: si TODAS las del candidato lo son, no es un nombre.
+# (medios, lugares, instituciones y sustantivos de titular en minúsculas)
+COMUNES = set('''partido elecciones generales gobierno vídeo encuesta informe
+convocatoria intervención rueda prensa entrevista exclusiva directo hora
+vanguardia país mundo público cadena confidencial lasexta newtral maldita
+rtve efe provence infobae plural cope onda cero telecinco antena periódico
+correo deia berria naiz jueves español independiente vozpopuli guardian times
+bbc reuters andalucía cataluña euskadi galicia pp vox psoe sumar junts erc pnv
+cup onu otan ue tve indra ocs franja ruta elcano iberifier edmo enisa diputados
+primera cadena china taiwán ucrania gaza israel pentágono casa blanca kremlin
+elíseo downing bruselas estrasburgo ginebra viena praga varsovia berlín parís
+londres roma lisboa dublín atenas banco mundial omc opep interpol europol frontex
+acnur unicef unesco fao oim pnud brics comisión parlamento consejo tribunal
+juzgado audiencia ministerio interior defensa exteriores supremo junta electoral
+guardia civil policía mossos ertzantza vía euronews prisa planeta mediaset
+atresmedia podemos izquierda bildu sortu venezuela cuba nicaragua colombia méxico
+argentina chile perú brasil bolivia ecuador uruguay paraguay rusia putin zelenski
+biden trump harris milei bolsonaro lula maduro petro boric boluarte erdogan netanyahu
+macron scholz meloni starmer cisjordania tánger mula puerta sol ceuta melilla españa
+marruecos posts hilo hilos vía sondeo sondeos encuesta urnas legislatura movilización
+parlamento vecinos vecina general generalesworkspace generalitat consell encuentra
+encuentran informa informa informa según informe revela revela desvela avanza
+presenta presenta publica publica asegura asegura denuncia denuncia exige exige
+pide pide anuncia anuncia confirma confirma niega niega rechaza rechaza apoya
+critica ataca acusa acusa culpa culpa advierte advierte alerta alerta avisa
+datos cifra cifras encuesta barrios pueblo ciudad capital provincia comarca isla
+playa costa sierra valle río mar monte pico cumbre cabo punta bahía cala puerto
+faro torre castillo palacio catedral iglesia ermita plaza calle avenida paseo
+parque jardín mercado lonja ayuntamiento diputación cabildo consell parlament
+corts juntero lehendakari president conseller alcalde alcaldesa concejal edil
+ministro ministra secretario secretaria director directora jefe jefa portavoz
+líder coordinador candidato lista cabezalero número dos tres cuatro cinco seis
+siete ocho nueve diez once doce trece catorce quince dieciséis diecisiete dieciocho
+diecinueve veinte treinta cuarenta cincuenta sesenta setenta ochenta noventa cien
+mil millones primero segundo tercero cuarto quinto sexto séptimo octavo noveno
+décimo lunes martes miércoles jueves viernes sábado domingo enero febrero marzo
+abril mayo junio julio agosto septiembre octubre noviembre diciembre hoy ayer
+mañana tarde noche madrugada semana mes año década siglo momento día días hora
+horas minuto minutos segundo segundos directo directa última último nueva nuevo
+gran grandes buen buen buena buenos buenas mal malo mala malos malas mejor peor
+mayor menor alto alta bajos baja nuevo nueva viejo vieja joven jóvenes primer
+primera gran grandes mismo misma pleno plena total total todo toda todos todas
+cada otro otra gran cada quien cualial cómo cuándo cuánto dónde informe semanal
+semana parcial ventana corpus ciclo linaje linajes banda score anomalía evento
+eventos autor autores cuenta cuentas dominio dominios enlace enlaces texto titular
+afirmación narrativa hipótesis veredicto contraste verificador fuente noticia
+prensa medio medios red social redes bulo bulos desinformación información dato
+campaña electoral elecciones generales generales voto votos votante urna urnas
+votar vota sondeo demoscopia CIS telediario informativo matinal vespertino
+moncloa madrid internacional amnistía central amplio amplia ejecutiva
+minas gerais inquilinas inquilino junta electoral frente mina general minero
+huelga sindicato sindicato vanguardia provence plural cope onda cero cuatro telecinco
+comité oficina consular europa aire consulado embajada delegación eurocámara
+eurodiputado domingo nieves casado casada vecino vecina usuario usuaria lector lectora
+desde hasta entre instituto unión aduanera fundación air europeo hormiguero
+rey reina
+'''.split())
+RE_HANDLE = re.compile(r'bsky\.app/profile/[\w.\-]+|(?<![\w.])@[\w][\w.\-]{2,}')
+RE_NOMBRE = re.compile(r'\b([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){1,2})\b')
+AMENAZAS = ('matar', 'mataré', 'amenaza de muerte', 'hijo de puta', 'cabrón',
+            'cabrona', 'hay que matar', 'muerte a', 'te voy a', 'vas a pagar')
+
+
+def redactar(txt):
+    """Devuelve (texto_limpio, redactado:bool). Sin NER ni LLM: reglas."""
+    if not txt:
+        return '', False
+    t = re.sub(r'\s+', ' ', txt).strip()
+    t, flag = RE_HANDLE.sub('[cuenta]', t), False
+    if t != txt:
+        flag = True
+    bajo = ' ' + t.lower() + ' '
+    if any(a in bajo for a in AMENAZAS):
+        return '[contenido con amenazas o insultos; no se reproduce]', True
+
+    def _rep(m):
+        nom = m.group(1)
+        ws = nom.lower().split()
+        if all(w in STOP or w in COMUNES for w in ws):
+            return nom
+        if nom.lower() in FIGURAS:
+            return nom
+        return '[dato personal]'
+
+    t2 = RE_NOMBRE.sub(_rep, t)
+    if t2 != t:
+        flag = True
+    if '[dato personal]' in t2:
+        return '[contenido con posible dato personal; no se reproduce]', True
+    return t2, flag
 STOP = set('''de la el en y que los del se las una por con para al como más pero sus este esta estos estas eso esa ese ser son fue han hay entre sobre todo también tras ante bajo cuyo cuya cuyos cuyas cual cuales donde cuando porque pues sino aunque según cada dos tres día días vez veces año años hoy ayer anteayer aquí ahí allí entonces pues tan tanto mucha mucho muchas muchos poca poco este esta eso esa aquel aquella aquello ello ello lo le les me te se nos os mi mis tu tus su sus nuestro nuestra nuestros nuestras este esta estos estas estas hay está están estoy estamos eres es son sea sean sido siendo tener tiene tienen hacer hace hacen decir dice dicen poder puede pueden haber hay van ver vez gran grandes nuevo nueva nuevos nuevas primer primera primeros primeras mismo misma mismos mismas otro otra otros otras tanto tanta tantos tantas todo toda todos todas cada cual quien quienes cuyo cuya cuyos cuyas donde como cuando cuanto cuanta cuantos cuantas porque pues sino mas si no ni o u e y'''.split())
 
 CURADO_PATH = os.path.join(BASE, 'data', 'narrativas.json')
@@ -100,9 +241,16 @@ def main():
         '(SELECT COUNT(DISTINCT author) FROM cluster_events ce '
         ' WHERE ce.cluster_id=c.id) nau, '
         '(SELECT MIN(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t0, '
-        '(SELECT MAX(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t1 '
+        '(SELECT MAX(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t1, '
+        '(SELECT lineage_id FROM cluster_lineage cl '
+        ' WHERE cl.cluster_label=c.cluster_label '
+        ' ORDER BY cycle_ts DESC LIMIT 1) lin '
         'FROM clusters c WHERE c.tema_id=? ORDER BY c.overall_score DESC',
         (a.tema,)).fetchall()
+    amp_global = con.execute(
+        'SELECT amplification_score FROM clusters WHERE tema_id=? LIMIT 1',
+        (a.tema,)).fetchone()
+    amp_global = round((amp_global[0] if amp_global else 0) or 0, 1)
 
     def dominios(cid, n=3):
         c = Counter()
@@ -124,8 +272,11 @@ def main():
         return (['%s (%d)' % x for x in c.most_common(n)], len(c))
 
     def contenido(cid):
-        """Capa semántica determinista (sin LLM): título más repetido,
-        top textos y términos. Reproducible y citable."""
+        """Capa semántica determinista (sin LLM) + filtro de privacidad.
+
+        Títulos/textos pasan por redactar(): @cuentas, nombres de
+        particulares y amenazas/insultos no se publican nunca. Devuelve
+        también n_redactados para la auditoría del informe."""
         try:
             tit = con.execute(
                 'SELECT title, COUNT(*) n FROM cluster_events '
@@ -137,18 +288,27 @@ def main():
                 'AND text IS NOT NULL AND text<>"" LIMIT 400',
                 (cid,)).fetchall()
         except Exception:
-            return {'titulos': [], 'terminos': [], 'resumen': ''}
+            return {'titulos': [], 'terminos': [], 'resumen': '',
+                    'redactados': 0, 'dato_personal': False}
+        red = 0
+        limpios = []
+        for r in tit:
+            t, f = redactar(r[0][:160])
+            red += f
+            limpios.append((t, r[1]))
+        titulos = [(t, n) for t, n in limpios]
         toks = Counter()
         for r in txt:
-            for w in re.sub(r'[^a-záéíóúñü ]', ' ',
-                            (r[0] or '').lower()).split():
-                if len(w) >= 4 and w not in STOP:
+            t, f = redactar(r[0] or '')
+            red += f
+            for w in re.sub(r'[^a-záéíóúñü ]', ' ', t.lower()).split():
+                if len(w) >= 4 and w not in STOP and not w.startswith('['):
                     toks[w] += 1
-        titulos = [(r[0][:160], r[1]) for r in tit]
         resumen = titulos[0][0] if titulos else ''
         return {'titulos': titulos,
                 'terminos': [w for w, _ in toks.most_common(8)],
-                'resumen': resumen}
+                'resumen': resumen, 'redactados': red,
+                'dato_personal': red > 0}
 
     def fmt_ts(ts):
         if not ts:
@@ -201,24 +361,28 @@ def main():
                      'ventana': '%s–%s' % (fmt_ts(c['t0']), fmt_ts(c['t1'])),
                      'subtipo': subtype(c), 'exp': supported(c)[:3],
                      'anomalia': round(c['anomaly_score'] or 0, 1),
-                     'amplificacion': round(c['amplification_score'] or 0, 1),
                      'coordinacion': round(c['coordination_score'] or 0, 1),
                      'techo': sc in TECHOS,
                      'dominios': doms, 'ndominios': ndom,
+                     'linaje': c['lin'] or '',
                      'narrativa': nar,
                      'narrativa_curada': bool(curado.get(c['cluster_label'])),
                      'resumen': cont['resumen'],
                      'atribucion': 'UNKNOWN',
                      'hipotesis': supported(c)[:3],
                      'titulos_top': cont['titulos'],
-                     'terminos': cont['terminos'][:8]})
+                     'terminos': cont['terminos'][:8],
+                     'redactados': cont['redactados']})
     rep = {name: 0 for _, name in BANDAS}
     for t in info:
         rep[t['banda']] += 1
     topados = [t for t in info if t['score'] in TECHOS]
+    _t0s = [c['t0'] for c in cls if c['t0']]
+    min_t0 = (datetime.fromtimestamp(min(_t0s), timezone.utc).strftime('%d/%m')
+              if _t0s else '')
     high = [t for t in info if t['banda'] in ('HIGH', 'CRITICAL')]
     watch_alto = [t for t in info if t['banda'] == 'ANOMALOUS'
-                  and t['score'] >= 55.0]
+                  and t['score'] >= 55.0 and t['autores'] >= 2]
 
     narr = Counter(t['subtipo'] for t in info)
     exps = Counter(e for t in info for e in t['exp'])
@@ -305,6 +469,10 @@ def main():
     concl += 'Qué vigilar: %s clusters en anómala alta pre-HIGH (55–59,9)%s.' % (
         len(watch_alto),
         '; %s contrastes con verificadores esta semana' % nbulos if nbulos else '')
+    n_red = sum(t.get('redactados', 0) for t in info)
+    if n_red:
+        concl += (' Se han redactado %s contenidos con datos personales, '
+                  'cuentas o amenazas: no se reproducen.' % n_red)
 
     informe = {
         'tema': a.tema, 'semana': semana,
@@ -370,35 +538,46 @@ def main():
         techo = (' <span style="color:#b45309">(techo de banda aplicado: '
                  'el score no distingue este clúster de otros topados)</span>'
                  if t['techo'] else '')
+        es_prio = t['anomalia'] >= prio_max and prio_max > 0
         prio = (' <span style="background:#c2410c;color:#fff;border-radius:8px;'
                 'padding:1px 8px;font-size:.75rem">prioridad de '
                 'seguimiento</span>'
-                if t['anomalia'] >= prio_max and prio_max > 0 else '')
+                if es_prio else '')
+        motivo = ('Es prioritario por anomalía máxima (%s) con volumen '
+                  'concentrado (%s ev/autor).' % (
+                      t['anomalia'], t['concentracion']) if es_prio else '')
+        linaje = (' · <a href="/c/%s" title="Identificador persistente '
+                  'entre ciclos">linaje %s</a>' % (
+                      html.escape(t['linaje']),
+                      html.escape(t['linaje'][:8])) if t['linaje'] else '')
         return (
             '<div style="border:1px solid #e2e8f0;border-radius:10px;'
             'padding:10px 12px;margin:8px 0">'
             '<h3 style="margin:0 0 6px">%s — %s%s</h3>'
             '<p style="color:#64748b;margin:0 0 6px"><b>%s</b> · %s%s · '
-            '%s autores · %s eventos (%s ev/autor) · %s · %s dominios</p>'
+            '%s autores · %s eventos (%s ev/autor) · %s</p>'
             '<p><b>Qué circula:</b> %s</p>'
-            '<p><b>Qué detecta el radar:</b> amplificación %s · '
-            'coordinación %s · anomalía %s. La amplificación mide repetición; '
-            'la coordinación, sincronía entre cuentas: son ejes distintos.</p>'
+            '<p><b>Qué detecta el radar:</b> coordinación %s · anomalía %s '
+            '(la amplificación global del ciclo se indica arriba; la '
+            'coordinación mide sincronía entre cuentas: son ejes distintos).</p>'
             '<p><b>Qué no permite concluir:</b> coordinación confirmada ni '
             'atribución (hipótesis compatibles: %s; atribución UNKNOWN).</p>'
-            '<p style="color:#64748b">Rol conductual: %s · '
-            '<a href="/api/v1/cluster/%s">API</a>%s</p></div>' % (
+            '<p style="color:#64748b">Rol: %s · dominios: %s · '
+            '<a href="/api/v1/cluster/%s">API</a>%s%s</p>%s</div>' % (
                 html.escape(num), html.escape(t['narrativa']), prio,
                 BAND_ES[t['banda']], t['score'], techo,
                 t['autores'], t['eventos'], t['concentracion'],
-                t['ventana'], t['ndominios'],
+                t['ventana'],
                 html.escape(t['resumen'][:220] or '—'),
-                t['amplificacion'], t['coordinacion'], t['anomalia'],
+                t['coordinacion'], t['anomalia'],
                 html.escape(', '.join(exp_llano(t['exp']))
                             or 'sin explicación concluyente'),
-                html.escape(str(t['subtipo'])),
-                html.escape(t['label']),
-                ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else ''))
+                html.escape(ROL_ES.get(str(t['subtipo']), str(t['subtipo']))),
+                html.escape(', '.join(t['dominios'][:5]) or '—'),
+                html.escape(t['label']), linaje,
+                ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else '',
+                ('<p><b>Por qué es prioritario:</b> %s</p>' % motivo)
+                if motivo else ''))
 
     fichas_high = ''.join(ficha(t) for t in high)
     fichas_pre = ''.join(ficha(t) for t in watch_alto)
@@ -439,13 +618,21 @@ def main():
             html.escape(t['narrativa'][:70]), t['autores'], t['eventos'],
             html.escape('; '.join(guia(t))))
         for t in watch_alto[:10])
+    vistos = set()
+    cruce_ord = []
+    for c in sorted(cruce, key=lambda x: (0 if x['relacion'] == 'MATCH' else 1,
+                                          x['fuente'] or '')):
+        if c['url'] in vistos:
+            continue
+        vistos.add(c['url'])
+        cruce_ord.append(c)
     filas_cruce = ''.join(
         '<tr><td>%s</td><td><a href="%s">%s</a></td>'
         '<td>%s</td><td><code>%s</code></td></tr>' % (
             html.escape(c['fuente'] or ''), html.escape(c['url'] or ''),
             html.escape(c['titular']), c['relacion'],
             html.escape((c['cluster'] or '').split('_cluster_')[-1]))
-        for c in cruce[:10])
+        for c in cruce_ord[:10])
     n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
@@ -478,8 +665,9 @@ def main():
         'loading="lazy" style="width:100%%;max-width:680px;display:block;'
         'margin:10px auto;border:1px solid #e2e8f0;border-radius:10px"></a>'
         '<a href="./%s.png" download>Descargar imagen</a></p>'
-        '<p style="color:#64748b">%s · %s eventos · %s autores · %s clusters · '
-        '%s en banda alta · <a href="./%s.json">JSON</a></p>'
+        '<p style="color:#64748b">%s%s · %s eventos · %s autores · %s clusters · '
+        '%s en banda alta · señal global de amplificación del ciclo: %s · '
+        '<a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
         '<h2>Narrativas de la semana</h2><p>Agregado de los clusters '
@@ -513,8 +701,13 @@ def main():
         '</body></html>' % (
             html.escape(a.tema), semana, a.tema, semana,
             html.escape(a.tema), semana, semana, semana, semana, semana,
-            informe['generado_utc'], informe['kpis']['eventos'],
+            informe['generado_utc'],
+            ('Semana en curso · parcial. ' if now.weekday() != 6 else '')
+            + ('Los clusters agregan todo el corpus (algunos empiezan en %s). '
+               % min_t0 if min_t0 else ''),
+            informe['kpis']['eventos'],
             informe['kpis']['autores'], informe['kpis']['clusters'], n_high,
+            amp_global,
             semana, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)
                        for k, v in sorted(rep.items()) if v),
@@ -554,6 +747,22 @@ def main():
                     % (h[:-5], h[:-5], h[:-5]) for h in sorted(hist, reverse=True))))
     with open(os.path.join(wdir, 'index.html'), 'w') as f:
         f.write(idx)
+    # Congelado: cada ejecución guarda snapshot inmutable; el .html semanal
+    # es la última foto. Retención: últimos 12 por tema.
+    import shutil
+    hdir = os.path.join(wdir, 'historial')
+    os.makedirs(hdir, exist_ok=True)
+    snap = '%s-%s.html' % (semana, now.strftime('%Y%m%d'))
+    shutil.copy(os.path.join(wdir, semana + '.html'),
+                os.path.join(hdir, snap))
+    snaps = sorted(f for f in os.listdir(hdir) if f.endswith('.html'))
+    for old_snap in snaps[:-12]:
+        os.remove(os.path.join(hdir, old_snap))
+    informe['kpis']['redactados_privacidad'] = n_red
+    with open(os.path.join(ddir, semana + '.json'), 'w') as f:
+        json.dump(informe, f, ensure_ascii=False, indent=1)
+    with open(os.path.join(wdir, semana + '.json'), 'w') as f:
+        json.dump(informe, f, ensure_ascii=False, indent=1)
     print('informe %s %s: %s ev, %s cl, %s HIGH, %s bulos, deltas=%s -> %s'
           % (a.tema, semana, informe['kpis']['eventos'],
              informe['kpis']['clusters'], n_high, nbulos,
