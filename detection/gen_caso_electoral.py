@@ -190,7 +190,7 @@ def main():
             + f"<td class='num'><b>{n(p['ev'])}</b></td><td class='num'>{n(p['au'])}</td>"
             + f"<td class='num'>{n(p['likes'])}</td>"
             + f"<td>{chip}{fmt_bandas(p['bandas'])}"
-            + (f" <a href='/informes/{p['tema']}/' title='Parte semanal de señales'>parte&nbsp;semanal</a>"
+            + (f" <a href='/informes/{p['tema']}/' title='Parte semanal de señales'>informe&nbsp;semanal</a>"
                if p.get('tema') and os.path.exists(
                    f"/var/www/fimi/informes/{p['tema']}/index.html") else "")
             + "</td></tr>"

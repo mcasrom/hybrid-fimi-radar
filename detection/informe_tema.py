@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-"""informe_tema.py — parte semanal de señales de un tema (MVP, solo lectura).
+"""informe_tema.py — informe semanal de señales de un tema (solo lectura).
 
 Lee data/radar.db y genera, por tema y semana ISO:
   data/informes/<tema>/<SEMANA>.json   (dataset)
-  /var/www/fimi/informes/<tema>/<SEMANA>.html  (parte)
+  /var/www/fimi/informes/<tema>/<SEMANA>.html  (informe)
   /var/www/fimi/informes/<tema>/index.html     (último + histórico)
 
-Las 5 preguntas mapean a instrumentos ya existentes (regla 12: nada nuevo):
-  qué ocurre   = reparto de bandas + top clusters por score
-  qué cambia   = linajes nuevos (first_seen 7d) y rampas (first_band_ts 7d)
-  qué persiste = linajes con n_ciclos>=3 + sustained_amplification
-  qué se sabe  = contrastes posible_bulos + explicaciones dominantes
-  qué no se sabe = límites honestos fijos (banda=amplificación, UNKNOWN, etc.)
+Las 5 preguntas mapean a instrumentos ya existentes (regla 12: nada nuevo).
+Honestidad (revisión 8-oct):
+  - "Nuevo" = linaje que NO estaba en el informe anterior, no first_seen
+    reciente (un tema joven tiene todos los first_seen recientes).
+  - Los scores clavados en 39,0/59,0 son topes de banda aplicados, no
+    señales independientes: se cuentan aparte como "topados".
+  - Sin informe anterior no hay comparativa: se dice, no se inventa.
 
 Uso:
     .venv/bin/python detection/informe_tema.py --tema espana_elecciones
 """
 import argparse
+import glob
 import html
 import json
 import os
@@ -47,6 +49,10 @@ def band(score):
     return out
 
 
+def pct(a, b):
+    return round(100.0 * a / max(b, 1), 1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--tema', default='espana_elecciones')
@@ -59,7 +65,6 @@ def main():
         return 1
     now = datetime.now(timezone.utc)
     semana = '%d-W%02d' % now.isocalendar()[:2]
-    week_ago = now.timestamp() - 7 * 86400
     con = sqlite3.connect(a.db)
     con.row_factory = sqlite3.Row
 
@@ -72,138 +77,227 @@ def main():
         'c.narrative_subtype, c.alternative_explanations, '
         '(SELECT COUNT(*) FROM cluster_events ce WHERE ce.cluster_id=c.id) nev, '
         '(SELECT COUNT(DISTINCT author) FROM cluster_events ce '
-        ' WHERE ce.cluster_id=c.id) nau, '
-        '(SELECT MIN(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t0, '
-        '(SELECT MAX(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t1 '
+        ' WHERE ce.cluster_id=c.id) nau '
         'FROM clusters c WHERE c.tema_id=? ORDER BY c.overall_score DESC',
         (a.tema,)).fetchall()
-    rep = {name: 0 for _, name in BANDAS}
-    top = []
+
+    def subtype(c):
+        try:
+            st = json.loads(c['narrative_subtype'] or '{}')
+        except ValueError:
+            return '?'
+        if isinstance(st, dict):
+            return st.get('dominant', st.get('dominant_subtype', '?'))
+        return str(st)
+
+    def supported(c):
+        try:
+            expl = json.loads(c['alternative_explanations'] or '{}')
+        except ValueError:
+            return []
+        if isinstance(expl, dict):
+            items = expl.items()
+        elif isinstance(expl, list):
+            items = [(e.get('id', e) if isinstance(e, dict) else e, e)
+                     for e in expl]
+        else:
+            return []
+        return [k for k, v in items
+                if (isinstance(v, dict) and v.get('estado') == 'supported')]
+
+    info = []
     for c in cls:
-        b = band(c['overall_score'])
-        rep[b] = rep.get(b, 0) + 1
-        if len(top) < 10:
-            try:
-                expl = json.loads(c['alternative_explanations'] or '{}')
-            except ValueError:
-                expl = {}
-            if isinstance(expl, dict):
-                items = expl.items()
-            elif isinstance(expl, list):
-                items = [(e.get('id', e) if isinstance(e, dict) else e, e)
-                         for e in expl]
-            else:
-                items = []
-            dom = [k for k, v in items
-                   if (isinstance(v, dict) and v.get('estado') == 'supported')
-                   or (isinstance(v, str) and v == 'supported')]
-            top.append({'label': c['cluster_label'],
-                        'score': round(c['overall_score'] or 0, 1),
-                        'banda': b, 'eventos': c['nev'], 'autores': c['nau'],
-                        't0': c['t0'], 't1': c['t1'],
-                        'explicaciones_supported': dom[:3]})
-    lin = con.execute(
-        'SELECT lineage_id, MAX(first_seen) fs, MAX(n_ciclos) nc, '
-        'MAX(first_band_ts) fb FROM cluster_lineage '
-        'WHERE tema_id=? GROUP BY lineage_id', (a.tema,)).fetchall()
-    nuevos = sorted([r['lineage_id'] for r in lin
-                     if (r['fs'] or 0) >= week_ago])
-    rampas = sorted([r['lineage_id'] for r in lin
-                     if (r['fb'] or 0) >= week_ago])
-    persist = sorted([r['lineage_id'] for r in lin if (r['nc'] or 0) >= 3])
+        sc = round(c['overall_score'] or 0, 1)
+        info.append({'label': c['cluster_label'], 'score': sc,
+                     'banda': band(c['overall_score']),
+                     'eventos': c['nev'], 'autores': c['nau'],
+                     'subtipo': subtype(c), 'exp': supported(c)[:3],
+                     'anomalia': round(c['anomaly_score'] or 0, 1)})
+    rep = {name: 0 for _, name in BANDAS}
+    for t in info:
+        rep[t['banda']] += 1
+    topados = [t for t in info if t['score'] in (39.0, 59.0)]
+    high = [t for t in info if t['banda'] in ('HIGH', 'CRITICAL')]
+    watch_alto = [t for t in info if t['banda'] == 'ANOMALOUS'
+                  and t['score'] >= 55.0]
+
+    from collections import Counter
+    narr = Counter(t['subtipo'] for t in info)
+    exps = Counter(e for t in info for e in t['exp'])
+
+    lin = {r['lineage_id']: dict(r) for r in con.execute(
+        'SELECT lineage_id, MIN(first_seen) fs, MAX(n_ciclos) nc, '
+        'MIN(first_band_ts) fb, MAX(cycle_ts) lc FROM cluster_lineage '
+        'WHERE tema_id=? GROUP BY lineage_id', (a.tema,)).fetchall()}
+    linajes = sorted(lin)
+
     bulos = [dict(r) for r in con.execute(
         'SELECT cluster_label, banda, verifica_fuente, verifica_titulo, '
         'verifica_url FROM posible_bulos WHERE tema_id=? '
-        'ORDER BY cycle_ts DESC LIMIT 20', (a.tema,)).fetchall()]
+        'ORDER BY cycle_ts DESC LIMIT 30', (a.tema,)).fetchall()]
     nbulos = con.execute(
         'SELECT COUNT(*) FROM posible_bulos WHERE tema_id=?',
         (a.tema,)).fetchone()[0]
-    con.close()
+    cl_by_label = {t['label']: t for t in info}
+    cruce = []
+    for b in bulos:
+        t = cl_by_label.get(b['cluster_label'])
+        cruce.append({'fuente': b['verifica_fuente'],
+                      'titular': (b['verifica_titulo'] or '')[:110],
+                      'url': b['verifica_url'],
+                      'cluster': b['cluster_label'],
+                      'score': t['score'] if t else None,
+                      'banda': t['banda'] if t else b['banda'],
+                      'autores': t['autores'] if t else None})
+
+    # Comparativa con el informe anterior (si existe)
+    ddir = os.path.join(a.datos, a.tema)
+    os.makedirs(ddir, exist_ok=True)
+    prevs = sorted(f for f in glob.glob(os.path.join(ddir, '*.json')))
+    prevs = [f for f in prevs if not f.endswith(semana + '.json')]
+    delta, prev_rep = None, None
+    if prevs:
+        with open(prevs[-1]) as f:
+            prev_rep = json.load(f)
+        d = {'eventos': ev['n'] - prev_rep['kpis']['eventos'],
+             'autores': ev['a'] - prev_rep['kpis']['autores'],
+             'clusters': len(cls) - prev_rep['kpis']['clusters'],
+             'high': rep.get('HIGH', 0) + rep.get('CRITICAL', 0)
+             - prev_rep['kpis']['bandas'].get('HIGH', 0)
+             - prev_rep['kpis']['bandas'].get('CRITICAL', 0)}
+        prev_lin = set(prev_rep.get('linajes_lista', []))
+        d['linajes_nuevos'] = sorted(set(linajes) - prev_lin)
+        d['linajes_caidos'] = sorted(prev_lin - set(linajes))
+        delta = d
+    nuevos_n = len(delta['linajes_nuevos']) if delta else None
+
+    # Conclusión automática (descriptiva, sin veredicto)
+    n_high = rep.get('HIGH', 0) + rep.get('CRITICAL', 0)
+    concl = (
+        'Esta semana: %s eventos de %s autores en %s clusters '
+        '(%s en banda alta%s). ' % (
+            ev['n'], ev['a'], len(cls), n_high,
+            '; %s topados en techos de banda' % len(topados) if topados
+            else ''))
+    if delta:
+        concl += 'Frente a la anterior: %s%sev, %s%s autores, %s en banda alta; %s linajes nuevos, %s caídos. ' % (
+            '+' if delta['eventos'] >= 0 else '', delta['eventos'],
+            '+' if delta['autores'] >= 0 else '', delta['autores'],
+            '%+d' % delta['high'], len(delta['linajes_nuevos']),
+            len(delta['linajes_caidos']))
+    else:
+        concl += 'Primera edición: sin comparativa todavía (la línea base empieza aquí). '
+    dom = next(((k, v) for k, v in narr.most_common() if k not in ('?', '')), None)
+    if dom:
+        concl += 'Rol dominante: %s (%s clusters). ' % dom
+    elif exps:
+        concl += 'Explicación más frecuente: %s (%s clusters). ' % exps.most_common(1)[0]
+    concl += 'Qué vigilar: %s clusters en anómala alta pre-HIGH (55–59,9)%s.' % (
+        len(watch_alto),
+        '; %s contrastes con verificadores esta semana' % nbulos if nbulos else '')
 
     informe = {
         'tema': a.tema, 'semana': semana,
         'generado_utc': now.strftime('%Y-%m-%d %H:%M'),
         'kpis': {'eventos': ev['n'], 'autores': ev['a'],
                  'clusters': len(cls), 'bandas': rep,
-                 'linajes': len(lin)},
-        'que_ocurre': {'top_clusters': top},
-        'que_cambia': {'linajes_nuevos_7d': len(nuevos),
-                       'rampas_7d': len(rampas),
-                       'detalle_nuevos': nuevos[:15]},
-        'que_persiste': {'linajes_3ciclos': len(persist),
-                         'detalle': persist[:15]},
-        'que_se_sabe': {'contrastes_bulos': nbulos, 'bulos': bulos},
+                 'linajes': len(linajes), 'topados_techo': len(topados)},
+        'delta_vs_anterior': delta,
+        'linajes_lista': linajes,
+        'que_ocurre': {'top_clusters': info[:5],
+                       'narrativas_dominantes': narr.most_common(5),
+                       'explicaciones_top': exps.most_common(5)},
+        'que_cambia': {'linajes_nuevos_vs_anterior': nuevos_n,
+                       'detalle_nuevos': (delta['linajes_nuevos'][:15]
+                                          if delta else [])},
+        'que_persiste': {'nota': 'linajes con ≥3 ciclos (ver JSON)'},
+        'que_se_sabe': {'contrastes_bulos': nbulos, 'cruce': cruce[:15]},
+        'high_explicados': [
+            {'label': t['label'], 'score': t['score'],
+             'autores': t['autores'], 'subtipo': t['subtipo'],
+             'explicaciones': t['exp']} for t in high],
+        'vigilar_proxima': [t['label'] for t in watch_alto[:10]],
+        'conclusion': concl,
         'que_no_se_sabe': LIMITES,
     }
-    ddir = os.path.join(a.datos, a.tema)
-    os.makedirs(ddir, exist_ok=True)
     with open(os.path.join(ddir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
     wdir = os.path.join(a.web, a.tema)
     os.makedirs(wdir, exist_ok=True)
     with open(os.path.join(wdir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
+
     filas_top = ''.join(
         '<tr><td><code>%s</code></td><td>%s</td>'
         '<td style="text-align:right">%s</td>'
-        '<td style="text-align:right">%s</td>'
         '<td style="text-align:right">%s</td></tr>' % (
             html.escape(t['label']), BAND_ES[t['banda']], t['score'],
-            t['eventos'], t['autores']) for t in top)
-    filas_b = ''.join(
-        '<tr><td>%s</td><td style="text-align:right">%s</td></tr>' % (
-            html.escape(b.get('verifica_fuente', '')), html.escape(
-                (b.get('verifica_titulo') or '')[:90]))
-        for b in bulos[:10])
+            ', '.join(t['exp'][:2]) or '—') for t in info[:5])
+    filas_cruce = ''.join(
+        '<tr><td>%s</td><td><a href="%s">%s</a></td>'
+        '<td style="text-align:right">%s</td></tr>' % (
+            html.escape(c['fuente'] or ''), html.escape(c['url'] or ''),
+            html.escape(c['titular']), c['score'] if c['score'] is not None
+            else '—') for c in cruce[:10])
+    filas_high = ''.join(
+        '<li><code>%s</code> (%s, %s autores): rol %s; %s.</li>' % (
+            html.escape(t['label']), t['score'], t['autores'],
+            html.escape(str(t['subtipo'])),
+            html.escape(', '.join(t['exp']) or 'sin explicación concluyente'))
+        for t in high) or '<li>Ninguno esta semana.</li>'
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<title>Parte semanal %s · %s · Observatorio de amplificación</title>'
+        '<title>Informe semanal %s · %s · Observatorio de amplificación</title>'
         '</head><body style="font-family:system-ui,sans-serif;max-width:760px;'
         'margin:0 auto;padding:16px;color:#0f172a">'
         '<p><a href="/casos/electoral/">← panorama electoral</a></p>'
-        '<h1>Parte semanal: %s <span style="color:#64748b">%s</span></h1>'
+        '<h1>Informe semanal: %s <span style="color:#64748b">%s</span></h1>'
         '<p style="color:#64748b">%s · %s eventos · %s autores · %s clusters · '
-        '%s linajes. <a href="./%s.json">JSON</a></p>'
+        '%s en banda alta · <a href="./%s.json">JSON</a></p>'
+        '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Clúster</th><th>Banda</th><th>Score</th><th>Ev.</th>'
-        '<th>Aut.</th></tr>%s</table>'
-        '<h2>Qué cambia (7 d)</h2><p>%s linajes nuevos · %s rampas '
-        '(cruzan a banda de aviso).</p>'
-        '<h2>Qué persiste</h2><p>%s linajes con ≥3 ciclos.</p>'
-        '<h2>Qué se sabe (contrastes)</h2><p>%s contrastes con verificadores '
-        '(contraste, no veredicto).</p>'
+        '<tr><th>Clúster (top 5)</th><th>Banda</th><th>Score</th>'
+        '<th>Explicación</th></tr>%s</table>'
+        '<p style="color:#64748b">%s clusters clavados en techos de banda '
+        '(39,0/59,0): topes aplicados, no señales independientes. '
+        'Detalle completo en el JSON.</p>'
+        '<h2>Banda alta, explicada</h2><ul>%s</ul>'
+        '<h2>Cruce con verificadores</h2><p>%s contrastes (contraste, no '
+        'veredicto), cruzados con score y autores del clúster.</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Fuente</th><th>Titular</th></tr>%s</table>'
+        '<tr><th>Fuente</th><th>Titular</th><th>Score</th></tr>%s</table>'
+        '<h2>Qué vigilar la próxima semana</h2><p>%s</p>'
         '<h2>Qué no se sabe</h2><ul>%s</ul>'
         '</body></html>' % (
             html.escape(a.tema), semana, html.escape(a.tema), semana,
             informe['generado_utc'], informe['kpis']['eventos'],
-            informe['kpis']['autores'], informe['kpis']['clusters'],
-            informe['kpis']['linajes'], semana,
+            informe['kpis']['autores'], informe['kpis']['clusters'], n_high,
+            semana, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)
                        for k, v in sorted(rep.items()) if v),
-            filas_top, len(nuevos), len(rampas), len(persist),
-            nbulos, filas_b,
+            filas_top, len(topados), filas_high, nbulos, filas_cruce,
+            html.escape(', '.join(informe['vigilar_proxima'][:5]) or '—'),
             ''.join('<li>%s</li>' % html.escape(x) for x in LIMITES)))
     with open(os.path.join(wdir, semana + '.html'), 'w') as f:
         f.write(body)
     hist = sorted(f for f in os.listdir(ddir) if f.endswith('.json'))
     idx = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
-        '<title>Partes semanales · %s</title></head>'
+        '<title>Informes semanales · %s</title></head>'
         '<body style="font-family:system-ui,sans-serif;max-width:760px;'
         'margin:0 auto;padding:16px">'
-        '<h1>Partes semanales: %s</h1><ul>%s</ul></body></html>' % (
+        '<h1>Informes semanales: %s</h1><ul>%s</ul></body></html>' % (
             html.escape(a.tema), html.escape(a.tema),
             ''.join('<li><a href="./%s.html">%s</a> (<a href="./%s.json">JSON</a>)</li>'
                     % (h[:-5], h[:-5], h[:-5]) for h in sorted(hist, reverse=True))))
     with open(os.path.join(wdir, 'index.html'), 'w') as f:
         f.write(idx)
-    print('parte %s %s: %s ev, %s cl, %s bulos -> %s'
+    print('informe %s %s: %s ev, %s cl, %s HIGH, %s bulos, deltas=%s -> %s'
           % (a.tema, semana, informe['kpis']['eventos'],
-             informe['kpis']['clusters'], nbulos, wdir))
+             informe['kpis']['clusters'], n_high, nbulos,
+             'si' if delta else 'primera edicion', wdir))
     return 0
 
 
