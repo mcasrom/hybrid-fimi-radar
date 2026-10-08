@@ -1353,7 +1353,7 @@ temas:
     estado: piloto
     nombre: España — defensa y amenazas híbridas
   espana_elecciones:
-    estado: piloto
+    estado: produccion
     nombre: España — elecciones generales
     # Tuning por tema: la coordinación humano/partidista legítima tiene
     # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
