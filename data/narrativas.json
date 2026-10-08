@@ -1,1 +1,20 @@
-{"espana_elecciones": {"espana_elecciones_cluster_000": "Sondeos: Feijóo, Vox y vivienda", "espana_elecciones_cluster_002": "Integridad electoral (pucherazo/Indra) y alquiler", "espana_elecciones_cluster_004": "Encuestas y coalición PP-Vox", "espana_elecciones_cluster_005": "Vivienda: escudo del Gobierno y oposición", "espana_elecciones_cluster_011": "Encuestas por segmentos (sexo, renta, edad)", "espana_elecciones_cluster_014": "Declaraciones de Feijóo (gestión del Gobierno, vivienda)", "espana_elecciones_cluster_018": "Marruecos, Ceuta y marco electoral"}}
+{
+ "espana_elecciones": {
+  "espana_elecciones_cluster_000": "Sondeos: Feijóo, Vox y vivienda",
+  "espana_elecciones_cluster_002": "Integridad electoral (pucherazo/Indra) y alquiler",
+  "espana_elecciones_cluster_004": "Encuestas y coalición PP-Vox",
+  "espana_elecciones_cluster_005": "Vivienda: escudo del Gobierno y oposición",
+  "espana_elecciones_cluster_011": "Encuestas por segmentos (sexo, renta, edad)",
+  "espana_elecciones_cluster_014": "Declaraciones de Feijóo (gestión del Gobierno, vivienda)",
+  "espana_elecciones_cluster_018": "Marruecos, Ceuta y marco electoral"
+ },
+ "frontera_sur": {
+  "frontera_sur_cluster_005": "Ceuta y Melilla: debate sobre entrega a Marruecos",
+  "frontera_sur_cluster_025": "Ceuta: coacción fronteriza y discurso de odio",
+  "frontera_sur_cluster_068": "Ceuta en podcast y prensa alternativa",
+  "frontera_sur_cluster_000": "Migrantes de Ceuta: testimonios y agresión en Mula",
+  "frontera_sur_cluster_001": "Ceuta: reconocimiento de vecinos",
+  "frontera_sur_cluster_002": "Agresión en Mula y reacción mediática",
+  "frontera_sur_cluster_011": "Militares y menores migrantes en Ceuta"
+ }
+}
