@@ -36,6 +36,20 @@ BANDAS = [(0, 'NORMAL'), (20, 'WATCH'), (40, 'ANOMALOUS'), (60, 'HIGH'),
 BAND_ES = {'NORMAL': 'Normal', 'WATCH': 'En observación',
            'ANOMALOUS': 'Amplificación anómala', 'HIGH': 'Amplificación alta',
            'CRITICAL': 'Amplificación muy alta'}
+# Hipótesis conductuales en llano (revisión 8-oct §3: los códigos no se
+# entienden; el código va entre paréntesis, nunca solo).
+EXP_ES = {'single_source_feed': 'feed de una sola fuente',
+          'cross_account_synchrony': 'reproducción entre cuentas distintas',
+          'mainstream_echo': 'eco de prensa',
+          'single_piece_echo': 'eco de una sola pieza',
+          'organic_viral': 'viralidad orgánica',
+          'synchronized_without_operator': 'sincronía sin operador',
+          'automated_non_malicious': 'automatización no maliciosa',
+          'legitimate_mobilization': 'movilización legítima',
+          'syndicated_wire': 'red de medios sindicados',
+          'graph_artifact': 'artefacto del grafo',
+          'unresolved': 'sin explicación concluyente'}
+TECHOS = (39.0, 59.0)
 STOP = set('''de la el en y que los del se las una por con para al como más pero sus este esta estos estas eso esa ese ser son fue han hay entre sobre todo también tras ante bajo cuyo cuya cuyos cuyas cual cuales donde cuando porque pues sino aunque según cada dos tres día días vez veces año años hoy ayer anteayer aquí ahí allí entonces pues tan tanto mucha mucho muchas muchos poca poco este esta eso esa aquel aquella aquello ello ello lo le les me te se nos os mi mis tu tus su sus nuestro nuestra nuestros nuestras este esta estos estas estas hay está están estoy estamos eres es son sea sean sido siendo tener tiene tienen hacer hace hacen decir dice dicen poder puede pueden haber hay van ver vez gran grandes nuevo nueva nuevos nuevas primer primera primeros primeras mismo misma mismos mismas otro otra otros otras tanto tanta tantos tantas todo toda todos todas cada cual quien quienes cuyo cuya cuyos cuyas donde como cuando cuanto cuanta cuantos cuantas porque pues sino mas si no ni o u e y'''.split())
 
 CURADO_PATH = os.path.join(BASE, 'data', 'narrativas.json')
@@ -80,6 +94,7 @@ def main():
         'WHERE et.tema_id=?', (a.tema,)).fetchone()
     cls = con.execute(
         'SELECT c.id, c.cluster_label, c.overall_score, c.anomaly_score, '
+        'c.amplification_score, c.coordination_score, '
         'c.narrative_subtype, c.alternative_explanations, '
         '(SELECT COUNT(*) FROM cluster_events ce WHERE ce.cluster_id=c.id) nev, '
         '(SELECT COUNT(DISTINCT author) FROM cluster_events ce '
@@ -96,7 +111,7 @@ def main():
                 'SELECT url FROM cluster_events WHERE cluster_id=? '
                 'AND url IS NOT NULL AND url<>""', (cid,)).fetchall()
         except Exception:
-            return []
+            return [], 0
         for r in rows:
             try:
                 dom = urlparse(r[0]).netloc.lower()
@@ -106,7 +121,7 @@ def main():
                 dom = dom[4:]
             if dom:
                 c[dom] += 1
-        return ['%s (%d)' % x for x in c.most_common(n)]
+        return (['%s (%d)' % x for x in c.most_common(n)], len(c))
 
     def contenido(cid):
         """Capa semántica determinista (sin LLM): título más repetido,
@@ -177,13 +192,19 @@ def main():
         nar = curado.get(c['cluster_label'])
         if not nar:
             nar = ' · '.join(cont['terminos'][:3]) or 'sin etiquetar'
+        doms, ndom = dominios(c['id']) if sc >= 55 else ([], 0)
+        nev, nau = c['nev'], c['nau']
         info.append({'label': c['cluster_label'], 'score': sc,
                      'banda': band(c['overall_score']),
-                     'eventos': c['nev'], 'autores': c['nau'],
+                     'eventos': nev, 'autores': nau,
+                     'concentracion': round(nev / max(nau, 1), 1),
                      'ventana': '%s–%s' % (fmt_ts(c['t0']), fmt_ts(c['t1'])),
                      'subtipo': subtype(c), 'exp': supported(c)[:3],
                      'anomalia': round(c['anomaly_score'] or 0, 1),
-                     'dominios': dominios(c['id']) if sc >= 55 else [],
+                     'amplificacion': round(c['amplification_score'] or 0, 1),
+                     'coordinacion': round(c['coordination_score'] or 0, 1),
+                     'techo': sc in TECHOS,
+                     'dominios': doms, 'ndominios': ndom,
                      'narrativa': nar,
                      'narrativa_curada': bool(curado.get(c['cluster_label'])),
                      'resumen': cont['resumen'],
@@ -194,7 +215,7 @@ def main():
     rep = {name: 0 for _, name in BANDAS}
     for t in info:
         rep[t['banda']] += 1
-    topados = [t for t in info if t['score'] in (39.0, 59.0)]
+    topados = [t for t in info if t['score'] in TECHOS]
     high = [t for t in info if t['banda'] in ('HIGH', 'CRITICAL')]
     watch_alto = [t for t in info if t['banda'] == 'ANOMALOUS'
                   and t['score'] >= 55.0]
@@ -330,8 +351,15 @@ def main():
             g.append('vigilar evolución de volumen, autores y banda')
         return g
 
+    prio_ids = {t['label'] for t in high + watch_alto}
+    prio_max = max([t['anomalia'] for t in high + watch_alto] or [0])
+
+    def exp_llano(codes):
+        return [('%s (%s)' % (EXP_ES.get(c, c), c)) for c in codes]
+
     def ficha(t):
-        # Ficha: QUÉ (narrativa+contenido), CÓMO (conducta), QUÉ SIGNIFICA.
+        # Ficha: QUÉ (narrativa+contenido), CÓMO (conducta separando
+        # amplificación de coordinación), QUÉ SIGNIFICA (hipótesis en llano).
         bulos_t = [c for c in cruce
                    if c['cluster'] == t['label']][:3]
         lb = ''.join(
@@ -339,28 +367,36 @@ def main():
                 html.escape(b['fuente'] or ''), html.escape(b['url'] or ''),
                 html.escape(b['titular'][:80]), b['relacion']) for b in bulos_t)
         num = t['label'].split('_cluster_')[-1]
+        techo = (' <span style="color:#b45309">(techo de banda aplicado: '
+                 'el score no distingue este clúster de otros topados)</span>'
+                 if t['techo'] else '')
+        prio = (' <span style="background:#c2410c;color:#fff;border-radius:8px;'
+                'padding:1px 8px;font-size:.75rem">prioridad de '
+                'seguimiento</span>'
+                if t['anomalia'] >= prio_max and prio_max > 0 else '')
         return (
             '<div style="border:1px solid #e2e8f0;border-radius:10px;'
             'padding:10px 12px;margin:8px 0">'
-            '<h3 style="margin:0 0 6px">%s — %s</h3>'
-            '<p style="color:#64748b;margin:0 0 6px"><b>%s</b> · %s · '
-            '%s autores · %s eventos · %s</p>'
+            '<h3 style="margin:0 0 6px">%s — %s%s</h3>'
+            '<p style="color:#64748b;margin:0 0 6px"><b>%s</b> · %s%s · '
+            '%s autores · %s eventos (%s ev/autor) · %s · %s dominios</p>'
             '<p><b>Qué circula:</b> %s</p>'
-            '<p><b>Qué detecta el radar:</b> %s autores repiten contenido '
-            '(%s) con anomalía %s; rol conductual %s.</p>'
-            '<p><b>Qué no permite concluir:</b> coordinación ni atribución '
-            '(hipótesis compatibles: %s; atribución UNKNOWN).</p>'
-            '<p style="color:#64748b">Dominios: %s · '
+            '<p><b>Qué detecta el radar:</b> amplificación %s · '
+            'coordinación %s · anomalía %s. La amplificación mide repetición; '
+            'la coordinación, sincronía entre cuentas: son ejes distintos.</p>'
+            '<p><b>Qué no permite concluir:</b> coordinación confirmada ni '
+            'atribución (hipótesis compatibles: %s; atribución UNKNOWN).</p>'
+            '<p style="color:#64748b">Rol conductual: %s · '
             '<a href="/api/v1/cluster/%s">API</a>%s</p></div>' % (
-                html.escape(num), html.escape(t['narrativa']),
-                BAND_ES[t['banda']], t['score'], t['autores'], t['eventos'],
-                t['ventana'], html.escape(t['resumen'][:220] or '—'),
-                t['autores'],
-                html.escape(', '.join(t['dominios'][:3]) or 'sin dominios'),
-                t['anomalia'], html.escape(str(t['subtipo'])),
-                html.escape(', '.join(t['exp'])
+                html.escape(num), html.escape(t['narrativa']), prio,
+                BAND_ES[t['banda']], t['score'], techo,
+                t['autores'], t['eventos'], t['concentracion'],
+                t['ventana'], t['ndominios'],
+                html.escape(t['resumen'][:220] or '—'),
+                t['amplificacion'], t['coordinacion'], t['anomalia'],
+                html.escape(', '.join(exp_llano(t['exp']))
                             or 'sin explicación concluyente'),
-                html.escape(', '.join(t['dominios'][:3]) or '—'),
+                html.escape(str(t['subtipo'])),
                 html.escape(t['label']),
                 ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else ''))
 
@@ -370,11 +406,13 @@ def main():
         '<tr><td><code>%s</code> — %s</td>'
         '<td style="text-align:right">%s</td>'
         '<td style="text-align:right">%s</td>'
+        '<td style="text-align:right">%s</td>'
         '<td>%s</td></tr>' % (
             html.escape(t['label'].split('_cluster_')[-1]),
             html.escape(t['narrativa'][:70]),
-            t['score'], t['autores'],
-            html.escape(', '.join(t['exp'][:2]) or '—'))
+            t['score'], t['anomalia'], t['autores'],
+            html.escape(', '.join(
+                EXP_ES.get(e, e) for e in t['exp'][:2]) or '—'))
         for t in info if t['banda'] == 'ANOMALOUS' and t['score'] < 55)
     prio = high + watch_alto
     curadas = {t['label'] for t in info if t['narrativa_curada']}
@@ -403,11 +441,11 @@ def main():
         for t in watch_alto[:10])
     filas_cruce = ''.join(
         '<tr><td>%s</td><td><a href="%s">%s</a></td>'
-        '<td>%s</td><td style="text-align:right">%s</td></tr>' % (
+        '<td>%s</td><td><code>%s</code></td></tr>' % (
             html.escape(c['fuente'] or ''), html.escape(c['url'] or ''),
             html.escape(c['titular']), c['relacion'],
-            c['score'] if c['score'] is not None
-            else '—') for c in cruce[:10])
+            html.escape((c['cluster'] or '').split('_cluster_')[-1]))
+        for c in cruce[:10])
     n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
@@ -419,6 +457,22 @@ def main():
         'margin:0 auto;padding:16px;color:#0f172a">'
         '<p><a href="/casos/electoral/">← panorama electoral</a></p>'
         '<h1>Informe semanal: %s <span style="color:#64748b">%s</span></h1>'
+        '<details style="margin:10px 0;border:1px solid #e2e8f0;'
+        'border-radius:10px;padding:8px 12px;background:#f8fafc">'
+        '<summary style="cursor:pointer;font-weight:700">Cómo leer este '
+        'informe</summary>'
+        '<ul style="font-size:.87rem;color:#334155">'
+        '<li><b>Evento:</b> una observación capturada por el radar.</li>'
+        '<li><b>Cluster:</b> eventos agrupados por contenido o patrón.</li>'
+        '<li><b>Anomalía:</b> desviación respecto al comportamiento esperado '
+        '(0–100).</li>'
+        '<li><b>Score:</b> indicador compuesto de amplificación anómala.</li>'
+        '<li><b>Banda alta:</b> supera el umbral de amplificación; no implica '
+        'coordinación.</li>'
+        '<li><b>Hipótesis:</b> explicaciones compatibles con lo observado '
+        '(p. ej. eco de prensa, feed de una sola fuente).</li>'
+        '<li><b>UNKNOWN:</b> sin evidencia suficiente para atribuir actor o '
+        'intención.</li></ul></details>'
         '<p><a href="./%s.png"><img src="./%s.png" alt="Resumen visual del '
         'informe semanal %s: cifras, mapa de clusters y narrativas" '
         'loading="lazy" style="width:100%%;max-width:680px;display:block;'
@@ -437,8 +491,8 @@ def main():
         '<h2>Anómala alta (55–59,9) — ficha completa</h2>%s'
         '<h2>Anómala &lt;55 — resumen</h2>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Clúster — narrativa</th><th>Score</th><th>Autores</th>'
-        '<th>Explicación</th></tr>%s</table>'
+        '<tr><th>Clúster — narrativa</th><th>Score</th><th>Anom.</th>'
+        '<th>Autores</th><th>Explicación</th></tr>%s</table>'
         '<p style="color:#64748b">%s clusters clavados en techos de banda '
         '(39,0/59,0): topes aplicados, no señales independientes. '
         'WATCH+NORMAL (%s): solo estadística agregada, detalle en el JSON.</p>'
@@ -446,7 +500,7 @@ def main():
         'veredicto): MATCH = el titular verificado circula en el clúster; '
         'THEMATIC = coincidencia temática.</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Fuente</th><th>Titular</th><th>Relación</th><th>Score</th></tr>%s</table>'
+        '<tr><th>Fuente</th><th>Titular</th><th>Relación</th><th>Clúster</th></tr>%s</table>'
         '<h2>Qué vigilar la próxima semana</h2><ul>%s</ul>'
         '<h2>Qué no se sabe</h2><ul>%s</ul>'
         '<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0">'
