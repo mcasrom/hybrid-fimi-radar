@@ -78,7 +78,7 @@
   - elecciones bosnia
   - generales bosnia
 - pais: Brasil
-  nombre: Generales (presidenciales)
+  nombre: Generales 1.ª vuelta (presidenciales)
   fecha: '2026-10-04'
   idioma: pt
   estado: activo
@@ -89,6 +89,19 @@
   - eleitores
   - votação
   - urnas
+- pais: Brasil
+  nombre: Presidenciales 2.ª vuelta (Flávio Bolsonaro vs Lula)
+  fecha: '2026-10-25'
+  idioma: pt
+  estado: activo
+  keywords:
+  - brasil
+  - segundo turno
+  - balotagem
+  - flavio bolsonaro
+  - lula
+  - tse
+  - apuração
 - pais: Bulgaria
   nombre: Presidenciales
   fecha: '2026-10-25'
