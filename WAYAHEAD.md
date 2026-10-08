@@ -7,7 +7,7 @@
 ## Estado actual (verificado 31/08/2026 — desfasado)
 
 - **MVP completo en local** (`~/hybrid-fimi-radar`), repo `mcasrom/hybrid-fimi-radar`.
-- **DEPLOY A HETZNER (24/7)**: captura + análisis corren en `178.105.80.193`
+- **DEPLOY A HETZNER (24/7)**: captura + análisis corren en `<IP-origen>`
   (`/home/deploy/hybrid-fimi-radar`), cron `30 */6 * * *` cada 6h.
   Corrección del error de concepto: el laptop no está 24h, el server sí.
   Primera captura en server: 331 eventos reales.

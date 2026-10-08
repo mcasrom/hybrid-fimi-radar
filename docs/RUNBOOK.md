@@ -9,7 +9,7 @@ pueda mantener el radar sin conocimiento previo (mitiga el **bus factor 1**).
 
 | Qué | Dónde |
 |---|---|
-| Servidor | Hetzner `178.105.80.193` (usuario `deploy`, SSH por clave) |
+| Servidor | Hetzner `<IP-origen>` (usuario `<despliegue>`, SSH por clave) |
 | Código | `~/hybrid-fimi-radar` en el server · GitHub `mcasrom/hybrid-fimi-radar` (público, AGPL-3.0) |
 | Entorno Python | `~/hybrid-fimi-radar/.venv` → usar SIEMPRE `.venv/bin/python` |
 | Base de datos | `data/radar.db` (SQLite, chmod 600) |

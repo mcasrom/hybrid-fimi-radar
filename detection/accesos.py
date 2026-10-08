@@ -51,7 +51,17 @@ SITIO = "fimi.viajeinteligencia.com"
 # Tu ISP (DIGI) mueve el IPv4 entre 79.116.x y 79.117.x según la sesión; si solo
 # se fija 79.116. tu propia IP se cuela como "humano externo" en cada informe.
 OWNER_PREFIXES = ("79.116.", "79.117.", "2a0c:5a83")
-OWNER_IPS = {"178.105.80.193"}
+# IP propias del servidor: viven SOLO en data/owner_ips.txt (gitignored).
+# El repo es publico: ningun literal de IP origen puede estar en el codigo.
+def _owner_ips_file():
+    p = os.path.join(DATA_DIR, "owner_ips.txt")
+    try:
+        with open(p) as f:
+            return {l.strip() for l in f
+                    if l.strip() and not l.startswith("#")}
+    except OSError:
+        return set()
+OWNER_IPS = _owner_ips_file()
 
 # --- Redes de hosting y nubes (CIDR) -----------------------------------------
 # El detector antiguo comparaba con `ip.startswith()` sobre una lista enorme
@@ -202,11 +212,13 @@ INTERNAL_NETS = tuple(
 #
 # La IPv6 está porque sale en el log del propio servidor: es la primera línea
 # literal de un access.log real usada como fixture en los tests
-# (`2a01:4f8:1c1e:92d2::1 - - [27/Sep/2026:00:00:09 +0000] "GET / HTTP/1.1"`)
+# (`2001:db8::1 - - [27/Sep/2026:00:00:09 +0000] "GET / HTTP/1.1"`)
 # y por ahí salen el canario y Uptime-Kuma. No es una suposición: está
 # observada. Aun así se puede ampliar sin tocar código con la variable de
 # entorno FIMI_IPS_PROPIAS (lista separada por comas).
-IPS_PROPIAS_EXTRA = ("2a01:4f8:1c1e:92d2::1",)
+# (vacio a proposito: las propias salen de getaddrinfo + owner_ips.txt;
+# ver _ips_propias. No poner literales: repo publico.)
+IPS_PROPIAS_EXTRA = ()
 
 _PROPIAS = None
 
@@ -222,7 +234,7 @@ def _ips_propias():
     """
     global _PROPIAS
     if _PROPIAS is None:
-        ips = set(IPS_PROPIAS_EXTRA)
+        ips = set(IPS_PROPIAS_EXTRA) | _owner_ips_file()
         ips.update(x.strip() for x in
                    os.environ.get("FIMI_IPS_PROPIAS", "").split(",")
                    if x.strip())

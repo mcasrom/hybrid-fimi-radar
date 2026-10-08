@@ -19,15 +19,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from detection.accesos import (  # noqa: E402
     es_datacenter, es_dueno, es_profunda, es_scan, clasificar,
 )
+from detection import accesos as _acc  # noqa: E402
+# Las IP de produccion viven en data/owner_ips.txt (gitignored). Aqui solo
+# TEST-NET (documentacion, RFC 5737): nunca la IP real en el repo publico.
+_acc.OWNER_IPS = {"192.0.2.10"}
+_acc._PROPIAS = {"2001:db8::1", "203.0.113.10"}
 
 CHROME = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
           "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
 
 # (ip, categoria_esperada, porque)
 CASOS_IP = [
-    ("79.117.150.124", "DUENO", "tu IP actual (DIGI 79.117.x) es tuya"),
+    ("79.117.200.11", "DUENO", "rango actual (DIGI 79.117.x)"),
     ("79.116.4.9", "DUENO", "tu rango anterior (DIGI 79.116.x)"),
-    ("178.105.80.193", "DUENO", "el propio servidor"),
+    ("192.0.2.10", "DUENO", "la IP propia configurada"),
     ("44.205.70.55", "BOT", "AWS (se colaba como humano)"),
     ("44.216.112.73", "BOT", "AWS (se colaba como humano)"),
     ("173.245.48.5", "BOT", "rango oficial de Cloudflare"),
@@ -130,7 +135,7 @@ def test_ia_con_gente_separa_de_ia_crawler():
 # La IP propia del servidor por IPv6. El canario y Uptime-Kuma salen por ahí y
 # `es_internal` solo miraba 127.0.0.0/8 y ::1/128, así que ~250 peticiones/día
 # de monitor propio contaban como "humano probable".
-IP_PROPIA_V6 = "2a01:4f8:1c1e:92d2::1"
+IP_PROPIA_V6 = "2001:db8::1"
 
 
 def _fallos():
@@ -154,7 +159,7 @@ def test_redes_de_hosting():
     for ip, _c, porque in CASOS_IP:
         if "residencial" in porque or "móvil" in porque:
             assert not es_datacenter(ip), f"{ip} marcado como datacenter"
-    assert es_dueno("79.117.150.124") and es_dueno("79.116.1.1")
+    assert es_dueno("79.117.200.11") and es_dueno("79.116.1.1")
     assert not es_dueno("88.13.206.136")
 
 
@@ -165,7 +170,7 @@ def test_parse_line_formato_real():
     anterior no parseaba ninguna línea del log real y el backfill devolvía 0.
     """
     from detection.accesos import parse_line
-    linea = ('2a01:4f8:1c1e:92d2::1 - - [27/Sep/2026:00:00:09 +0000] '
+    linea = ('2001:db8::1 - - [27/Sep/2026:00:00:09 +0000] '
              '"GET / HTTP/1.1" 200 1001758 "-" '
              '"Mozilla/5.0 (X11; Linux x86_64) canary-urls/1.0"" '
              'host=fimi.viajeinteligencia.com')
@@ -202,7 +207,7 @@ def test_ip_propia_por_ipv6():
     """
     from detection.accesos import es_internal
     assert es_internal(IP_PROPIA_V6, CHROME), \
-        f"{IP_PROPIA_V6} es el propio servidor y debe ser INTERNAL"
+        f"{IP_PROPIA_V6} esta configurada como propia y debe ser INTERNAL"
     assert es_internal("127.0.0.1", CHROME)
     assert not es_internal("88.13.206.136", CHROME), "una IP de fuera no es propia"
 
