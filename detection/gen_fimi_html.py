@@ -5035,6 +5035,12 @@ a{{color:#c2410c}}
     </div>
   </details>
   <details class="navmenu">
+    <summary class="transp" title="Partes semanales de señales por tema">Informes &#9662;</summary>
+    <div class="navmenu-panel">
+      <a href="/informes/espana_elecciones/" title="Parte semanal: Espa&ntilde;a, elecciones generales">Espa&ntilde;a &middot; elecciones (semanal)</a>
+    </div>
+  </details>
+  <details class="navmenu">
     <summary class="transp" title="El proyecto y la transparencia">Acerca ▾</summary>
     <div class="navmenu-panel">
       <a href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
