@@ -24,7 +24,9 @@ import json
 import os
 import sqlite3
 import sys
+from collections import Counter
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(BASE, 'data', 'radar.db')
@@ -77,9 +79,35 @@ def main():
         'c.narrative_subtype, c.alternative_explanations, '
         '(SELECT COUNT(*) FROM cluster_events ce WHERE ce.cluster_id=c.id) nev, '
         '(SELECT COUNT(DISTINCT author) FROM cluster_events ce '
-        ' WHERE ce.cluster_id=c.id) nau '
+        ' WHERE ce.cluster_id=c.id) nau, '
+        '(SELECT MIN(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t0, '
+        '(SELECT MAX(ts) FROM cluster_events ce WHERE ce.cluster_id=c.id) t1 '
         'FROM clusters c WHERE c.tema_id=? ORDER BY c.overall_score DESC',
         (a.tema,)).fetchall()
+
+    def dominios(cid, n=3):
+        c = Counter()
+        try:
+            rows = con.execute(
+                'SELECT url FROM cluster_events WHERE cluster_id=? '
+                'AND url IS NOT NULL AND url<>""', (cid,)).fetchall()
+        except Exception:
+            return []
+        for r in rows:
+            try:
+                dom = urlparse(r[0]).netloc.lower()
+            except Exception:
+                continue
+            if dom.startswith('www.'):
+                dom = dom[4:]
+            if dom:
+                c[dom] += 1
+        return ['%s (%d)' % x for x in c.most_common(n)]
+
+    def fmt_ts(ts):
+        if not ts:
+            return '—'
+        return datetime.fromtimestamp(ts, timezone.utc).strftime('%d/%m')
 
     def subtype(c):
         try:
@@ -111,8 +139,10 @@ def main():
         info.append({'label': c['cluster_label'], 'score': sc,
                      'banda': band(c['overall_score']),
                      'eventos': c['nev'], 'autores': c['nau'],
+                     'ventana': '%s–%s' % (fmt_ts(c['t0']), fmt_ts(c['t1'])),
                      'subtipo': subtype(c), 'exp': supported(c)[:3],
-                     'anomalia': round(c['anomaly_score'] or 0, 1)})
+                     'anomalia': round(c['anomaly_score'] or 0, 1),
+                     'dominios': dominios(c['id']) if sc >= 55 else []})
     rep = {name: 0 for _, name in BANDAS}
     for t in info:
         rep[t['banda']] += 1
@@ -121,7 +151,6 @@ def main():
     watch_alto = [t for t in info if t['banda'] == 'ANOMALOUS'
                   and t['score'] >= 55.0]
 
-    from collections import Counter
     narr = Counter(t['subtipo'] for t in info)
     exps = Counter(e for t in info for e in t['exp'])
 
@@ -204,7 +233,7 @@ def main():
                  'linajes': len(linajes), 'topados_techo': len(topados)},
         'delta_vs_anterior': delta,
         'linajes_lista': linajes,
-        'que_ocurre': {'top_clusters': info[:5],
+        'que_ocurre': {'clusters_detalle': info,
                        'narrativas_dominantes': narr.most_common(5),
                        'explicaciones_top': exps.most_common(5)},
         'que_cambia': {'linajes_nuevos_vs_anterior': nuevos_n,
@@ -227,24 +256,49 @@ def main():
     with open(os.path.join(wdir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
 
-    filas_top = ''.join(
-        '<tr><td><code>%s</code></td><td>%s</td>'
+    def ficha(t):
+        # Ficha completa: primero lo observado, luego el patrón, al final
+        # las hipótesis compatibles. Señal, no atribución.
+        bulos_t = [c for c in cruce
+                   if c['cluster'] == t['label']][:3]
+        lb = ''.join(
+            '<li>%s — <a href="%s">%s</a></li>' % (
+                html.escape(b['fuente'] or ''), html.escape(b['url'] or ''),
+                html.escape(b['titular'][:80])) for b in bulos_t)
+        return (
+            '<div style="border:1px solid #e2e8f0;border-radius:10px;'
+            'padding:10px 12px;margin:8px 0">'
+            '<code>%s</code> · <b>%s</b> %s · %s autores · %s eventos · %s'
+            '<br>Se observa: %s.'
+            '<br>Patrón: rol %s; anomalía %s.'
+            '<br>Hipótesis compatibles: %s. '
+            '<a href="/api/v1/cluster/%s">API</a>%s</div>' % (
+                html.escape(t['label']), BAND_ES[t['banda']], t['score'],
+                t['autores'], t['eventos'], t['ventana'],
+                html.escape(', '.join(t['dominios']) or 'sin dominios'),
+                html.escape(str(t['subtipo'])), t['anomalia'],
+                html.escape(', '.join(t['exp'])
+                            or 'sin explicación concluyente'),
+                html.escape(t['label']),
+                ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else ''))
+
+    fichas_high = ''.join(ficha(t) for t in high)
+    fichas_pre = ''.join(ficha(t) for t in watch_alto)
+    filas_anom = ''.join(
+        '<tr><td><code>%s</code></td>'
         '<td style="text-align:right">%s</td>'
-        '<td style="text-align:right">%s</td></tr>' % (
-            html.escape(t['label']), BAND_ES[t['banda']], t['score'],
-            ', '.join(t['exp'][:2]) or '—') for t in info[:5])
+        '<td style="text-align:right">%s</td>'
+        '<td>%s</td></tr>' % (
+            html.escape(t['label']), t['score'], t['autores'],
+            html.escape(', '.join(t['exp'][:2]) or '—'))
+        for t in info if t['banda'] == 'ANOMALOUS' and t['score'] < 55)
     filas_cruce = ''.join(
         '<tr><td>%s</td><td><a href="%s">%s</a></td>'
         '<td style="text-align:right">%s</td></tr>' % (
             html.escape(c['fuente'] or ''), html.escape(c['url'] or ''),
             html.escape(c['titular']), c['score'] if c['score'] is not None
             else '—') for c in cruce[:10])
-    filas_high = ''.join(
-        '<li><code>%s</code> (%s, %s autores): rol %s; %s.</li>' % (
-            html.escape(t['label']), t['score'], t['autores'],
-            html.escape(str(t['subtipo'])),
-            html.escape(', '.join(t['exp']) or 'sin explicación concluyente'))
-        for t in high) or '<li>Ninguno esta semana.</li>'
+    n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -257,13 +311,15 @@ def main():
         '%s en banda alta · <a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
+        '<h2>Banda alta — ficha completa</h2>%s'
+        '<h2>Anómala alta (55–59,9) — ficha completa</h2>%s'
+        '<h2>Anómala &lt;55 — resumen</h2>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Clúster (top 5)</th><th>Banda</th><th>Score</th>'
+        '<tr><th>Clúster</th><th>Score</th><th>Aut.</th>'
         '<th>Explicación</th></tr>%s</table>'
         '<p style="color:#64748b">%s clusters clavados en techos de banda '
         '(39,0/59,0): topes aplicados, no señales independientes. '
-        'Detalle completo en el JSON.</p>'
-        '<h2>Banda alta, explicada</h2><ul>%s</ul>'
+        'WATCH+NORMAL (%s): solo estadística agregada, detalle en el JSON.</p>'
         '<h2>Cruce con verificadores</h2><p>%s contrastes (contraste, no '
         'veredicto), cruzados con score y autores del clúster.</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
@@ -277,7 +333,9 @@ def main():
             semana, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)
                        for k, v in sorted(rep.items()) if v),
-            filas_top, len(topados), filas_high, nbulos, filas_cruce,
+            fichas_high or '<p>Ninguno esta semana.</p>',
+            fichas_pre or '<p>Ninguno esta semana.</p>', filas_anom,
+            len(topados), n_watch, nbulos, filas_cruce,
             html.escape(', '.join(informe['vigilar_proxima'][:5]) or '—'),
             ''.join('<li>%s</li>' % html.escape(x) for x in LIMITES)))
     with open(os.path.join(wdir, semana + '.html'), 'w') as f:
