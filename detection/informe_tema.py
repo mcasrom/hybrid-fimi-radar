@@ -388,10 +388,11 @@ def main():
         agg[t['narrativa']]['cur'] = agg[t['narrativa']]['cur'] or (
             t['label'] in curadas)
     filas_narr = ''.join(
-        '<tr><td>%s%s</td><td style="text-align:right">%s</td>'
+        '<tr><td>%s%s</td><td>%s</td><td style="text-align:right">%s</td>'
         '<td style="text-align:right">%s</td></tr>' % (
             html.escape(nar[:80]),
             '' if v['cur'] else ' <span style="color:#64748b">(auto)</span>',
+            html.escape(', '.join(v['clusters'])),
             len(v['clusters']), v['ev'])
         for nar, v in sorted(agg.items(), key=lambda x: -x[1]['ev'])[:12])
     filas_watch = ''.join(
@@ -431,7 +432,7 @@ def main():
         'prioritarios. <span style="color:#64748b">(auto)</span> = etiqueta '
         'automática por términos, sin curar; el resto, curadas a mano.</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
-        '<tr><th>Narrativa</th><th>Clusters</th><th>Ev.</th></tr>%s</table>'
+        '<tr><th>Narrativa</th><th>Clusters (id)</th><th>N.º</th><th>Ev.</th></tr>%s</table>'
         '<h2>Banda alta — ficha completa</h2>%s'
         '<h2>Anómala alta (55–59,9) — ficha completa</h2>%s'
         '<h2>Anómala &lt;55 — resumen</h2>'
