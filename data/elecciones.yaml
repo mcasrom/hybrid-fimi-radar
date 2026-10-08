@@ -114,6 +114,8 @@
   - гласуване българия
   - elecciones bulgaria
   - presidenciales bulgaria
+  - президентски избори българия
+  - presidential elections bulgaria
 - pais: Serbia
   nombre: Parlamentarias anticipadas
   fecha: '2026-10-25'
@@ -127,6 +129,7 @@
   - glasanje srbija
   - elecciones serbia
   - parlamentarias serbia
+  - parlamentarni izbori srbija
 - pais: España
   nombre: Generales
   fecha: '2026-11-29'
