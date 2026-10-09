@@ -1673,25 +1673,7 @@ keywords:
 - palabra: artificial intelligence
   plataformas: *id005
   tema: inteligencia_artificial
-- palabra: OpenAI
-  plataformas: *id005
-  tema: inteligencia_artificial
-- palabra: ChatGPT
-  plataformas: *id005
-  tema: inteligencia_artificial
-- palabra: Gemini
-  plataformas: *id005
-  tema: inteligencia_artificial
-- palabra: Claude
-  plataformas: *id005
-  tema: inteligencia_artificial
-- palabra: Anthropic
-  plataformas: *id005
-  tema: inteligencia_artificial
 - palabra: deepfake
-  plataformas: *id005
-  tema: inteligencia_artificial
-- palabra: Nvidia
   plataformas: *id005
   tema: inteligencia_artificial
 - palabra: robot
