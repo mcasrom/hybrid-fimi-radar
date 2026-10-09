@@ -147,6 +147,7 @@ muestra el valor vivo):
   580 WATCH · 379 ANOMALOUS · 91 HIGH · 0 CRITICAL. **Estas cifras cambian en cada ciclo**
   (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
+- **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 60 días** (`run_fimi --ventana-dias 60`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 60 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
   La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por
