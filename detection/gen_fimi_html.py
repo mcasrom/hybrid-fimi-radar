@@ -4540,17 +4540,32 @@ def main():
                 "%Y-%m-%d", _t.gmtime())
 
         if _pb_lista:
-            _pb_lis = "".join(
-                "<tr><td>" + _pb_esc.escape(",".join(sorted(r["temas"]))) + "</td>"
-                "<td><code>" + _pb_esc.escape(",".join(r["clusters"])) + "</code> "
-                + ("<span style='color:#c2410c;font-weight:700'>nuevo</span> " if _pb_nuevo(r) else "")
-                + "</td><td>" + _pb_esc.escape(",".join(sorted(r["bandas"]))) + "</td>"
-                "<td><a href='" + _pb_esc.escape(r["url"]) + "'>" + _pb_esc.escape((r["titulo"] or "")[:110]) + "</a>"
-                " <span class='mut'>(" + _pb_esc.escape(r["fuente"]) + ")</span></td></tr>"
-                for r in _pb_rows)
-            _pb_tbl = ("<div class='tablewrap'><table><thead><tr><th>Tema</th><th>Clúster</th>"
-                       "<th>Banda</th><th>Contraste en verificador</th></tr></thead><tbody>"
-                       + _pb_lis + "</tbody></table></div>")
+            import time as _pb_t
+            _PB_ORD = {"CRITICAL": 0, "HIGH": 1, "ANOMALOUS": 2}
+            def _pb_rank(r):
+                b = min((_PB_ORD.get(x, 3) for x in r["bandas"]), default=3)
+                return (b, -(r["pub"] or 0))
+            _pb_sorted = sorted(_pb_lista, key=_pb_rank)[:30]
+
+            def _pb_fila(r):
+                banda = ("HIGH" if "HIGH" in r["bandas"] else
+                         "CRITICAL" if "CRITICAL" in r["bandas"] else "ANOMALOUS")
+                fecha = (_pb_t.strftime("%d-%b", _pb_t.gmtime(r["pub"]))
+                         if r["pub"] else "—")
+                ncl = len(r["clusters"])
+                nuevo = (" <span style='color:#c2410c;font-weight:700'>nuevo</span>"
+                         if _pb_nuevo(r) else "")
+                return (
+                    "<li style='padding:9px 0;border-top:1px solid #eef2f7'>"
+                    "<a href='" + _pb_esc.escape(r["url"]) + "' style='font-weight:600'>"
+                    + _pb_esc.escape((r["titulo"] or "")[:140]) + "</a>" + nuevo
+                    + "<div class='caption' style='margin-top:2px'>"
+                    + _pb_esc.escape((r["fuente"] or "").capitalize()) + " · "
+                    + _pb_esc.escape(fecha) + " · <b>" + banda + "</b> · casa con "
+                    + str(ncl) + " clúster" + ("es" if ncl != 1 else "") + "</div></li>")
+
+            _pb_lis = "".join(_pb_fila(r) for r in _pb_sorted)
+            _pb_tbl = "<ul style='list-style:none;margin:0;padding:0'>" + _pb_lis + "</ul>"
         else:
             _pb_tbl = "<p class='caption'>Sin contrastes en este ciclo.</p>"
         posibles_bulos_html = (
