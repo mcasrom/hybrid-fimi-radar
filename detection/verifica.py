@@ -172,16 +172,31 @@ def exportar_feed() -> dict:
     finally:
         con.close()
     now = int(time.time())
-    items = []
+    # Dedup por URL: una pieza de verificador = un item (con sus temas/clusters).
+    _pz = {}
     for r in rows:
-        ts = r["published_ts"] or r["cycle_ts"] or now
-        items.append({
-            "fecha_utc": datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d"),
-            "tema": r["tema_id"], "banda": r["banda"], "cluster": r["cluster_label"],
-            "verificador": r["verifica_fuente"], "titular": r["verifica_titulo"],
-            "url": r["verifica_url"], "solape": r["solape"],
-            "ficha": f"/#posibles-bulos",
-        })
+        _u = r["verifica_url"]
+        _ts = r["published_ts"] or r["cycle_ts"] or now
+        p = _pz.get(_u)
+        if not p:
+            p = {"url": _u, "verificador": r["verifica_fuente"],
+                 "titular": r["verifica_titulo"], "solape": r["solape"],
+                 "temas": set(), "bandas": set(), "clusters": [], "_ts": _ts}
+            _pz[_u] = p
+        p["temas"].add(r["tema_id"])
+        p["bandas"].add(r["banda"])
+        if r["cluster_label"] not in p["clusters"]:
+            p["clusters"].append(r["cluster_label"])
+        if _ts > p["_ts"]:
+            p["_ts"] = _ts
+    items = sorted(_pz.values(), key=lambda x: -x["_ts"])
+    for p in items:
+        p["fecha_utc"] = datetime.fromtimestamp(p["_ts"], tz=timezone.utc).strftime("%Y-%m-%d")
+        p["temas"] = sorted(p["temas"])
+        p["bandas"] = sorted(p["bandas"])
+        p["n_clusters"] = len(p["clusters"])
+        p["ficha"] = "/#posibles-bulos"
+        del p["_ts"]
     os.makedirs(os.path.dirname(OUT_JSON), exist_ok=True)
     with open(OUT_JSON, "w", encoding="utf-8") as fh:
         json.dump({"updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -196,9 +211,10 @@ def exportar_feed() -> dict:
     few = "".join(
         "<item><title>" + esc(i["titular"]) + "</title>"
         "<link>" + esc(i["url"]) + "</link>"
-        "<guid isPermaLink=\"false\">" + esc(i["cluster"] + "|" + i["url"]) + "</guid>"
-        "<category>" + esc(i["tema"]) + "</category>"
-        "<description>" + esc(f"{i['tema']} · {i['banda']} · clúster {i['cluster']} · "
+        "<guid isPermaLink=\"false\">" + esc("verifica|" + i["url"]) + "</guid>"
+        "<category>" + esc(",".join(i["temas"])) + "</category>"
+        "<description>" + esc(f"{",".join(i['temas'])} · {",".join(i['bandas'])} · "
+                              f"{i['n_clusters']} clúster(es) · "
                               f"verificador {i['verificador']} · solape: {i['solape']}") + "</description>"
         "</item>" for i in items)
     rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

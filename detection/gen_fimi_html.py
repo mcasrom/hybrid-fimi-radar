@@ -4502,18 +4502,44 @@ def main():
         _pb_con = sqlite3.connect(DB, timeout=30)
         try:
             _pb_all = _pb_con.execute(
-                "SELECT tema_id, cluster_label, banda, verifica_fuente,"
-                " verifica_titulo, verifica_url, solape, cycle_ts"
-                " FROM posible_bulos ORDER BY cycle_ts DESC, tema_id").fetchall()
+                "SELECT pb.tema_id, pb.cluster_label, pb.banda, pb.verifica_fuente,"
+                " pb.verifica_titulo, pb.verifica_url, pb.solape, pb.cycle_ts,"
+                " vi.published_ts, vi.fetched_ts"
+                " FROM posible_bulos pb LEFT JOIN verifica_items vi"
+                " ON vi.url=pb.verifica_url").fetchall()
         finally:
             _pb_con.close()
-        _pb_rows = _pb_all[:30]
-        if _pb_all:
+        # Dedup por URL: una pieza de verificador = una fila (con sus clústeres).
+        _pb_piezas = {}
+        for r in _pb_all:
+            _u = r[5]
+            _p = _pb_piezas.get(_u)
+            if not _p:
+                _p = {"url": _u, "titulo": r[4], "fuente": r[3], "temas": set(),
+                      "clusters": [], "bandas": set(), "pub": r[8] or r[7],
+                      "fetched": r[9]}
+                _pb_piezas[_u] = _p
+            _p["temas"].add(r[0])
+            if r[1] not in _p["clusters"]:
+                _p["clusters"].append(r[1])
+            _p["bandas"].add(r[2])
+        _pb_lista = sorted(_pb_piezas.values(), key=lambda x: -(x["pub"] or 0))
+        _pb_rows = _pb_lista[:30]
+
+        def _pb_nuevo(p):
+            import time as _t
+            return bool(p["fetched"]) and _t.strftime(
+                "%Y-%m-%d", _t.gmtime(p["fetched"])) == _t.strftime(
+                "%Y-%m-%d", _t.gmtime())
+
+        if _pb_lista:
             _pb_lis = "".join(
-                "<tr><td>" + _pb_esc.escape(r[0]) + "</td><td><code>" + _pb_esc.escape(r[1]) + "</code></td>"
-                "<td>" + _pb_esc.escape(r[2]) + "</td>"
-                "<td><a href='" + _pb_esc.escape(r[5]) + "'>" + _pb_esc.escape((r[4] or "")[:110]) + "</a>"
-                " <span class='mut'>(" + _pb_esc.escape(r[3]) + ")</span></td></tr>"
+                "<tr><td>" + _pb_esc.escape(",".join(sorted(r["temas"]))) + "</td>"
+                "<td><code>" + _pb_esc.escape(",".join(r["clusters"])) + "</code> "
+                + ("<span style='color:#c2410c;font-weight:700'>nuevo</span> " if _pb_nuevo(r) else "")
+                + "</td><td>" + _pb_esc.escape(",".join(sorted(r["bandas"]))) + "</td>"
+                "<td><a href='" + _pb_esc.escape(r["url"]) + "'>" + _pb_esc.escape((r["titulo"] or "")[:110]) + "</a>"
+                " <span class='mut'>(" + _pb_esc.escape(r["fuente"]) + ")</span></td></tr>"
                 for r in _pb_rows)
             _pb_tbl = ("<div class='tablewrap'><table><thead><tr><th>Tema</th><th>Clúster</th>"
                        "<th>Banda</th><th>Contraste en verificador</th></tr></thead><tbody>"
@@ -4522,16 +4548,16 @@ def main():
             _pb_tbl = "<p class='caption'>Sin contrastes en este ciclo.</p>"
         posibles_bulos_html = (
             "<div class='card' id='posibles-bulos'><h3>Posibles bulos contrastados</h3>"
-            "<p class='caption'>Clusters en banda alta/anómala que comparten tema con una pieza "
-            "reciente de verificador (Maldita/Newtral, 14d; se muestran los 30 recientes). Es "
+            "<p class='caption'>Una fila por pieza de verificador (Maldita/Newtral, 14d), ordenada "
+            "por fecha de publicación; los clústeres son los del tema con los que casa. Es "
             "<b>contraste, no veredicto</b>: no atribuye actor ni confirma bulo.</p>" + _pb_tbl + "</div>")
 
         # --- Mini-tarjeta de resumen (preview) que va tras las tarjetas de temas ---
-        _pb_total = len(_pb_all)
-        _pb_clusters = len({r[1] for r in _pb_all})
-        _pb_high = sum(1 for r in _pb_all if r[2] == "HIGH")
-        _pb_anom = sum(1 for r in _pb_all if r[2] == "ANOMALOUS")
-        _pb_temas = _pb_counter(r[0] for r in _pb_all).most_common(4)
+        _pb_total = len(_pb_lista)
+        _pb_clusters = len({c for p in _pb_lista for c in p["clusters"]})
+        _pb_high = sum(1 for p in _pb_lista if "HIGH" in p["bandas"])
+        _pb_anom = sum(1 for p in _pb_lista if "ANOMALOUS" in p["bandas"])
+        _pb_temas = _pb_counter(t for p in _pb_lista for t in p["temas"]).most_common(4)
         _pb_fuentes = _pb_counter(r[3] for r in _pb_all).most_common(3)
         _pb_max = max([n for _, n in _pb_temas] or [1])
 
@@ -4564,7 +4590,7 @@ def main():
             "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con "
             "piezas recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
             "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
-            + _btile(_pb_total, "contrastes", "#c2410c") + _btile(_pb_clusters, "clusters", "#0f172a")
+            + _btile(_pb_total, "piezas (únicas)", "#c2410c") + _btile(_pb_clusters, "clusters", "#0f172a")
             + _btile(_pb_high, "banda HIGH", "#dc2626") + _btile(_pb_anom, "ANOMALOUS", "#7c3aed")
             + "</div>"
             + ("<div style='margin:6px 0 2px'><b style='font-size:.8rem;color:#64748b'>Por tema</b>"
