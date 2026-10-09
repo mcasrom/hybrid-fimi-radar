@@ -433,12 +433,13 @@ def main():
     if prevs:
         with open(prevs[-1]) as f:
             prev_rep = json.load(f)
-        d = {'eventos': ev['n'] - prev_rep['kpis']['eventos'],
-             'autores': ev['a'] - prev_rep['kpis']['autores'],
-             'clusters': len(cls) - prev_rep['kpis']['clusters'],
+        _pk = (prev_rep.get('kpis') or {})
+        _pb = (_pk.get('bandas') or {})
+        d = {'eventos': ev['n'] - (_pk.get('eventos') or 0),
+             'autores': ev['a'] - (_pk.get('autores') or 0),
+             'clusters': len(cls) - (_pk.get('clusters') or 0),
              'high': rep.get('HIGH', 0) + rep.get('CRITICAL', 0)
-             - prev_rep['kpis']['bandas'].get('HIGH', 0)
-             - prev_rep['kpis']['bandas'].get('CRITICAL', 0)}
+             - _pb.get('HIGH', 0) - _pb.get('CRITICAL', 0)}
         prev_lin = set(prev_rep.get('linajes_lista', []))
         d['linajes_nuevos'] = sorted(set(linajes) - prev_lin)
         d['linajes_caidos'] = sorted(prev_lin - set(linajes))
@@ -448,7 +449,8 @@ def main():
     # Conclusión automática (descriptiva, sin veredicto)
     n_high = rep.get('HIGH', 0) + rep.get('CRITICAL', 0)
     concl = (
-        'Esta semana: %s eventos de %s autores en %s clusters '
+        'Acumulado del tema (no solo esta semana): %s eventos de %s autores '
+        'en %s clusters '
         '(%s en banda alta%s). ' % (
             ev['n'], ev['a'], len(cls), n_high,
             '; %s topados en techos de banda' % len(topados) if topados
@@ -546,10 +548,12 @@ def main():
         motivo = ('Es prioritario por anomalía máxima (%s) con volumen '
                   'concentrado (%s ev/autor).' % (
                       t['anomalia'], t['concentracion']) if es_prio else '')
-        linaje = (' · <a href="/c/%s" title="Identificador persistente '
-                  'entre ciclos">linaje %s</a>' % (
-                      html.escape(t['linaje']),
-                      html.escape(t['linaje'][:8])) if t['linaje'] else '')
+        # Enlace estable: el permalink por linaje sobrevive al cambio de
+        # cluster_label entre ciclos (regla 6); si falta, se cae al API.
+        enlace = ('<a href="/c/%s" title="Permalink por linaje (estable '
+                  'entre ciclos)">ficha persistente</a>' % html.escape(t['linaje'])
+                  if t.get('linaje') else
+                  '<a href="/api/v1/cluster/%s">API</a>' % html.escape(t['label']))
         return (
             '<div style="border:1px solid #e2e8f0;border-radius:10px;'
             'padding:10px 12px;margin:8px 0">'
@@ -563,7 +567,7 @@ def main():
             '<p><b>Qué no permite concluir:</b> coordinación confirmada ni '
             'atribución (hipótesis compatibles: %s; atribución UNKNOWN).</p>'
             '<p style="color:#64748b">Rol: %s · dominios: %s · '
-            '<a href="/api/v1/cluster/%s">API</a>%s%s</p>%s</div>' % (
+            '%s</p>%s%s</div>' % (
                 html.escape(num), html.escape(t['narrativa']), prio,
                 BAND_ES[t['banda']], t['score'], techo,
                 t['autores'], t['eventos'], t['concentracion'],
@@ -574,7 +578,7 @@ def main():
                             or 'sin explicación concluyente'),
                 html.escape(ROL_ES.get(str(t['subtipo']), str(t['subtipo']))),
                 html.escape(', '.join(t['dominios'][:5]) or '—'),
-                html.escape(t['label']), linaje,
+                enlace,
                 ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else '',
                 ('<p><b>Por qué es prioritario:</b> %s</p>' % motivo)
                 if motivo else ''))
@@ -665,7 +669,8 @@ def main():
         'loading="lazy" style="width:100%%;max-width:680px;display:block;'
         'margin:10px auto;border:1px solid #e2e8f0;border-radius:10px"></a>'
         '<a href="./%s.png" download>Descargar imagen</a></p>'
-        '<p style="color:#64748b">%s%s · %s eventos · %s autores · %s clusters · '
+        '<p style="color:#64748b">%s%s · %s eventos acumulados del tema · '
+        '%s autores · %s clusters · '
         '%s en banda alta · señal global de amplificación del ciclo: %s · '
         '<a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'

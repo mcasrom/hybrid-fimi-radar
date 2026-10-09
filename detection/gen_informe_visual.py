@@ -75,7 +75,7 @@ def main():
         a.tema, sem, d['generado_utc']), color='#64748b', fontsize=10,
         va='center')
     # KPIs
-    kpis = [('%s' % k['eventos'], 'eventos'), ('%s' % k['autores'], 'autores'),
+    kpis = [('%s' % k['eventos'], 'eventos acumul.'), ('%s' % k['autores'], 'autores'),
             ('%s' % k['clusters'], 'clusters'),
             ('%s' % (k['bandas'].get('HIGH', 0)
                      + k['bandas'].get('CRITICAL', 0)), 'banda alta'),
