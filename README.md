@@ -165,7 +165,7 @@ muestra el valor vivo):
   piezas recientes de **verificadores** (Maldita/Newtral, 14 d). Se ofrece como **mini-tarjeta con KPIs**
   en la portada (tras las tarjetas de temas), **feed RSS** (`/datos/bulos.xml`) y **JSON** (`/datos/bulos.json`),
   accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
-  Es **contraste, no veredicto**: no atribuye actor ni confirma bulo.
+  Es **contraste, no veredicto**: no atribuye actor ni confirma bulo. **Revisión 9-oct**: la tabla se rehace cada ciclo (DELETE+INSERT) y producía 435 filas para solo ~68 piezas; ahora el **panel, el detalle y el feed se deduplican por pieza** (URL), se ordenan por **fecha real de publicación** del verificador (no por `cycle_ts`, idéntico dentro del ciclo), marcan **«nuevo»** (primera vez visto hoy) e indican **con cuántos clústeres casa**; el detalle se muestra como **lista compacta** (no tabla).
 - **Ventana de observación 60 días** (6-oct): el pipeline solo ve eventos de los últimos 60 d
   (`run_fimi --ventana-dias`; medido neutro en los 9 temas); las señales viejas caducan.
   El almacenamiento conserva 90 d (`mantenimiento.py`).
