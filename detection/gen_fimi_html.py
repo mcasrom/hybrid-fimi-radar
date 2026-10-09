@@ -3588,19 +3588,26 @@ def main():
             _cn = sqlite3.connect(DB, timeout=30)
             try:
                 _rr = _cn.execute(
-                    "SELECT tema_id, cluster_label, banda, verifica_fuente FROM posible_bulos"
-                    " ORDER BY cycle_ts DESC, tema_id").fetchall()
+                    "SELECT pb.tema_id, pb.cluster_label, pb.banda, pb.verifica_url"
+                    " FROM posible_bulos pb").fetchall()
             finally:
                 _cn.close()
         except Exception:
             return ""
         if not _rr:
             return ""
-        _tot = len(_rr)
-        _cl = len({r[1] for r in _rr})
-        _hi = sum(1 for r in _rr if r[2] == "HIGH")
-        _an = sum(1 for r in _rr if r[2] == "ANOMALOUS")
-        _tm = _cnt(r[0] for r in _rr).most_common(4)
+        _pz = {}
+        for _r in _rr:
+            _p = _pz.setdefault(_r[3], {"temas": set(), "clusters": set(),
+                                        "bandas": set()})
+            _p["temas"].add(_r[0])
+            _p["clusters"].add(_r[1])
+            _p["bandas"].add(_r[2])
+        _tot = len(_pz)
+        _cl = len({c for p in _pz.values() for c in p["clusters"]})
+        _hi = sum(1 for p in _pz.values() if "HIGH" in p["bandas"])
+        _an = sum(1 for p in _pz.values() if "ANOMALOUS" in p["bandas"])
+        _tm = _cnt(t for p in _pz.values() for t in p["temas"]).most_common(4)
         _mx = max([n for _, n in _tm] or [1])
 
         def _t(v, lab, col):
@@ -3629,7 +3636,7 @@ def main():
             "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con piezas "
             "recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
             "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
-            + _t(_tot, "contrastes", "#c2410c") + _t(_cl, "clusters", "#0f172a")
+            + _t(_tot, "piezas (únicas)", "#c2410c") + _t(_cl, "clusters", "#0f172a")
             + _t(_hi, "banda HIGH", "#dc2626") + _t(_an, "ANOMALOUS", "#7c3aed") + "</div>"
             "<div style='margin:6px 0 2px'><b style='font-size:.8rem;color:#64748b'>Por tema</b>" + _bars + "</div>"
             "<img src='/bulos-og.png' alt='Resumen de posibles bulos contrastados' loading='lazy' "
