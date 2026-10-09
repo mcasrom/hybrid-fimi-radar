@@ -165,7 +165,13 @@ AMENAZAS = ('matar', 'mataré', 'amenaza de muerte', 'hijo de puta', 'cabrón',
 
 
 def redactar(txt):
-    """Devuelve (texto_limpio, redactado:bool). Sin NER ni LLM: reglas."""
+    """Devuelve (texto_limpio, redactado:bool). Sin NER ni LLM: reglas.
+
+    - Amenazas/insultos → se ANULA el texto (no se reproduce).
+    - @cuentas y nombres de particulares → se ENMASCARAN en sitio
+      (`[cuenta]`/`[nombre]`); el resto del titular se conserva (antes se
+      anulaba el titular entero, perdiendo ~42 % de resúmenes legítimos).
+    """
     if not txt:
         return '', False
     t = re.sub(r'\s+', ' ', txt).strip()
@@ -183,13 +189,11 @@ def redactar(txt):
             return nom
         if nom.lower() in FIGURAS:
             return nom
-        return '[dato personal]'
+        return '[nombre]'
 
     t2 = RE_NOMBRE.sub(_rep, t)
     if t2 != t:
         flag = True
-    if '[dato personal]' in t2:
-        return '[contenido con posible dato personal; no se reproduce]', True
     return t2, flag
 STOP = set('''de la el en y que los del se las una por con para al como más pero sus este esta estos estas eso esa ese ser son fue han hay entre sobre todo también tras ante bajo cuyo cuya cuyos cuyas cual cuales donde cuando porque pues sino aunque según cada dos tres día días vez veces año años hoy ayer anteayer aquí ahí allí entonces pues tan tanto mucha mucho muchas muchos poca poco este esta eso esa aquel aquella aquello ello ello lo le les me te se nos os mi mis tu tus su sus nuestro nuestra nuestros nuestras este esta estos estas estas hay está están estoy estamos eres es son sea sean sido siendo tener tiene tienen hacer hace hacen decir dice dicen poder puede pueden haber hay van ver vez gran grandes nuevo nueva nuevos nuevas primer primera primeros primeras mismo misma mismos mismas otro otra otros otras tanto tanta tantos tantas todo toda todos todas cada cual quien quienes cuyo cuya cuyos cuyas donde como cuando cuanto cuanta cuantos cuantas porque pues sino mas si no ni o u e y'''.split())
 

@@ -123,12 +123,7 @@ def _sans_url(t):
     return m.group(1) if m else s
 
 
-def band_of(score):
-    if score >= 80: return "CRITICAL"
-    if score >= 60: return "HIGH"
-    if score >= 40: return "ANOMALOUS"
-    if score >= 20: return "WATCH"
-    return "NORMAL"
+from detection.bandas import banda as band_of  # noqa: E402
 
 
 def render_bubble_chart(rows, temas, temas_cfg, width=1120):

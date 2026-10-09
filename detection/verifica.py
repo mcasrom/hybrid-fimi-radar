@@ -61,17 +61,7 @@ def cumple(tokens: list) -> bool:
     return len(tokens) >= 2 and any(len(t) >= 8 for t in tokens)
 
 
-def banda(sc: float) -> str:
-    sc = sc or 0.0
-    if sc >= 80:
-        return "CRITICAL"
-    if sc >= 60:
-        return "HIGH"
-    if sc >= 40:
-        return "ANOMALOUS"
-    if sc >= 20:
-        return "WATCH"
-    return "NORMAL"
+from detection.bandas import banda  # noqa: E402 (fuente unica)
 
 
 def _tablas(con):

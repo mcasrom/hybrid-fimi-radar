@@ -33,17 +33,7 @@ COLS = ["lineage_id", "cluster_label", "banda", "overall_score",
         "last_seen_utc", "n_ciclos", "narrative_subtype", "explicacion_principal"]
 
 
-def banda(sc: float) -> str:
-    sc = sc or 0.0
-    if sc >= 80:
-        return "CRITICAL"
-    if sc >= 60:
-        return "HIGH"
-    if sc >= 40:
-        return "ANOMALOUS"
-    if sc >= 20:
-        return "WATCH"
-    return "NORMAL"
+from detection.bandas import banda  # noqa: E402 (fuente unica)
 
 
 def num(x, nd=1):

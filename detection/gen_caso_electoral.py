@@ -25,9 +25,7 @@ TEMA = "elecciones"
 DIAS = 30
 UMBRAL_COBERTURA = 100   # por debajo: cobertura de feeds baja (no ausencia de actividad)
 
-BAND_ES = {"NORMAL": "Normal", "WATCH": "En observación",
-           "ANOMALOUS": "Amplificación anómala", "HIGH": "Amplificación alta",
-           "CRITICAL": "Amplificación muy alta"}
+from detection.bandas import BAND_ES  # noqa: E402
 FASE_TXT = {"fase": "fase electoral", "pasado": "pasado", "proximo": "próximo", "—": "—"}
 MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 COORD = {"Brasil": (-15.8, -47.9), "EEUU": (38.9, -77.0), "Suecia": (59.3, 18.1),
@@ -42,12 +40,7 @@ def coord(pais, nombre):
     return COORD.get(pais)
 
 
-def band(score):
-    if score >= 80: return "CRITICAL"
-    if score >= 60: return "HIGH"
-    if score >= 40: return "ANOMALOUS"
-    if score >= 20: return "WATCH"
-    return "NORMAL"
+from detection.bandas import banda as band  # noqa: E402
 
 
 def n(x):
