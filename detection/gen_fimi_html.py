@@ -1784,6 +1784,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       <a class="nlink" href="/#transparencia">Transparencia</a>
       <a class="nlink active" href="/research.html">Research</a>
       <a class="nlink" href="/metodo.html">Método</a>
+      <a class="nlink" href="/metodo.en.html" title="Method and validation (English)">EN</a>
       <details class="navmenu">
         <summary class="nlink cta-ceuta">Casos ▾</summary>
         <div class="navmenu-panel">
