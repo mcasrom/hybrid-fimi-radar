@@ -101,7 +101,7 @@ def load_names():
 def load_salud():
     try:
         d = json.load(open(SALUD, encoding="utf-8"))
-    except Exception:
+    except (OSError, ValueError):
         return {}
     out = {}
     for t in d.get("temas") or []:
@@ -134,7 +134,7 @@ def cargar_tema(con, tema):
                 doms[h] = doms.get(h, 0) + 1
         try:
             hyps = json.loads(hyps) if hyps else []
-        except Exception:
+        except (ValueError, TypeError):
             hyps = []
         clusters.append({
             "id": cid, "label": label, "ov": float(ov or 0), "banda": band_for(ov),
@@ -171,18 +171,16 @@ def dias_desde(ts):
     if not ts:
         return 0
     # admite epoch (int/str numerico) o ISO/'YYYY-MM-DD HH:MM:SS'
-    try:
+    if str(ts).strip().isdigit():
         v = int(ts)
         if v > 10_000_000:
             t = datetime.fromtimestamp(v, tz=timezone.utc)
             return max(0, (datetime.now(timezone.utc) - t).days)
-    except (TypeError, ValueError):
-        pass
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
             t = datetime.strptime(str(ts)[:19], fmt).replace(tzinfo=timezone.utc)
             return max(0, (datetime.now(timezone.utc) - t).days)
-        except Exception:
+        except ValueError:
             continue
     return 0
 
