@@ -339,14 +339,16 @@ def render(tema, nombre, clusters, kpi, salud):
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
 a{{color:{ACCENT};text-decoration:none}}
-.hd{{background:{NAVY};color:#fff;padding:22px 0}} .hd .wrap{{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}}
-.hd h1{{margin:0;font-size:1.55rem}} .hd .sub{{opacity:.8;font-size:.85rem;margin-top:4px}}
+.hd{{background:{NAVY};color:#fff;padding:26px 0}} .hd .wrap{{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}}
+.hd .brand{{display:flex;align-items:center;gap:15px}}
+.hd .eyebrow{{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;font-weight:800;margin-bottom:4px}}
+.hd h1{{margin:0;font-size:1.62rem;letter-spacing:-.01em}} .hd .sub{{opacity:.82;font-size:.85rem;margin-top:5px}}
 .btns a,.btns button{{display:inline-block;border:1px solid rgba(255,255,255,.5);color:#fff;background:transparent;
-border-radius:8px;padding:9px 14px;font-size:.85rem;cursor:pointer;margin-left:8px}}
+border-radius:9px;padding:9px 15px;font-size:.85rem;cursor:pointer;margin-left:8px}}
 .btns a:hover,.btns button:hover{{background:rgba(255,255,255,.12)}}
-.disc{{background:#fff7ed;border-bottom:1px solid #fed7aa;color:#9a3412;font-size:.82rem;padding:9px 0;text-align:center}}
-section{{background:#fff;border:1px solid {LINE};border-radius:12px;padding:18px 20px;margin:16px 0}}
-h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14px}}
+.disc{{background:#fff7ed;border-bottom:1px solid #fed7aa;color:#9a3412;font-size:.82rem;padding:10px 0;text-align:center}}
+section{{background:#fff;border:1px solid {LINE};border-radius:14px;padding:22px 24px;margin:18px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}}
+h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left:4px solid {ACCENT};line-height:1.2}} .grid{{display:grid;gap:14px}}
 .tiles{{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}}
 .tile{{background:#f8fafc;border:1px solid {LINE};border-radius:10px;padding:12px;text-align:center}}
 .tile .k{{font-size:1.5rem;font-weight:800;color:{NAVY}}} .tile .kl{{font-size:.78rem;font-weight:600}}
@@ -384,9 +386,23 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
 <style>{css}</style></head><body>
 <div class="hd"><div class="wrap">
-  <div><div class="sub">FIMI · Observatorio de amplificacion</div>
-  <h1>{esc(nombre)}</h1>
-  <div class="sub">Informe visual de observacion · generado {esc(now)}</div></div>
+  <div class="brand">
+    <svg width="46" height="46" viewBox="0 0 44 44" aria-hidden="true">
+      <g stroke="#93c5fd" stroke-width="1.6" fill="none" opacity=".9">
+        <line x1="22" y1="8" x2="9" y2="22"/><line x1="22" y1="8" x2="35" y2="22"/>
+        <line x1="9" y1="22" x2="35" y2="22"/><line x1="9" y1="22" x2="16" y2="36"/>
+        <line x1="35" y1="22" x2="28" y2="36"/><line x1="16" y1="36" x2="28" y2="36"/>
+      </g>
+      <g fill="#fff"><circle cx="22" cy="8" r="4"/><circle cx="9" cy="22" r="3.4"/>
+        <circle cx="35" cy="22" r="3.4"/><circle cx="16" cy="36" r="3.4"/>
+        <circle cx="28" cy="36" r="3.4"/><circle cx="22" cy="22" r="3"/></g>
+    </svg>
+    <div>
+      <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
+      <h1>{esc(nombre)}</h1>
+      <div class="sub">Informe visual de observación · generado {esc(now)}</div>
+    </div>
+  </div>
   <div class="btns">
     <a href="https://fimi.viajeinteligencia.com/#{esc(tema)}">&larr; Radar</a>
     <a href="/informes/{esc(tema)}/" target="_blank">Informe semanal</a>
