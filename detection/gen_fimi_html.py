@@ -3425,15 +3425,20 @@ def main():
         # alerta alta, anomalía alta, cuentas implicadas y score máximo, todos
         # derivados de los datos que se muestran en cada tarjeta.
         _asm_by_cid_t = {a["cluster_id"]: a for a in assessments} if assessments else {}
-        _tot_cuentas = 0
+        # Cuentas implicadas = DISTINTAS (antes se SUMABAN las de cada cluster ->
+        # doble conteo de una misma cuenta en varios clusters; alineado con el
+        # informe visual y con la linea "Que esta pasando").
+        _ccon = sqlite3.connect(DB, timeout=30)
+        try:
+            _tot_cuentas = _ccon.execute(
+                "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
+                " JOIN clusters cl ON cl.id=ce.cluster_id WHERE cl.tema_id=?",
+                (_t,)).fetchone()[0]
+        finally:
+            _ccon.close()
         _anom_list_t = []
         _score_list_t = []
         for _cc_t in _tema_cl:
-            _aa_t = _asm_by_cid_t.get(_cc_t["id"])
-            if _aa_t:
-                _mm_t = re.search(r"(\d+)\s+cuentas?", str(_aa_t["assessment"] or ""))
-                if _mm_t:
-                    _tot_cuentas += int(_mm_t.group(1))
             _anom_list_t.append(_cc_t["anomaly_score"] or 0)
             _score_list_t.append(_cc_t["overall_score"] or 0)
         _n_alerta = sum(1 for _v in _score_list_t if _v >= 60)

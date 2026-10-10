@@ -263,8 +263,8 @@ def render(tema, nombre, clusters, kpi, salud):
         ("clusters", n, "clusters"),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
         ("en banda alta", len(altos), "&ge;60"),
-        ("hipotesis dominante", dom_h, "del tema"),
-        ("H3 extranjera", h3, "clusters"),
+        ("hipotesis mas frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
+        ("H3 como max", h3, "clusters"),
         ("dias operando", dias, "desde el 1.er evento"),
     ]
     tiles = "".join(
@@ -309,6 +309,12 @@ def render(tema, nombre, clusters, kpi, salud):
                    ("Infraestructura", "infra"), ("Densidad de red", "dens")]:
         sen += (f"<div class='hrow'><div class='hname' style='width:auto;flex:1'>{lab}</div>"
                 f"<div class='hbar'>{bar(med[k], NAVY)}</div><div class='hval'>{med[k]:.0f}</div></div>")
+    # distribucion de la hipotesis de mayor puntuacion por cluster (frecuencia del tema)
+    _dist_dom = ""
+    for code, c in sorted(cnt.items(), key=lambda x: -x[1]):
+        _dist_dom += (f"<div class='hrow'><div class='hcode'>{esc(code)}</div>"
+                      f"<div class='hname'>{esc(HYP_ES.get(code, ''))}</div>"
+                      f"<div class='hbar'>{bar(100 * c / max(1, n), NAVY)}</div><div class='hval'>{c}</div></div>")
     mas_anom_txt = ""
     if mas_anom:
         mas_anom_txt = (f"<b>{esc(mas_anom['label'])}</b> "
@@ -358,6 +364,16 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Informe visual — {esc(nombre)} · Observatorio de amplificación</title>
 <meta name="description" content="Informe visual del tema {esc(nombre)}: que se observa, senales, hipotesis alternativas y limites. Senal, no atribucion.">
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Informe visual — {esc(nombre)}">
+<meta property="og:description" content="Que se observa, senales, hipotesis alternativas y limites. Amplificacion medida, no coordinacion confirmada.">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Informe visual — {esc(nombre)}">
+<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
 <style>{css}</style></head><body>
 <div class="hd"><div class="wrap">
   <div><div class="sub">FIMI · Observatorio de amplificacion</div>
@@ -387,10 +403,10 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
   <div><h2>Radar de componentes (media del tema)</h2>
     {spider([("Tema (media)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (media)", med, NAVY)])}
     <p class="cs">Media de {n} clusters. El cluster top se dibuja en azul.</p></div>
-  <div><h2>Cluster top — {esc(top['label']) if top else '—'}</h2>
+  <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
     <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
     {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · nucleo k={top['kc']}"}</p>
-    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipotesis evaluadas (0-100)</h3>
+    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipotesis de ESTE cluster (0-100)</h3>
     {hyp_bars or '<p class="cs">Sin hipotesis registradas.</p>'}
     <p class="cs" style="margin-top:10px"><b>Atribucion:</b> {esc(top['atr']) if top else '—'} · confianza {esc(top['conf']) if top else '—'}
     &middot; <i>las puntuaciones son evaluacion interna del sistema; no son probabilidades.</i></p>
@@ -421,11 +437,11 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
     <p class="cs" style="margin-top:8px">Cuentas del cluster compartiendo enlaces del mismo dominio.</p></section>
-  <section><h2>Hipotesis dominante del tema</h2>
-    <div class="hrow"><div class="hname" style="width:auto;flex:1"><b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b></div></div>
-    <div class="hrow"><div class="hname" style="width:auto;flex:1">{dom_h_n} de {n} clusters</div>
-      <div class="hbar">{bar(100*dom_h_n/max(1,n), NAVY)}</div><div class="hval">{100*dom_h_n//max(1,n)}%</div></div>
-    <p class="cs" style="margin-top:8px">Hipotesis dominante del <b>conjunto</b> del tema (no la de un cluster concreto).</p></section>
+  <section><h2>Hipotesis mas frecuente del tema</h2>
+    <p class="cs" style="margin-top:0">Numero de clusters cuya hipotesis de <b>mayor puntuacion</b> es cada una.
+    El tema puede tener una hipotesis mas frecuente distinta de la del <b>cluster top</b> (arriba).</p>
+    {_dist_dom}
+    <p class="cs" style="margin-top:8px">Mas frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p></section>
 </div>
 
 <section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusion</h2><p class="cs">{concl}</p>
