@@ -1,0 +1,42 @@
+{
+ "version": "2026-10-10",
+ "nota": "Lista curada y citable de medios ESTATALES o financiados/controlados por el Estado. Es una clasificación DESCRIPTIVA, no una acusación ni un juicio sobre su fiabilidad. El badge del clúster solo indica que un dominio compartido pertenece a un medio estatal; el radar no atribuye intención. Verificar y citar la fuente antes de publicar.",
+ "fuentes": [
+  "https://euvsdisinfo.eu/",
+  "https://rsf.org/en",
+  "https://www.state-media-monitor.org/"
+ ],
+ "dominios": {
+  "rt.com": {"estado": "estatal", "pais": "RU", "f": "RT (TV-Novosti, Rusia)"},
+  "sputniknews.com": {"estado": "estatal", "pais": "RU", "f": "Sputnik (Rossiya Segodnya)"},
+  "sputnikglobe.com": {"estado": "estatal", "pais": "RU", "f": "Sputnik"},
+  "tass.com": {"estado": "estatal", "pais": "RU", "f": "TASS"},
+  "tass.ru": {"estado": "estatal", "pais": "RU", "f": "TASS"},
+  "ria.ru": {"estado": "estatal", "pais": "RU", "f": "RIA Novosti"},
+  "rg.ru": {"estado": "estatal", "pais": "RU", "f": "Rossiyskaya Gazeta"},
+  "tvzvezda.ru": {"estado": "estatal", "pais": "RU", "f": "Zvezda (Min. Defensa)"},
+  "rbth.com": {"estado": "estatal", "pais": "RU", "f": "Russia Beyond"},
+  "kremlin.ru": {"estado": "oficial", "pais": "RU", "f": "Kremlin (fuente oficial)"},
+  "mid.ru": {"estado": "oficial", "pais": "RU", "f": "MAE ruso (oficial)"},
+  "xinhuanet.com": {"estado": "estatal", "pais": "CN", "f": "Xinhua"},
+  "news.cn": {"estado": "estatal", "pais": "CN", "f": "Xinhua"},
+  "cgtn.com": {"estado": "estatal", "pais": "CN", "f": "CGTN"},
+  "globaltimes.cn": {"estado": "estatal", "pais": "CN", "f": "Global Times"},
+  "chinadaily.com.cn": {"estado": "estatal", "pais": "CN", "f": "China Daily"},
+  "people.com.cn": {"estado": "estatal", "pais": "CN", "f": "People's Daily"},
+  "ecns.cn": {"estado": "estatal", "pais": "CN", "f": "China News Service"},
+  "presstv.ir": {"estado": "estatal", "pais": "IR", "f": "Press TV (IRIB)"},
+  "hispantv.com": {"estado": "estatal", "pais": "IR", "f": "HispanTV (IRIB)"},
+  "irna.ir": {"estado": "estatal", "pais": "IR", "f": "IRNA"},
+  "tasnimnews.com": {"estado": "estatal", "pais": "IR", "f": "Tasnim (IRGC)"},
+  "alalam.ir": {"estado": "estatal", "pais": "IR", "f": "Al-Alam (IRIB)"},
+  "trtworld.com": {"estado": "estatal", "pais": "TR", "f": "TRT World"},
+  "trt.net.tr": {"estado": "estatal", "pais": "TR", "f": "TRT"},
+  "aa.com.tr": {"estado": "estatal", "pais": "TR", "f": "Anadolu Agency"},
+  "vitrinelatina.com": {"estado": "estatal", "pais": "VE", "f": "teleSUR/afines"},
+  "telesurtv.net": {"estado": "estatal", "pais": "VE", "f": "teleSUR"},
+  "cubadebate.cu": {"estado": "estatal", "pais": "CU", "f": "Cubadebate"},
+  "granma.cu": {"estado": "estatal", "pais": "CU", "f": "Granma"},
+  "spanish.xinhuanet.com": {"estado": "estatal", "pais": "CN", "f": "Xinhua (ES)"}
+ }
+}

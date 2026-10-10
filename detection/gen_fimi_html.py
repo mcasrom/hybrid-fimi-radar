@@ -18,6 +18,24 @@ import unicodedata
 ROOT = Path("/home/deploy/hybrid-fimi-radar")
 sys.path.insert(0, str(ROOT))  # importar detection/normalizer/... como paquetes (se corre como script)
 DB = ROOT / "data" / "radar.db"
+MEDIOS_ESTATALES = {}
+try:
+    with open(ROOT / "data" / "medios_estatales.json", encoding="utf-8") as _f:
+        MEDIOS_ESTATALES = (json.load(_f) or {}).get("dominios", {})
+except Exception:
+    MEDIOS_ESTATALES = {}
+
+
+def _estatal_badge(_dom):
+    _d = (_dom or "").lower()
+    for _k, _v in MEDIOS_ESTATALES.items():
+        if _d == _k or _d.endswith("." + _k):
+            return (' <span title="%s (%s) — clasificación descriptiva, ver fuentes" '
+                    'style="background:#fee2e2;color:#991b1b;border-radius:999px;'
+                    'padding:0 6px;font-size:.66rem;font-weight:700">%s</span>'
+                    % (_v.get("f", "medio estatal"), _v.get("pais", ""),
+                       _v.get("estado", "estatal")))
+    return ""
 OUT = Path("/var/www/fimi/index.html")
 # El detalle de los clusters del "resto" (oculto, ~900 tarjetas) NO se incrusta en
 # index.html (lo llevaba a ~17,8 MB y rompía el "Request indexing" de GSC). Se
@@ -1246,7 +1264,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
         _dom_chips = "".join(
             f'<span style="display:inline-block;background:#fff;border:1px solid #e2e8f0;'
             f'border-radius:999px;padding:1px 8px;font-size:.72rem;color:#475569;margin:1px 4px 1px 0">'
-            f'{_dom_esc.escape(x["dominio"])} <b style="color:#c2410c">· {_pl(x['n_cuentas'],'cuenta','cuentas')}</b></span>'
+            f'{_dom_esc.escape(x["dominio"])}{_estatal_badge(x["dominio"])} <b style="color:#c2410c">· {_pl(x['n_cuentas'],'cuenta','cuentas')}</b></span>'
             for x in dominios[:3])
         if _dom_chips:
             _dom_html = (f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;'

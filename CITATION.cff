@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "Si usas este observatorio, cítalo como se indica."
+title: "Observatorio de amplificación (ámbito FIMI)"
+abstract: >-
+  Sistema OSINT abierto que mide patrones de amplificación (sincronización,
+  repetición de contenido y anomalías) en conversación pública, en español.
+  No atribuye autoría ni confirma campañas: publica señales conductuales
+  auditables, método, límites y evidencia descargable (API + CSV/JSON).
+  FIMI es el ámbito observado, no la promesa.
+authors:
+  - family-names: "Castillo"
+    given-names: "Miguel"
+    email: "info-fimi@viajeinteligencia.com"
+    website: "https://fimi.viajeinteligencia.com"
+version: "0.2"
+date-released: "2026-10-10"
+license: AGPL-3.0
+repository-code: "https://github.com/mcasrom/hybrid-fimi-radar"
+url: "https://fimi.viajeinteligencia.com"
+keywords:
+  - OSINT
+  - FIMI
+  - desinformación
+  - amplificación
+  - coordinación
+  - redes sociales
+  - metodología abierta
