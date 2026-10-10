@@ -1435,6 +1435,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         return (f'<div class="card"><h3>{titulo_vacio}</h3>'
                 '<p class="caption">Con la historia acumulada hasta ahora no hay señal de '
                 'coordinación. La ausencia de señal es un resultado válido del radar.</p></div>')
+    _tkey = str(clus[0]["tema_id"]) if clus else "t"
     # índice assessments por cluster_id
     asm_by_cid = {a["cluster_id"]: a for a in asm} if asm else {}
     contenido_map = contenido_map or {}
@@ -1446,6 +1447,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
     # miles de px cuando un tema tiene muchas señales en alerta (p.ej. frontera_sur
     # con ~68 HIGH/CRITICAL = ~60k px si se expanden todos).
     MAX_EXPAND = 6
+    INLINE_BARS_MAX = 40  # barras resto inline/tema; cola -> resto.html
     order = sorted(clus, key=lambda c: -(c["overall_score"] or 0))
     _cands = [c for c in order if band_of(c["overall_score"] or 0) in EXPANDED_BANDS]
     expandidos = _cands[:MAX_EXPAND]
@@ -1477,7 +1479,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
         # orden: score desc; empate -> más cuentas primero
         resto_sorted = sorted(resto, key=lambda c: (-(c["overall_score"] or 0), -_n_acc(c)))
 
-        bars = ""
+        _bar_list = []
         pool = ""  # detalles pre-renderizados (uno por cluster), ocultos
         for c in resto_sorted:
             cid = c["id"]
@@ -1518,7 +1520,7 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             except Exception:
                 ctx_ = ""
             # fila-barra clicable (div, sin framework)
-            bars += (
+            _bar_list.append(
                 f'<div class="fimi-bar" data-cid="{cid}" '
                 f'onclick="fimiResto({cid})" '
                 f'style="display:flex;align-items:center;gap:10px;padding:7px 8px;'
@@ -1538,18 +1540,24 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
             pool += (f'<div class="fimi-resto-detail" data-cid="{cid}" hidden>'
                      f'<div style="border-left:5px solid {_bcol_pool}">{_cluster_detail_html(c, a_, comps_, contenido_map.get(cid), diversidad_map.get(cid), (domains_map or {}).get(cid), evidencia_map.get(cid), amp_global, disp_map, (lineage_map or {}).get((c["tema_id"], c["cluster_label"])), (tipologia_map or {}).get(c["cluster_label"]))}</div></div>')
 
+        bars = "".join(_bar_list[:INLINE_BARS_MAX])
+        tail_bars = "".join(_bar_list[INLINE_BARS_MAX:])
         plural = "clusters" if len(resto) != 1 else "cluster"
         out += (f'<div class="card" style="padding:12px 16px;background:#fafaf9">'
-                f'<details><summary style="cursor:pointer;font-weight:600;color:#475569;font-size:.9rem">'
+                f'<details data-tail="{_tkey}" ontoggle="fimiTail(this)">'
+                f'<summary style="cursor:pointer;font-weight:600;color:#475569;font-size:.9rem">'
                 f'Ver los {len(resto)} {plural} restantes '
                 f'(resto del listado, ordenado por score)</summary>'
                 f'<p style="font-size:.74rem;color:#94a3b8;margin:8px 0 2px">Pulsa una barra para ver su detalle '
                 f'(solo se muestra uno a la vez).</p>'
                 f'{bars}'
+                f'<div class="fimi-tail-holder"></div>'
                 f'<div id="fimiRestoPane" style="display:none;margin-top:10px"></div>'
                 f'</details></div>')
         # El detalle (pool) va a resto.html, no inline (ver POOL_ACC).
         POOL_ACC.append(pool)
+        if tail_bars:
+            POOL_ACC.append(f'<div class="fimi-resto-tailbars" data-tail="{_tkey}" hidden>{tail_bars}</div>')
 
     return out
 
@@ -5558,6 +5566,20 @@ if ('serviceWorker' in navigator) {{
     }});
   }}
   window.fimiResto=fimiResto;
+  function fimiTail(det){{
+    if(det.dataset.tailloaded) return;
+    var key=det.getAttribute("data-tail");
+    _ensurePool(function(){{
+      var tb=document.querySelector('.fimi-resto-tailbars[data-tail="'+key+'"]');
+      var holder=det.querySelector(".fimi-tail-holder");
+      if(tb&&holder&&!det.dataset.tailloaded){{
+        var c=tb.cloneNode(true); c.removeAttribute("hidden"); c.hidden=false;
+        while(c.firstChild){{ holder.appendChild(c.firstChild); }}
+        det.dataset.tailloaded="1";
+      }}
+    }});
+  }}
+  window.fimiTail=fimiTail;
 
   // Navegación 2 vistas: resumen (diales) por defecto; detalle tras pulsar.
   function abrirDetalle(t){{
