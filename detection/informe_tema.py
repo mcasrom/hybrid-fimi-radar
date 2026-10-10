@@ -29,6 +29,9 @@ from collections import Counter
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import metricas_tema as _mt  # noqa: E402  (definiciones canonicas por tema)
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(BASE, 'data', 'radar.db')
 BANDAS = [(0, 'NORMAL'), (20, 'WATCH'), (40, 'ANOMALOUS'), (60, 'HIGH'),
@@ -480,11 +483,18 @@ def main():
         concl += (' Se han redactado %s contenidos con datos personales, '
                   'cuentas o amenazas: no se reproducen.' % n_red)
 
+    cuentas_clusters = _mt.cuentas_en_clusters(con, a.tema)
+    _dias_oper, _ini_ing = _mt.dias_operando(con, a.tema)
+    _ini_str = (datetime.fromtimestamp(_ini_ing, timezone.utc).strftime('%d/%m/%Y')
+                if _ini_ing else 's/d')
+    _dias_txt = '%d dias operando (desde %s)' % (round(_dias_oper), _ini_str)
     informe = {
         'tema': a.tema, 'semana': semana,
         'generado_utc': now.strftime('%Y-%m-%d %H:%M'),
         'kpis': {'eventos': ev['n'], 'autores': ev['a'],
+                 'cuentas_clusters': cuentas_clusters,
                  'clusters': len(cls), 'bandas': rep,
+                 'dias_operando': round(_dias_oper, 1), 'inicio_ingesta': _ini_ing,
                  'linajes': len(linajes), 'topados_techo': len(topados)},
         'delta_vs_anterior': delta,
         'linajes_lista': linajes,
@@ -673,9 +683,9 @@ def main():
         'loading="lazy" style="width:100%%;max-width:680px;display:block;'
         'margin:10px auto;border:1px solid #e2e8f0;border-radius:10px"></a>'
         '<a href="./%s.png" download>Descargar imagen</a></p>'
-        '<p style="color:#64748b">%s%s · %s eventos acumulados del tema · '
-        '%s autores · %s clusters · '
-        '%s en banda alta · señal global de amplificación del ciclo: %s · '
+        '<p style="color:#64748b">%s%s · %s eventos del tema · '
+        '%s autores del tema · %s cuentas en clusters · %s clusters · '
+        '%s en banda alta · %s · señal global de amplificación del ciclo: %s · '
         '<a href="./%s.json">JSON</a></p>'
         '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
@@ -715,7 +725,8 @@ def main():
             + ('Los clusters agregan todo el corpus (algunos empiezan en %s). '
                % min_t0 if min_t0 else ''),
             informe['kpis']['eventos'],
-            informe['kpis']['autores'], informe['kpis']['clusters'], n_high,
+            informe['kpis']['autores'], cuentas_clusters, informe['kpis']['clusters'], n_high,
+            _dias_txt,
             amp_global,
             semana, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)

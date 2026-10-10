@@ -17,7 +17,11 @@ import json
 import os
 import re
 import sqlite3
+import sys
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import metricas_tema as _mt  # noqa: E402  (definiciones canonicas por tema)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "radar.db")
@@ -152,17 +156,10 @@ def cargar_tema(con, tema):
     tmin = con.execute(
         "SELECT MIN(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id"
         " WHERE et.tema_id=?", (tema,)).fetchone()[0]
-    # cuentas implicadas en CLUSTERS (no todos los autores del tema): misma definicion
-    # que la referencia visual; evita la discrepancia autores-vs-cuentas.
-    n_au_cl = con.execute(
-        "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
-        " JOIN clusters c ON c.id=ce.cluster_id WHERE c.tema_id=?", (tema,)).fetchone()[0]
-    # inicio real de ingesta del tema = primer hallazgo persistido (misma fuente
-    # que el dashboard: salud_tema._inicio_ingesta -> MIN(fecha) FROM findings).
-    try:
-        _ini = con.execute("SELECT MIN(fecha) FROM findings WHERE tema_id=?", (tema,)).fetchone()[0]
-    except sqlite3.Error:
-        _ini = None
+    # cuentas implicadas en CLUSTERS (distintas) e inicio de ingesta: fuente
+    # canonica compartida (metricas_tema), igual que el dashboard y el semanal.
+    n_au_cl = _mt.cuentas_en_clusters(con, tema)
+    _ini = _mt.inicio_ingesta(con, tema)
     return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin, "inicio": _ini}
 
 
