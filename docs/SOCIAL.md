@@ -154,3 +154,20 @@ tail -40 logs/social_rotacion.log
 tail -20 logs/social_verificar.log
 tail -20 /home/deploy/.pm2/logs/radar-fimi-bot-out.log
 ```
+
+## 10. Informe visual por tema
+
+Cada tema tiene un **informe visual de una página** (`/informes/visual/<tema>.html`). Para
+publicarlo en **Mastodon + Bluesky + Telegram** con su **tarjeta OG** y **alt**, y obtener los
+textos de **X** y **LinkedIn** para pegar a mano:
+
+```bash
+cd /home/deploy/social-poster
+/usr/bin/python3 publish_visual_card.py <tema>          # publica (Mastodon+Bluesky+Telegram)
+/usr/bin/python3 publish_visual_card.py <tema> --dry    # solo muestra los textos
+```
+
+- `publish_mastodon.py` acepta **`--alt "..."`** (accesibilidad): se sube como `description` del media.
+- Límites: **Mastodon ≤500 · Bluesky ≤300 · X (enlace=23) ≤280 · Telegram caption ≤1024**.
+- **X es siempre manual** (regla 25); el lanzador lo remite por stdout/pantalla.
+- Encuadre obligatorio: «amplificación medida, **no** coordinación confirmada».
