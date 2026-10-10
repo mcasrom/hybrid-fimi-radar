@@ -37,6 +37,7 @@ done
 .venv/bin/python detection/gen_datasets.py >> logs/fimi.log 2>&1
 # 3d) Informe visual de una pagina por tema (reutiliza datos; estatico)
 .venv/bin/python detection/gen_informe_visual_tema.py --todos >> logs/fimi.log 2>&1
+/usr/bin/python3 detection/gen_informe_visual_og.py --todos >> logs/fimi.log 2>&1
 # 3c) Tarjeta social de posibles bulos (PNG 1200x630 desde posible_bulos)
 /usr/bin/python3 detection/gen_bulos_og.py >> logs/fimi.log 2>&1
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).

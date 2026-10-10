@@ -3704,6 +3704,13 @@ def main():
             "</div>")
 
     bulos_card_html = _bulos_mini_card()
+    try:
+        _tnames_nav = {t: ((temas_cfg.get(t) or {}).get("nombre") or t) for t in temas}
+    except (AttributeError, TypeError):
+        _tnames_nav = {t: t for t in temas}
+    _informes_visual_nav = "".join(
+        f"<a href='/informes/visual/{t}.html' title='Informe visual (una p\u00e1gina)'>{_tnames_nav[t]}</a>"
+        for t in temas)
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
                f"{piloto_banner}"
                f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
@@ -5148,8 +5155,11 @@ a{{color:#c2410c}}
     </div>
   </details>
   <details class="navmenu">
-    <summary class="transp" title="Partes semanales de señales por tema">Informes &#9662;</summary>
+    <summary class="transp" title="Informes visuales y semanales por tema">Informes &#9662;</summary>
     <div class="navmenu-panel">
+      <div style="padding:6px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Informe visual &middot; una p&aacute;gina</div>
+      {_informes_visual_nav}
+      <div style="padding:8px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Semanal</div>
       <a href="/informes/espana_elecciones/" title="Parte semanal: Espa&ntilde;a, elecciones generales">Espa&ntilde;a &middot; elecciones (semanal)</a>
     </div>
   </details>
