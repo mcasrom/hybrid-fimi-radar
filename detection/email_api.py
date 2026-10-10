@@ -480,6 +480,43 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
         payload["eventos"] = lat
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         return ("application/json", body, f"fimi-evidence-{cid}.json")
+    if fmt in ("gexf", "graphml"):
+        # Grafo cuenta-cuenta del cluster (nodos = cuentas sociales; aristas =
+        # misma URL compartida). Authors ya vienen anonimizados (anon map).
+        import io as _io
+        import itertools as _it
+        from collections import defaultdict as _dd
+        import networkx as _nx
+        _SOCIAL = ("bsky:", "tg:", "reddit:", "masto:")
+        _url_accs = _dd(set)
+        _acc_n = _dd(int)
+        for _e in evs:  # autores ORIGINALES (antes de anonimizar)
+            _a = _e["author"] or ""
+            if not _a or not any(_a.startswith(p) for p in _SOCIAL):
+                continue
+            _acc_n[_a] += 1
+            _u = (_e["url"] or "").strip()
+            if _u:
+                _url_accs[_u].add(_a)
+        _g = _nx.Graph()
+        _g.graph["cluster"] = cid
+        _g.graph["banda"] = banda
+        _g.graph["autor"] = "Observatorio de amplificacion (ambito FIMI)"
+        for _a, _n in _acc_n.items():
+            _g.add_node(_a, eventos=int(_n))
+        _wc = _dd(int)
+        for _u, _accs in _url_accs.items():
+            for _a, _b in _it.combinations(sorted(_accs), 2):
+                _wc[(_a, _b)] += 1
+        for (_a, _b), _n in _wc.items():
+            _g.add_edge(_a, _b, weight=int(_n), tipo="misma_url", n_urls=int(_n))
+        _g = _nx.relabel_nodes(_g, {_a: anon.get(_a, _a) for _a in _acc_n})
+        _buf = _io.BytesIO()
+        if fmt == "gexf":
+            _nx.write_gexf(_g, _buf)
+            return ("application/gexf+xml", _buf.getvalue(), f"fimi-graph-{cid}.gexf")
+        _nx.write_graphml(_g, _buf)
+        return ("application/graphml+xml", _buf.getvalue(), f"fimi-graph-{cid}.graphml")
     # CSV
     import io
     import csv
@@ -1130,8 +1167,8 @@ class H(BaseHTTPRequestHandler):
             # tarjetas; el export facilita auditoría/compartir.
             cid = (q.get("cluster") or [""])[0]
             fmt = (q.get("fmt") or ["csv"])[0]
-            if fmt not in ("csv", "json"):
-                return self._send(400, {"error": "fmt invalido (csv|json)"})
+            if fmt not in ("csv", "json", "gexf", "graphml"):
+                return self._send(400, {"error": "fmt invalido (csv|json|gexf|graphml)"})
             if not cid:
                 return self._send(400, {"error": "falta cluster"})
             if not re.match(r"^[a-z0-9_]+(_cluster_[0-9]{3})?$", cid):

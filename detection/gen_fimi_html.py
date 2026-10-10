@@ -1301,6 +1301,9 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
                          f'style="color:#c2410c;text-decoration:none">📥 Exportar evidencia (CSV)</a>'
                          f' · <a href="/api/export?cluster={c["cluster_label"]}&fmt=json" '
                          f'style="color:#c2410c;text-decoration:none">JSON</a>'
+                         f' · <a href="/api/export?cluster={c["cluster_label"]}&fmt=gexf" '
+                         f'title="Grafo cuenta-cuenta (GEXF) para Gephi" '
+                         f'style="color:#c2410c;text-decoration:none">GEXF (Gephi)</a>'
                          f'</div></div>')
 
     # barras de componentes (X/100 junto a la barra)
