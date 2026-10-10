@@ -871,6 +871,15 @@ No expone endpoints de administración ni datos personales.
 `Allow`), y `414`/`500`/`505` de protocolo/servidor. Nunca se devuelve HTML ni una traza.
 `HEAD` está soportado (mismas cabeceras que `GET`, sin cuerpo).
 
+## Informe visual por tema
+
+`detection/gen_informe_visual_tema.py` genera una página editorial por tema en
+`/informes/visual/<tema>.html` (KPIs + radar de componentes + cluster de mayor score con sus
+hipótesis + clusters destacados + dominios + conclusión; Imprimir/PDF y export CSV/JSON/GEXF),
+con `og:image` por tema (`gen_informe_visual_og.py`). Usa las métricas **canónicas** de
+`detection/metricas_tema.py`, compartidas con el dashboard y el informe semanal. Se enlaza desde
+un botón en cada panel del dashboard y el desplegable «Informes ▾».
+
 ## Contexto de interpretación en las tarjetas de cluster
 
 Cada cluster se presenta con bloques de contexto que ayudan al analista a no sobreleer la

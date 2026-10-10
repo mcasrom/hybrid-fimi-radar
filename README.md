@@ -189,6 +189,13 @@ muestra el valor vivo):
 - **Dashboard más ligero** (10-oct): las barras de clúster se capan a 40 **inline** por tema
   y el resto se carga **bajo demanda** (`resto.html`); la portada baja de ~2,2 MB a **~1,6 MB**
   (brotli ~214 KB) sin perder barras.
+- **Informe visual por tema** (10-oct): una página editorial por tema en
+  `/informes/visual/<tema>.html` (9 temas + índice) con KPIs, **radar de componentes**,
+  cluster de mayor score con sus **hipótesis**, 3 clusters destacados, dominios que
+  amplifican y **conclusión**; botones **Imprimir/Guardar PDF** y export **CSV/JSON/GEXF**.
+  Botón **«Informe visual ↗»** en cada panel del dashboard y desplegable **«Informes ▾»**.
+  Métricas **canónicas compartidas** con el dashboard y el informe semanal
+  (`detection/metricas_tema.py`: eventos del tema · cuentas en clusters · días operando).
 - Última release: **v0.2.1** (incluye el snapshot de dataset con DOI).
 
 ## 5. Limitaciones conocidas

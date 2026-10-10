@@ -151,6 +151,13 @@ the live value):
 - **Lighter dashboard** (10-Oct): cluster bars are capped to 40 **inline** per topic and the
   rest load **on demand** (`resto.html`); the home page drops from ~2.2 MB to **~1.6 MB**
   (brotli ~214 KB) with no bars lost.
+- **Per-topic visual report** (10-Oct): a one-page editorial report per topic at
+  `/informes/visual/<tema>.html` (9 topics + index) with KPIs, a **component radar**,
+  the top-score cluster with its **hypotheses**, 3 highlighted clusters, amplifying
+  domains and a **conclusion**; **Print/Save PDF** and **CSV/JSON/GEXF** export.
+  **"Visual report ↗"** button in each dashboard panel and an **"Informes ▾"** menu.
+  **Canonical metrics** shared with the dashboard and the weekly report
+  (`detection/metricas_tema.py`: topic events · cluster accounts · days running).
 - Latest release: **v0.2.1** (includes the dataset snapshot with DOI).
 
 ## 5. Known limitations
