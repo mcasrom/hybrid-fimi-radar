@@ -17,4 +17,5 @@ una banda alta es amplificación medida, **nunca** coordinación confirmada. El 
 resultado.
 
 **Licencias.** Los **datos** se publican bajo **CC BY 4.0**; el **software** bajo **AGPL-3.0**.
-El código está en <https://github.com/mcasrom/hybrid-fimi-radar>.
+El código está en <https://github.com/mcasrom/hybrid-fimi-radar>. El **dataset** tiene **DOI**
+(<https://doi.org/10.5281/zenodo.23282710>); los metadatos de cita están en `CITATION.cff`.

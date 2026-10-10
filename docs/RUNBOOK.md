@@ -20,7 +20,7 @@ pueda mantener el radar sin conocimiento previo (mitiga el **bus factor 1**).
 | Backups BD | `backups/radar-*.db.gz` (rotación 4) |
 | Backup offsite | `backups/offsite/` (config + bitácora, semanal) |
 | Logs | `logs/*.log` |
-| Zona Cloudflare | `a56f7c002b1db64082f0813b839db412` (viajeinteligencia.com) |
+| Zona Cloudflare | `<zone-id>` (viajeinteligencia.com) |
 
 ---
 

@@ -823,6 +823,15 @@ y URLs de un cluster en CSV o JSON (`--cluster <label> --fmt csv|json`), o en el
 (los links "Exportar evidencia" de cada tarjeta). Recurso público: los datos ya eran
 visibles en las tarjetas; el export solo los facilita.
 
+El mismo endpoint acepta `fmt=gexf` o `fmt=graphml` y devuelve el **grafo cuenta↔cuenta** del
+clúster (nodos anonimizados `cuenta-N`, aristas = misma URL compartida) para Gephi/GraphML; en
+el dashboard, cada detalle enlaza **«GEXF (Gephi)»**.
+
+**Dataset citable (DOI).** `scripts/build_snapshot.py` empaqueta un snapshot congelado
+(datasets por tema + `datapackage.json` con `sha256` + conjunto ciego redactado); su **DOI**
+se cita desde `CITATION.cff` ([`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710))
+y cada release de GitHub lo versiona con un DOI nuevo.
+
 Además, al generar un **finding** de tipo cluster se archiva un **snapshot de sus eventos**
 en la tabla **`finding_evidence`** (`detection/persistencia.py`), que se purga junto al
 finding. Como `cluster_events` se sobrescribe cada ciclo, sin este archivo no se podría
@@ -842,6 +851,7 @@ rate-limit 20 req/min por IP) y con CORS abierto para lectura.
 | `GET /api/v1/cluster/<label>` | Cluster completo + evidencia (eventos) + `lineage` + `kcore` |
 | `GET /c/<lineage_id>` | **Permalink** de una campaña sostenida (ID lógico estable) → cluster actual del linaje |
 | `GET /api/v1/openapi.json` | Especificación OpenAPI 3.0 |
+| `GET /api/export?cluster=<label>&fmt=csv/json/gexf/graphml` | Exporta un clúster: evidencia (csv/json) o **grafo cuenta↔cuenta** (GEXF/GraphML para Gephi; nodos anonimizados) |
 | `GET /api/v1/health` | Estado del servicio |
 
 Cada respuesta incluye `meta` (programa, versión, `generado_utc`, `snapshot: true`,

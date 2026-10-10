@@ -113,16 +113,22 @@ URLs) plus the empty `label_*` columns for human annotation.
 
 ## 4. Current status
 
-Latest run snapshot (27 Sep 2026, **v0.2**; figures grow every cycle — the dashboard shows
+Snapshot (10 Oct 2026, **v0.2.1**; figures grow every cycle — the dashboard shows
 the live value):
 
 - **8 active topics** (6 in production + 2 pilot: `elecciones`, `defensa_espana`).
   `espana_amenazas_hibridas` was merged into `defensa_espana` on 27 Sep (renamed "Spain — defence and hybrid threats").
-- **~133,000 events** and **933 clusters** (90-day window).
+- **~233,000 events** and **~1,600 clusters** (9 active topics, as of 10 Oct 2026): the API
+  (`/api/v1/temas`) reports **99 in a high band** (HIGH/CRITICAL, score ≥60) and **0 CRITICAL**.
+  Figures grow every cycle — the dashboard shows the live value.
 - **78 RSS feeds** (5 Spanish ones with `tema: espana_elecciones` since 5 Oct + `Meneame Portada` since 7 Oct, no tema: the gate decides) + 2 platform searches, 6 public Telegram channels (2 parked), subreddits parked (429).
 - Live dashboard: https://fimi.viajeinteligencia.com · read-only API v1: `/api/v1/…`.
 - **Open datasets by topic** (5-Oct): `/datos/<tema>/clusters.{csv,json}` per cluster
   (no texts or authors) + `datapackage.json` (CC BY 4.0) + freshness `status.json`.
+- **Citable dataset with DOI** (10-Oct): frozen snapshot with `sha256` and a **Zenodo DOI**
+  [`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710) (data CC BY 4.0);
+  includes the **blind set** (redacted texts). Rebuild with `scripts/build_snapshot.py`;
+  citation metadata in `CITATION.cff`.
 - **Contrast-checked possible hoaxes** (5-Oct, expanded 6-Oct): crosses high/anomalous-band clusters
   with recent **fact-checker** pieces (Maldita/Newtral, 14 d). Offered as a **KPI mini-card** on the
   dashboard (after the topic cards), **RSS feed** (`/datos/bulos.xml`) and **JSON** (`/datos/bulos.json`)
@@ -134,9 +140,18 @@ the live value):
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
+- **Per-cluster graph export** (10-Oct): `/api/export?cluster=<label>&fmt=gexf|graphml`
+  (account↔account graph, anonymised nodes `cuenta-N`, edges = same shared URL) for
+  Gephi/GraphML; the cluster detail links **"GEXF (Gephi)"**.
 - **Sitemap with `/casos/electoral/`** (6-Oct, 15 URLs) + `/api/v1/openapi.json` served after
   an nginx exception (the extension rule swallowed it → 404 before).
-- Latest release: **v0.2**.
+- **State-media context** (10-Oct): 31 state/state-funded domains (curated, sourced) flagged
+  with a **"state"** badge on the cluster-detail domain chips (`data/medios_estatales.json`).
+  A **descriptive** classification, not an accusation.
+- **Lighter dashboard** (10-Oct): cluster bars are capped to 40 **inline** per topic and the
+  rest load **on demand** (`resto.html`); the home page drops from ~2.2 MB to **~1.6 MB**
+  (brotli ~214 KB) with no bars lost.
+- Latest release: **v0.2.1** (includes the dataset snapshot with DOI).
 
 ## 5. Known limitations
 
@@ -188,6 +203,10 @@ Docs in [`docs/`](docs/): `TAXONOMIA.md`, `SCORING.md`, `ATRIBUCION-LIMITACIONES
 `TRAZABILIDAD.md`, `GOBERNANZA.md`, `RUNBOOK.md`, `FUENTES.md`, `EIPD-DPIA.md`. Detailed
 (historical) version of this README: [`docs/README-detallado.md`](docs/README-detallado.md).
 
+How to cite: [`CITATION.cff`](CITATION.cff) — dataset with DOI
+[`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710). Reproducible snapshot
+with `scripts/build_snapshot.py`.
+
 ## 7. License and contact
 
 **AGPL-3.0** (network copyleft): anyone who modifies it and offers it as a service must
@@ -196,3 +215,5 @@ publish their source. See [`LICENSE`](LICENSE).
 - Questions, corrections or **right of reply**: **info-fimi@viajeinteligencia.com**
 - Issues and code: [GitHub Issues](https://github.com/mcasrom/hybrid-fimi-radar/issues)
 - Alert bot (Telegram): `@Sieg_politica_bot` (display name: RadarFIMI_bot)
+- **How to cite:** [`CITATION.cff`](CITATION.cff); dataset with DOI
+  [`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710).
