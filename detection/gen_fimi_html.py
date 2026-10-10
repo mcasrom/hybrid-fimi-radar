@@ -3584,7 +3584,7 @@ def main():
             _cn = sqlite3.connect(DB, timeout=30)
             try:
                 _rr = _cn.execute(
-                    "SELECT pb.tema_id, pb.cluster_label, pb.banda, pb.verifica_url"
+                    "SELECT pb.tema_id, pb.cluster_label, pb.banda, pb.verifica_url, pb.cycle_ts"
                     " FROM posible_bulos pb").fetchall()
             finally:
                 _cn.close()
@@ -3605,6 +3605,10 @@ def main():
         _an = sum(1 for p in _pz.values() if "ANOMALOUS" in p["bandas"])
         _tm = _cnt(t for p in _pz.values() for t in p["temas"]).most_common(4)
         _mx = max([n for _, n in _tm] or [1])
+        _cts1 = [r[4] for r in _rr if r[4]]
+        _ts1 = (__import__("datetime").datetime.fromtimestamp(
+            max(_cts1), __import__("datetime").timezone.utc
+        ).strftime("%d/%m/%Y %H:%M UTC") if _cts1 else "—")
 
         def _t(v, lab, col):
             return ("<div style='flex:1 1 110px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"
@@ -3630,7 +3634,7 @@ def main():
             "<a href='/datos/bulos.xml' style='" + _b + "'>RSS</a>"
             "<a href='/datos/bulos.json' style='" + _b + "'>JSON</a></div></div>"
             "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con piezas "
-            "recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
+            "recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b> · <b>Actualizado: " + _ts1 + "</b></p>"
             "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
             + _t(_tot, "piezas (únicas)", "#c2410c") + _t(_cl, "clusters", "#0f172a")
             + _t(_hi, "banda HIGH", "#dc2626") + _t(_an, "ANOMALOUS", "#7c3aed") + "</div>"
@@ -4512,6 +4516,10 @@ def main():
                 " ON vi.url=pb.verifica_url").fetchall()
         finally:
             _pb_con.close()
+        _pcts = [r[7] for r in _pb_all if r[7]]
+        _pb_ts = (__import__("datetime").datetime.fromtimestamp(
+            max(_pcts), __import__("datetime").timezone.utc
+        ).strftime("%d/%m/%Y %H:%M UTC") if _pcts else "—")
         # Dedup por URL: una pieza de verificador = una fila (con sus clústeres).
         _pb_piezas = {}
         for r in _pb_all:
@@ -4568,7 +4576,7 @@ def main():
             "<div class='card' id='posibles-bulos'><h3>Posibles bulos contrastados</h3>"
             "<p class='caption'>Una fila por pieza de verificador (Maldita/Newtral, 14d), ordenada "
             "por fecha de publicación; los clústeres son los del tema con los que casa. Es "
-            "<b>contraste, no veredicto</b>: no atribuye actor ni confirma bulo.</p>" + _pb_tbl + "</div>")
+            "<b>contraste, no veredicto</b>: no atribuye actor ni confirma bulo. Actualizado: " + _pb_ts + "</p>" + _pb_tbl + "</div>")
 
         # --- Mini-tarjeta de resumen (preview) que va tras las tarjetas de temas ---
         _pb_total = len(_pb_lista)
@@ -4606,7 +4614,7 @@ def main():
             "<a href='/datos/bulos.xml' style='" + _pb_btn + "'>RSS</a>"
             "<a href='/datos/bulos.json' style='" + _pb_btn + "'>JSON</a></div></div>"
             "<p class='caption' style='margin:6px 0 8px'>Cruza clusters en banda alta/anómala con "
-            "piezas recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b></p>"
+            "piezas recientes de verificadores (Maldita/Newtral, 14 d). <b>No atribuye actor ni confirma bulo.</b> · <b>Actualizado: " + _pb_ts + "</b></p>"
             "<div class='kpis' style='display:flex;flex-wrap:wrap;gap:10px;margin:8px 0'>"
             + _btile(_pb_total, "piezas (únicas)", "#c2410c") + _btile(_pb_clusters, "clusters", "#0f172a")
             + _btile(_pb_high, "banda HIGH", "#dc2626") + _btile(_pb_anom, "ANOMALOUS", "#7c3aed")
@@ -5062,6 +5070,7 @@ a{{color:#c2410c}}
     <div class="navmenu-panel">
       <a href="/research.html" title="Investigación y validación del modelo">Research</a>
       <a href="/metodo.html" title="Método y validación (tasas de error y límites)">Método</a>
+      <a href="/metodo.en.html" title="Method and validation (English)">Método (EN)</a>
       <a href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos (biblioteca)</a>
       <a href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
       <a href="/api.html" title="API pública (datos en JSON)">API</a>
