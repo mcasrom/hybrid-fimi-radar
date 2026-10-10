@@ -3615,8 +3615,13 @@ def main():
                           f'con señal de campaña. El sistema da mucho peso a la anomalía para no '
                           f'marcarlas como red inorgánica, pero sigue en calibración: interpreta '
                           f'cualquier alerta como hipótesis, no como veredicto.</div>')
+        _informe_btn = (
+            f"<div style='display:flex;justify-content:flex-end;margin:2px 0 6px'>"
+            f"<a class='primary' href='/informes/visual/{_t}.html' target='_blank' rel='noopener'"
+            f" style='text-decoration:none'>Informe visual \u2197</a></div>")
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
+                       f"{_informe_btn}"
                        f"{_que_pasa_html.get(_t, '')}"
                        f"{_resumen_tema_html.get(_t, '')}"
                        f"{_esfera_html.get(_t, '')}"
