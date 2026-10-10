@@ -2000,13 +2000,16 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
         <a href="/metodo.en.html">/metodo.en.html</a>.</li>
       <li><b>Reproducibilidad:</b> código <a href="https://github.com/mcasrom/hybrid-fimi-radar">AGPL-3.0</a>
         + sistema de tests + generador sintético; metadatos de cita en <code>CITATION.cff</code>.</li>
+      <li><b>Dataset citable:</b> snapshot empaquetado con <code>sha256</code> y DOI
+        <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a>
+        (Zenodo; datos CC BY 4.0).</li>
       <li><b>Colaboración:</b> si tu grupo observa plataformas cerradas (X, TikTok, Meta), este radar aporta
         el <b>motor y la metodología</b> y puede ingerir datos agregados que aporte el grupo.
         Contacto: <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a>.</li>
     </ul>
     <p class="caption">Cómo citar: Observatorio de amplificación (ámbito FIMI), M. Castillo, 2026,
-      https://fimi.viajeinteligencia.com (AGPL-3.0). Una banda alta es amplificación medida,
-      no coordinación confirmada.</p>
+      https://fimi.viajeinteligencia.com · DOI <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a>
+      (AGPL-3.0; datos CC BY 4.0). Una banda alta es amplificación medida, no coordinación confirmada.</p>
   </div>
 
   <div class="footer">
