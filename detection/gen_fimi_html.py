@@ -1986,6 +1986,29 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       evidencia por cluster, descargable en cada ciclo.</p>
   </div>
 
+  <div class="card">
+    <h2><span class="num">09 —</span> Data for research: ¿cómo reutilizarlo?</h2>
+    <p>El observatorio está pensado para que otros lo auditen y lo reutilicen. Para investigación:</p>
+    <ul>
+      <li><b>Datos:</b> API v1 read-only (<a href="/api.html">/api/v1/…</a>, con OpenAPI) y export por
+        clúster en <b>CSV, JSON y GEXF/GraphML</b> (grafo cuenta-cuenta para Gephi):
+        <code>/api/export?cluster=&lt;label&gt;&amp;fmt=csv|json|gexf|graphml</code>.</li>
+      <li><b>Conjunto ciego de validación:</b> muestra etiquetada a mano con rúbrica propia
+        (<code>docs/RUBRICA-VALIDACION.md</code>); precisiones y κ publicados en
+        <a href="/metodo.html">Método</a> / <a href="/metodo.en.html">Method (EN)</a>.</li>
+      <li><b>Método y límites:</b> <a href="/metodo.html">/metodo.html</a> ·
+        <a href="/metodo.en.html">/metodo.en.html</a>.</li>
+      <li><b>Reproducibilidad:</b> código <a href="https://github.com/mcasrom/hybrid-fimi-radar">AGPL-3.0</a>
+        + sistema de tests + generador sintético; metadatos de cita en <code>CITATION.cff</code>.</li>
+      <li><b>Colaboración:</b> si tu grupo observa plataformas cerradas (X, TikTok, Meta), este radar aporta
+        el <b>motor y la metodología</b> y puede ingerir datos agregados que aporte el grupo.
+        Contacto: <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a>.</li>
+    </ul>
+    <p class="caption">Cómo citar: Observatorio de amplificación (ámbito FIMI), M. Castillo, 2026,
+      https://fimi.viajeinteligencia.com (AGPL-3.0). Una banda alta es amplificación medida,
+      no coordinación confirmada.</p>
+  </div>
+
   <div class="footer">
     Observatorio · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
     <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
