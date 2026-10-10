@@ -3616,9 +3616,11 @@ def main():
                           f'marcarlas como red inorgánica, pero sigue en calibración: interpreta '
                           f'cualquier alerta como hipótesis, no como veredicto.</div>')
         _informe_btn = (
-            f"<div style='display:flex;justify-content:flex-end;margin:2px 0 6px'>"
-            f"<a class='primary' href='/informes/visual/{_t}.html' target='_blank' rel='noopener'"
-            f" style='text-decoration:none'>Informe visual \u2197</a></div>")
+            f"<div style='display:flex;justify-content:flex-end;margin:2px 0 8px'>"
+            f"<a href='/informes/visual/{_t}.html' target='_blank' rel='noopener'"
+            f" style='display:inline-block;background:#c2410c;color:#fff;font-weight:700;"
+            f"font-size:.84rem;padding:8px 15px;border-radius:9px;text-decoration:none;"
+            f"box-shadow:0 1px 2px rgba(0,0,0,.15)'>Generar informe visual \u2197</a></div>")
         tema_panes += (f"<div id='fimi-pane-{_t}' class='fimi-pane' data-tema='{_t}'"
                        f"{'' if i == 0 else ' hidden'}>"
                        f"{_informe_btn}"
