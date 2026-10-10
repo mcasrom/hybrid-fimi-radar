@@ -157,7 +157,13 @@ def cargar_tema(con, tema):
     n_au_cl = con.execute(
         "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
         " JOIN clusters c ON c.id=ce.cluster_id WHERE c.tema_id=?", (tema,)).fetchone()[0]
-    return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin}
+    # inicio real de ingesta del tema = primer hallazgo persistido (misma fuente
+    # que el dashboard: salud_tema._inicio_ingesta -> MIN(fecha) FROM findings).
+    try:
+        _ini = con.execute("SELECT MIN(fecha) FROM findings WHERE tema_id=?", (tema,)).fetchone()[0]
+    except sqlite3.Error:
+        _ini = None
+    return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin, "inicio": _ini}
 
 
 def hyp_top(c):
@@ -237,7 +243,12 @@ def render(tema, nombre, clusters, kpi, salud):
     altos = [c for c in clusters if c["ov"] >= 60]
     top = clusters[0] if clusters else None
     mas_anom = max(clusters, key=lambda c: c["anom"]) if clusters else None
-    dias = dias_desde(kpi.get("tmin"))
+    _ini = kpi.get("inicio") or kpi.get("tmin")
+    try:
+        _ini_s = datetime.fromtimestamp(int(_ini), tz=timezone.utc).strftime("%d/%m/%Y") if _ini else "—"
+    except (TypeError, ValueError):
+        _ini_s = "—"
+    dias = dias_desde(_ini)
     # hipotesis dominante del tema (moda del top de cada cluster)
     from collections import Counter
     cnt = Counter()
@@ -265,7 +276,7 @@ def render(tema, nombre, clusters, kpi, salud):
         ("en banda alta", len(altos), "&ge;60"),
         ("hipotesis mas frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
         ("H3 como max", h3, "clusters"),
-        ("dias operando", dias, "desde el 1.er evento"),
+        ("dias operando", dias, f"desde {_ini_s}"),
     ]
     tiles = "".join(
         f"<div class='tile'><div class='k'>{esc(v)}</div><div class='kl'>{esc(l)}</div><div class='ks'>{esc(sub)}</div></div>"
@@ -402,7 +413,8 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
 <section><div class="two">
   <div><h2>Radar de componentes (media del tema)</h2>
     {spider([("Tema (media)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (media)", med, NAVY)])}
-    <p class="cs">Media de {n} clusters. El cluster top se dibuja en azul.</p></div>
+    <p class="cs">Media de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
+    dimensiones distintas (0-100) y <b>no</b> suman el score global.</p></div>
   <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
     <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
     {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · nucleo k={top['kc']}"}</p>
@@ -418,7 +430,7 @@ h2{{font-size:1.05rem;margin:0 0 12px;color:{NAVY}}} .grid{{display:grid;gap:14p
   <div class="two">
     <div><p class="cs">{lectura}</p>
       <div class="metric">
-        <div><b>{tot_ev:,}</b>eventos</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
+        <div><b>{tot_ev:,}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
         <div><b>{n}</b>clusters</div><div><b>{kpi.get('n_au_cl', kpi['n_au']):,}</b>cuentas</div></div></div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>

@@ -957,7 +957,7 @@ def _lectura_tema(mean, n=0, n_cuentas=0, n_ev=0, n_sost=0):
     _sost = (str(int(n_sost)) + " narrativa" + ("" if int(n_sost) == 1 else "s") + " sostenida" + ("" if int(n_sost) == 1 else "s")) \
         if n_sost else "sin narrativas sostenidas"
     _ctx = (str(int(n)) + " clusters · " + str(int(n_cuentas)) + " cuentas"
-            + (" · " + str(int(n_ev)) + " eventos" if n_ev else "")
+            + (" · " + str(int(n_ev)) + " eventos en clusters" if n_ev else "")
             + " · " + _sost)
     return ("🔎 <b>Lectura del tema:</b> " + _p + ". <span style='color:#94a3b8'>(" + _ctx + ")</span>")
 
@@ -3520,13 +3520,7 @@ def main():
                     _top_hyps = json.loads(_asm_top["hypotheses_json"]) if _asm_top["hypotheses_json"] else None
                 except Exception:
                     _top_hyps = None
-            _n_cuentas_t = 0
-            for _cc in _tema_cl:
-                _a_cc = _asm_by_cid_t.get(_cc["id"])
-                if _a_cc is not None:
-                    _m_c = re.search(r"(\d+)\s+cuentas?", str(_a_cc["assessment"] or ""))
-                    if _m_c:
-                        _n_cuentas_t += int(_m_c.group(1))
+            _n_cuentas_t = _tot_cuentas  # DISTINTAS (misma definicion que el KPI)
             _n_ev_t = sum(int((diversidad_map.get(_cc["id"]) or {}).get("n_ev", 0)) for _cc in _tema_cl)
             _n_sost_t = 0
             for _cc in _tema_cl:
@@ -3536,7 +3530,7 @@ def main():
             _lect_tema = _lectura_tema(_rm, len(_tema_cl), _n_cuentas_t, _n_ev_t, _n_sost_t)
             _sal_t = _salud_r.get(_t)
             _sal_txt = (str(len(_tema_cl)) + " clusters · " + str(_n_cuentas_t) + " cuentas · "
-                        + str(_n_ev_t) + " eventos")
+                        + str(_n_ev_t) + " eventos en clusters")
             if isinstance(_sal_t, dict) and _sal_t.get("score") is not None:
                 _sal_txt += " · salud " + ("%.0f" % float(_sal_t.get("score"))) + "/100"
             _sal_txt += (" · banda " + band_of(_tcc["overall_score"] or 0)
