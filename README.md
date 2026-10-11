@@ -195,7 +195,10 @@ muestra el valor vivo):
   amplifican y **conclusión**; botones **Imprimir/Guardar PDF** y export **CSV/JSON/GEXF**.
   Botón **«Informe visual ↗»** en cada panel del dashboard y desplegable **«Informes ▾»**.
   Métricas **canónicas compartidas** con el dashboard y el informe semanal
-  (`detection/metricas_tema.py`: eventos del tema · cuentas en clusters · días operando).
+  (`detection/metricas_tema.py`: eventos del tema · cuentas en clusters · días operando). Incluye
+  **ritmo del cluster + línea base del tema** (eventos/día vs volumen del tema), **cobertura por
+  plataforma**, **bandas cualitativas** y **umbrales**, **accesibilidad** (tabla alternativa al radar)
+  y marca de **muestra pequeña**.
 - Última release: **v0.2.1** (incluye el snapshot de dataset con DOI).
 
 ## 5. Limitaciones conocidas

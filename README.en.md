@@ -157,7 +157,9 @@ the live value):
   domains and a **conclusion**; **Print/Save PDF** and **CSV/JSON/GEXF** export.
   **"Visual report ↗"** button in each dashboard panel and an **"Informes ▾"** menu.
   **Canonical metrics** shared with the dashboard and the weekly report
-  (`detection/metricas_tema.py`: topic events · cluster accounts · days running).
+  (`detection/metricas_tema.py`: topic events · cluster accounts · days running). It also shows the
+  **cluster rhythm vs the topic baseline**, **platform coverage**, **qualitative bands** and
+  **accessibility** (alternative table to the radar).
 - Latest release: **v0.2.1** (includes the dataset snapshot with DOI).
 
 ## 5. Known limitations
