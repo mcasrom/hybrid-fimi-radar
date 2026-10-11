@@ -33,7 +33,7 @@ ACTIVOS = ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artifici
 
 # Hipotesis (attribution.py) -> etiqueta en espanol natural (coincide con gen_fimi_html.py)
 HYP_ES = {
-    "H2": "Coordinación doméstica (con estructura)",
+    "H2": "Compatible con coordinación doméstica (con estructura)",
     "H2b": "Sincronización sin atribución de operador",
     "H5": "Sincronía sostenida (sin estructura)",
     "H1": "Viralización orgánica",
@@ -372,10 +372,12 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     for c in destac:
         ct, _ = hyp_top(c)
         doms_txt = " · ".join(f"{esc(d)}" for d, _ in c["doms"][:3]) or "—"
+        _small = (" · <span style='color:#b45309;font-weight:700'>muestra pequeña</span>"
+                  if c["n_ev"] < 30 else "")
         cards += (
             f"<div class='ccard'><div class='cchead'><b>{esc(c['label'])}</b>"
             f"<span class='chip' style='background:{BAND_COL[c['banda']]}'>{c['ov']:.0f}/100 · {esc(c['banda'])}</span></div>"
-            f"<p class='cs'>{esc(BAND_ES[c['banda']])} · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}</p>"
+            f"<p class='cs'>{esc(BAND_ES[c['banda']])} · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}{_small}</p>"
             f"<p class='cs'><b>Hipótesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
             f"<p class='cs'><b>De qué habla:</b> {doms_txt}</p>"
             f"<div class='cact'>"
@@ -608,7 +610,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 </section>
 
 <section><h2>Clusters destacados</h2><div class="three">{cards}</div>
-  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar.</p></section>
+  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad).</p></section>
 
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
