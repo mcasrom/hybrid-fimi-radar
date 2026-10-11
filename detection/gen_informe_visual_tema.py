@@ -63,6 +63,17 @@ PAIS_DOM = {"spiegel.de": "Alemania", "zeit.de": "Alemania", "faz.net": "Alemani
             "publico.es": "España", "infolibre.es": "España", "efe.com": "España", "elconfidencial.com": "España"}
 
 
+# Acortadores, plataformas y dominios propios: NO cuentan como "dominio" ni como país.
+DOM_EXCL = {"youtu.be", "youtube.com", "bit.ly", "t.co", "flip.it", "dlvr.it", "ow.ly", "lnkd.in",
+            "buff.ly", "ift.tt", "bsky.app", "x.com", "twitter.com", "facebook.com", "instagram.com",
+            "t.me", "telegram.me", "briefly.co", "reddit.com", "news.google.com", "goo.gl", "shorturl.at",
+            "pruebapublica.com", "analisis.pruebapublica.com", "viajeinteligencia.com", "diario-red.com"}
+
+
+def mil(n):
+    return "{:,}".format(int(round(float(n or 0)))).replace(",", ".")
+
+
 def _pais_de(host):
     h = (host or "").lower()
     if h in PAIS_DOM:
@@ -202,7 +213,7 @@ def cargar_tema(con, tema):
         doms = {}
         for u in urls:
             h = host(u)
-            if h:
+            if h and h not in DOM_EXCL:
                 doms[h] = doms.get(h, 0) + 1
         try:
             hyps = json.loads(hyps) if hyps else []
@@ -418,8 +429,9 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
             hyp_bars += (f"<div class='hrow'><div class='hcode'>{star}{esc(code)}</div>"
                          f"<div class='hname'>{esc(HYP_ES.get(code, h.get('label', code)))}</div>"
                          f"<div class='hbar'>{bar(sc, '#1d4ed8')}</div><div class='hval'>{sc:.0f}</div><div class='hqual'>{_qual(sc)}</div></div>")
-    # cluster destacados (3)
-    destac = clusters[:3]
+    # destacados: top por score SIN 'muestra pequeña' (<30 eventos) salvo que no haya 3
+    _big = [c for c in clusters if c['n_ev'] >= 30]
+    destac = (_big[:3] if len(_big) >= 3 else (_big + [c for c in clusters if c['n_ev'] < 30])[:3])
     cards = ""
     for c in destac:
         ct, _ = hyp_top(c)
@@ -482,20 +494,32 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         _vals = sorted(_thd.get(x, 0) for x in _days)
         _p90 = _vals[int(len(_vals) * 0.9)] if _vals else 0
         _peak = [x for x in _days if _thd.get(x, 0) >= _p90 and _p90 > 0]
-        _onpeak = sum(top["daily"].get(x, 0) for x in _peak)
-        _tot = sum(top["daily"].values()) or 1
-        _pct = 100 * _onpeak / _tot
-        if _pct >= 60:
-            ritmo = (f"El <b>{_pct:.0f}%</b> de la actividad del cluster cae en los «picos del tema» (días con volumen ≥ p90) → "
-                     f"<b>coincide</b> con el ciclo informativo: puede ser <b>eco</b>, no necesariamente coordinación.")
+        _cl_on = sum(top["daily"].get(x, 0) for x in _peak)
+        _cl_tot = sum(top["daily"].values()) or 1
+        _th_on = sum(_thd.get(x, 0) for x in _peak)
+        _th_tot = sum(_thd.get(x, 0) for x in _days) or 1
+        _cl_pct = 100 * _cl_on / _cl_tot
+        _th_pct = 100 * _th_on / _th_tot
+        _ratio = (_cl_pct / _th_pct) if _th_pct else 1.0
+        _base = (f"el cluster concentra el <b>{_cl_pct:.0f}%</b> de su actividad en esos días y el tema en conjunto el <b>{_th_pct:.0f}%</b>")
+        if _ratio >= 1.3:
+            ritmo = (f"En los «picos del tema» (días con volumen ≥ p90), {_base} → el cluster está <b>sobrerrepresentado</b>: "
+                     f"sigue el ciclo informativo (posible <b>eco</b>), no necesariamente coordinación.")
+        elif _ratio <= 0.7:
+            ritmo = (f"En los «picos del tema» (días con volumen ≥ p90), {_base} → el cluster está <b>infrarrepresentado</b>: "
+                     f"patrón <b>más propio del cluster</b> que del ciclo de noticias.")
         else:
-            ritmo = (f"Solo el <b>{_pct:.0f}%</b> de la actividad del cluster cae en los «picos del tema» (días con volumen ≥ p90) → "
-                     f"indicio (no prueba) de un patrón <b>más propio del cluster</b> que del ciclo de noticias.")
+            ritmo = (f"En los «picos del tema» (días con volumen ≥ p90), {_base} → el cluster <b>sigue el tema de forma similar al conjunto</b>: "
+                     f"sin señal clara de reacción ni de patrón propio.")
     # reparto por plataforma (cobertura)
     _srca = kpi.get("sources", {})
     _src_tot = sum(_srca.values()) or 1
-    _src_top = sorted(_srca.items(), key=lambda x: -x[1])[:5]
+    _src_all = sorted(_srca.items(), key=lambda x: -x[1])
+    _src_top = _src_all[:5]
+    _otras = len(_src_all) - len(_src_top)
     _src_txt = " · ".join(f"{esc(_s)} {100 * _v / _src_tot:.0f}%" for _s, _v in _src_top) or "—"
+    if _otras > 0:
+        _src_txt += f" · otras ({_otras})"
     _dsrc, _dn = (_src_top[0] if _src_top else ("—", 0))
     _dpct = 100 * _dn / _src_tot
     cobertura = (f"<b>Cobertura por plataforma:</b> {_src_txt}. " +
@@ -510,7 +534,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     tema_def = ""
     if _kws:
         tema_def = (f"<details class='tdef'><summary>Cómo se define «{esc(nombre)}»: términos y ventana</summary>"
-                    f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws[:14]))}</code></p>"
+                    f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws))}</code></p>"
                     f"<p class='cs'>Periodo del corpus: {_tmin_s} → {_tmax_s} (incluye <b>backfill</b> retrospectivo). "
                     f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: 60 días. El corpus llega "
                     f"también por búsqueda en las plataformas con estos términos y sus variantes.</p></details>")
@@ -548,21 +572,29 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                     _k = max(_kv, key=_kv.get)
             _pai.setdefault(_k, []).append(_c)
         _rows = []
-        for _pai_n, _cs in sorted(_pai.items(), key=lambda kv: -len(kv[1])):
+        for _pai_n, _cs in sorted(_pai.items(), key=lambda kv: -sum(c["n_au"] for c in kv[1])):
             _alta = sum(1 for _x in _cs if _x["ov"] >= 60)
             _mx = max(_x["ov"] for _x in _cs)
-            _dm = " · ".join(sorted({_d for _x in _cs for _d, _n in _x["doms"][:2]})[:6])
+            _acct = sum(c["n_au"] for c in _cs)
+            _dmc = Counter()
+            for _x in _cs:
+                for _d, _n in _x["doms"][:3]:
+                    _dmc[_d] += _n
+            _dm = " · ".join(_d for _d, _ in _dmc.most_common(6))
             _rows.append(f"<tr><td style='padding:4px 8px'>{esc(_pai_n)}</td>"
                          f"<td style='text-align:right'>{len(_cs)}</td>"
+                         f"<td style='text-align:right'>{mil(_acct)}</td>"
                          f"<td style='text-align:right'>{_alta}</td>"
                          f"<td style='text-align:right'>{_mx:.0f}</td>"
                          f"<td style='padding:4px 8px;color:#94a3b8'>{esc(_dm)}</td></tr>")
         paises_html = ("<section><h2>Desglose por país (aproximado, por dominios)</h2>"
                        "<p class='cs'>Tema <b>multinacional</b>: el país se asigna por los <b>dominios</b> que comparten las "
-                       "cuentas del cluster (ccTLD y medios conocidos). Es <b>orientativo</b>, no una clasificación estricta.</p>"
+                       "cuentas del cluster (ccTLD y medios conocidos) y, si no, por <b>palabras del país</b>. Se excluyen "
+                       "acortadores, plataformas y dominios propios. Es <b>orientativo</b>, no una clasificación estricta.</p>"
                        "<table style='width:100%;border-collapse:collapse;font-size:.8rem'>"
                        "<tr><th style='text-align:left;padding:4px 8px'>País</th><th style='text-align:right'>Clusters</th>"
-                       "<th style='text-align:right'>En banda alta</th><th style='text-align:right'>Máx</th>"
+                       "<th style='text-align:right'>Cuentas</th><th style='text-align:right'>En banda alta</th>"
+                       "<th style='text-align:right'>Máx</th>"
                        "<th style='text-align:left;padding:4px 8px'>Dominios ejemplo</th></tr>"
                        + "".join(_rows) + "</table></section>")
     css = f"""
@@ -685,13 +717,13 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div class="two">
     <div><p class="cs">{lectura}</p>
       <div class="metric">
-        <div><b>{tot_ev:,}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
-        <div><b>{n}</b>clusters</div>        <div><b>{kpi.get('n_au_cl', kpi['n_au']):,}</b>cuentas</div></div>
+        <div><b>{mil(tot_ev)}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
+        <div><b>{n}</b>clusters</div>        <div><b>{mil(kpi.get('n_au_cl', kpi['n_au']))}</b>cuentas</div></div>
       <p class="cs" style="margin-top:10px">{cobertura}</p></div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
-      <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+.</p>
+      <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+. La banda es el <b>score global compuesto</b> (sincronía, anomalía, infraestructura y densidad), <b>no</b> el componente de amplificación: un cluster puede estar en banda alta por infraestructura/densidad, no por difusión.</p>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificación global</div>
         <div class="hbar">{bar(med['amp'], ACCENT)}</div><div class="hval">{med['amp']:.0f}</div></div>
       <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Señales clave del tema (medianas)</h3>
