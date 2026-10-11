@@ -132,6 +132,10 @@ def test_origen_unico_cap():
     # 2 URLs -> no es eco
     overall2, eco2 = origen_unico_cap(90, n_urls=2, n_events=5, config=cfg)
     assert eco2 is False and overall2 == 90.0
+    # 0 URLs (sin enlace) -> NO es eco de 1 pieza (fix 11-oct): no hay URL que
+    # repetir; el cluster conserva su score (puede llegar a banda alta).
+    overall0, eco0 = origen_unico_cap(90, n_urls=0, n_events=5, config=cfg)
+    assert eco0 is False and overall0 == 90.0
 
 
 def test_single_source_feed_cap():

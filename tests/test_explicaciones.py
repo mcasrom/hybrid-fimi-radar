@@ -59,6 +59,14 @@ def test_eco_una_sola_url_soportado():
     assert items["single_piece_echo"]["evidence"]["distinct_urls"] == 1
 
 
+def test_sin_url_no_es_eco_de_una_pieza():
+    """fix 11-oct: n_urls=0 (sin enlace) no se lee como 'eco de 1 pieza'."""
+    items = _by_code(para_cluster(**_base(n_urls=0, n_events=4,
+                                          single_piece_cap=False)))
+    assert items["single_piece_echo"]["status"] == "ruled_out"
+    assert items["single_piece_echo"]["evidence"]["distinct_urls"] == 0
+
+
 def test_viralidad_organica_soportada():
     items = _by_code(para_cluster(**_base(synchronization=72, anomaly=8,
                                           infrastructure=10)))

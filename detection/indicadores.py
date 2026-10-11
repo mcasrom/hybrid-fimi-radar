@@ -101,7 +101,7 @@ def _indicadores_clusters(conn):
         rows = conn.execute(
             "SELECT c.cluster_label, c.tema_id, c.overall_score,"
             " COUNT(*) n_ev, COUNT(DISTINCT ce.author) n_cuentas,"
-            " COUNT(DISTINCT ce.url) n_urls,"
+            " COUNT(DISTINCT NULLIF(TRIM(ce.url), '')) n_urls,"
             " (MAX(ce.ts)-MIN(ce.ts))/3600.0 horas"
             " FROM clusters c JOIN cluster_events ce ON ce.cluster_id=c.id"
             " GROUP BY c.id").fetchall()
@@ -112,9 +112,13 @@ def _indicadores_clusters(conn):
     for r in rows:
         n_ev, n_c, n_u = r["n_ev"], r["n_cuentas"], r["n_urls"]
         horas = r["horas"] or 0
-        if n_u <= 1 and n_ev >= 2:
+        # fix 11-oct: "eco de 1 pieza" exige EXACTAMENTE 1 URL; n_u == 0 (contenido
+        # sin enlace) no es eco. Para no perder la señal text-only, la ventana
+        # sostenida admite también n_u == 0 (el requisito n_u >= 3 existía para no
+        # confundir eco con red; ahora el eco ya se acota a n_u == 1).
+        if n_u == 1 and n_ev >= 2:
             tipo = "eco_1_pieza"
-        elif n_ev >= 10 and horas >= 24 and n_u >= 3:
+        elif n_ev >= 10 and horas >= 24 and (n_u == 0 or n_u >= 3):
             tipo = "coordinacion_sostenida"
         elif n_ev >= 5 and horas <= 6:
             tipo = "rafaga"

@@ -112,7 +112,8 @@ def tipo_de(r):
         f.append("red_dominio_unico")
     if r["same_url_max"] >= 2:
         f.append("mismo_enlace_repetido")
-    if r["n_urls"] <= 1 and r["n_eventos"] >= 2:
+    # fix 11-oct: exige exactamente 1 URL; n_urls == 0 (sin enlace) no es eco.
+    if r["n_urls"] == 1 and r["n_eventos"] >= 2:
         f.append("eco_1_pieza")
     if r["n_cuentas"] >= 3 and r["n_urls"] >= 3:
         f.append("red_multidominio")

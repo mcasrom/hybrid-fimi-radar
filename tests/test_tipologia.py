@@ -53,3 +53,13 @@ def test_tipo_mismo_enlace_repetido():
     tipo, flags, _ = tipo_de(r)
     assert r["same_url_max"] == 3
     assert "mismo_enlace_repetido" in flags
+
+
+def test_sin_url_no_es_eco_1_pieza():
+    """fix 11-oct: eventos sin URL no forman un cluster 'eco_1_pieza'."""
+    evs = [_ev(1000 + i, f"u{i}.bsky.social", "", f"copypasta {i}")
+           for i in range(3)]
+    r = rasgos(evs)
+    assert r["n_urls"] == 0
+    _, flags, _ = tipo_de(r)
+    assert "eco_1_pieza" not in flags

@@ -107,7 +107,8 @@ def para_cluster(
     }))
 
     # 2. Eco de una sola pieza: una misma URL repetida por varias cuentas.
-    if single_piece_cap or (n_urls <= 1 and n_events >= 2):
+    # (fix 11-oct: n_urls == 0 no es eco de una pieza: no hay URL que repetir.)
+    if single_piece_cap or (n_urls == 1 and n_events >= 2):
         st = "supported"
     elif n_urls == 2:
         st = "plausible"

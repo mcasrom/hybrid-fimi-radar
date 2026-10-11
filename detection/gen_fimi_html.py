@@ -635,10 +635,11 @@ def _sostenido_chip(diver):
     sostenida' según la diversidad de URLs y la ventana temporal (opción 3).
 
     diver: dict con {n_ev, n_urls, horas} o None. Criterios (solo lectura):
-      - n_urls<=1 y n_ev>=2 -> eco puntual: varias cuentas comparten la MISMA
-        pieza. No es patrón de larga duración.
-      - n_ev>=10 y horas>=24 y n_urls>=3 -> amplificación sostenida: una misma
-        red vertiendo muchas piezas a lo largo del tiempo.
+      - n_urls==1 y n_ev>=2 -> eco puntual: varias cuentas comparten la MISMA
+        pieza. No es patrón de larga duración. (fix 11-oct: n_urls==0 no es eco:
+        no hay enlace que repetir.)
+      - n_ev>=10 y horas>=24 y (n_urls==0 o n_urls>=3) -> amplificación sostenida:
+        una misma red vertiendo muchas piezas a lo largo del tiempo.
     Devuelve el HTML del chip o "" si no aplica. NO toca el scoring: es contexto
     de interpretación para que el analista no lea el eco de una pieza como una
     campaña de larga duración (responde a 'no hay trayectoria, solo snapshot')."""
@@ -647,11 +648,11 @@ def _sostenido_chip(diver):
     n_ev = diver.get("n_ev", 0) or 0
     n_urls = diver.get("n_urls", 0) or 0
     horas = diver.get("horas", 0) or 0
-    if n_urls <= 1 and n_ev >= 2:
+    if n_urls == 1 and n_ev >= 2:
         return ('<span style="display:inline-block;font-size:.72rem;color:#7c3aed;'
                 'border:1px dashed #a78bfa;border-radius:999px;padding:1px 10px;'
                 'font-weight:600;background:#f5f3ff;cursor:help" title="Eco de 1 pieza: varias cuentas comparten la MISMA pieza noticiosa (1 URL). Viralidad, no coordinacion cruzada entre redes.">ecos de 1 pieza</span>')
-    if n_ev >= 10 and horas >= 24 and n_urls >= 3:
+    if n_ev >= 10 and horas >= 24 and (n_urls == 0 or n_urls >= 3):
         return ('<span style="display:inline-block;font-size:.72rem;color:#b45309;'
                 'border:1px solid #f59e0b;border-radius:999px;padding:1px 10px;'
                 'font-weight:600;background:#fffbeb;cursor:help" title="Amplificacion sostenida: una misma red (3+ cuentas) vierte muchas piezas (10+) durante 24+h. Patron sostenido de amplificacion; no implica por si solo coordinacion.">amplificación sostenida</span>')
@@ -895,7 +896,7 @@ def _lectura_cluster(comps, n_cuentas=None, diver=None, ruido=False):
     n_urls = (diver or {}).get("n_urls", 0) or 0
     nc = n_cuentas or 0
     # 1) eco de una sola pieza
-    if n_urls <= 1 and n_ev >= 2:
+    if n_urls == 1 and n_ev >= 2:
         return ("📄 <b>Eco de una sola pieza</b>: varias cuentas comparten el mismo enlace. "
                 "Suele ser interés real por una noticia puntual, no una campaña sostenida.")
     # 2) pocas cuentas + anomalía alta: distinguir repetir el MISMO enlace de publicar mucho
@@ -1650,11 +1651,12 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         n_ecos = n_sost = 0
         try:
             for r in rc.execute(
-                    "SELECT ce.cluster_id AS id, COUNT(*) n_ev, COUNT(DISTINCT ce.url) n_urls,"
+                    "SELECT ce.cluster_id AS id, COUNT(*) n_ev,"
+                    " COUNT(DISTINCT NULLIF(TRIM(ce.url), '')) n_urls,"
                     " MIN(ce.ts) mn, MAX(ce.ts) mx FROM cluster_events ce GROUP BY ce.cluster_id"):
-                if (r["n_urls"] or 0) <= 1 and (r["n_ev"] or 0) >= 2:
+                if (r["n_urls"] or 0) == 1 and (r["n_ev"] or 0) >= 2:
                     n_ecos += 1
-                if (r["n_ev"] or 0) >= 10 and (((r["mx"] or 0) - (r["mn"] or 0)) >= 86400) and (r["n_urls"] or 0) >= 3:
+                if (r["n_ev"] or 0) >= 10 and (((r["mx"] or 0) - (r["mn"] or 0)) >= 86400) and ((r["n_urls"] or 0) == 0 or (r["n_urls"] or 0) >= 3):
                     n_sost += 1
         except Exception:
             pass
@@ -2458,7 +2460,8 @@ def main():
     diversidad_map = {}
     try:
         _div = con.execute(
-            "SELECT cluster_id, COUNT(*) n_ev, COUNT(DISTINCT url) n_urls,"
+            "SELECT cluster_id, COUNT(*) n_ev,"
+            " COUNT(DISTINCT NULLIF(TRIM(url), '')) n_urls,"
             " MIN(ts) min_ts, MAX(ts) max_ts FROM cluster_events"
             " GROUP BY cluster_id").fetchall()
         for r in _div:
@@ -3528,7 +3531,8 @@ def main():
             _n_sost_t = 0
             for _cc in _tema_cl:
                 _dv = diversidad_map.get(_cc["id"]) or {}
-                if (_dv.get("n_ev", 0) or 0) >= 10 and (_dv.get("horas", 0) or 0) >= 24 and (_dv.get("n_urls", 0) or 0) >= 3:
+                _dv_u = _dv.get("n_urls", 0) or 0
+                if (_dv.get("n_ev", 0) or 0) >= 10 and (_dv.get("horas", 0) or 0) >= 24 and (_dv_u == 0 or _dv_u >= 3):
                     _n_sost_t += 1
             _lect_tema = _lectura_tema(_rm, len(_tema_cl), _n_cuentas_t, _n_ev_t, _n_sost_t)
             _sal_t = _salud_r.get(_t)

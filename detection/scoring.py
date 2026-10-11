@@ -188,6 +188,13 @@ def origen_unico_cap(overall, n_urls, n_events, config=None, tema=None):
     cap_band (por defecto ANOMALOUS) para evitar el "eco de agencia" leído como
     coordinación sostenida.
 
+    IMPORTANTE (fix 11-oct): el tope exige AL MENOS UNA URL. Un cluster con
+    n_urls == 0 NO es "eco de una pieza" (no hay enlace/pieza que repetir): es
+    contenido sin enlace (texto copiado/republicado) y debe poder alcanzar
+    bandas altas si lo respaldan la anomalía/coordinación. Antes `n_urls <=
+    max_urls` incluía el 0 y lo capaba a ANOMALOUS en silencio (36 % de los
+    eventos no llevan URL) → falsos negativos en la coordinación sin enlaces.
+
     Config: scoring.origen_unico = {max_urls, min_events, cap_band}, con
     override por tema en temas.<tema>.scoring.origen_unico (igual que pesos).
 
@@ -195,7 +202,7 @@ def origen_unico_cap(overall, n_urls, n_events, config=None, tema=None):
     sola pieza aunque el tope no haya cambiado el score (ya estaba dentro)."""
     p = _tema_scale(config, tema, "origen_unico",
                     {"max_urls": 1, "min_events": 2, "cap_band": "ANOMALOUS"})
-    es_eco = (n_urls <= p["max_urls"]) and (n_events >= p["min_events"])
+    es_eco = (1 <= n_urls <= p["max_urls"]) and (n_events >= p["min_events"])
     if es_eco:
         bands = load_bands(config)
         overall = min(float(overall), float(bands[p["cap_band"]][1]))
