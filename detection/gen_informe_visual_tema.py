@@ -41,8 +41,8 @@ HYP_ES = {
     "H4": "Amplificación mediática",
     "H6": "Sin evidencia concluyente",
 }
-BAND_ES = {"NORMAL": "Normal", "WATCH": "En observacion", "ANOMALOUS": "Amplificacion anomala",
-           "HIGH": "Amplificacion alta", "CRITICAL": "Amplificacion muy alta"}
+BAND_ES = {"NORMAL": "Normal", "WATCH": "En observación", "ANOMALOUS": "Amplificación anómala",
+           "HIGH": "Amplificación alta", "CRITICAL": "Amplificación muy alta"}
 # color por banda (sobrio; rojo solo en CRITICAL)
 BAND_COL = {"NORMAL": "#94a3b8", "WATCH": "#0891b2", "ANOMALOUS": "#d97706",
             "HIGH": "#ea580c", "CRITICAL": "#dc2626"}
@@ -228,6 +228,11 @@ def bar(pct, color=ACCENT, w=100):
             f"background:{color};border-radius:6px'></div></div>")
 
 
+_ASCII_BAD = ["Senal", "Amplificacion", "Coordinacion", "Anomalia", "hipotesis", "Hipotesis",
+              "Que esta", "observacion", "informacion", "atribucion", "Conclusion",
+              "nucleo", "metodo y", "dias operando", "senales"]
+
+
 def day_key(ts):
     return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
 
@@ -348,9 +353,9 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     kpi_tiles = [
         ("clusters", n, "activos"),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
-        ("en banda alta", len(altos), "&ge;60"),
+        ("en banda alta", len(altos), "≥60"),
         ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
-        ("H3 como máx", h3, "clusters"),
+        ("H3 como máx", h3, "del tema"),
         ("días operando", dias, f"desde {_ini_s}"),
     ]
     tiles = "".join(
@@ -434,11 +439,11 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         _tot = sum(top["daily"].values()) or 1
         _pct = 100 * _onpeak / _tot
         if _pct >= 60:
-            ritmo = (f"El <b>{_pct:.0f}%</b> de la actividad del cluster cae en los días de mayor volumen del tema → "
-                     f"compatible con <b>reacción al ciclo informativo</b> (posible eco de una noticia), no necesariamente coordinación.")
+            ritmo = (f"El <b>{_pct:.0f}%</b> de la actividad del cluster cae en los «picos del tema» (días con volumen ≥ p90) → "
+                     f"<b>coincide</b> con el ciclo informativo: puede ser <b>eco</b>, no necesariamente coordinación.")
         else:
-            ritmo = (f"Solo el <b>{_pct:.0f}%</b> de la actividad del cluster cae en los picos del tema → patrón "
-                     f"<b>más propio del cluster</b> que del ciclo de noticias.")
+            ritmo = (f"Solo el <b>{_pct:.0f}%</b> de la actividad del cluster cae en los «picos del tema» (días con volumen ≥ p90) → "
+                     f"indicio (no prueba) de un patrón <b>más propio del cluster</b> que del ciclo de noticias.")
     # reparto por plataforma (cobertura)
     _srca = kpi.get("sources", {})
     _src_tot = sum(_srca.values()) or 1
@@ -459,8 +464,9 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     if _kws:
         tema_def = (f"<details class='tdef'><summary>Cómo se define «{esc(nombre)}»: términos y ventana</summary>"
                     f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws[:14]))}</code></p>"
-                    f"<p class='cs'>Periodo de datos: {_tmin_s} → {_tmax_s} · ventana de análisis 60 días. El corpus llega "
-                    f"también por búsqueda en las plataformas con estos términos y sus variantes (no solo por coincidencia literal).</p></details>")
+                    f"<p class='cs'>Periodo del corpus: {_tmin_s} → {_tmax_s} (incluye <b>backfill</b> retrospectivo). "
+                    f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: 60 días. El corpus llega "
+                    f"también por búsqueda en las plataformas con estos términos y sus variantes.</p></details>")
     _tp = top or {}
     _radar_tabla = ("<details class='tdef'><summary>Ver los valores del radar (tabla)</summary>"
                     "<table style='width:100%;border-collapse:collapse;font-size:.78rem'>"
@@ -554,13 +560,13 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 <div class="wrap">
 
 <section>
-  <h2>Que esta pasando</h2>
+  <h2>Qué está pasando</h2>
   <div class="tiles">{tiles}</div>
   <div class="two" style="margin-top:14px">
     <div><b>Lo más anómalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Salud del tema: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
-      fuente dominante {esc(s.get('fuente_top', '—'))} ({esc(s.get('dependencia_pct', '—'))}%).</p>
+      fuente dominante {esc(_dsrc)} ({_dpct:.0f}%).</p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -576,7 +582,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}"}</p>
     <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
-    <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades.</p>
+    <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades. Las hipótesis se puntúan de forma independiente (pueden aparecer varias como compatibles); no son mutuamente excluyentes.</p>
     <p class="cs" style="margin-top:10px"><b>Atribución:</b> {esc(top['atr']) if top else '—'} · confianza {esc(top['conf']) if top else '—'}
     &middot; <i>las puntuaciones son evaluación interna del sistema; no son probabilidades.</i></p>
   </div>
@@ -586,7 +592,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <h2>Ritmo del cluster top y línea base del tema</h2>
   {tl_svg}
   <p class="cs">{ritmo}</p>
-  <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster.</p>
+  <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster. «Pico del tema» = día con volumen ≥ percentil 90 del periodo; la línea va en escala propia (independiente de las barras).</p>
 </section>
 
 <section>
@@ -610,7 +616,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 </section>
 
 <section><h2>Clusters destacados</h2><div class="three">{cards}</div>
-  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad).</p></section>
+  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad). Los exports (CSV/JSON/GEXF) <b>pseudonimizan</b> las cuentas («cuenta-N») y <b>redactan</b> textos; no incluyen identificadores de cuenta.</p></section>
 
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
@@ -656,6 +662,9 @@ def main():
         with open(os.path.join(a.out, tema + ".html"), "w", encoding="utf-8") as f:
             f.write(html_out)
         hechos.append((tema, nombre, len(clusters)))
+        _h = [w for w in _ASCII_BAD if w in html_out]
+        if _h:
+            print("AVISO acentos ASCII en %s: %s" % (tema, ", ".join(sorted(set(_h)))), file=sys.stderr)
         print("OK:", os.path.join(a.out, tema + ".html"), len(clusters), "clusters")
     if a.todos and hechos:
         links = "".join(f"<li><a href='{esc(t)}.html'>{esc(nm)}</a> — {n} clusters</li>" for t, nm, n in hechos)
