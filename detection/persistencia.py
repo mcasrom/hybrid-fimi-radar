@@ -54,13 +54,17 @@ def persist_findings(conn, narratives, clusters=None, cascades=None, tema_id="fr
 
     # clusters (si los hay)
     for c in clusters or []:
-        titulo = c.get("cluster", "")
+        _label = c.get("cluster", "")
+        _topic = (c.get("topic_dominant") or "").strip()[:200]
+        # La clave de DEDUP no puede ser cluster_label: se re-numera cada ciclo
+        # (DELETE+re-INSERT por tamaño), así que la misma historia cambia de
+        # etiqueta y se duplicaría (medido: 31k filas tipo 'cluster' / 2k
+        # títulos). La clave estable es el tema dominante (texto real del
+        # cluster) del día; el label se conserva en 'detalle' para trazabilidad.
+        titulo = _topic or _label
         if not titulo or ya_existe(titulo, "cluster", hoy):
             continue
-        _topic = c.get("topic_dominant", "")
-        _detalle = f"score {c.get('overall_score',0):.0f}/100, {c.get('accounts',0)} cuentas"
-        if _topic:
-            _detalle += f" | {_topic}"
+        _detalle = f"score {c.get('overall_score',0):.0f}/100, {c.get('accounts',0)} cuentas | {_label}"
         conn.execute(
             "INSERT INTO findings (fecha, tipo, titulo, detalle, n_sources, n_events,"
             " window_hours, fuentes, intensidad, url, tema_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -76,7 +80,7 @@ def persist_findings(conn, narratives, clusters=None, cascades=None, tema_id="fr
             "INSERT INTO finding_evidence (finding_id, ts, source, author, title, text, url) "
             "SELECT ?, ce.ts, ce.source, ce.author, ce.title, ce.text, ce.url "
             "FROM cluster_events ce JOIN clusters cl ON cl.id = ce.cluster_id "
-            "WHERE cl.cluster_label = ?", (fid, titulo))
+            "WHERE cl.cluster_label = ?", (fid, _label))
         inserted += 1
 
     # cascadas
