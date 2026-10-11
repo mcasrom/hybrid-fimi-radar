@@ -185,6 +185,14 @@ def load_keywords(tema):
     return out
 
 
+def load_clusters_counts():
+    """Cifras de clusters por tema tal como las publica el dashboard (raw y sin repetir señal)."""
+    try:
+        return json.load(open(os.path.join(ROOT, "data", "temas_clusters.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def load_elecciones():
     """Fechas electorales activas (data/elecciones.yaml) para marcarlas en el timeline."""
     try:
@@ -404,6 +412,9 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     n = len(clusters)
+    _cc = load_clusters_counts().get(tema, {})
+    _n_raw = _cc.get("raw") or n
+    _n_dedup = _cc.get("dedup") or kpi.get("n_excl", n)
     altos = [c for c in clusters if c["ov"] >= 60]
     top = clusters[0] if clusters else None
     mas_anom = max(clusters, key=lambda c: c["anom"]) if clusters else None
@@ -435,7 +446,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     s = salud or {}
     # ---- bloques html ----
     kpi_tiles = [
-        ("clusters", n, "%d exclusivos" % kpi.get("n_excl", n)),
+        ("clusters", _n_raw, ("%d sin repetir" % _n_dedup) if _n_dedup < _n_raw else "del tema"),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
         ("en banda alta", len(altos), "≥60"),
         ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
@@ -719,7 +730,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Salud del tema <span style='color:#94a3b8'>(últimos 14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{n}</b> clusters del tema (<b>{kpi.get('n_excl', n)}</b> exclusivos; {n - kpi.get('n_excl', n)} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes.</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{_n_raw}</b> clusters del tema (<b>{_n_dedup}</b> sin repetir señal; {_n_raw - _n_dedup} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes. <i>Fuente de las cifras: el propio panel del dashboard.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}

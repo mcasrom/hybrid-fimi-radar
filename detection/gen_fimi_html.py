@@ -3480,21 +3480,15 @@ def main():
             _mini_dial("Amplificación", _amp_val, "#c2410c",
                        "señal global del tema"),
         ])
-        try:
-            _ccn = sqlite3.connect(DB, timeout=30)
-            _tot_cl = _ccn.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=?", (_t,)).fetchone()[0]
-            _ccn.close()
-        except sqlite3.Error:
-            _tot_cl = len(_tema_cl)
-        _cl_sub = (f"{len(_tema_cl)} exclusivos · {_tot_cl} del tema" if _tot_cl > len(_tema_cl)
-                   else "activos")
+        _cl_sub = (f"{len(_tema_cl)} sin repetir señal" if len(_tema_cl) < len(_tema_cl_raw)
+                   else "del tema")
         _cards_t = (f'<div class="fimi-gauges" '
                     f'style="display:flex;flex-wrap:wrap;gap:12px;margin:0 auto 10px;width:100%;justify-content:center">'
                     f'{_gauges_t}</div>'
                     f'<div style="display:flex;flex-wrap:wrap;gap:10px;width:100%">' + "".join([
                         kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
                         kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
-                        kpi("Clusters", len(_tema_cl), _cl_sub, "#fafaf9"),
+                        kpi("Clusters", len(_tema_cl_raw), _cl_sub, "#fafaf9"),
                         kpi("Cuentas", _tot_cuentas, "implicadas en clusters", "#f1f5f9"),
                         kpi_banda_alerta(_tema_cl),
                     ]) + '</div>')
@@ -3505,6 +3499,7 @@ def main():
             "nombre": _nombre,
             "estado": _estado,
             "clusters": len(_tema_cl),
+            "clusters_raw": len(_tema_cl_raw),
             "high": _n_high_t,
         }
         _cl_txt = ""
@@ -5829,6 +5824,12 @@ if ('serviceWorker' in navigator) {{
         html = _minify_inline_styles(html)
     except Exception as _e_min:
         print(f"minify estilos fallo (no bloquea): {_e_min}")
+    try:
+        _tcj = {_t: {"raw": _st.get("clusters_raw"), "dedup": _st.get("clusters")}
+                for _t, _st in temas_stats.items()}
+        (ROOT / "data" / "temas_clusters.json").write_text(json.dumps(_tcj, ensure_ascii=False), encoding="utf-8")
+    except Exception as _e_tcj:
+        print(f"temas_clusters.json fallo (no bloquea): {_e_tcj}")
     OUT.write_text(html, encoding="utf-8")
     print(f"OK: {OUT} — {n_events} eventos, {n_sources} fuentes, {len(clusters)} clusters")
     # Detalle de los clusters del "resto" EN UN FICHERO APARTE (no inline): el
