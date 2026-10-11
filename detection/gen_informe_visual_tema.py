@@ -161,12 +161,15 @@ def cargar_tema(con, tema):
     n_ev, n_au = ev[0], ev[1]
     # linea base de noticias: volumen diario del TEMA (todos sus eventos)
     theme_daily = {}
-    for (_ts,) in con.execute(
-            "SELECT e.timestamp FROM events e JOIN event_temas et ON et.event_id=e.id"
+    _src = {}
+    for (_ts, _s) in con.execute(
+            "SELECT e.timestamp, e.source FROM events e JOIN event_temas et ON et.event_id=e.id"
             " WHERE et.tema_id=?", (tema,)).fetchall():
         if _ts:
             d = day_key(_ts)
             theme_daily[d] = theme_daily.get(d, 0) + 1
+        if _s:
+            _src[_s] = _src.get(_s, 0) + 1
     tmin = con.execute(
         "SELECT MIN(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id"
         " WHERE et.tema_id=?", (tema,)).fetchone()[0]
@@ -175,7 +178,7 @@ def cargar_tema(con, tema):
     n_au_cl = _mt.cuentas_en_clusters(con, tema)
     _ini = _mt.inicio_ingesta(con, tema)
     return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin,
-                      "inicio": _ini, "theme_daily": theme_daily}
+                      "inicio": _ini, "theme_daily": theme_daily, "sources": _src}
 
 
 def hyp_top(c):
@@ -415,6 +418,17 @@ def render(tema, nombre, clusters, kpi, salud):
         else:
             ritmo = (f"Solo el <b>{_pct:.0f}%</b> de la actividad del cluster cae en los picos del tema → patrón "
                      f"<b>más propio del cluster</b> que del ciclo de noticias.")
+    # reparto por plataforma (cobertura)
+    _srca = kpi.get("sources", {})
+    _src_tot = sum(_srca.values()) or 1
+    _src_top = sorted(_srca.items(), key=lambda x: -x[1])[:5]
+    _src_txt = " · ".join(f"{esc(_s)} {100 * _v / _src_tot:.0f}%" for _s, _v in _src_top) or "—"
+    _dsrc, _dn = (_src_top[0] if _src_top else ("—", 0))
+    _dpct = 100 * _dn / _src_tot
+    cobertura = (f"<b>Cobertura por plataforma:</b> {_src_txt}. " +
+                 (f"Este informe refleja sobre todo <b>{esc(_dsrc)}</b> ({_dpct:.0f}% del corpus del tema); "
+                  f"no representa por sí solo todo el debate público." if _dpct >= 50
+                  else "Ninguna plataforma domina por completo el corpus del tema."))
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -534,10 +548,12 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div><p class="cs">{lectura}</p>
       <div class="metric">
         <div><b>{tot_ev:,}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
-        <div><b>{n}</b>clusters</div><div><b>{kpi.get('n_au_cl', kpi['n_au']):,}</b>cuentas</div></div></div>
+        <div><b>{n}</b>clusters</div>        <div><b>{kpi.get('n_au_cl', kpi['n_au']):,}</b>cuentas</div></div>
+      <p class="cs" style="margin-top:10px">{cobertura}</p></div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
+      <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+. Una banda alta es amplificación medida, no coordinación confirmada.</p>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificación global</div>
         <div class="hbar">{bar(med['amp'], ACCENT)}</div><div class="hval">{med['amp']:.0f}</div></div>
       <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Señales clave del tema (medianas)</h3>
