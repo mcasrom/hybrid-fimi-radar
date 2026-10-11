@@ -261,7 +261,10 @@ def timeline_svg(days, cl, th, w=760, h=130):
     labels = (f"<text x='0' y='{h - 3}' font-size='10' fill='{MUT}'>{days[0][5:]}</text>"
               f"<text x='{w}' y='{h - 3}' font-size='10' fill='{MUT}' text-anchor='end'>{days[-1][5:]}</text>")
     return (f"<svg viewBox='0 0 {w} {h}' width='100%' style='max-width:760px;display:block' role='img' "
-            f"aria-label='Eventos por día del cluster (barras) frente al volumen diario del tema (línea)'>{axis}{line}{''.join(bars)}{labels}</svg>")
+            f"aria-label='Eventos por día del cluster (barras) frente al volumen diario del tema (línea)'>"
+            f"<title>Ritmo del cluster top y línea base del tema</title>"
+            f"<desc>Barras: eventos por día del cluster de mayor score. Línea: volumen diario del tema (línea base).</desc>"
+            f"{axis}{line}{''.join(bars)}{labels}</svg>")
 
 
 def _qual(sc):
@@ -302,7 +305,9 @@ def spider(series):
         anch = "middle"
         labels.append(f"<text x='{lx:.0f}' y='{ly:.0f}' text-anchor='{anch}' font-size='11' fill='{MUT}'>{esc(ax)}</text>")
     return (f"<svg viewBox='0 0 300 260' width='100%' style='max-width:340px;display:block;margin:0 auto' "
-            f"role='img' aria-label='Radar de componentes'>"
+            f"role='img' aria-label='Radar de componentes: tema (mediana) y cluster de mayor score'>"
+            f"<title>Radar de componentes</title>"
+            f"<desc>Coordinación, infraestructura, densidad, amplificación y anomalía, del tema (mediana) y del cluster de mayor score. Los valores están en la tabla alternativa siguiente.</desc>"
             f"{''.join(rings)}{''.join(spokes)}{''.join(polys)}{''.join(labels)}</svg>")
 
 
@@ -454,6 +459,19 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                     f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws[:14]))}</code></p>"
                     f"<p class='cs'>Periodo de datos: {_tmin_s} → {_tmax_s} · ventana de análisis 60 días. El corpus llega "
                     f"también por búsqueda en las plataformas con estos términos y sus variantes (no solo por coincidencia literal).</p></details>")
+    _tp = top or {}
+    _radar_tabla = ("<details class='tdef'><summary>Ver los valores del radar (tabla)</summary>"
+                    "<table style='width:100%;border-collapse:collapse;font-size:.78rem'>"
+                    "<tr><th style='text-align:left;padding:3px 6px'>Componente</th>"
+                    "<th style='text-align:right;padding:3px 6px'>Tema (mediana)</th>"
+                    "<th style='text-align:right;padding:3px 6px'>Cluster top</th></tr>"
+                    + "".join(f"<tr><td style='padding:3px 6px'>{lab}</td>"
+                              f"<td style='text-align:right;padding:3px 6px'>{med[k]:.0f}</td>"
+                              f"<td style='text-align:right;padding:3px 6px'>{float(_tp.get(k, 0) or 0):.0f}</td></tr>"
+                              for lab, k in [("Coordinación", "coord"), ("Infraestructura", "infra"),
+                                             ("Densidad de red", "dens"), ("Amplificación", "amp"),
+                                             ("Anomalía", "anom")])
+                    + "</table></details>")
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -550,7 +568,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div><h2>Radar de componentes (mediana del tema)</h2>
     {spider([("Tema (mediana)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (mediana)", med, NAVY)])}
     <p class="cs">Mediana de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
-    dimensiones distintas (0-100) y <b>no</b> suman el score global.</p></div>
+    dimensiones distintas (0-100) y <b>no</b> suman el score global.</p>{_radar_tabla}</div>
   <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
     <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
     {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}"}</p>
