@@ -484,6 +484,11 @@ def main():
                   'cuentas o amenazas: no se reproducen.' % n_red)
 
     cuentas_clusters = _mt.cuentas_en_clusters(con, a.tema)
+    try:
+        _tcj = json.load(open(os.path.join(BASE, 'data', 'temas_clusters.json'), encoding='utf-8')).get(a.tema, {})
+        _n_cl = _tcj.get('raw') or len(cls)
+    except (OSError, ValueError):
+        _n_cl = len(cls)
     _dias_oper, _ini_ing = _mt.dias_operando(con, a.tema)
     _ini_str = (datetime.fromtimestamp(_ini_ing, timezone.utc).strftime('%d/%m/%Y')
                 if _ini_ing else 's/d')
@@ -493,7 +498,7 @@ def main():
         'generado_utc': now.strftime('%Y-%m-%d %H:%M'),
         'kpis': {'eventos': ev['n'], 'autores': ev['a'],
                  'cuentas_clusters': cuentas_clusters,
-                 'clusters': len(cls), 'bandas': rep,
+                 'clusters': _n_cl, 'bandas': rep,
                  'dias_operando': round(_dias_oper, 1), 'inicio_ingesta': _ini_ing,
                  'linajes': len(linajes), 'topados_techo': len(topados)},
         'delta_vs_anterior': delta,
