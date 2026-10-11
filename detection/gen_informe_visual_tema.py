@@ -185,6 +185,23 @@ def load_keywords(tema):
     return out
 
 
+def load_elecciones():
+    """Fechas electorales activas (data/elecciones.yaml) para marcarlas en el timeline."""
+    try:
+        import yaml
+        d = yaml.safe_load(open(os.path.join(ROOT, "data", "elecciones.yaml"), encoding="utf-8")) or []
+    except (OSError, ValueError):
+        return []
+    out = []
+    for row in d:
+        if not isinstance(row, dict) or row.get("estado") == "cerrado":
+            continue
+        f = str(row.get("fecha") or "")[:10]
+        if len(f) == 10 and f[4] == "-" and f[7] == "-":
+            out.append((f, str(row.get("pais") or "")))
+    return out
+
+
 def cargar_tema(con, tema):
     cl = con.execute(
         "SELECT c.id, c.cluster_label, c.overall_score, c.coordination_score,"
@@ -305,7 +322,7 @@ def _cont_days(dmin, dmax):
     return out
 
 
-def timeline_svg(days, cl, th, w=760, h=130):
+def timeline_svg(days, cl, th, w=760, h=130, marks=None):
     n = max(1, len(days))
     cmax = max([cl.get(d, 0) for d in days] + [1])
     tmax = max([th.get(d, 0) for d in days] + [1])
@@ -323,11 +340,18 @@ def timeline_svg(days, cl, th, w=760, h=130):
     axis = f"<line x1='0' y1='{h - 16}' x2='{w}' y2='{h - 16}' stroke='{LINE}'/>"
     labels = (f"<text x='0' y='{h - 3}' font-size='10' fill='{MUT}'>{days[0][5:]}</text>"
               f"<text x='{w}' y='{h - 3}' font-size='10' fill='{MUT}' text-anchor='end'>{days[-1][5:]}</text>")
+    marks_html = ""
+    for _d, _lab in (marks or []):
+        if _d in days:
+            _x = days.index(_d) * bw + bw / 2
+            marks_html += (f"<line x1='{_x:.1f}' y1='12' x2='{_x:.1f}' y2='{h - 16}' stroke='#dc2626' "
+                           f"stroke-width='1' stroke-dasharray='3 3'/>"
+                           f"<text x='{_x:.1f}' y='10' font-size='9' fill='#b91c1c' text-anchor='middle'>{esc(_lab[:9])}</text>")
     return (f"<svg viewBox='0 0 {w} {h}' width='100%' style='max-width:760px;display:block' role='img' "
             f"aria-label='Eventos por día del cluster (barras) frente al volumen diario del tema (línea)'>"
             f"<title>Ritmo del cluster top y línea base del tema</title>"
             f"<desc>Barras: eventos por día del cluster de mayor score. Línea: volumen diario del tema (línea base).</desc>"
-            f"{axis}{line}{''.join(bars)}{labels}</svg>")
+            f"{axis}{line}{''.join(bars)}{marks_html}{labels}</svg>")
 
 
 def _qual(sc):
@@ -472,6 +496,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         _mal = esc(mas_anom["label"])
         mas_anom_txt = (f"<b>{_mal}</b> "
                         f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}</span>"
+                        f" <span style='font-size:.72rem;color:#64748b'>· {mas_anom['n_ev']} eventos · {mas_anom['n_au']} cuentas</span>"
                         f" <span style='font-size:.72rem'>· "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=csv'>CSV</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
@@ -486,11 +511,14 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     # ritmo del cluster top + linea base del tema (noticias)
     tl_svg = ""
     ritmo = ""
+    _elec_note = ""
     _thd = kpi.get("theme_daily", {})
     if top and top.get("daily"):
         _dd = sorted(top["daily"])
         _days = _cont_days(_dd[0], _dd[-1])
-        tl_svg = timeline_svg(_days, top["daily"], _thd)
+        _mk = [(f, p) for f, p in (load_elecciones() if tema == "elecciones" else []) if f in _days]
+        _elec_note = " Las <b>líneas rojas</b> marcan fechas electorales (data/elecciones.yaml)." if _mk else ""
+        tl_svg = timeline_svg(_days, top["daily"], _thd, marks=_mk)
         _vals = sorted(_thd.get(x, 0) for x in _days)
         _p90 = _vals[int(len(_vals) * 0.9)] if _vals else 0
         _peak = [x for x in _days if _thd.get(x, 0) >= _p90 and _p90 > 0]
@@ -526,6 +554,11 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                  (f"Este informe refleja sobre todo <b>{esc(_dsrc)}</b> ({_dpct:.0f}% del corpus del tema); "
                   f"no representa por sí solo todo el debate público." if _dpct >= 50
                   else "Ninguna plataforma domina por completo el corpus del tema."))
+    # distribucion de tamaños de cluster
+    _nacs = sorted(c["n_au"] for c in clusters)
+    _alta_small = sum(1 for c in altos if c["n_ev"] < 30)
+    tamano = (f"Tamaño: mediana <b>{median(_nacs):.0f}</b> cuentas por cluster (n={n}); de los "
+              f"<b>{len(altos)}</b> en banda alta, <b>{_alta_small}</b> tienen &lt;30 eventos (muestra pequeña).")
     # como se define el tema (transparencia)
     _kws = keywords or []
     _dd_all = sorted(kpi.get("theme_daily", {}))
@@ -693,7 +726,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div><h2>Radar de componentes (mediana del tema)</h2>
     {spider([("Tema (mediana)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (mediana)", med, NAVY)])}
     <p class="cs">Mediana de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
-    dimensiones distintas (0-100) y <b>no</b> suman el score global.</p>{_radar_tabla}</div>
+    dimensiones distintas (0-100) y <b>no</b> suman el score global. <b>Infraestructura y densidad suelen saturar</b> (tope de normalización): valores altos pueden reflejar una comunidad que comparte prensa, no necesariamente un operador.</p>{_radar_tabla}</div>
   <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
     <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
     {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}"}</p>
@@ -709,7 +742,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <h2>Ritmo del cluster top y línea base del tema</h2>
   {tl_svg}
   <p class="cs">{ritmo}</p>
-  <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster. «Pico del tema» = día con volumen ≥ percentil 90 del periodo; la línea va en escala propia (independiente de las barras).</p>
+  <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster. «Pico del tema» = día con volumen ≥ percentil 90 del periodo; la línea va en escala propia (independiente de las barras).{_elec_note}</p>
 </section>
 
 <section>
@@ -719,7 +752,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
       <div class="metric">
         <div><b>{mil(tot_ev)}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
         <div><b>{n}</b>clusters</div>        <div><b>{mil(kpi.get('n_au_cl', kpi['n_au']))}</b>cuentas</div></div>
-      <p class="cs" style="margin-top:10px">{cobertura}</p></div>
+      <p class="cs" style="margin-top:10px">{cobertura}</p>
+      <p class="cs" style="margin-top:4px;color:#94a3b8">{tamano}</p></div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
@@ -739,12 +773,13 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
-    <p class="cs" style="margin-top:8px">Cuentas del cluster compartiendo enlaces del mismo dominio.</p></section>
+    <p class="cs" style="margin-top:8px">Dominios más compartidos por las cuentas de los <b>20 clusters de mayor score</b> del tema (no solo del cluster top). Cuentas del cluster compartiendo enlaces del mismo dominio.</p></section>
   <section><h2>Hipótesis más frecuente del tema</h2>
     <p class="cs" style="margin-top:0">Número de clusters cuya hipótesis de <b>mayor puntuación</b> es cada una.
     El tema puede tener una hipótesis más frecuente distinta de la del <b>cluster top</b> (arriba).</p>
     {_dist_dom}
-    <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p></section>
+    <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p>
+    <p class="cs" style="margin-top:4px;color:#94a3b8">H2b = <b>sincronía temporal alta SIN evidencia de estructura organizada</b> (no atribuye operador). Por eso puede ser la más frecuente del tema y, a la vez, valer 0 en un cluster concreto con estructura —ese puntúa H2 (compatible con coordinación doméstica).</p></section>
 </div>
 
 <section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusión</h2><p class="cs">{concl}</p>
