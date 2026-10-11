@@ -114,6 +114,21 @@ def load_salud():
     return out
 
 
+def load_keywords(tema):
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(CFG, encoding="utf-8")) or {}
+    except (OSError, ValueError):
+        return []
+    out = []
+    for k in (cfg.get("keywords") or []):
+        if (k.get("tema") or "frontera_sur") == tema:
+            w = k.get("palabra")
+            if w:
+                out.append(w)
+    return out
+
+
 def cargar_tema(con, tema):
     cl = con.execute(
         "SELECT c.id, c.cluster_label, c.overall_score, c.coordination_score,"
@@ -291,7 +306,7 @@ def spider(series):
             f"{''.join(rings)}{''.join(spokes)}{''.join(polys)}{''.join(labels)}</svg>")
 
 
-def render(tema, nombre, clusters, kpi, salud):
+def render(tema, nombre, clusters, kpi, salud, keywords=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     n = len(clusters)
@@ -396,8 +411,7 @@ def render(tema, nombre, clusters, kpi, salud):
                f"{h3} clusters muestran señal compatible con influencia extranjera (H3). "
                f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
                f"una banda alta es amplificación medida, no campaña confirmada.")
-    concl = (f"{esc(BAND_ES[bd])} (max {top['ov']:.0f}/100) con {len(altos)} de {n} clusters en banda alta. "
-             f"Señal NO atribuida (actor: UNKNOWN). La interpretación final requiere validación externa.")
+    concl = (f"{esc(BAND_ES[bd])} (max {top['ov']:.0f}/100) con {len(altos)} de {n} clusters en banda alta.")
     # ritmo del cluster top + linea base del tema (noticias)
     tl_svg = ""
     ritmo = ""
@@ -429,6 +443,17 @@ def render(tema, nombre, clusters, kpi, salud):
                  (f"Este informe refleja sobre todo <b>{esc(_dsrc)}</b> ({_dpct:.0f}% del corpus del tema); "
                   f"no representa por sí solo todo el debate público." if _dpct >= 50
                   else "Ninguna plataforma domina por completo el corpus del tema."))
+    # como se define el tema (transparencia)
+    _kws = keywords or []
+    _dd_all = sorted(kpi.get("theme_daily", {}))
+    _tmin_s = _dd_all[0] if _dd_all else "—"
+    _tmax_s = _dd_all[-1] if _dd_all else "—"
+    tema_def = ""
+    if _kws:
+        tema_def = (f"<details class='tdef'><summary>Cómo se define «{esc(nombre)}»: términos y ventana</summary>"
+                    f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws[:14]))}</code></p>"
+                    f"<p class='cs'>Periodo de datos: {_tmin_s} → {_tmax_s} · ventana de análisis 60 días. El corpus llega "
+                    f"también por búsqueda en las plataformas con estos términos y sus variantes (no solo por coincidencia literal).</p></details>")
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -458,6 +483,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 .ccard{{border:1px solid {LINE};border-radius:10px;padding:12px}} .cchead{{display:flex;justify-content:space-between;align-items:center}}
 .chip{{color:#fff;border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700}}
 .cs{{font-size:.78rem;color:#334155;margin:6px 0 0}} .cact{{margin-top:8px}} .cact a{{margin-right:10px;font-size:.75rem;font-weight:600}}
+.tdef{{margin-top:12px;border-top:1px solid {LINE};padding-top:10px}} .tdef summary{{cursor:pointer;font-size:.8rem;color:{NAVY};font-weight:700}} .tdef code{{font-size:.74rem;color:#334155;background:#f1f5f9;border-radius:4px;padding:1px 5px}}
 .metric{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}}
 .metric div{{background:#f8fafc;border:1px solid {LINE};border-radius:8px;padding:8px;text-align:center}}
 .metric b{{display:block;font-size:1.1rem;color:{NAVY}}}
@@ -517,6 +543,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
       fuente dominante {esc(s.get('fuente_top', '—'))} ({esc(s.get('dependencia_pct', '—'))}%).</p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
+  {tema_def}
 </section>
 
 <section><div class="two">
@@ -553,7 +580,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
-      <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+. Una banda alta es amplificación medida, no coordinación confirmada.</p>
+      <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+.</p>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificación global</div>
         <div class="hbar">{bar(med['amp'], ACCENT)}</div><div class="hval">{med['amp']:.0f}</div></div>
       <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Señales clave del tema (medianas)</h3>
@@ -579,7 +606,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <p class="cs" style="margin-top:6px"><b>Señal, no atribución.</b> Actor: UNKNOWN · evaluación: no concluyente. La interpretación final requiere validación externa y análisis experto.</p></section>
 
 </div>
-<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)}) · amplificación medida, no coordinación confirmada ·
+<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)}) ·
 <a href="https://fimi.viajeinteligencia.com/metodo.html">método y límites</a></div>
 </body></html>"""
 
@@ -605,7 +632,7 @@ def main():
             print("sin clusters:", tema)
             continue
         nombre = names.get(tema, tema)
-        html_out = render(tema, nombre, clusters, kpi, salud.get(tema))
+        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema))
         with open(os.path.join(a.out, tema + ".html"), "w", encoding="utf-8") as f:
             f.write(html_out)
         hechos.append((tema, nombre, len(clusters)))
