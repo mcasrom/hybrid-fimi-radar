@@ -46,6 +46,51 @@ BAND_ES = {"NORMAL": "Normal", "WATCH": "En observación", "ANOMALOUS": "Amplifi
 # color por banda (sobrio; rojo solo en CRITICAL)
 BAND_COL = {"NORMAL": "#94a3b8", "WATCH": "#0891b2", "ANOMALOUS": "#d97706",
             "HIGH": "#ea580c", "CRITICAL": "#dc2626"}
+# Países (para el desglose multinacional del tema "elecciones") — por ccTLD y medios conocidos.
+PAIS_TLD = {"de": "Alemania", "se": "Suecia", "es": "España", "it": "Italia", "fr": "Francia",
+            "pl": "Polonia", "nl": "Países Bajos", "at": "Austria", "gr": "Grecia", "pt": "Portugal",
+            "ro": "Rumanía", "bg": "Bulgaria", "rs": "Serbia", "ba": "Bosnia", "hu": "Hungría",
+            "cz": "Chequia", "dk": "Dinamarca", "fi": "Finlandia", "no": "Noruega", "be": "Bélgica",
+            "ie": "Irlanda", "ch": "Suiza", "us": "EE. UU.", "ru": "Rusia", "ua": "Ucrania",
+            "br": "Brasil", "ar": "Argentina", "mx": "México", "uk": "Reino Unido"}
+PAIS_DOM = {"spiegel.de": "Alemania", "zeit.de": "Alemania", "faz.net": "Alemania", "welt.de": "Alemania",
+            "tagesschau.de": "Alemania", "sueddeutsche.de": "Alemania", "taz.de": "Alemania",
+            "nytimes.com": "EE. UU.", "washingtonpost.com": "EE. UU.", "wsj.com": "EE. UU.",
+            "cnn.com": "EE. UU.", "politico.com": "EE. UU.", "npr.org": "EE. UU.", "pbs.org": "EE. UU.",
+            "foxnews.com": "EE. UU.", "theguardian.com": "Reino Unido", "bbc.com": "Reino Unido",
+            "bbc.co.uk": "Reino Unido", "dn.se": "Suecia", "aftonbladet.se": "Suecia",
+            "expressen.se": "Suecia", "svt.se": "Suecia", "eldiario.es": "España", "elpais.com": "España",
+            "publico.es": "España", "infolibre.es": "España", "efe.com": "España", "elconfidencial.com": "España"}
+
+
+def _pais_de(host):
+    h = (host or "").lower()
+    if h in PAIS_DOM:
+        return PAIS_DOM[h]
+    parts = h.split(".")
+    if len(parts) >= 2 and ".".join(parts[-2:]) == "co.uk":
+        return "Reino Unido"
+    return PAIS_TLD.get(parts[-1] if parts else "", "Internacional/otros")
+
+
+PAIS_KW = {
+    "Alemania": ["afd", "landtagswahl", "bundestagswahl", "wahlkampf", "europawahl", "scholz",
+                 "merz", "spd", "cdu", "gruene", "bundestag"],
+    "Suecia": ["sverige", "riksdag", "sverigedemokraterna", "moderaterna", "valet"],
+    "España": ["elecciones generales", "feijoo", "sanchez", "vox", "moncloa", "29n", "psoe"],
+    "Brasil": ["lula", "bolsonaro", "tse", "planalto", "segundo turno", "balotagem"],
+    "EE. UU.": ["midterms", "harris", "biden", "republican", "democrat", "gop"],
+    "Francia": ["assemblee", "macron", "le pen", "legislativas"],
+    "Italia": ["meloni", "elezioni", "fratelli d italia"],
+    "Reino Unido": ["westminster", "labour", "tory", "tories", "snap election"],
+}
+
+
+def _sint(s):
+    import unicodedata as _u
+    return "".join(c for c in _u.normalize("NFD", (s or "").lower()) if not _u.combining(c))
+
+
 NAVY = "#1e3a5f"
 ACCENT = "#2563eb"
 INK = "#0f172a"
@@ -152,6 +197,8 @@ def cargar_tema(con, tema):
             if _ts:
                 d = day_key(_ts)
                 daily[d] = daily.get(d, 0) + 1
+        _tt = con.execute("SELECT title, text FROM cluster_events WHERE cluster_id=? LIMIT 40", (cid,)).fetchall()
+        txt = (" ".join((str(x[0] or "") + " " + str(x[1] or "")) for x in _tt))[:6000]
         doms = {}
         for u in urls:
             h = host(u)
@@ -166,7 +213,7 @@ def cargar_tema(con, tema):
             "coord": float(coord or 0), "amp": float(amp or 0), "anom": float(anom or 0),
             "infra": float(infra or 0), "dens": float(dens or 0),
             "kc": kc or 0, "kcs": kcs or 0, "n_ev": n_ev, "n_au": n_au, "t0": t0,
-            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "daily": daily,
+            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "daily": daily, "txt": txt,
             "atr": atr or "UNKNOWN", "conf": conf or "NO_ATTRIBUTION", "asses": asses or "",
         })
     # KPIs de tema (misma definicion que informe_tema.py)
@@ -480,6 +527,44 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                                              ("Densidad de red", "dens"), ("Amplificación", "amp"),
                                              ("Anomalía", "anom")])
                     + "</table></details>")
+    # desglose por país (solo tema multinacional "elecciones")
+    paises_html = ""
+    if tema == "elecciones":
+        _pai = {}
+        for _c in clusters:
+            _v = {}
+            for _d, _n in _c["doms"][:5]:
+                _k = _pais_de(_d)
+                _v[_k] = _v.get(_k, 0) + 1
+            _k = max(_v, key=_v.get) if _v else "Internacional/otros"
+            if _k == "Internacional/otros" and _c.get("txt"):
+                _t = _sint(_c["txt"])
+                _kv = {}
+                for _pn, _kl in PAIS_KW.items():
+                    _n2 = sum(_t.count(_sint(_w)) for _w in _kl)
+                    if _n2:
+                        _kv[_pn] = _n2
+                if _kv:
+                    _k = max(_kv, key=_kv.get)
+            _pai.setdefault(_k, []).append(_c)
+        _rows = []
+        for _pai_n, _cs in sorted(_pai.items(), key=lambda kv: -len(kv[1])):
+            _alta = sum(1 for _x in _cs if _x["ov"] >= 60)
+            _mx = max(_x["ov"] for _x in _cs)
+            _dm = " · ".join(sorted({_d for _x in _cs for _d, _n in _x["doms"][:2]})[:6])
+            _rows.append(f"<tr><td style='padding:4px 8px'>{esc(_pai_n)}</td>"
+                         f"<td style='text-align:right'>{len(_cs)}</td>"
+                         f"<td style='text-align:right'>{_alta}</td>"
+                         f"<td style='text-align:right'>{_mx:.0f}</td>"
+                         f"<td style='padding:4px 8px;color:#94a3b8'>{esc(_dm)}</td></tr>")
+        paises_html = ("<section><h2>Desglose por país (aproximado, por dominios)</h2>"
+                       "<p class='cs'>Tema <b>multinacional</b>: el país se asigna por los <b>dominios</b> que comparten las "
+                       "cuentas del cluster (ccTLD y medios conocidos). Es <b>orientativo</b>, no una clasificación estricta.</p>"
+                       "<table style='width:100%;border-collapse:collapse;font-size:.8rem'>"
+                       "<tr><th style='text-align:left;padding:4px 8px'>País</th><th style='text-align:right'>Clusters</th>"
+                       "<th style='text-align:right'>En banda alta</th><th style='text-align:right'>Máx</th>"
+                       "<th style='text-align:left;padding:4px 8px'>Dominios ejemplo</th></tr>"
+                       + "".join(_rows) + "</table></section>")
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -617,6 +702,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 
 <section><h2>Clusters destacados</h2><div class="three">{cards}</div>
   <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad). Los exports (CSV/JSON/GEXF) <b>pseudonimizan</b> las cuentas («cuenta-N») y <b>redactan</b> textos; no incluyen identificadores de cuenta.</p></section>
+
+{paises_html}
 
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
