@@ -18,7 +18,7 @@ import os
 import re
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import metricas_tema as _mt  # noqa: E402  (definiciones canonicas por tema)
@@ -130,7 +130,13 @@ def cargar_tema(con, tema):
         n_ev = con.execute("SELECT COUNT(*) FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()[0]
         n_au = con.execute("SELECT COUNT(DISTINCT author) FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()[0]
         t0 = con.execute("SELECT MIN(ts) FROM cluster_events WHERE cluster_id=?", (cid,)).fetchone()[0]
-        urls = [x[0] for x in con.execute("SELECT url FROM cluster_events WHERE cluster_id=?", (cid,)).fetchall()]
+        rows_ct = con.execute("SELECT url, ts FROM cluster_events WHERE cluster_id=?", (cid,)).fetchall()
+        urls = [x[0] for x in rows_ct]
+        daily = {}
+        for _u, _ts in rows_ct:
+            if _ts:
+                d = day_key(_ts)
+                daily[d] = daily.get(d, 0) + 1
         doms = {}
         for u in urls:
             h = host(u)
@@ -145,7 +151,7 @@ def cargar_tema(con, tema):
             "coord": float(coord or 0), "amp": float(amp or 0), "anom": float(anom or 0),
             "infra": float(infra or 0), "dens": float(dens or 0),
             "kc": kc or 0, "kcs": kcs or 0, "n_ev": n_ev, "n_au": n_au, "t0": t0,
-            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps,
+            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "daily": daily,
             "atr": atr or "UNKNOWN", "conf": conf or "NO_ATTRIBUTION", "asses": asses or "",
         })
     # KPIs de tema (misma definicion que informe_tema.py)
@@ -153,6 +159,14 @@ def cargar_tema(con, tema):
         "SELECT COUNT(*), COUNT(DISTINCT e.author) FROM events e"
         " JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id=?", (tema,)).fetchone()
     n_ev, n_au = ev[0], ev[1]
+    # linea base de noticias: volumen diario del TEMA (todos sus eventos)
+    theme_daily = {}
+    for (_ts,) in con.execute(
+            "SELECT e.timestamp FROM events e JOIN event_temas et ON et.event_id=e.id"
+            " WHERE et.tema_id=?", (tema,)).fetchall():
+        if _ts:
+            d = day_key(_ts)
+            theme_daily[d] = theme_daily.get(d, 0) + 1
     tmin = con.execute(
         "SELECT MIN(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id"
         " WHERE et.tema_id=?", (tema,)).fetchone()[0]
@@ -160,7 +174,8 @@ def cargar_tema(con, tema):
     # canonica compartida (metricas_tema), igual que el dashboard y el semanal.
     n_au_cl = _mt.cuentas_en_clusters(con, tema)
     _ini = _mt.inicio_ingesta(con, tema)
-    return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin, "inicio": _ini}
+    return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin,
+                      "inicio": _ini, "theme_daily": theme_daily}
 
 
 def hyp_top(c):
@@ -193,6 +208,42 @@ def bar(pct, color=ACCENT, w=100):
     return (f"<div style='position:relative;height:10px;background:#eef2f7;border-radius:6px'>"
             f"<div style='position:absolute;left:0;top:0;height:10px;width:{pct:.1f}%;"
             f"background:{color};border-radius:6px'></div></div>")
+
+
+def day_key(ts):
+    return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def _cont_days(dmin, dmax):
+    a = datetime.strptime(dmin, "%Y-%m-%d")
+    b = datetime.strptime(dmax, "%Y-%m-%d")
+    out = []
+    while a <= b:
+        out.append(a.strftime("%Y-%m-%d"))
+        a += timedelta(days=1)
+    return out
+
+
+def timeline_svg(days, cl, th, w=760, h=130):
+    n = max(1, len(days))
+    cmax = max([cl.get(d, 0) for d in days] + [1])
+    tmax = max([th.get(d, 0) for d in days] + [1])
+    bw = w / n
+    bars = []
+    for i, d in enumerate(days):
+        v = cl.get(d, 0)
+        if v:
+            bh = (h - 26) * v / cmax
+            bars.append(f"<rect x='{i * bw:.1f}' y='{h - 16 - bh:.1f}' width='{max(1, bw - 1.5):.1f}' "
+                        f"height='{bh:.1f}' fill='{ACCENT}' rx='1'/>")
+    pts = " ".join(f"{i * bw + bw / 2:.1f},{h - 16 - (h - 26) * th.get(d, 0) / tmax:.1f}"
+                   for i, d in enumerate(days))
+    line = f"<polyline points='{pts}' fill='none' stroke='{NAVY}' stroke-opacity='.35' stroke-width='1.6'/>"
+    axis = f"<line x1='0' y1='{h - 16}' x2='{w}' y2='{h - 16}' stroke='{LINE}'/>"
+    labels = (f"<text x='0' y='{h - 3}' font-size='10' fill='{MUT}'>{days[0][5:]}</text>"
+              f"<text x='{w}' y='{h - 3}' font-size='10' fill='{MUT}' text-anchor='end'>{days[-1][5:]}</text>")
+    return (f"<svg viewBox='0 0 {w} {h}' width='100%' style='max-width:760px;display:block' role='img' "
+            f"aria-label='Eventos por día del cluster (barras) frente al volumen diario del tema (línea)'>{axis}{line}{''.join(bars)}{labels}</svg>")
 
 
 def _qual(sc):
@@ -344,6 +395,26 @@ def render(tema, nombre, clusters, kpi, salud):
                f"una banda alta es amplificación medida, no campaña confirmada.")
     concl = (f"{esc(BAND_ES[bd])} (max {top['ov']:.0f}/100) con {len(altos)} de {n} clusters en banda alta. "
              f"Señal NO atribuida (actor: UNKNOWN). La interpretación final requiere validación externa.")
+    # ritmo del cluster top + linea base del tema (noticias)
+    tl_svg = ""
+    ritmo = ""
+    _thd = kpi.get("theme_daily", {})
+    if top and top.get("daily"):
+        _dd = sorted(top["daily"])
+        _days = _cont_days(_dd[0], _dd[-1])
+        tl_svg = timeline_svg(_days, top["daily"], _thd)
+        _vals = sorted(_thd.get(x, 0) for x in _days)
+        _p90 = _vals[int(len(_vals) * 0.9)] if _vals else 0
+        _peak = [x for x in _days if _thd.get(x, 0) >= _p90 and _p90 > 0]
+        _onpeak = sum(top["daily"].get(x, 0) for x in _peak)
+        _tot = sum(top["daily"].values()) or 1
+        _pct = 100 * _onpeak / _tot
+        if _pct >= 60:
+            ritmo = (f"El <b>{_pct:.0f}%</b> de la actividad del cluster cae en los días de mayor volumen del tema → "
+                     f"compatible con <b>reacción al ciclo informativo</b> (posible eco de una noticia), no necesariamente coordinación.")
+        else:
+            ritmo = (f"Solo el <b>{_pct:.0f}%</b> de la actividad del cluster cae en los picos del tema → patrón "
+                     f"<b>más propio del cluster</b> que del ciclo de noticias.")
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -449,6 +520,13 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     &middot; <i>las puntuaciones son evaluación interna del sistema; no son probabilidades.</i></p>
   </div>
 </div></section>
+
+<section>
+  <h2>Ritmo del cluster top y línea base del tema</h2>
+  {tl_svg}
+  <p class="cs">{ritmo}</p>
+  <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster.</p>
+</section>
 
 <section>
   <h2>Lectura del tema y métricas</h2>
