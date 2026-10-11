@@ -267,8 +267,10 @@ def cargar_tema(con, tema):
     # canonica compartida (metricas_tema), igual que el dashboard y el semanal.
     n_au_cl = _mt.cuentas_en_clusters(con, tema)
     _ini = _mt.inicio_ingesta(con, tema)
+    _n_excl = _mt.clusters_exclusivos(con, tema)
     return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin,
-                      "inicio": _ini, "theme_daily": theme_daily, "sources": _src}
+                      "inicio": _ini, "theme_daily": theme_daily, "sources": _src,
+                      "n_excl": _n_excl, "n_fuentes": len(_src)}
 
 
 def hyp_top(c):
@@ -433,7 +435,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     s = salud or {}
     # ---- bloques html ----
     kpi_tiles = [
-        ("clusters", n, "activos"),
+        ("clusters", n, "%d exclusivos" % kpi.get("n_excl", n)),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
         ("en banda alta", len(altos), "≥60"),
         ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
@@ -501,7 +503,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=csv'>CSV</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
-    tot_ev = s.get("eventos", kpi["n_ev"])
+    tot_ev = kpi["n_ev"]  # all-time (canónico)
     lectura = (f"El sistema observa <b>{n}</b> clusters en el tema. La hipótesis dominante del conjunto es "
                f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
                f"{h3} clusters muestran señal compatible con influencia extranjera (H3). "
@@ -697,7 +699,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
       <h1>{esc(nombre)}</h1>
-      <div class="sub">Informe visual de observación · generado {esc(now)}</div>
+      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 60 d) · generado {esc(now)}</div>
     </div>
   </div>
   <div class="btns">
@@ -715,8 +717,9 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div class="two" style="margin-top:14px">
     <div><b>Lo más anómalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
-      Salud del tema: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
-      fuente dominante {esc(_dsrc)} ({_dpct:.0f}%).</p>
+      Salud del tema <span style='color:#94a3b8'>(últimos 14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
+      fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{n}</b> clusters del tema (<b>{kpi.get('n_excl', n)}</b> exclusivos; {n - kpi.get('n_excl', n)} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes.</p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -750,7 +753,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div class="two">
     <div><p class="cs">{lectura}</p>
       <div class="metric">
-        <div><b>{mil(tot_ev)}</b>eventos del tema</div><div><b>{esc(s.get('fuentes', '—'))}</b>fuentes</div>
+        <div><b>{mil(tot_ev)}</b>eventos del tema</div><div><b>{mil(kpi.get('n_fuentes', 0))}</b>fuentes del tema</div>
         <div><b>{n}</b>clusters</div>        <div><b>{mil(kpi.get('n_au_cl', kpi['n_au']))}</b>cuentas</div></div>
       <p class="cs" style="margin-top:10px">{cobertura}</p>
       <p class="cs" style="margin-top:4px;color:#94a3b8">{tamano}</p></div>

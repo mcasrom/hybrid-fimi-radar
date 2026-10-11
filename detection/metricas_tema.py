@@ -34,6 +34,13 @@ def autores_tema(con, tema):
     return r[0] if r else 0
 
 
+def fuentes_tema(con, tema):
+    r = con.execute(
+        "SELECT COUNT(DISTINCT e.source) FROM events e JOIN event_temas et ON et.event_id=e.id"
+        " WHERE et.tema_id=?", (tema,)).fetchone()
+    return r[0] if r else 0
+
+
 def cuentas_en_clusters(con, tema):
     r = con.execute(
         "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
@@ -50,6 +57,32 @@ def banda_alta(con, tema):
     r = con.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=? AND overall_score>=?",
                     (tema, UMBRAL_ALTA)).fetchone()
     return r[0] if r else 0
+
+
+def clusters_exclusivos(con, tema):
+    """Clusters del tema cuya firma de cuentas (set de autores) NO coincide con la
+    de ningún cluster de OTRO tema. Es el número que muestra el dashboard (señal
+    ya contada una vez); `clusters_tema` es el bruto por tema_id."""
+    from collections import defaultdict
+    tema_de = {}
+    for r in con.execute("SELECT id, tema_id FROM clusters"):
+        tema_de[r[0]] = r[1]
+    acc = defaultdict(set)
+    for r in con.execute("SELECT cluster_id, author FROM cluster_events"):
+        if r[1]:
+            acc[r[0]].add(r[1])
+    by = defaultdict(list)
+    sig = {}
+    for cid, s in acc.items():
+        sig[cid] = frozenset(s)
+        by[sig[cid]].append(cid)
+    n = 0
+    for cid, s in sig.items():
+        if tema_de.get(cid) != tema:
+            continue
+        if not any(tema_de.get(o) != tema for o in by[s]):
+            n += 1
+    return n
 
 
 def inicio_ingesta(con, tema):

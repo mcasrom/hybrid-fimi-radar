@@ -3480,13 +3480,21 @@ def main():
             _mini_dial("Amplificación", _amp_val, "#c2410c",
                        "señal global del tema"),
         ])
+        try:
+            _ccn = sqlite3.connect(DB, timeout=30)
+            _tot_cl = _ccn.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=?", (_t,)).fetchone()[0]
+            _ccn.close()
+        except sqlite3.Error:
+            _tot_cl = len(_tema_cl)
+        _cl_sub = (f"{len(_tema_cl)} exclusivos · {_tot_cl} del tema" if _tot_cl > len(_tema_cl)
+                   else "activos")
         _cards_t = (f'<div class="fimi-gauges" '
                     f'style="display:flex;flex-wrap:wrap;gap:12px;margin:0 auto 10px;width:100%;justify-content:center">'
                     f'{_gauges_t}</div>'
                     f'<div style="display:flex;flex-wrap:wrap;gap:10px;width:100%">' + "".join([
                         kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
                         kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
-                        kpi("Clusters", len(_tema_cl), "activos", "#fafaf9"),
+                        kpi("Clusters", len(_tema_cl), _cl_sub, "#fafaf9"),
                         kpi("Cuentas", _tot_cuentas, "implicadas en clusters", "#f1f5f9"),
                         kpi_banda_alerta(_tema_cl),
                     ]) + '</div>')
