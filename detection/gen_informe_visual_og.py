@@ -76,13 +76,13 @@ def render(con, tema, nombre):
         c = tuple(int(NAVY[i] * (1 - f) + NAVY2[i] * f) for i in range(3))
         d.line([(0, y), (W, y)], fill=c)
     d.rectangle([0, 0, W, 12], fill=ACCENT)
-    d.text((64, 60), "OBSERVATORIO DE AMPLIFICACION  ·  INFORME VISUAL", font=F(BOLD, 19), fill=ACCENT)
+    d.text((64, 60), "OBSERVATORIO DE AMPLIFICACIÓN · INFORME VISUAL", font=F(BOLD, 19), fill=ACCENT)
     lines = wrap(d, nombre, F(BOLD, 56), W - 128)
     y = 104
     for ln in lines[:2]:
         d.text((64, y), ln, font=F(BOLD, 56), fill=WHITE)
         y += 66
-    d.text((64, y + 8), "Que se observa, senales, hipotesis alternativas y limites.", font=F(REG, 22), fill=SOFT)
+    d.text((64, y + 8), "Qué se observa, señales, hipótesis alternativas y límites.", font=F(REG, 22), fill=SOFT)
     # tiles KPI
     ty = 360
     tw, th, gap = 240, 118, 22
@@ -94,7 +94,7 @@ def render(con, tema, nombre):
         x += tw + gap
     # pie
     d.rectangle([0, H - 62, W, H], fill=NAVY2)
-    d.text((64, H - 42), "Senal detectada != desinformacion confirmada != atribucion de actor.",
+    d.text((64, H - 42), "Señal detectada ≠ desinformación confirmada ≠ atribución de actor.",
            font=F(REG, 17), fill=SOFT)
     url = "fimi.viajeinteligencia.com/informes/visual/"
     uw = d.textlength(url, font=F(BOLD, 17))

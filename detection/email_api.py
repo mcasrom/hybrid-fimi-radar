@@ -1196,14 +1196,17 @@ class H(BaseHTTPRequestHandler):
                 "(SELECT 1 FROM event_temas t WHERE t.event_id=e.id) "
                 "ORDER BY e.timestamp DESC LIMIT ?", (n,)).fetchall()
             con.close()
-            csv_rows = ["id,timestamp_utc,source,author,title,text,url"]
+            # Privacidad (RGPD): anonimizar autor (cuenta-N) y redactar texto/titulo,
+            # igual que exportar_cluster. Antes exponia handles crudos en publico.
+            _anon = _anon_map([r["author"] for r in rows])
+            csv_rows = ["id,timestamp_utc,source,author_anon,title_redact,text_redact,url"]
             for r in rows:
                 def _esc(v):
                     return str(v).replace(",", " ").replace("\n", " ")[:200] if v else ""
                 csv_rows.append(",".join([
                     str(r["id"]), str(r["timestamp"]), _esc(r["source"]),
-                    _esc(r["author"]), _esc(r["title"]), _esc(r["text"]),
-                    _esc(r["url"])]))
+                    _anon.get(r["author"], ""), _esc(_redact(r["title"] or "")),
+                    _esc(_redact(r["text"] or "")), _esc(r["url"])]))
             body = "\n".join(csv_rows) + "\n"
             return self._send(200, body,
                               extra_headers={"Content-Type": "text/csv",

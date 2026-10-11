@@ -33,12 +33,12 @@ ACTIVOS = ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artifici
 
 # Hipotesis (attribution.py) -> etiqueta en espanol natural (coincide con gen_fimi_html.py)
 HYP_ES = {
-    "H2": "Coordinacion domestica (con estructura)",
-    "H2b": "Sincronizacion sin atribucion de operador",
-    "H5": "Sincronia sostenida (sin estructura)",
-    "H1": "Viralizacion organica",
+    "H2": "Coordinación doméstica (con estructura)",
+    "H2b": "Sincronización sin atribución de operador",
+    "H5": "Sincronía sostenida (sin estructura)",
+    "H1": "Viralización orgánica",
     "H3": "Influencia extranjera",
-    "H4": "Amplificacion mediatica",
+    "H4": "Amplificación mediática",
     "H6": "Sin evidencia concluyente",
 }
 BAND_ES = {"NORMAL": "Normal", "WATCH": "En observacion", "ANOMALOUS": "Amplificacion anomala",
@@ -195,10 +195,14 @@ def bar(pct, color=ACCENT, w=100):
             f"background:{color};border-radius:6px'></div></div>")
 
 
+def _qual(sc):
+    return "compatible" if sc >= 66 else ("débil" if sc >= 33 else "sin soporte")
+
+
 def spider(series):
     # series: list of (label, value 0-100, color). Hexagono con 5 ejes (components).
-    axes = [("Coordinacion", "coord"), ("Infraestructura", "infra"), ("Densidad", "dens"),
-            ("Amplificacion", "amp"), ("Anomalia", "anom")]
+    axes = [("Coordinación", "coord"), ("Infraestructura", "infra"), ("Densidad", "dens"),
+            ("Amplificación", "amp"), ("Anomalía", "anom")]
     import math
     cx, cy, R = 150, 130, 95
     n = len(axes)
@@ -268,12 +272,12 @@ def render(tema, nombre, clusters, kpi, salud):
     s = salud or {}
     # ---- bloques html ----
     kpi_tiles = [
-        ("clusters", n, "clusters"),
+        ("clusters", n, "activos"),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
         ("en banda alta", len(altos), "&ge;60"),
-        ("hipotesis mas frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
-        ("H3 como max", h3, "clusters"),
-        ("dias operando", dias, f"desde {_ini_s}"),
+        ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
+        ("H3 como máx", h3, "clusters"),
+        ("días operando", dias, f"desde {_ini_s}"),
     ]
     tiles = "".join(
         f"<div class='tile'><div class='k'>{esc(v)}</div><div class='kl'>{esc(l)}</div><div class='ks'>{esc(sub)}</div></div>"
@@ -287,7 +291,7 @@ def render(tema, nombre, clusters, kpi, salud):
             star = "★ " if code == hyp_top(top)[0] else ""
             hyp_bars += (f"<div class='hrow'><div class='hcode'>{star}{esc(code)}</div>"
                          f"<div class='hname'>{esc(HYP_ES.get(code, h.get('label', code)))}</div>"
-                         f"<div class='hbar'>{bar(sc, '#1d4ed8')}</div><div class='hval'>{sc:.0f}</div></div>")
+                         f"<div class='hbar'>{bar(sc, '#1d4ed8')}</div><div class='hval'>{sc:.0f}</div><div class='hqual'>{_qual(sc)}</div></div>")
     # cluster destacados (3)
     destac = clusters[:3]
     cards = ""
@@ -297,9 +301,9 @@ def render(tema, nombre, clusters, kpi, salud):
         cards += (
             f"<div class='ccard'><div class='cchead'><b>{esc(c['label'])}</b>"
             f"<span class='chip' style='background:{BAND_COL[c['banda']]}'>{c['ov']:.0f}/100 · {esc(c['banda'])}</span></div>"
-            f"<p class='cs'>{esc(BAND_ES[c['banda']])} · {c['n_au']} cuentas · {c['n_ev']} eventos · nucleo k={c['kc']}</p>"
-            f"<p class='cs'><b>Hipotesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
-            f"<p class='cs'><b>De que habla:</b> {doms_txt}</p>"
+            f"<p class='cs'>{esc(BAND_ES[c['banda']])} · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}</p>"
+            f"<p class='cs'><b>Hipótesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
+            f"<p class='cs'><b>De qué habla:</b> {doms_txt}</p>"
             f"<div class='cact'>"
             f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={esc(c['label'])}&fmt=csv'>CSV</a>"
             f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={esc(c['label'])}&fmt=json'>JSON</a>"
@@ -313,7 +317,7 @@ def render(tema, nombre, clusters, kpi, salud):
         f"<div class='dval'>{v}</div></div>" for d, v in top_doms)
     # senales clave (medianas)
     sen = ""
-    for lab, k in [("Amplificacion", "amp"), ("Coordinacion", "coord"), ("Anomalia", "anom"),
+    for lab, k in [("Amplificación", "amp"), ("Coordinación", "coord"), ("Anomalía", "anom"),
                    ("Infraestructura", "infra"), ("Densidad de red", "dens")]:
         sen += (f"<div class='hrow'><div class='hname' style='width:auto;flex:1'>{lab}</div>"
                 f"<div class='hbar'>{bar(med[k], NAVY)}</div><div class='hval'>{med[k]:.0f}</div></div>")
@@ -325,16 +329,21 @@ def render(tema, nombre, clusters, kpi, salud):
                       f"<div class='hbar'>{bar(100 * c / max(1, n), NAVY)}</div><div class='hval'>{c}</div></div>")
     mas_anom_txt = ""
     if mas_anom:
-        mas_anom_txt = (f"<b>{esc(mas_anom['label'])}</b> "
-                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalia {mas_anom['anom']:.0f}</span>")
+        _mal = esc(mas_anom["label"])
+        mas_anom_txt = (f"<b>{_mal}</b> "
+                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}</span>"
+                        f" <span style='font-size:.72rem'>· "
+                        f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=csv'>CSV</a> "
+                        f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
+                        f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
     tot_ev = s.get("eventos", kpi["n_ev"])
-    lectura = (f"El sistema observa <b>{n}</b> clusters en el tema. La hipotesis dominante del conjunto es "
+    lectura = (f"El sistema observa <b>{n}</b> clusters en el tema. La hipótesis dominante del conjunto es "
                f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
-               f"{h3} clusters muestran senal compatible con influencia extranjera (H3). "
+               f"{h3} clusters muestran señal compatible con influencia extranjera (H3). "
                f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
-               f"una banda alta es amplificacion medida, no campana confirmada.")
+               f"una banda alta es amplificación medida, no campaña confirmada.")
     concl = (f"{esc(BAND_ES[bd])} (max {top['ov']:.0f}/100) con {len(altos)} de {n} clusters en banda alta. "
-             f"Senal NO atribuida (actor: UNKNOWN). La interpretacion final requiere validacion externa.")
+             f"Señal NO atribuida (actor: UNKNOWN). La interpretación final requiere validación externa.")
     css = f"""
 *{{box-sizing:border-box}} body{{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 color:{INK};background:#f5f7fa;line-height:1.5}} .wrap{{max-width:1080px;margin:0 auto;padding:0 18px}}
@@ -358,6 +367,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 .hrow{{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.8rem}}
 .hcode{{width:38px;font-weight:700;color:{NAVY}}} .hname{{width:210px;color:{MUT}}}
 .hbar{{flex:1}} .hval{{width:34px;text-align:right;font-weight:700}}
+.hqual{{width:86px;font-size:.68rem;color:{MUT};text-align:right}}
 .drow{{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.78rem}}
 .dname{{width:150px;color:{INK}}} .dbar{{flex:1;background:#eef2f7;border-radius:6px}} .dval{{width:26px;text-align:right;color:{MUT}}}
 .ccard{{border:1px solid {LINE};border-radius:10px;padding:12px}} .cchead{{display:flex;justify-content:space-between;align-items:center}}
@@ -373,11 +383,11 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Informe visual — {esc(nombre)} · Observatorio de amplificación</title>
-<meta name="description" content="Informe visual del tema {esc(nombre)}: que se observa, senales, hipotesis alternativas y limites. Senal, no atribucion.">
+<meta name="description" content="Informe visual del tema {esc(nombre)}: qué se observa, señales, hipótesis alternativas y límites. Señal, no atribución.">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Informe visual — {esc(nombre)}">
-<meta property="og:description" content="Que se observa, senales, hipotesis alternativas y limites. Amplificacion medida, no coordinacion confirmada.">
+<meta property="og:description" content="Qué se observa, señales, hipótesis alternativas y límites. Amplificación medida, no coordinación confirmada.">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -409,37 +419,39 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <button onclick="window.print()">Imprimir / Guardar PDF</button>
   </div>
 </div></div>
-<div class="disc">Senal detectada &ne; desinformacion confirmada &ne; atribucion de actor. Una banda alta es <b>amplificacion medida</b>, nunca coordinacion confirmada.</div>
+<div class="disc">Señal detectada &ne; desinformación confirmada &ne; atribución de actor. Una banda alta es <b>amplificación medida</b>, nunca coordinación confirmada.</div>
 <div class="wrap">
 
 <section>
   <h2>Que esta pasando</h2>
   <div class="tiles">{tiles}</div>
   <div class="two" style="margin-top:14px">
-    <div><b>Lo mas anomalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
+    <div><b>Lo más anómalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
-      Salud del tema: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronias ·
-      fuente dominante {esc(s.get('fuente_top', '—'))} ({esc(s.get('dependencia_pct', '—'))}%).</p></div>
+      Salud del tema: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
+      fuente dominante {esc(s.get('fuente_top', '—'))} ({esc(s.get('dependencia_pct', '—'))}%).</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
 </section>
 
 <section><div class="two">
-  <div><h2>Radar de componentes (media del tema)</h2>
-    {spider([("Tema (media)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (media)", med, NAVY)])}
-    <p class="cs">Media de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
+  <div><h2>Radar de componentes (mediana del tema)</h2>
+    {spider([("Tema (mediana)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (mediana)", med, NAVY)])}
+    <p class="cs">Mediana de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
     dimensiones distintas (0-100) y <b>no</b> suman el score global.</p></div>
   <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
     <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
-    {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · nucleo k={top['kc']}"}</p>
-    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipotesis de ESTE cluster (0-100)</h3>
-    {hyp_bars or '<p class="cs">Sin hipotesis registradas.</p>'}
-    <p class="cs" style="margin-top:10px"><b>Atribucion:</b> {esc(top['atr']) if top else '—'} · confianza {esc(top['conf']) if top else '—'}
-    &middot; <i>las puntuaciones son evaluacion interna del sistema; no son probabilidades.</i></p>
+    {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}"}</p>
+    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
+    {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
+    <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades.</p>
+    <p class="cs" style="margin-top:10px"><b>Atribución:</b> {esc(top['atr']) if top else '—'} · confianza {esc(top['conf']) if top else '—'}
+    &middot; <i>las puntuaciones son evaluación interna del sistema; no son probabilidades.</i></p>
   </div>
 </div></section>
 
 <section>
-  <h2>Lectura del tema y metricas</h2>
+  <h2>Lectura del tema y métricas</h2>
   <div class="two">
     <div><p class="cs">{lectura}</p>
       <div class="metric">
@@ -448,33 +460,33 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
-      <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificacion global</div>
+      <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificación global</div>
         <div class="hbar">{bar(med['amp'], ACCENT)}</div><div class="hval">{med['amp']:.0f}</div></div>
-      <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Senales clave del tema (medianas)</h3>
+      <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Señales clave del tema (medianas)</h3>
       {sen}
     </div>
   </div>
 </section>
 
 <section><h2>Clusters destacados</h2><div class="three">{cards}</div>
-  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle tecnico completo esta en el radar.</p></section>
+  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar.</p></section>
 
 <div class="two">
   <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
     <p class="cs" style="margin-top:8px">Cuentas del cluster compartiendo enlaces del mismo dominio.</p></section>
-  <section><h2>Hipotesis mas frecuente del tema</h2>
-    <p class="cs" style="margin-top:0">Numero de clusters cuya hipotesis de <b>mayor puntuacion</b> es cada una.
-    El tema puede tener una hipotesis mas frecuente distinta de la del <b>cluster top</b> (arriba).</p>
+  <section><h2>Hipótesis más frecuente del tema</h2>
+    <p class="cs" style="margin-top:0">Número de clusters cuya hipótesis de <b>mayor puntuación</b> es cada una.
+    El tema puede tener una hipótesis más frecuente distinta de la del <b>cluster top</b> (arriba).</p>
     {_dist_dom}
-    <p class="cs" style="margin-top:8px">Mas frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p></section>
+    <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p></section>
 </div>
 
-<section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusion</h2><p class="cs">{concl}</p>
-  <p class="cs" style="margin-top:6px"><b>Senal, no atribucion.</b> Actor: UNKNOWN · evaluacion: no concluyente. La interpretacion final requiere validacion externa y analisis experto.</p></section>
+<section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusión</h2><p class="cs">{concl}</p>
+  <p class="cs" style="margin-top:6px"><b>Señal, no atribución.</b> Actor: UNKNOWN · evaluación: no concluyente. La interpretación final requiere validación externa y análisis experto.</p></section>
 
 </div>
-<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)}) · amplificacion medida, no coordinacion confirmada ·
-<a href="https://fimi.viajeinteligencia.com/metodo.html">metodo y limites</a></div>
+<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)}) · amplificación medida, no coordinación confirmada ·
+<a href="https://fimi.viajeinteligencia.com/metodo.html">método y límites</a></div>
 </body></html>"""
 
 
