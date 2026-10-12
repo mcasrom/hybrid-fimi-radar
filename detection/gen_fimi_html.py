@@ -1815,6 +1815,8 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 .fimi-brandbar .navmenu-panel{{position:absolute;top:40px;left:0;z-index:300;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.14);padding:6px;min-width:240px}}
 .fimi-brandbar .navmenu-panel a{{display:block;padding:9px 12px;border-radius:8px;color:#334155;font-weight:700;font-size:.86rem;text-decoration:none;white-space:nowrap}}
 .fimi-brandbar .navmenu-panel a:hover{{background:#fff7ed;color:#c2410c}}
+.fimi-brandbar .navmenu-panel a.navvis{{border-left:3px solid #0ea5e9}}
+.fimi-brandbar .navmenu-panel a.navsem{{border-left:3px solid #d97706}}
 @keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
 @media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .chips{{display:inline-flex;flex-wrap:wrap;gap:6px;margin-left:auto}}
@@ -3792,13 +3794,15 @@ def main():
         _tnames_nav = {t: ((temas_cfg.get(t) or {}).get("nombre") or t) for t in temas}
     except (AttributeError, TypeError):
         _tnames_nav = {t: t for t in temas}
+    # Dos grupos con tono propio (12-oct): el visual (una página, estado actual)
+    # en teal y el semanal en ámbar, para distinguirlos de un vistazo.
     _informes_visual_nav = "".join(
-        f"<a href='/informes/visual/{t}.html' title='Informe visual (una p\u00e1gina)'>{_tnames_nav[t]}</a>"
+        f"<a class='navvis' href='/informes/visual/{t}.html' title='Informe visual (una p\u00e1gina)'>{_tnames_nav[t]}</a>"
         for t in temas)
     # Informe semanal por tema (el cron `informes_semanales.sh` regenera los 9;
     # antes solo se enlazaba espana_elecciones a mano).
     _informes_semanal_nav = "".join(
-        f"<a href='/informes/{t}/' title='Informe semanal: {_tnames_nav[t]}'>{_tnames_nav[t]}</a>"
+        f"<a class='navsem' href='/informes/{t}/' title='Informe semanal: {_tnames_nav[t]}'>{_tnames_nav[t]}</a>"
         for t in temas)
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
                f"{piloto_banner}"
@@ -5144,6 +5148,8 @@ a{{color:#c2410c}}
 .fimi-brandbar .navmenu-panel{{position:absolute;top:40px;left:0;z-index:300;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.14);padding:6px;min-width:240px}}
 .fimi-brandbar .navmenu-panel a{{display:block;padding:9px 12px;border-radius:8px;color:#334155;font-weight:700;font-size:.86rem;text-decoration:none;white-space:nowrap}}
 .fimi-brandbar .navmenu-panel a:hover{{background:#fff7ed;color:#c2410c}}
+.fimi-brandbar .navmenu-panel a.navvis{{border-left:3px solid #0ea5e9}}
+.fimi-brandbar .navmenu-panel a.navsem{{border-left:3px solid #d97706}}
 @keyframes pulseCeuta{{0%{{box-shadow:0 0 0 0 rgba(194,65,12,.55)}}70%{{box-shadow:0 0 0 8px rgba(194,65,12,0)}}100%{{box-shadow:0 0 0 0 rgba(194,65,12,0)}}}}
 @media(prefers-reduced-motion:reduce){{.fimi-brandbar a.cta-ceuta{{animation:none}}}}
 .fimi-brandbar .transp.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
@@ -5237,9 +5243,9 @@ a{{color:#c2410c}}
   <details class="navmenu">
     <summary class="transp" title="Informes visuales y semanales por tema">Informes &#9662;</summary>
     <div class="navmenu-panel">
-      <div style="padding:6px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Informe visual &middot; una p&aacute;gina</div>
+      <div style="padding:6px 12px 2px;font-size:.68rem;color:#0369a1;font-weight:800;text-transform:uppercase;letter-spacing:.04em">&#9679; Informe visual &middot; una p&aacute;gina <span style="color:#94a3b8;font-weight:600;text-transform:none;letter-spacing:0">(estado actual)</span></div>
       {_informes_visual_nav}
-      <div style="padding:8px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Semanal</div>
+      <div style="padding:8px 12px 2px;font-size:.68rem;color:#b45309;font-weight:800;text-transform:uppercase;letter-spacing:.04em">&#9679; Semanal</div>
       {_informes_semanal_nav}
     </div>
   </details>
