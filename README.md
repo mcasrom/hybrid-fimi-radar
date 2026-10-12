@@ -60,6 +60,11 @@ y RSS), las normaliza y calcula componentes estructurales por **cluster** de cue
 > La **densidad de red** se calcula y se publica como dato, pero **no pondera en el
 > score**: es una transformación del mismo eje de coordinación (doble conteo) y se
 > retiró el 24/Sep-2026. La usa el módulo de atribución (hipótesis H3).
+>
+> **Cluster publicado = cluster con señal (12/oct/2026):** los titulares cuentan
+> solo clusters de **≥3 cuentas**; las parejas y solitarios se agregan en nota
+> (no llegan a banda alta por las reglas de escala). La distribución de scores
+> se muestra con el muro de escala (39,0/59,0) explicado, no escondido.
 
 Cada cluster publica además **`alternative_explanations`**: explicaciones alternativas con
 estado (`supported` / `plausible` / `ruled_out`) y la **evidencia** que lo motiva. Distingue,

@@ -54,6 +54,11 @@ normalises them and computes structural components per account **cluster**:
 > **Network density** is still computed and published as a datum, but it **does not
 > weight the score**: it is a transform of the same coordination axis (double counting)
 > and was removed on 24-Sep-2026. It feeds the attribution module (hypothesis H3).
+>
+> **Published cluster = cluster with signal (12-Oct-2026):** headlines count only
+> clusters with **≥3 accounts**; pairs and singletons are aggregated in a note
+> (scale rules keep them out of high bands). The score distribution is shown with
+> the scale wall (39.0/59.0) explained, not hidden.
 
 Each cluster also publishes **`alternative_explanations`**: alternative explanations with a
 status (`supported` / `plausible` / `ruled_out`) and the **evidence** behind it. Among others,
