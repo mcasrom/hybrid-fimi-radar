@@ -3795,6 +3795,11 @@ def main():
     _informes_visual_nav = "".join(
         f"<a href='/informes/visual/{t}.html' title='Informe visual (una p\u00e1gina)'>{_tnames_nav[t]}</a>"
         for t in temas)
+    # Informe semanal por tema (el cron `informes_semanales.sh` regenera los 9;
+    # antes solo se enlazaba espana_elecciones a mano).
+    _informes_semanal_nav = "".join(
+        f"<a href='/informes/{t}/' title='Informe semanal: {_tnames_nav[t]}'>{_tnames_nav[t]}</a>"
+        for t in temas)
     tabs_ui = (f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px'>{tema_tabs}</div>"
                f"{piloto_banner}"
                f"<div style='font-size:.76rem;color:#94a3b8;margin:2px 0 8px'>"
@@ -5235,7 +5240,7 @@ a{{color:#c2410c}}
       <div style="padding:6px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Informe visual &middot; una p&aacute;gina</div>
       {_informes_visual_nav}
       <div style="padding:8px 12px 2px;font-size:.68rem;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Semanal</div>
-      <a href="/informes/espana_elecciones/" title="Parte semanal: Espa&ntilde;a, elecciones generales">Espa&ntilde;a &middot; elecciones (semanal)</a>
+      {_informes_semanal_nav}
     </div>
   </details>
   <details class="navmenu">
