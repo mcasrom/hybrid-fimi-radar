@@ -3437,7 +3437,7 @@ def main():
                 f'<b>➕ {len(_par_aqui)} grupos pequeños agregados</b> '
                 f'({_n_par2} parejas · {_n_par1} individuales/sin eventos): no entran en '
                 f'titulares por tamaño mínimo (≥{MIN_CUENTAS_PUBLICADO} cuentas); su score '
-                f'máximo es {_par_max:.0f}/100, bajo ANOMALOUS.</div>')
+                f'máximo es {_par_max:.0f}/100 (banda {band_of(_par_max)}).</div>')
         _dup_note = ""
         if _dup_aqui:
             # nombres legibles de los temas origen + qué cuentas son

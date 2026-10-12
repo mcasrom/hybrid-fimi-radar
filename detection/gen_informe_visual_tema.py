@@ -469,9 +469,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     bd = band_for(top["ov"]) if top else "NORMAL"
     s = salud or {}
     # ---- bloques html ----
-    # Sprint A (A1): el tile cuenta el conjunto PUBLICADO (≥3 cuentas).
-    _sub_cl = ((f"{_n_raw} en vista · +{n_par_inf} agregados" if n_par_inf
-                else (("%d sin repetir" % _n_dedup) if _n_dedup < _n_raw else "del tema")))
+    # Sprint A + revisión (12-oct): el tile usa SOLO el universo del informe
+    # (cargados por tema_id), nunca mezclado con la vista del dashboard.
+    _sub_cl = ((f"{n_raw_inf} cargados · {n} con señal · +{n_par_inf} agregados"
+                if n_par_inf else f"{n_raw_inf} cargados"))
     kpi_tiles = [
         ("clusters", n, _sub_cl),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
@@ -539,19 +540,20 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     if mas_anom:
         _mal = esc(mas_anom["label"])
         mas_anom_txt = (f"<b>{_mal}</b> "
-                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}</span>"
+                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}/100 (componente, no global)</span>"
                         f" <span style='font-size:.72rem;color:#64748b'>· {mas_anom['n_ev']} eventos · {mas_anom['n_au']} cuentas</span>"
                         f" <span style='font-size:.72rem'>· "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=csv'>CSV</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
     tot_ev = kpi["n_ev"]  # all-time (canónico)
+    _h3txt = (f"{h3} clusters muestran" if h3 != 1 else "1 cluster muestra")
     lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. La hipótesis dominante del conjunto es "
                f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
-               f"{h3} clusters muestran señal compatible con influencia extranjera (H3). "
+               f"{_h3txt} señal compatible con influencia extranjera (H3). "
                f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
                f"una banda alta es amplificación medida, no campaña confirmada.")
-    concl = (f"{esc(BAND_ES[bd])} (max {top['ov']:.0f}/100) con {len(altos)} de {n} clusters en banda alta.")
+    concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta.")
     # ritmo del cluster top + linea base del tema (noticias)
     tl_svg = ""
     ritmo = ""
@@ -762,7 +764,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{_n_raw}</b> clusters del tema (<b>{_n_dedup}</b> sin repetir señal; {_n_raw - _n_dedup} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes{f' · <b>+{n_par_inf}</b> grupos pequeños agregados' if n_par_inf else ''}. <i>Fuente de las cifras: el propio panel del dashboard.</i></p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes.</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} aquí); la banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
