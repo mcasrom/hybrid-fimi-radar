@@ -574,7 +574,7 @@ def main():
                        'detalle_nuevos': (delta['linajes_nuevos'][:15]
                                           if delta else [])},
         'que_persiste': {'nota': 'linajes con ≥3 ciclos (ver JSON)'},
-        'que_se_sabe': {'contrastes_bulos': nbulos, 'cruce': cruce[:15]},
+        'que_se_sabe': {'contrastes_bulos': nbulos, 'cruce': cruce},
         'high_explicados': [
             {'label': t['label'], 'score': t['score'],
              'autores': t['autores'], 'subtipo': t['subtipo'],
@@ -589,6 +589,20 @@ def main():
     os.makedirs(wdir, exist_ok=True)
     with open(os.path.join(wdir, semana + '.json'), 'w') as f:
         json.dump(informe, f, ensure_ascii=False, indent=1)
+    # Cruce con verificadores descargable completo (S1, sprint 12-oct): el HTML
+    # muestra 10, el JSON y este CSV llevan todos los registros cruzados.
+    import csv as _csv
+    with open(os.path.join(wdir, semana + '-contrastes.csv'), 'w',
+              newline='', encoding='utf-8') as _f:
+        _w = _csv.writer(_f)
+        _w.writerow(['fuente', 'titular', 'url', 'cluster', 'relacion',
+                     'score', 'banda', 'autores', 'narrativa'])
+        for _c in cruce:
+            _w.writerow([_c.get('fuente') or '', _c.get('titular') or '',
+                         _c.get('url') or '', _c.get('cluster') or '',
+                         _c.get('relacion') or '', _c.get('score') or '',
+                         _c.get('banda') or '', _c.get('autores') or '',
+                         _c.get('narrativa') or ''])
 
     def guia(t):
         g = []
@@ -751,10 +765,11 @@ def main():
     # cruzados en JSON, mostrados en HTML. MATCH/THEMATIC no son equivalentes.
     n_match = sum(1 for c in cruce if c.get('relacion') == 'MATCH')
     n_them = len(cruce) - n_match
-    txt_cruce = ('%s contrastes registrados · %s cruzados en JSON '
-                 '(%s MATCH + %s THEMATIC) · 10 mostrados%s' % (
-                     nbulos, len(cruce), n_match, n_them,
-                     '; lista completa en el JSON' if len(cruce) > 10 else ''))
+    txt_cruce = ('%s contrastes registrados · %s cruzados '
+                 '(%s MATCH + %s THEMATIC) · 10 mostrados abajo · '
+                 '<a href="./%s-contrastes.csv">lista completa (CSV)</a> · '
+                 '<a href="./%s.json">JSON</a>' % (
+                     nbulos, len(cruce), n_match, n_them, semana, semana))
     n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
