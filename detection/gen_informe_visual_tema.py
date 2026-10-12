@@ -416,11 +416,13 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Sprint A (A1, 12-oct): conjunto PUBLICADO = clusters con señal (≥3 cuentas).
+    # Revisión 12-oct: universo declarado único (cargados por tema_id).
     n_raw_inf = len(clusters)
-    clusters = [c for c in clusters
-                if _pr.es_publicado(c.get("n_au", 0), _pr.MIN_CUENTAS_PUBLICADO)]
-    n_par_inf = n_raw_inf - len(clusters)
+    clusters, _agregados_inf = _pr.partir_publicados(
+        clusters, {c["id"]: c.get("n_au", 0) for c in clusters})
+    n_par_inf = len(_agregados_inf)
     n = len(clusters)
+    _pr.chequeo_coherencia(n_raw_inf, clusters, _agregados_inf)
     # Sprint A (A5): sello dato-congelado · código · generado.
     try:
         _tmax = kpi.get("tmax")
@@ -510,7 +512,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         cards += (
             f"<div class='ccard'><div class='cchead'><b>{esc(c['label'])}</b>"
             f"<span class='chip' style='background:{BAND_COL[c['banda']]}'>{c['ov']:.0f}/100 · {esc(c['banda'])}</span></div>"
-            f"<p class='cs'>{esc(BAND_ES[c['banda']])} · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}{_small}</p>"
+            f"<p class='cs'>{esc(BAND_ES[c['banda']])} (banda global) · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}{_small}</p>"
             f"<p class='cs'><b>Hipótesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
             f"<p class='cs'><b>De qué habla:</b> {doms_txt}</p>"
             f"<div class='cact'>"
@@ -593,7 +595,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     _otras = len(_src_all) - len(_src_top)
     _src_txt = " · ".join(f"{esc(_s)} {100 * _v / _src_tot:.0f}%" for _s, _v in _src_top) or "—"
     if _otras > 0:
-        _src_txt += f" · otras ({_otras})"
+        _otras_v = _src_tot - sum(_v for _, _v in _src_top)
+        _otras_pct = 100 * _otras_v / _src_tot
+        _src_txt += (f" · otras fuentes ({_otras} fuentes): {_otras_pct:.0f}%"
+                     f" (de {len(_src_all)} fuentes en total; suma con redondeo)")
     _dsrc, _dn = (_src_top[0] if _src_top else ("—", 0))
     _dpct = 100 * _dn / _src_tot
     cobertura = (f"<b>Cobertura por plataforma:</b> {_src_txt}. " +
@@ -764,8 +769,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes.</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} aquí); la banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes (un evento = una pieza capturada).</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} aquí: solo clusters cuyo contenido explica el tema); este informe analiza por tema_id ({n_raw_inf}). La banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -821,14 +826,15 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 {paises_html}
 
 <div class="two">
-  <section><h2>Dominios que amplifican (top)</h2>{dom_bars}
-    <p class="cs" style="margin-top:8px">Dominios más compartidos por las cuentas de los <b>20 clusters de mayor score</b> del tema (no solo del cluster top). Cuentas del cluster compartiendo enlaces del mismo dominio.</p></section>
+  <section><h2>Dominios más compartidos (top)</h2>{dom_bars}
+    <p class="cs" style="margin-top:8px">Dominios presentes en enlaces compartidos por cuentas de los <b>20 clusters de mayor score</b> del tema (no solo del cluster top). La frecuencia no implica participación del medio en una operación ni demuestra coordinación entre quienes comparten.</p></section>
   <section><h2>Hipótesis más frecuente del tema</h2>
     <p class="cs" style="margin-top:0">Número de clusters cuya hipótesis de <b>mayor puntuación</b> es cada una.
     El tema puede tener una hipótesis más frecuente distinta de la del <b>cluster top</b> (arriba).</p>
     {_dist_dom}
     <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p>
-    <p class="cs" style="margin-top:4px;color:#94a3b8">H2b = <b>sincronía temporal alta SIN evidencia de estructura organizada</b> (no atribuye operador). Por eso puede ser la más frecuente del tema y, a la vez, valer 0 en un cluster concreto con estructura —ese puntúa H2 (compatible con coordinación doméstica).</p></section>
+    <p class="cs" style="margin-top:4px;color:#94a3b8">H2b = <b>sincronía temporal alta SIN evidencia de estructura organizada</b> (no atribuye operador). Por eso puede ser la más frecuente del tema y, a la vez, valer 0 en un cluster concreto con estructura —ese puntúa H2 (compatible con coordinación doméstica).</p>
+    <p class="cs" style="margin-top:8px"><b>Cómo leer H2 (verificado en código):</b> H2 = estructura mutua (núcleo k≥2 de ≥3 cuentas con URLs/dominios compartidos) × (sincronía temporal×0,55 + resto). La «sincronía» de H2 es proximidad temporal continua, <b>no</b> el contador «sincronías entre cuentas distintas» (ese exige ≥5 cuentas sin dominante, mismo contenido y ventana ≤24 h). Por eso una H2 alta puede coexistir con 0 sincronías contadas; H2b vale 0 por construcción cuando hay estructura. Detalle en <a href="/metodo.html">Método</a>.</p></section>
 </div>
 
 <section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusión</h2><p class="cs">{concl}</p>

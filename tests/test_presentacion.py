@@ -1,7 +1,9 @@
 """Tests Sprint A: definición única de 'cluster publicado' y distribución."""
+import pytest
 from detection.presentacion import (
     MIN_CUENTAS_PUBLICADO,
     bloque_distribucion_html,
+    chequeo_coherencia,
     es_publicado,
     mil,
     partir_publicados,
@@ -43,3 +45,13 @@ def test_mil_formato_es():
 def test_bloque_muestra_muro_y_pares():
     h = bloque_distribucion_html(resumen_distribucion([39.0, 61.0]), n_par=1048)
     assert "39,0" in h and "59,0" in h and "+1048" in h and "scale_floor" in h
+
+
+def test_chequeo_coherencia():
+    pub = [{"id": 1, "label": "c1", "n_au": 10}, {"id": 2, "label": "c2", "n_au": 3}]
+    par = [{"id": 3, "label": "c3", "n_au": 2}]
+    assert chequeo_coherencia(3, pub, par) is True
+    with pytest.raises(AssertionError):
+        chequeo_coherencia(4, pub, par)  # suma no cuadra
+    with pytest.raises(AssertionError):
+        chequeo_coherencia(3, pub + [{"id": 9, "label": "c9", "n_au": 1}], par)

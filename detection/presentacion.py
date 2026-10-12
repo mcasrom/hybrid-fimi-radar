@@ -71,6 +71,21 @@ def resumen_distribucion(scores):
     return {"bandas": bandas, "pin39": pin39, "pin59": pin59, "total": len(scores)}
 
 
+def chequeo_coherencia(n_raw_inf, publicados, agregados,
+                       minimo=MIN_CUENTAS_PUBLICADO):
+    """El universo declarado cuadra: cargados = publicados + agregados y todo
+    lo publicado alcanza el mínimo de cuentas. Falla en voz alta en vez de
+    publicar cifras incoherentes (revisión externa 12-oct). Puro, testeable."""
+    publicadas = list(publicados or [])
+    agregadas = list(agregados or [])
+    assert len(publicadas) + len(agregadas) == n_raw_inf, (
+        f"universo incoherente: {len(publicadas)}+{len(agregadas)}!={n_raw_inf}")
+    bajos = [c for c in publicadas if (c.get("n_au", 0) or 0) < minimo]
+    assert not bajos, (
+        "publicado bajo mínimo: %s" % [c.get("label") for c in bajos])
+    return True
+
+
 def mil(n):
     """Miles con punto (formato español): 241885 -> '241.885'."""
     try:
@@ -102,10 +117,11 @@ def bloque_distribucion_html(dist, n_par=0, colores=None, compacto=False):
     muro = ""
     if dist["pin39"] or dist["pin59"]:
         muro = (
-            f"<div style='font-size:.7rem;color:#64748b;margin-top:4px'>Muro de escala: "
+            f"<div style='font-size:.7rem;color:#64748b;margin-top:4px'>Muro de escala "
+            f"(<b>{dist['pin39'] + dist['pin59']}</b> clusters topados de {dist['total']} con señal): "
             f"<b>{dist['pin39']}</b> en 39,0 y <b>{dist['pin59']}</b> en 59,0 — reglas "
-            f"deliberadas (<i>scale_floor</i>/<i>scale_cap</i>) para no sobre-valorar "
-            f"grupos minúsculos. Ver «Cómo se puntúa».</div>"
+            f"deliberadas (<i>scale_floor</i>/<i>scale_cap</i>) que limitan la puntuación "
+            f"para no sobre-valorar grupos minúsculos. Ver «Cómo se puntúa».</div>"
         )
     pares = (
         f"<div style='font-size:.7rem;color:#64748b'>+{n_par} grupos pequeños "
