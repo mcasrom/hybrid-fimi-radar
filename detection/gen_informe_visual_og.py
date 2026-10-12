@@ -58,8 +58,15 @@ def wrap(d, text, font, maxw):
 
 
 def kpis(con, tema):
-    n = con.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=?", (tema,)).fetchone()[0]
-    alta = con.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=? AND overall_score>=60", (tema,)).fetchone()[0]
+    # Sprint A (A1, 12-oct): la tarjeta cuenta el conjunto PUBLICADO (≥3 cuentas).
+    n = con.execute(
+        "SELECT COUNT(*) FROM clusters c WHERE c.tema_id=?"
+        " AND (SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
+        " WHERE ce.cluster_id=c.id) >= 3", (tema,)).fetchone()[0]
+    alta = con.execute(
+        "SELECT COUNT(*) FROM clusters c WHERE c.tema_id=? AND c.overall_score>=60"
+        " AND (SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
+        " WHERE ce.cluster_id=c.id) >= 3", (tema,)).fetchone()[0]
     au = con.execute(
         "SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce JOIN clusters c"
         " ON c.id=ce.cluster_id WHERE c.tema_id=?", (tema,)).fetchone()[0]

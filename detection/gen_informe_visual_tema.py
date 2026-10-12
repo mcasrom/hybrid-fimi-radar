@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import metricas_tema as _mt  # noqa: E402  (definiciones canonicas por tema)
+import presentacion as _pr  # noqa: E402  (Sprint A: conjunto publicado + distribución)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "radar.db")
@@ -276,9 +277,12 @@ def cargar_tema(con, tema):
     n_au_cl = _mt.cuentas_en_clusters(con, tema)
     _ini = _mt.inicio_ingesta(con, tema)
     _n_excl = _mt.clusters_exclusivos(con, tema)
+    tmax = con.execute(
+        "SELECT MAX(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id"
+        " WHERE et.tema_id=?", (tema,)).fetchone()[0]
     return clusters, {"n_ev": n_ev, "n_au": n_au, "n_au_cl": n_au_cl, "tmin": tmin,
-                      "inicio": _ini, "theme_daily": theme_daily, "sources": _src,
-                      "n_excl": _n_excl, "n_fuentes": len(_src)}
+                      "tmax": tmax, "inicio": _ini, "theme_daily": theme_daily,
+                      "sources": _src, "n_excl": _n_excl, "n_fuentes": len(_src)}
 
 
 def hyp_top(c):
@@ -411,7 +415,27 @@ def spider(series):
 def render(tema, nombre, clusters, kpi, salud, keywords=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # Sprint A (A1, 12-oct): conjunto PUBLICADO = clusters con señal (≥3 cuentas).
+    n_raw_inf = len(clusters)
+    clusters = [c for c in clusters
+                if _pr.es_publicado(c.get("n_au", 0), _pr.MIN_CUENTAS_PUBLICADO)]
+    n_par_inf = n_raw_inf - len(clusters)
     n = len(clusters)
+    # Sprint A (A5): sello dato-congelado · código · generado.
+    try:
+        _tmax = kpi.get("tmax")
+        _tmax_s = (datetime.fromtimestamp(int(_tmax), tz=timezone.utc)
+                   .strftime("%d/%m/%Y %H:%M UTC") if _tmax else "—")
+    except (TypeError, ValueError):
+        _tmax_s = "—"
+    try:
+        import subprocess as _spv
+        _ver = (_spv.check_output(["git", "describe", "--tags", "--always"],
+                                  cwd=ROOT, stderr=_spv.DEVNULL)
+                .decode().strip() or "desarrollo")
+    except Exception:
+        _ver = "desarrollo"
+    _sello = (f"datos congelados a {_tmax_s} · código {_ver} · generado {now}")
     _cc = load_clusters_counts().get(tema, {})
     _n_raw = _cc.get("raw") or n
     _n_dedup = _cc.get("dedup") or kpi.get("n_excl", n)
@@ -445,8 +469,11 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     bd = band_for(top["ov"]) if top else "NORMAL"
     s = salud or {}
     # ---- bloques html ----
+    # Sprint A (A1): el tile cuenta el conjunto PUBLICADO (≥3 cuentas).
+    _sub_cl = ((f"{_n_raw} en vista · +{n_par_inf} agregados" if n_par_inf
+                else (("%d sin repetir" % _n_dedup) if _n_dedup < _n_raw else "del tema")))
     kpi_tiles = [
-        ("clusters", _n_raw, ("%d sin repetir" % _n_dedup) if _n_dedup < _n_raw else "del tema"),
+        ("clusters", n, _sub_cl),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
         ("en banda alta", len(altos), "≥60"),
         ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
@@ -456,6 +483,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
     tiles = "".join(
         f"<div class='tile'><div class='k'>{esc(v)}</div><div class='kl'>{esc(l)}</div><div class='ks'>{esc(sub)}</div></div>"
         for (l, v, sub) in kpi_tiles)
+    # Sprint A (A1): distribución de scores del conjunto publicado + muro 39/59.
+    distrib = _pr.bloque_distribucion_html(
+        _pr.resumen_distribucion([c["ov"] for c in clusters]),
+        n_par=n_par_inf, colores=BAND_COL)
     # cluster top hypotheses
     hyp_bars = ""
     if top and top["hyps"]:
@@ -515,7 +546,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
     tot_ev = kpi["n_ev"]  # all-time (canónico)
-    lectura = (f"El sistema observa <b>{n}</b> clusters en el tema. La hipótesis dominante del conjunto es "
+    lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. La hipótesis dominante del conjunto es "
                f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
                f"{h3} clusters muestran señal compatible con influencia extranjera (H3). "
                f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
@@ -710,7 +741,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
       <h1>{esc(nombre)}</h1>
-      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 60 d) · generado {esc(now)}</div>
+      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 60 d) · {esc(_sello)}</div>
     </div>
   </div>
   <div class="btns">
@@ -725,12 +756,13 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 <section>
   <h2>Qué está pasando</h2>
   <div class="tiles">{tiles}</div>
+  {distrib}
   <div class="two" style="margin-top:14px">
     <div><b>Lo más anómalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
-      Salud del tema <span style='color:#94a3b8'>(últimos 14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
+      Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{_n_raw}</b> clusters del tema (<b>{_n_dedup}</b> sin repetir señal; {_n_raw - _n_dedup} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes. <i>Fuente de las cifras: el propio panel del dashboard.</i></p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras acumuladas: <b>{_n_raw}</b> clusters del tema (<b>{_n_dedup}</b> sin repetir señal; {_n_raw - _n_dedup} comparten cuentas con otro tema) · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes{f' · <b>+{n_par_inf}</b> grupos pequeños agregados' if n_par_inf else ''}. <i>Fuente de las cifras: el propio panel del dashboard.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -800,7 +832,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <p class="cs" style="margin-top:6px"><b>Señal, no atribución.</b> Actor: UNKNOWN · evaluación: no concluyente. La interpretación final requiere validación externa y análisis experto.</p></section>
 
 </div>
-<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)}) ·
+<div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)} · {esc(_sello)}) ·
 <a href="https://fimi.viajeinteligencia.com/metodo.html">método y límites</a></div>
 </body></html>"""
 

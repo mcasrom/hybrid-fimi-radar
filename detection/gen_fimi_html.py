@@ -48,6 +48,14 @@ RESTO_OUT = Path("/var/www/fimi/resto.html")
 # ver detection/mainstream.py.
 from detection import mainstream as _ms_mod  # noqa: E402
 _MAINSTREAM = _ms_mod.MAINSTREAM
+from detection.presentacion import (  # noqa: E402  (Sprint A: definición única de publicado)
+    MIN_CUENTAS_PUBLICADO,
+    bloque_distribucion_html,
+    es_publicado as _es_pub,
+    mil as _mil,
+    partir_publicados,
+    resumen_distribucion,
+)
 
 
 def _filtro_temas_activos(temas_cfg, col="tema_id"):
@@ -1615,6 +1623,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
     n_band = {}
     _gen = "—"
     _top_label = ""
+    _CuentasPorCluster, n_par_global = {}, 0
     try:
         rc = sqlite3.connect(DB)
         rc.row_factory = sqlite3.Row
@@ -1635,10 +1644,21 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
         except Exception:
             _gen = "—"
         _w_act, _a_act = _filtro_temas_activos(temas_cfg)
-        _rows = rc.execute("SELECT cluster_label, overall_score, tema_id FROM clusters"
+        _rows = rc.execute("SELECT id, cluster_label, overall_score, tema_id FROM clusters"
                            + _w_act, _a_act).fetchall()
-        n_clusters = len(_rows)
-        for _c in _rows:
+        # Sprint A (A1, 12-oct): nº de cuentas por cluster para el conjunto
+        # PUBLICADO (≥3 cuentas). Las parejas/solitarios van agregados en nota.
+        try:
+            _CuentasPorCluster = {
+                r["cluster_id"]: r["n"] for r in rc.execute(
+                    "SELECT cluster_id, COUNT(DISTINCT author) AS n"
+                    " FROM cluster_events GROUP BY cluster_id")}
+        except Exception:
+            _CuentasPorCluster = {}
+        _pub_rows, _par_rows = partir_publicados(_rows, _CuentasPorCluster)
+        n_par_global = len(_par_rows)
+        n_clusters = len(_pub_rows)
+        for _c in _pub_rows:
             s = _c["overall_score"] or 0
             b = "CRITICAL" if s >= 80 else "HIGH" if s >= 60 else "ANOMALOUS" if s >= 40 \
                 else "WATCH" if s >= 20 else "NORMAL"
@@ -1743,7 +1763,9 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
                       f"{n_band.get('ANOMALOUS', 0)} ANOMALOUS · {n_band.get('WATCH', 0)} WATCH · "
                       f"{n_band.get('NORMAL', 0)} NORMAL. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
                       f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;amplificación "
-                      f"sostenida&quot; (la misma red vertiendo varias piezas a lo largo de &gt;1 día).")
+                      f"sostenida&quot; (la misma red vertiendo varias piezas a lo largo de &gt;1 día)."
+                      f" Se cuentan los clusters con señal (≥{MIN_CUENTAS_PUBLICADO} cuentas);"
+                      f" +{n_par_global} grupos pequeños agregados aparte.")
     _tabs_temas = " · ".join(f"<a href='/#{t}'>#{t}</a>" for t in temas) or "/"
     _dataset_link = (f"/api/export?cluster={_top_label}&fmt=csv" if _top_label
                      else "/api/export?fmt=csv")
@@ -3375,6 +3397,31 @@ def main():
         # muestra en un tema anterior del catálogo (no duplicar hallazgos).
         _dup_aqui = [c for c in _tema_cl_raw if c["cluster_label"] in _duplicados]
         _tema_cl = [c for c in _tema_cl_raw if c["cluster_label"] not in _duplicados]
+        # Sprint A (A1, 12-oct): el conjunto PUBLICADO son clusters con señal
+        # (≥3 cuentas). Parejas y solitarios se agregan en nota, no en titulares.
+        # Todo lo que sigue en este bloque (diales, KPIs, tarjetas, compartir)
+        # usa ya el conjunto publicado.
+        _tema_cl, _par_aqui = partir_publicados(
+            _tema_cl, _CuentasPorCluster, MIN_CUENTAS_PUBLICADO)
+        _n_par2 = sum(
+            1 for _c in _par_aqui
+            if (_CuentasPorCluster.get(_c["id"], 0) or 0) == 2)
+        _n_par1 = len(_par_aqui) - _n_par2
+        _par_max = 0
+        for _c in _par_aqui:
+            _s = _c["overall_score"] or 0
+            if isinstance(_s, (int, float)) and _s > _par_max:
+                _par_max = _s
+        _par_note = ""
+        if _par_aqui:
+            _par_note = (
+                f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:5px solid #94a3b8;'
+                f'border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.8rem;'
+                f'color:#475569;line-height:1.55">'
+                f'<b>➕ {len(_par_aqui)} grupos pequeños agregados</b> '
+                f'({_n_par2} parejas · {_n_par1} individuales/sin eventos): no entran en '
+                f'titulares por tamaño mínimo (≥{MIN_CUENTAS_PUBLICADO} cuentas); su score '
+                f'máximo es {_par_max:.0f}/100, bajo ANOMALOUS.</div>')
         _dup_note = ""
         if _dup_aqui:
             # nombres legibles de los temas origen + qué cuentas son
@@ -3483,18 +3530,25 @@ def main():
             _mini_dial("Amplificación", _amp_val, "#c2410c",
                        "señal global del tema"),
         ])
-        _cl_sub = (f"{len(_tema_cl)} sin repetir señal" if len(_tema_cl) < len(_tema_cl_raw)
-                   else "del tema")
+        # Sprint A (A1): el KPI cuenta el conjunto PUBLICADO (≥3 cuentas);
+        # los grupos pequeños van agregados en nota (_par_note).
+        _n_par_t = len(_par_aqui)
+        _cl_sub = (f"{len(_tema_cl_raw)} en la vista"
+                   + (f" · +{_n_par_t} pequeños agregados" if _n_par_t else "")
+                   + (" · sin repetir señal" if len(_tema_cl) < len(_tema_cl_raw) else ""))
+        _dist_tema = resumen_distribucion([_cc["overall_score"] for _cc in _tema_cl])
+        _distrib_tema_html = bloque_distribucion_html(
+            _dist_tema, n_par=_n_par_t, colores=BAND_COLORS, compacto=True)
         _cards_t = (f'<div class="fimi-gauges" '
                     f'style="display:flex;flex-wrap:wrap;gap:12px;margin:0 auto 10px;width:100%;justify-content:center">'
                     f'{_gauges_t}</div>'
                     f'<div style="display:flex;flex-wrap:wrap;gap:10px;width:100%">' + "".join([
                         kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
                         kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
-                        kpi("Clusters", len(_tema_cl_raw), _cl_sub, "#fafaf9"),
+                        kpi("Clusters", len(_tema_cl), _cl_sub, "#fafaf9"),
                         kpi("Cuentas", _tot_cuentas, "implicadas en clusters", "#f1f5f9"),
                         kpi_banda_alerta(_tema_cl),
-                    ]) + '</div>')
+                    ]) + '</div>' + _distrib_tema_html)
         # stats por tema para el texto de compartir (se genera en el momento)
         _n_high_t = sum(1 for _cc in _tema_cl
                         if (_cc["overall_score"] or 0) >= 60)
@@ -3503,16 +3557,22 @@ def main():
             "estado": _estado,
             "clusters": len(_tema_cl),
             "clusters_raw": len(_tema_cl_raw),
+            "pares": _n_par_t,
             "high": _n_high_t,
         }
         _cl_txt = ""
         if not _tema_cl:
-            if _dup_aqui:
+            if not _tema_cl_raw:
+                _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
+            elif len(_dup_aqui) == len(_tema_cl_raw):
                 _cl_txt = ("<p style='font-size:.82rem;color:#64748b;font-style:italic'>"
                            "Todo lo activo en este tema ya se muestra en otro tema "
                            "(mismas cuentas coordinadas). Sin hallazgos exclusivos ahora.</p>")
             else:
-                _cl_txt = render_cluster_cards([], assessments, titulo_vacio="Sin clusters activos en este tema")
+                _cl_txt = ("<p style='font-size:.82rem;color:#64748b;font-style:italic'>"
+                           "Este tema solo tiene grupos pequeños "
+                           f"({len(_tema_cl_raw)} de menos de {MIN_CUENTAS_PUBLICADO} cuentas, "
+                           "agregados arriba): sin clusters con señal ahora.</p>")
         else:
             # leyenda de componentes UNA vez, arriba del listado; luego las tarjetas
             _rc = [_cluster_comps(_cc, _asm_by_cid_t.get(_cc["id"])) for _cc in _tema_cl]
@@ -3635,7 +3695,7 @@ def main():
                        f"{_esfera_html.get(_t, '')}"
                        f"{_elec_tema_html.get(_t, '')}"
                        f"{_blog_html}"
-                       f"{_bias_note}{_dup_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
+                       f"{_bias_note}{_dup_note}{_par_note}<div class='kpis'>{_cards_t}</div>{_cl_txt}</div>")
     # Banner fijo de piloto: se muestra/oculta por JS segun la pestaña activa,
     # justo debajo del selector (imposible de no ver al entrar en un tema piloto).
     piloto_banner = (
@@ -4108,7 +4168,7 @@ def main():
             f"{_resumen_ejecutivo(_t)}</div>"
             f"<div style='margin:0 0 10px;font-size:.74rem;color:#475569;display:flex;justify-content:center;"
             f"align-items:center;gap:6px'>"
-            f"<span style='color:#94a3b8'>Salud del tema</span>"
+            f"<span style='color:#94a3b8' title='Estado operativo del pipeline (cobertura y frescura), no score'>Salud operativa del tema</span>"
             f"<b style='color:{_st_color}'>{_st_score:.0f}/100 · {_st_nivel}</b>"
             f"</div>"
             f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
@@ -4349,15 +4409,19 @@ def main():
     # nº de clusters activos, nº en alerta (score>=60) y nº con atribución
     # CONCLUYENTE = distinta de UNKNOWN/NO_ATTRIBUTION Y con confianza HIGH
     # (una atribución de confianza baja/media es hipótesis, no conclusión).
-    _n_clusters = len(clusters)
-    _n_alerta = sum(1 for c in clusters if (c["overall_score"] or 0) >= 60)
+    # Sprint A (A1): el banner cuenta el conjunto PUBLICADO (≥3 cuentas).
+    _clusters_pub, _clusters_par = partir_publicados(
+        clusters, _CuentasPorCluster, MIN_CUENTAS_PUBLICADO)
+    _n_par_s1 = len(_clusters_par)
+    _n_clusters = len(_clusters_pub)
+    _n_alerta = sum(1 for c in _clusters_pub if (c["overall_score"] or 0) >= 60)
     _atr_map_b = {}
     for _a in assessments or []:
         _atr_map_b[_a["cluster_id"]] = (
             str(_a["attribution"] or "").upper(),
             str(_a["attribution_confidence"] or "").upper(),
         )
-    _n_atrib = sum(1 for c in clusters
+    _n_atrib = sum(1 for c in _clusters_pub
                    if (_atr_map_b.get(c["id"], ("", ""))[0]
                        not in ("", "UNKNOWN", "NO_ATTRIBUTION")
                        and _atr_map_b[c["id"]][1] == "HIGH"))
@@ -4377,7 +4441,10 @@ def main():
         f"background:#fff;border:1px solid #e2e8f0;font-size:.78rem;font-weight:700;color:#475569'>"
         f"⚖️ {_n_atrib}/{_n_clusters} con atribución concluyente</span>"
         f"</div>"
-        f"<div style='font-size:.74rem;color:#7c2d12;margin-top:10px;line-height:1.5'>"
+        + (f"<div style='font-size:.74rem;color:#7c2d12;margin-top:8px'>Se cuentan los clusters con señal "
+             f"(≥{MIN_CUENTAS_PUBLICADO} cuentas); +{_n_par_s1} grupos pequeños agregados aparte.</div>"
+             if _n_par_s1 else "")
+        + f"<div style='font-size:.74rem;color:#7c2d12;margin-top:10px;line-height:1.5'>"
         f"El radar marca <b>señales de comportamiento</b> (coordinación, amplificación, anomalía), "
         f"no identidades: sin evidencia concluyente, <b>no se acusa a ningún actor</b>. "
         f"Pulsa <b>ver detalle</b> en un tema para leer la evidencia y sus límites.</div>"
@@ -4385,30 +4452,14 @@ def main():
     )
     # Panel de situación (aditivo, S-preview): tiles KPI + distribución por banda
     # + tira por tema. Reutiliza lo ya calculado; no altera nada existente.
-    _counts_band = {}
-    for _c in clusters:
-        _bb = band_of(_c["overall_score"] or 0)
-        _counts_band[_bb] = _counts_band.get(_bb, 0) + 1
-    _tot_band = sum(_counts_band.values()) or 1
-    _seg = ""
-    _leg = ""
-    for _b in ("NORMAL", "WATCH", "ANOMALOUS", "HIGH", "CRITICAL"):
-        _nb = _counts_band.get(_b, 0)
-        if _nb:
-            _seg += (f"<span style='display:block;width:{100 * _nb / _tot_band:.1f}%;height:100%;"
-                     f"background:{BAND_COLORS[_b]}'></span>")
-            _leg += (f"<span style='display:inline-flex;align-items:center;gap:5px'>"
-                     f"<span style='width:9px;height:9px;border-radius:50%;background:{BAND_COLORS[_b]}'></span>"
-                     f"{_nb} {_b}</span>")
-    _band_dist = (
-        f"<div style='margin-top:12px'>"
-        f"<div style='font-size:.72rem;color:#64748b;font-weight:600;margin-bottom:4px'>"
-        f"Distribución de clusters por banda</div>"
-        f"<div style='display:flex;height:14px;border-radius:7px;overflow:hidden;background:#f1f5f9'>{_seg}</div>"
-        f"<div style='display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:.72rem;color:#475569'>{_leg}</div></div>")
+    # Sprint A (A1): distribución sobre el conjunto PUBLICADO + muro 39/59.
+    _band_dist = bloque_distribucion_html(
+        resumen_distribucion([c["overall_score"] for c in _clusters_pub]),
+        n_par=_n_par_s1, colores=BAND_COLORS)
     # --- Gráfico de burbujas global (clusters por tema, tamaño = cuentas) ---
+    # Sprint A: solo clusters con señal (coherente con titulares y tarjetas).
     _bubble_rows = []
-    for _c in clusters:
+    for _c in _clusters_pub:
         if _c["cluster_label"] in _duplicados:
             continue
         _acc = len(firma_cluster.get(_c["id"], ()))
@@ -4439,7 +4490,7 @@ def main():
         f"<div style='display:flex;flex-wrap:wrap;gap:10px'>"
         f"{kpi('Eventos', n_events, 'ventana 90 días', '#f8fafc')}"
         f"{kpi('Fuentes', n_sources, 'captura activa', '#f8fafc')}"
-        f"{kpi('Clusters', _n_clusters, 'activos ahora', '#f8fafc')}"
+        f"{kpi('Clusters', _n_clusters, 'con señal' + (f' · +{_n_par_s1} agregados' if _n_par_s1 else ''), '#f8fafc')}"
         f"{kpi('En alerta', _n_alerta, 'score ≥60', '#fff7ed')}"
         f"{kpi('Temas', len(temas), 'monitorizados', '#f8fafc')}"
         f"</div>"
@@ -4988,7 +5039,7 @@ def main():
         'amplificación y anomalías en temas en español (ámbito FIMI). Mide propagación; no confirma coordinación ni atribuye."},'
         '{"@type": "Dataset", "@id": "https://fimi.viajeinteligencia.com/#dataset", '
         '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de amplificación (ámbito FIMI) — eventos y clusters", '
-        f'"description": "{n_events} eventos y {n_clusters} clusters de amplificación del ciclo actual (6h) del observatorio.", '
+        f'"description": "Eventos y clusters de amplificación con señal del ciclo actual (6h) del observatorio.", '
         '"isAccessibleForFree": true, "inLanguage": "es", '
         '"license": "https://creativecommons.org/licenses/by/4.0/", '
         f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
@@ -5000,14 +5051,14 @@ def main():
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Observatorio de amplificación · ámbito FIMI</title>
- <meta name="description" content="Observatorio OSINT agnóstico al actor: amplificación y anomalías (ámbito FIMI) en español. {n_events} eventos y {n_clusters} clusters de amplificación hoy. Mide propagación; no confirma coordinación ni atribuye.">
+ <meta name="description" content="Observatorio OSINT agnóstico al actor: amplificación y anomalías (ámbito FIMI) en español. {_mil(n_clusters)} clusters con señal (+{_mil(n_par_global)} parejas) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  <link rel="alternate" type="application/rss+xml" title="Posibles bulos contrastados" href="/datos/bulos.xml">
  {_jsonld_html}
  <meta property="og:type" content="website">
- <meta property="og:title" content="Observatorio de amplificación ({n_events} eventos, {n_clusters} clusters)">
-<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados (frontera sur, Oriente Medio, elecciones, inteligencia artificial). {n_clusters} clusters de amplificación hoy ({n_high} en banda alta). Mide propagación; no confirma coordinación ni atribuye.">
+ <meta property="og:title" content="Observatorio de amplificación · ámbito FIMI">
+<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados ({tema_nombres_html}). Mide propagación; no confirma coordinación ni atribuye.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
@@ -5016,7 +5067,7 @@ def main():
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Observatorio de amplificación">
-<meta name="twitter:description" content="{n_clusters} clusters de amplificación, {n_events} eventos de {n_sources} fuentes. Radar OSINT agnóstico al actor en varios temas.">
+<meta name="twitter:description" content="{_mil(n_clusters)} clusters con señal, {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT agnóstico al actor en varios temas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
