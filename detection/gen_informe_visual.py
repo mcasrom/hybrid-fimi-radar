@@ -46,11 +46,15 @@ TITULO = {'espana_elecciones': 'Elecciones generales 29-N',
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--tema', default='espana_elecciones')
+    ap.add_argument('--semana', default=None,
+                    help='semana ISO concreta (p. ej. 2026-W41); por defecto, la última')
     a = ap.parse_args()
     fs = sorted(glob.glob(os.path.join(
         BASE, 'data', 'informes', a.tema, '*.json')))
+    if a.semana:
+        fs = [f for f in fs if a.semana in os.path.basename(f)]
     if not fs:
-        print('sin informes de %s' % a.tema)
+        print('sin informes de %s%s' % (a.tema, ' ' + a.semana if a.semana else ''))
         return 1
     with open(fs[-1], encoding='utf-8') as f:
         d = json.load(f)
