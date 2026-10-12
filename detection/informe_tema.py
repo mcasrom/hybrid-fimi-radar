@@ -202,8 +202,10 @@ STOP = set('''de la el en y que los del se las una por con para al como más per
 
 CURADO_PATH = os.path.join(BASE, 'data', 'narrativas.json')
 LIMITES = [
-    'Una banda alta es amplificación medida, nunca coordinación confirmada '
-    '(8,3 % en la validación ciega del 29/Sep/2026).',
+    'Una banda alta es amplificación medida, nunca coordinación confirmada: '
+    'en la validación ciega del 29/Sep solo 3 de 36 clusters evaluables '
+    '(<a href="/research.html#validacion">detalle de la validación</a>) '
+    'mostraban coordinación; no es una tasa de precisión general.',
     'No se atribuye actor ni intención: el resultado por defecto es UNKNOWN.',
     'Los verificadores aportan contraste, no veredicto.',
 ]
@@ -347,6 +349,47 @@ def main():
         return [k for k, v in items
                 if (isinstance(v, dict) and v.get('status') == 'supported')]
 
+    def norm(s):
+        return re.sub(r'[^a-záéíóúñü ]', ' ', (s or '').lower())
+
+    # Relevancia temática por cluster (revisión 12-oct): fracción de eventos
+    # cuyo título+texto contiene algún término del tema (léxico, documentado
+    # abajo). Solo ETIQUETA (alta ≥0.5, parcial 0.2–0.5, baja <0.2), separada
+    # de la anomalía; nunca filtra ni borra.
+    _rel_hit, _rel_tot = Counter(), Counter()
+    try:
+        import yaml as _yaml
+        _cfg = _yaml.safe_load(
+            open(os.path.join(BASE, 'config.yaml'), encoding='utf-8'))
+        def _es_de_tema(_k):
+            _kt = _k.get('tema')
+            # Las keywords sin `tema` en config son las de frontera_sur (legado);
+            # no deben colarse en la relevancia de los demás temas.
+            return _kt == a.tema or (a.tema == 'frontera_sur' and _kt is None)
+        _kws = sorted({
+            norm(_k.get('palabra', '')).strip()
+            for _k in (_cfg.get('keywords') or [])
+            if _es_de_tema(_k) and len((_k.get('palabra') or '').strip()) >= 4})
+    except (OSError, ValueError):
+        _kws = []
+    _rx_kw = (re.compile('|'.join(r'\b%s\b' % re.escape(w) for w in _kws))
+              if _kws else None)
+    if _rx_kw:
+        _ids = [c['id'] for c in cls]
+        for _cid, _ti, _tx in con.execute(
+                'SELECT cluster_id, title, text FROM cluster_events'
+                ' WHERE cluster_id IN (%s)' % ','.join('?' * len(_ids)), _ids):
+            _rel_tot[_cid] += 1
+            if _rx_kw.search(norm('%s %s' % (_ti, _tx))):
+                _rel_hit[_cid] += 1
+
+    def _relevancia(cid, nev):
+        if not _rx_kw:
+            return 's/d', 0.0
+        frac = _rel_hit.get(cid, 0) / max(nev, 1)
+        return (('alta' if frac >= 0.5 else 'parcial' if frac >= 0.2 else 'baja'),
+                round(frac, 2))
+
     info = []
     try:
         with open(CURADO_PATH, encoding='utf-8') as f:
@@ -361,12 +404,14 @@ def main():
             nar = ' · '.join(cont['terminos'][:3]) or 'sin etiquetar'
         doms, ndom = dominios(c['id']) if sc >= 55 else ([], 0)
         nev, nau = c['nev'], c['nau']
+        _rel, _rel_frac = _relevancia(c['id'], nev)
         info.append({'label': c['cluster_label'], 'score': sc,
                      'banda': band(c['overall_score']),
                      'eventos': nev, 'autores': nau,
                      'concentracion': round(nev / max(nau, 1), 1),
                      'ventana': '%s–%s' % (fmt_ts(c['t0']), fmt_ts(c['t1'])),
                      'subtipo': subtype(c), 'exp': supported(c)[:3],
+                     'relevancia': _rel, 'relevancia_frac': _rel_frac,
                      'anomalia': round(c['anomaly_score'] or 0, 1),
                      'coordinacion': round(c['coordination_score'] or 0, 1),
                      'techo': sc in TECHOS,
@@ -383,6 +428,11 @@ def main():
     rep = {name: 0 for _, name in BANDAS}
     for t in info:
         rep[t['banda']] += 1
+    # Guardián (revisión 12-oct): el universo declarado debe cuadrar con las
+    # bandas. Falla en voz alta en vez de publicar totales incoherentes.
+    assert sum(rep.values()) == len(info) == len(cls), (
+        'coherencia: bandas=%d info=%d cls=%d'
+        % (sum(rep.values()), len(info), len(cls)))
     topados = [t for t in info if t['score'] in TECHOS]
     _t0s = [c['t0'] for c in cls if c['t0']]
     min_t0 = (datetime.fromtimestamp(min(_t0s), timezone.utc).strftime('%d/%m')
@@ -400,17 +450,16 @@ def main():
         'WHERE tema_id=? GROUP BY lineage_id', (a.tema,)).fetchall()}
     linajes = sorted(lin)
 
+    # Revisión 12-oct (punto 2E): SIN límite — el JSON lleva el cruce completo
+    # y el HTML muestra 10 con los tres niveles contados.
     bulos = [dict(r) for r in con.execute(
         'SELECT cluster_label, banda, verifica_fuente, verifica_titulo, '
         'verifica_url, solape FROM posible_bulos WHERE tema_id=? '
-        'ORDER BY cycle_ts DESC LIMIT 30', (a.tema,)).fetchall()]
+        'ORDER BY cycle_ts DESC', (a.tema,)).fetchall()]
     nbulos = con.execute(
         'SELECT COUNT(*) FROM posible_bulos WHERE tema_id=?',
         (a.tema,)).fetchone()[0]
     cl_by_label = {t['label']: t for t in info}
-
-    def norm(s):
-        return re.sub(r'[^a-záéíóúñü ]', ' ', (s or '').lower())
 
     cruce = []
     for b in bulos:
@@ -456,10 +505,11 @@ def main():
     # Conclusión automática (descriptiva, sin veredicto)
     n_high = rep.get('HIGH', 0) + rep.get('CRITICAL', 0)
     concl = (
-        'Acumulado del tema (no solo esta semana): %s eventos de %s autores '
-        'en %s clusters '
-        '(%s en banda alta%s). ' % (
-            ev['n'], ev['a'], len(cls), n_high,
+        'Acumulado del tema (no solo esta semana): %s eventos de %s autores, '
+        '%s clusters actuales y %s linajes persistentes '
+        '(%s en banda alta%s). Universo: clusters actuales con tema_id; '
+        'un linaje es la identidad estable de una historia entre ciclos. ' % (
+            ev['n'], ev['a'], len(cls), len(linajes), n_high,
             '; %s topados en techos de banda' % len(topados) if topados
             else ''))
     if delta:
@@ -478,17 +528,31 @@ def main():
     concl += 'Qué vigilar: %s clusters en anómala alta pre-HIGH (55–59,9)%s.' % (
         len(watch_alto),
         '; %s contrastes con verificadores esta semana' % nbulos if nbulos else '')
+    # Bloque «evolución semanal» (revisión 12-oct, P1): lo que CAMBIÓ esta
+    # semana, separado del acumulado que describen las secciones siguientes.
+    if delta:
+        delta_txt = (
+            'Frente a la semana anterior: %s%sev · %s%s autores · %s en banda '
+            'alta · %s linajes nuevos · %s caídos. Universo comparable: '
+            'clusters actuales con tema_id.' % (
+                '+' if delta['eventos'] >= 0 else '', delta['eventos'],
+                '+' if delta['autores'] >= 0 else '', delta['autores'],
+                '%+d' % delta['high'], len(delta['linajes_nuevos']),
+                len(delta['linajes_caidos'])))
+    else:
+        delta_txt = ('Primera edición: todavía no hay semana anterior con la '
+                     'que comparar. La serie empieza aquí y la comparativa '
+                     'aparecerá en el próximo informe.')
     n_red = sum(t.get('redactados', 0) for t in info)
     if n_red:
         concl += (' Se han redactado %s contenidos con datos personales, '
                   'cuentas o amenazas: no se reproducen.' % n_red)
 
     cuentas_clusters = _mt.cuentas_en_clusters(con, a.tema)
-    try:
-        _tcj = json.load(open(os.path.join(BASE, 'data', 'temas_clusters.json'), encoding='utf-8')).get(a.tema, {})
-        _n_cl = _tcj.get('raw') or len(cls)
-    except (OSError, ValueError):
-        _n_cl = len(cls)
+    # Universo único (revisión 12-oct): TODO el informe usa los clusters
+    # actuales con tema_id (len(cls)). Importar el recuento de la vista del
+    # dashboard mezclaba dos congelados (117 vs 118) en el mismo JSON.
+    _n_cl = len(cls)
     _dias_oper, _ini_ing = _mt.dias_operando(con, a.tema)
     _ini_str = (datetime.fromtimestamp(_ini_ing, timezone.utc).strftime('%d/%m/%Y')
                 if _ini_ing else 's/d')
@@ -569,10 +633,31 @@ def main():
                       t['anomalia'], t['concentracion']) if es_prio else '')
         # Enlace estable: el permalink por linaje sobrevive al cambio de
         # cluster_label entre ciclos (regla 6); si falta, se cae al API.
-        enlace = ('<a href="/c/%s" title="Permalink por linaje (estable '
-                  'entre ciclos)">ficha persistente</a>' % html.escape(t['linaje'])
-                  if t.get('linaje') else
-                  '<a href="/api/v1/cluster/%s">API</a>' % html.escape(t['label']))
+        # Revisión 12-oct: se muestran AMBOS identificadores + la relación
+        # con la semana anterior (nuevo/continuado/re-etiquetado).
+        if t.get('linaje'):
+            _ant = prev_por_linaje.get(t['linaje'])
+            if _ant is None:
+                _rel_lin = 'linaje nuevo esta semana'
+            elif _ant == t['label']:
+                _rel_lin = 'continuado (misma etiqueta)'
+            else:
+                _rel_lin = 're-etiquetado (antes %s)' % _ant
+            enlace = ('ID actual: <code>%s</code> · linaje persistente: '
+                      '<a href="/c/%s" title="Permalink por linaje (estable '
+                      'entre ciclos)">%s</a> (%s)' % (
+                          html.escape(t['label']), html.escape(t['linaje']),
+                          html.escape(t['linaje']), html.escape(_rel_lin)))
+        else:
+            enlace = ('<a href="/api/v1/cluster/%s">API</a>' % html.escape(t['label']))
+        _rol = ROL_ES.get(str(t['subtipo']), str(t['subtipo']))
+        if str(t['subtipo']) == 'official_response':
+            _rol += (' (detecta vocabulario institucional en los textos'
+                     ' —gobierno, autoridades…—, no autoría institucional)')
+        _rel_txt = ('Relevancia temática: <b>%s</b> (%s%% de eventos con '
+                    'términos del tema; umbrales 50/20 %%. No filtra, solo etiqueta.') % (
+                        html.escape(str(t.get('relevancia', 's/d'))),
+                        round((t.get('relevancia_frac') or 0) * 100))
         return (
             '<div style="border:1px solid #e2e8f0;border-radius:10px;'
             'padding:10px 12px;margin:8px 0">'
@@ -586,7 +671,7 @@ def main():
             '<p><b>Qué no permite concluir:</b> coordinación confirmada ni '
             'atribución (hipótesis compatibles: %s; atribución UNKNOWN).</p>'
             '<p style="color:#64748b">Rol: %s · dominios: %s · '
-            '%s</p>%s%s</div>' % (
+            '%s</p><p>%s</p>%s%s</div>' % (
                 html.escape(num), html.escape(t['narrativa']), prio,
                 BAND_ES[t['banda']], t['score'], techo,
                 t['autores'], t['eventos'], t['concentracion'],
@@ -595,13 +680,19 @@ def main():
                 t['coordinacion'], t['anomalia'],
                 html.escape(', '.join(exp_llano(t['exp']))
                             or 'sin explicación concluyente'),
-                html.escape(ROL_ES.get(str(t['subtipo']), str(t['subtipo']))),
+                html.escape(_rol),
                 html.escape(', '.join(t['dominios'][:5]) or '—'),
-                enlace,
+                enlace, _rel_txt,
                 ('<br>Contrastes: <ul>%s</ul>' % lb) if lb else '',
                 ('<p><b>Por qué es prioritario:</b> %s</p>' % motivo)
                 if motivo else ''))
 
+    # Relación con la semana anterior por linaje (revisión 12-oct, punto 3C).
+    prev_por_linaje = {}
+    if prev_rep:
+        for _pe in (prev_rep.get('que_ocurre') or {}).get('clusters_detalle', []):
+            if _pe.get('linaje'):
+                prev_por_linaje[_pe['linaje']] = _pe.get('label', '')
     fichas_high = ''.join(ficha(t) for t in high)
     fichas_pre = ''.join(ficha(t) for t in watch_alto)
     filas_anom = ''.join(
@@ -656,6 +747,14 @@ def main():
             html.escape(c['titular']), c['relacion'],
             html.escape((c['cluster'] or '').split('_cluster_')[-1]))
         for c in cruce_ord[:10])
+    # Tres niveles declarados (revisión 12-oct, punto 2E): registrados en BD,
+    # cruzados en JSON, mostrados en HTML. MATCH/THEMATIC no son equivalentes.
+    n_match = sum(1 for c in cruce if c.get('relacion') == 'MATCH')
+    n_them = len(cruce) - n_match
+    txt_cruce = ('%s contrastes registrados · %s cruzados en JSON '
+                 '(%s MATCH + %s THEMATIC) · 10 mostrados%s' % (
+                     nbulos, len(cruce), n_match, n_them,
+                     '; lista completa en el JSON' if len(cruce) > 10 else ''))
     n_watch = rep.get('WATCH', 0) + rep.get('NORMAL', 0)
     body = (
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
@@ -689,9 +788,12 @@ def main():
         'margin:10px auto;border:1px solid #e2e8f0;border-radius:10px"></a>'
         '<a href="./%s.png" download>Descargar imagen</a></p>'
         '<p style="color:#64748b">%s%s · %s eventos del tema · '
-        '%s autores del tema · %s cuentas en clusters · %s clusters · '
+        '%s autores del tema · %s cuentas en clusters · %s clusters actuales '
+        '(%s linajes persistentes) · '
         '%s en banda alta · %s · señal global de amplificación del ciclo: %s · '
         '<a href="./%s.json">JSON</a></p>'
+        '<h2>Evolución semanal (esto es lo que cambió)</h2><p>%s</p>'
+        '<h2>Situación acumulada (lo que el sistema observa desde el inicio)</h2>'
         '<h2>Conclusión</h2><p>%s</p>'
         '<h2>Qué ocurre</h2><p>%s</p>'
         '<h2>Narrativas de la semana</h2><p>Agregado de los clusters '
@@ -708,9 +810,9 @@ def main():
         '<p style="color:#64748b">%s clusters clavados en techos de banda '
         '(39,0/59,0): topes aplicados, no señales independientes. '
         'WATCH+NORMAL (%s): solo estadística agregada, detalle en el JSON.</p>'
-        '<h2>Cruce con verificadores</h2><p>%s contrastes (contraste, no '
+        '<h2>Cruce con verificadores</h2><p>%s (contraste, no '
         'veredicto): MATCH = el titular verificado circula en el clúster; '
-        'THEMATIC = coincidencia temática.</p>'
+        'THEMATIC = coincidencia temática (no prueba desinformación).</p>'
         '<table border="1" cellpadding="4" cellspacing="0">'
         '<tr><th>Fuente</th><th>Titular</th><th>Relación</th><th>Clúster</th></tr>%s</table>'
         '<h2>Qué vigilar la próxima semana</h2><ul>%s</ul>'
@@ -730,16 +832,17 @@ def main():
             + ('Los clusters agregan todo el corpus (algunos empiezan en %s). '
                % min_t0 if min_t0 else ''),
             informe['kpis']['eventos'],
-            informe['kpis']['autores'], cuentas_clusters, informe['kpis']['clusters'], n_high,
+            informe['kpis']['autores'], cuentas_clusters, informe['kpis']['clusters'],
+            len(linajes), n_high,
             _dias_txt,
             amp_global,
-            semana, html.escape(concl),
+            semana, delta_txt, html.escape(concl),
             ', '.join('%s: %s' % (BAND_ES[k], v)
                        for k, v in sorted(rep.items()) if v),
             filas_narr,
             fichas_high or '<p>Ninguno esta semana.</p>',
             fichas_pre or '<p>Ninguno esta semana.</p>', filas_anom,
-            len(topados), n_watch, nbulos, filas_cruce, filas_watch,
+            len(topados), n_watch, txt_cruce, filas_cruce, filas_watch,
             ''.join('<li>%s</li>' % html.escape(x) for x in LIMITES)))
     with open(os.path.join(wdir, semana + '.html'), 'w') as f:
         f.write(body)
