@@ -30,7 +30,7 @@ from detection.scoring import (  # noqa: E402
     single_source_feed_cap, solve_scale,
 )
 from normalizer.clasificar import _matches, _tokens, temas_por_contenido  # noqa: E402
-from clustering.clustering import _label_prefix, cluster_by_components  # noqa: E402
+from clustering.clustering import _label_prefix, cluster_by_components, cluster_summary  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -383,3 +383,26 @@ def test_api_band_of_limite_inferior():
     assert bof(82.8, bands) == "CRITICAL"
     assert bof(5, bands) == "NORMAL"
     assert bof(None, bands) == "NORMAL"
+
+
+def test_cluster_summary_anomalia_p75():
+    # 1 cuenta a 0.9 + 7 a 0.0: la media daría 0.112 y el máximo 0.9;
+    # el p75 debe dar 0.0 (el núcleo NO es anómalo).
+    idx = ["bsky:c%d" % i for i in range(8)]
+    df = pd.DataFrame(
+        {"cluster_label": ["c0"] * 8,
+         "anomaly_score": [0.9] + [0.0] * 7,
+         "n_events": [10] * 8},
+        index=idx,
+    )
+    edges = pd.DataFrame(columns=["source", "target", "weight", "evidence"])
+    s = cluster_summary(df, edges, {})
+    assert s["c0"]["anomaly_score"] == 0.0
+    # todo-NaN -> 0.0 sin romper
+    df2 = pd.DataFrame(
+        {"cluster_label": ["c1", "c1"],
+         "anomaly_score": [float("nan"), float("nan")],
+         "n_events": [1, 1]},
+        index=["bsky:x", "bsky:y"],
+    )
+    assert cluster_summary(df2, edges, {})["c1"]["anomaly_score"] == 0.0

@@ -125,7 +125,9 @@ def main():
     _ts = time.time()
     print("[3/7] Anomalías (Isolation Forest)")
     scored, thr = detect_anomalies(feat, cfg)
-    print(f"      umbral anomalía p={cfg['detection']['anomaly_percentile']} · {time.time()-_ts:.1f}s")
+    # OJO: el motor usa thresholds.anomaly_percentile (anomaly.py); detection.*
+    # es clave duplicada con el mismo valor (0.85). Se imprime la que manda.
+    print(f"      umbral anomalía p={cfg['thresholds']['anomaly_percentile']} · {time.time()-_ts:.1f}s")
 
     # --- COORDINATION + CASCADES ---
     _ts = time.time()

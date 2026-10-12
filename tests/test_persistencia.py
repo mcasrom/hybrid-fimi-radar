@@ -74,14 +74,23 @@ def test_misma_historia_en_dias_distintos_si_se_repite():
     conn = _conn()
     _seed_ce(conn, "tema_x_cluster_000", 1)
     _seed_ce(conn, "tema_x_cluster_001", 3)
-    original_today = p._today
+    original_today, original_epoch = p._today, p._epoch_day
+    # _epoch_day también debe seguir al día simulado: si no, la fila guarda la
+    # fecha REAL y el test solo pasa el día en que se escribió (12-oct-2026).
+    from datetime import datetime, timezone
+
+    def _ep(fecha):
+        return int(datetime.strptime(fecha, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+
     try:
         p._today = lambda: "2026-10-11"
+        p._epoch_day = lambda: _ep("2026-10-11")
         n1, _ = p.persist_findings(conn, [], [_cluster("tema_x_cluster_000", "Historia X")])
         p._today = lambda: "2026-10-12"
+        p._epoch_day = lambda: _ep("2026-10-12")
         n2, _ = p.persist_findings(conn, [], [_cluster("tema_x_cluster_000", "Historia X")])
     finally:
-        p._today = original_today
+        p._today, p._epoch_day = original_today, original_epoch
     assert n1 == 1 and n2 == 1
     assert _totales(conn) == 2
 

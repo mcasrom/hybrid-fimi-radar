@@ -163,7 +163,7 @@ def cluster_by_components(feat_df, edges_df, config, tema=None):
 
 
 def cluster_summary(df_scored, edges_df, config):
-    """Resumen por cluster: cuentas, eventos, coordination_score, anomaly medio,
+    """Resumen por cluster: cuentas, eventos, coordination_score, anomaly (p75),
     y evidencias."""
     # coordination score por cuenta = grado ponderado normalizado
     g = nx.Graph()
@@ -184,7 +184,14 @@ def cluster_summary(df_scored, edges_df, config):
 
         total_w = sum(deg.get(a, 0) for a in mem_set)
         coord = round(total_w / max(accs, 1), 3)
-        anom = round(float(members["anomaly_score"].mean()), 3)
+        # Anomalía del cluster = percentil 75 de las anomalías de sus cuentas
+        # (bug #4, 11-oct): la MEDIA diluía el núcleo anómalo en clusters
+        # grandes/heterogéneos (p. ej. 1 cuenta a 0.9 + 20 a 0.05 → 0.09),
+        # dejando fuera de banda alta clusters con un núcleo claro. El p75
+        # captura ese núcleo sin que una sola cuenta atípica marque todo el
+        # cluster (a diferencia del máximo). Medido: HIGH 109→126, CRIT 0→3.
+        _anoms = members["anomaly_score"].dropna().to_numpy(dtype="float64")
+        anom = round(float(np.percentile(_anoms, 75)), 3) if _anoms.size else 0.0
 
         # evidencias dentro del cluster
         ev_counts = {}
