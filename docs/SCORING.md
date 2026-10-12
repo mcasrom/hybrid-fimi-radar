@@ -13,7 +13,9 @@ Componentes 0-100 por cluster:
 - content_similarity = nº textos representativos * 25 (cap 100)
 - amplification = señal global del run (igual para todo el tema)
 - infrastructure = (urls+dominios compartidos) * 15 (cap 100)
-- anomaly = anomaly_score * 100
+- anomaly = anomaly_score * 100, donde `anomaly_score` del cluster es el
+  **percentil 75** de las anomalías de sus cuentas (12-oct, bug #4; antes la
+  media, que diluía el núcleo anómalo). Medido a BD temporal (9 temas): HIGH 109→126, CRITICAL 0→3.
 
 **`network_density` ELIMINADO del compuesto (24/Sep, cambio "D").** Era
 `coordination_score * 6`: una transformación lineal del MISMO `coordination_score`
