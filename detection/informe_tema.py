@@ -204,7 +204,7 @@ CURADO_PATH = os.path.join(BASE, 'data', 'narrativas.json')
 LIMITES = [
     'Una banda alta es amplificación medida, nunca coordinación confirmada: '
     'en la validación ciega del 29/Sep solo 3 de 36 clusters evaluables '
-    '(<a href="/research.html#validacion">detalle de la validación</a>) '
+    '(<a href="/research.html">detalle de la validación</a>) '
     'mostraban coordinación; no es una tasa de precisión general.',
     'No se atribuye actor ni intención: el resultado por defecto es UNKNOWN.',
     'Los verificadores aportan contraste, no veredicto.',
