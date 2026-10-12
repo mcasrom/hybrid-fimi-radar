@@ -2238,6 +2238,22 @@ def main():
     _w_act, _a_act = _filtro_temas_activos(temas_cfg)
     clusters = con.execute("SELECT * FROM clusters" + _w_act +
                            " ORDER BY overall_score DESC", _a_act).fetchall()
+    # Sprint A (A1, 12-oct): nº de cuentas por cluster para el conjunto
+    # PUBLICADO (≥3 cuentas) del dashboard. (research.html calcula el suyo.)
+    try:
+        _CuentasPorCluster = {
+            r["cluster_id"]: r["n"] for r in con.execute(
+                "SELECT cluster_id, COUNT(DISTINCT author) AS n"
+                " FROM cluster_events GROUP BY cluster_id")}
+    except Exception:
+        _CuentasPorCluster = {}
+    try:
+        n_par_global = sum(
+            1 for _c in clusters
+            if not es_publicado(_CuentasPorCluster.get(_c["id"], 0),
+                                MIN_CUENTAS_PUBLICADO))
+    except Exception:
+        n_par_global = 0
     assessments = con.execute("SELECT * FROM assessments").fetchall()
     # contenido real por cluster (cluster_events): cluster_id -> top titulares
     # agrupados por frecuencia, para mostrar DE QUÉ habla cada cluster.
