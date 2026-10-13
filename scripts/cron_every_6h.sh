@@ -19,7 +19,7 @@ temas = c.get('temas', {}) or {}
 print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in ('produccion', 'piloto')))
 "); do
   echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
-  /usr/bin/time -a -o logs/fimi_rss.log -f "run tema=$tema: %e s  %M KB RSS" .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" --ventana-dias 60 >> logs/fimi.log 2>&1
+  /usr/bin/time -a -o logs/fimi_rss.log -f "run tema=$tema: %e s  %M KB RSS" .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" --ventana-dias 45 >> logs/fimi.log 2>&1
 done
 # 2a) Contraste con verificadores (Maldita/Newtral -> posible_bulos; solo lectura
 #     del corpus + sus tablas propias; la tarjeta la renderiza el dashboard).

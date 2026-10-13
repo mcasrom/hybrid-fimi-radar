@@ -55,10 +55,10 @@ CICLO_H = 7.0
 #   defensa 9.130 ev -> 389 MB ; oriente_medio 56.558 ev -> 2.270 MB (VmHWM)
 # => ~40 KB/evento; el OOM (~3,4 GB) se alcanza a ~85 k ev/run. Avisamos por el
 # MAYOR run (ventana), no por el corpus total (métrica engañosa: la historia es
-# ~90 d y "60 d" casi no recorta).
+# ~90 d y la ventana casi no recorta).
 RUN_WARN = 65_000
 RUN_BAD = 80_000
-VENTANA_DIAS_CHECK = 60
+VENTANA_DIAS_CHECK = 45
 
 
 def _cargar_config():

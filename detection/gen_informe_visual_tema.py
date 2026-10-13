@@ -621,7 +621,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         tema_def = (f"<details class='tdef'><summary>Cómo se define «{esc(nombre)}»: términos y ventana</summary>"
                     f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws))}</code></p>"
                     f"<p class='cs'>Periodo del corpus: {_tmin_s} → {_tmax_s} (incluye <b>backfill</b> retrospectivo). "
-                    f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: 60 días. El corpus llega "
+                    f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: 45 días. El corpus llega "
                     f"también por búsqueda en las plataformas con estos términos y sus variantes.</p></details>")
     _tp = top or {}
     _radar_tabla = ("<details class='tdef'><summary>Ver los valores del radar (tabla)</summary>"
@@ -751,7 +751,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
       <h1>{esc(nombre)}</h1>
-      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 60 d) · {esc(_sello)}</div>
+      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 45 d) · {esc(_sello)}</div>
     </div>
   </div>
   <div class="btns">

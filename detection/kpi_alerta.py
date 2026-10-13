@@ -18,7 +18,7 @@ Tres medidas honestas y distintas, que NO son "lead time frente al mundo"
 
 La causa de la latencia alta está documentada: hasta el 6-oct-2026 `load_sqlite`
 alimentaba el pipeline con TODO el corpus del tema, sin ventana temporal; desde
-entonces el pipeline ve los últimos 60 días (ventana de observación) y las
+entonces el pipeline ve los últimos 45 días (ventana de observación) y las
 señales viejas caducan.
 """
 import sqlite3
