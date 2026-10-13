@@ -40,6 +40,8 @@ done
 /usr/bin/python3 detection/gen_informe_visual_og.py --todos >> logs/fimi.log 2>&1
 # 3c) Tarjeta social de posibles bulos (PNG 1200x630 desde posible_bulos)
 /usr/bin/python3 detection/gen_bulos_og.py >> logs/fimi.log 2>&1
+# 3e) Wallchart A4 (mapa del sistema) con datos vivos: HTML -> PNG/PDF/webp
+/usr/bin/python3 detection/gen_wallchart.py >> logs/fimi.log 2>&1
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
 #    Sin FIMI_TELEGRAM_BOT_TOKEN no envía nada; idempotente, sin spam.
 .venv/bin/python detection/notify_subs_telegram.py >> logs/fimi.log 2>&1
