@@ -28,6 +28,7 @@ DIAS = 30
 UMBRAL_COBERTURA = 100   # por debajo: cobertura de feeds baja (no ausencia de actividad)
 
 from detection.bandas import BAND_ES  # noqa: E402
+from detection.captacion import captacion_block  # noqa: E402
 FASE_TXT = {"fase": "fase electoral", "pasado": "pasado", "proximo": "próximo", "—": "—"}
 MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 COORD = {"Brasil": (-15.8, -47.9), "EEUU": (38.9, -77.0), "Suecia": (59.3, 18.1),
@@ -316,6 +317,7 @@ def main():
 <div class="box" style="background:#f8fafc;border-color:#cbd5e1;border-left-color:#64748b">
  <b>Cómo leer este panorama.</b> <b>Se puede citar:</b> el volumen relativo por proceso y el patrón (amplificación medida). <b>No citar como:</b> «campaña coordinada» o «injerencia confirmada»: <b>no está medido</b>. <b>Datos:</b> <a href="/api/v1/tema/elecciones">API del tema</a> · <a href="/casos/electoral/procesos.csv">CSV</a> · <a href="/metodo.html">método</a> · <a href="/casos/ceuta/">caso Ceuta</a>.
 </div>
+{captacion_block(["elecciones", "espana_elecciones"])}
 <p class="pie">Observatorio de amplificación · datos de fuentes públicas · generado {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC.</p>
 </div>
 <script src="/assets/leaflet/leaflet.js"></script>
