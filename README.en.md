@@ -148,6 +148,10 @@ the live value):
   (~40 KB/event) on a 3.8 GB server (with 19 apps + Postgres), risking **OOM at ~85 k
   events/run**. Shortening to 45 d shrinks the heaviest run's input (less RAM/CPU) without
   losing relevant signal; `check_sistema` now alerts on the **largest run**, not the total corpus.
+- **Ceuta case — frozen + live (13-Oct):** the **V1 analysis** (30 Jul→21 Sep) is **frozen** and immutable
+  (SHA-256 hash) in `docs/casos/ceuta-v1.json`; the **data keeps arriving** (live layer, every 6 h from
+  `event_temas`). Both are published at **`/datos/casos/ceuta.json`** (+ CSV) and linked from the case page.
+  Full flow: `docs/CASO-CEUTA-CONGELADO.md`.
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
