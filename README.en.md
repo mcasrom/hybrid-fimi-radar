@@ -139,9 +139,13 @@ the live value):
   dashboard (after the topic cards), **RSS feed** (`/datos/bulos.xml`) and **JSON** (`/datos/bulos.json`)
   under the **"Bulos ▾"** nav menu, plus a **social card** `/bulos-og.png`. **Contrast, not verdict**:
   it attributes no actor and confirms no hoax.
-- **60-day observation window** (6-Oct): the pipeline only sees events from the last 60 d
-  (`run_fimi --ventana-dias`; measured neutral across all 9 topics); old signals expire.
-  Storage keeps 90 d (`mantenimiento.py`).
+- **45-day observation window** (13-Oct; was 60): the pipeline only sees events from the last
+  45 d (`run_fimi --ventana-dias 45`); old signals expire. Storage keeps 90 d
+  (`mantenimiento.py`). **Why the change (measured, not estimated):** the heaviest run —the
+  largest per-topic window, `oriente_medio`, 56.5 k events at 60 d— peaked at **2.27 GB RAM**
+  (~40 KB/event) on a 3.8 GB server (with 19 apps + Postgres), risking **OOM at ~85 k
+  events/run**. Shortening to 45 d shrinks the heaviest run's input (less RAM/CPU) without
+  losing relevant signal; `check_sistema` now alerts on the **largest run**, not the total corpus.
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
@@ -186,7 +190,7 @@ the live value):
   and precision sampling with no recall. See `docs/README-detallado.md`.
 - **Limited coverage:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp are not observed
   (API cost or not public); multimodal analysis (image/video) is missing. The corpus
-  depends ~95 % on Bluesky + Google News. **60-day observation window**: older signals
+  depends ~95 % on Bluesky + Google News. **45-day observation window**: older signals
   expire and stop scoring (see Method).
 
 Full detail in [`docs/ATRIBUCION-LIMITACIONES.md`](docs/ATRIBUCION-LIMITACIONES.md). The

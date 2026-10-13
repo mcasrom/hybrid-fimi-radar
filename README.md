@@ -151,7 +151,7 @@ muestra el valor vivo):
   (`/api/v1/temas`) cuenta **99 en banda alta** (HIGH/CRITICAL, score ≥60) y **0 CRITICAL**.
   **Estas cifras cambian en cada ciclo** (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
-- **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 60 días** (`run_fimi --ventana-dias 60`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 60 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
+- **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 45 días** (`run_fimi --ventana-dias 45`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 45 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
   La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por
@@ -174,9 +174,14 @@ muestra el valor vivo):
   en la portada (tras las tarjetas de temas), **feed RSS** (`/datos/bulos.xml`) y **JSON** (`/datos/bulos.json`),
   accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
   Es **contraste, no veredicto**: no atribuye actor ni confirma bulo. **Revisión 9-oct**: la tabla se rehace cada ciclo (DELETE+INSERT) y producía 435 filas para solo ~68 piezas; ahora el **panel, el detalle y el feed se deduplican por pieza** (URL), se ordenan por **fecha real de publicación** del verificador (no por `cycle_ts`, idéntico dentro del ciclo), marcan **«nuevo»** (primera vez visto hoy) e indican **con cuántos clústeres casa**; el detalle se muestra como **lista compacta** (no tabla).
-- **Ventana de observación 60 días** (6-oct): el pipeline solo ve eventos de los últimos 60 d
-  (`run_fimi --ventana-dias`; medido neutro en los 9 temas); las señales viejas caducan.
-  El almacenamiento conserva 90 d (`mantenimiento.py`).
+- **Ventana de observación 45 días** (13-oct; antes 60): el pipeline solo ve eventos de los
+  últimos 45 d (`run_fimi --ventana-dias 45`); las señales viejas caducan. El almacenamiento
+  conserva 90 d (`mantenimiento.py`). **Motivo del cambio (medido, no estimado):** el run más
+  pesado —la mayor ventana por tema, `oriente_medio`, 56,5 k ev a 60 d— consumía **2,27 GB de
+  pico de RAM** (~40 KB/evento) sobre un servidor de 3,8 GB (con 19 apps + Postgres), con
+  **riesgo de OOM a ~85 k ev/run**. Acortar a 45 d reduce el input del mayor run (menos RAM y
+  CPU) sin perder señal relevante; además `check_sistema` ahora avisa por el **run mayor**, no
+  por el corpus total.
 - **API para periodistas** (6-oct): serie diaria por tema (`/api/v1/tema/<slug>/serie?dias=30`,
   solo agregados) y búsqueda de clusters (`/api/v1/buscar?q=&tema=&limite=`, fragmentos
   redactados, sin autores). Documentadas en `/api.html` y el OpenAPI.
@@ -225,7 +230,7 @@ muestra el valor vivo):
   Ver `docs/README-detallado.md`.
 - **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
   (coste/API o no público); falta análisis multimodal (imagen/vídeo). El corpus depende
-  en ~95 % de Bluesky + Google News. **Ventana de observación 60 días**: lo anterior
+  en ~95 % de Bluesky + Google News. **Ventana de observación 45 días**: lo anterior
   caduca y deja de puntuar (ver Método).
 - **Qué cuenta hoy como "coordinación" — y qué no.** Medido sobre producción
   (29/Sep/2026 10:14 UTC, snapshot de 1052 clusters, 20.016 eventos miembro; **los 100 HIGH
