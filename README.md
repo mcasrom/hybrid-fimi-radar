@@ -154,6 +154,10 @@ muestra el valor vivo):
 - **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 45 días** (`run_fimi --ventana-dias 45`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 45 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
 - **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
+- **Caso Ceuta — congelado + live (13-oct):** el **análisis V1** (30-jul→21-sep) está **congelado** e inmutable
+  (con hash SHA-256) en `docs/casos/ceuta-v1.json`; los **datos siguen llegando** (capa *live*, cada 6 h desde
+  `event_temas`). Ambos se publican en **`/datos/casos/ceuta.json`** (+ `ceuta-frozen.csv`) y se enlazan desde
+  la página. Flujo completo: `docs/CASO-CEUTA-CONGELADO.md`.
   La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por
   `event_temas` y el clúster sostenido del caso) se **auto-inyectan cada 6 h** desde la BD
   (`detection/update_caso_ceuta_live.py`, en el cron de 6 h). Análisis **V1** 30-jul→21-sep
