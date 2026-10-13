@@ -50,11 +50,15 @@ URL_DASH = "https://fimi.viajeinteligencia.com"
 CAPTURA_MAX_H = 7.5
 # ventana para considerar "el run del tema corrió en el último ciclo"
 CICLO_H = 7.0
-# crecimiento del corpus: la memoria de frontera_sur escala ~7,5 KB/evento
-# (medido 2026-09-17: 57.510 ev -> 1,6 GB; 115.020 ev -> 2,03 GB) y el OOM
-# (~3,4 GB) se alcanzaría a ~298.000 events. Avisar antes de acercarse.
-CORPUS_WARN = 250_000
-CORPUS_BAD = 290_000
+# OOM por RUN, no por corpus total: el run más pesado es el de la MAYOR ventana
+# por tema (el cron corre --ventana-dias 60). Medido 13-oct-2026:
+#   defensa 9.130 ev -> 389 MB ; oriente_medio 56.558 ev -> 2.270 MB (VmHWM)
+# => ~40 KB/evento; el OOM (~3,4 GB) se alcanza a ~85 k ev/run. Avisamos por el
+# MAYOR run (ventana), no por el corpus total (métrica engañosa: la historia es
+# ~90 d y "60 d" casi no recorta).
+RUN_WARN = 65_000
+RUN_BAD = 80_000
+VENTANA_DIAS_CHECK = 60
 
 
 def _cargar_config():
@@ -190,19 +194,30 @@ def chequea():
     except Exception as e:
         issues.append({"check": "descarte", "nivel": "warn", "msg": f"error descarte: {e}"})
 
-    # 6) crecimiento del corpus (riesgo OOM del run pesado `frontera_sur`)
+    # 6) tamaño del INPUT del run MÁS pesado (mayor ventana por tema) — el OOM
+    # escala con el mayor run, no con el corpus total. Ver RUN_WARN/RUN_BAD.
     try:
+        _cut = int(datetime.datetime.now().timestamp()) - VENTANA_DIAS_CHECK * 86400
+        _row = con.execute(
+            "SELECT et.tema_id, COUNT(*) n FROM event_temas et"
+            " JOIN events e ON e.id=et.event_id"
+            " WHERE e.timestamp>=? GROUP BY et.tema_id ORDER BY n DESC LIMIT 1",
+            (_cut,)).fetchone()
+        _tema, n_run = (_row[0], _row[1]) if _row else ("—", 0)
         n_ev = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
-        if n_ev >= CORPUS_BAD:
-            issues.append({"check": "corpus", "nivel": "bad",
-                           "msg": f"corpus {n_ev:,} events — cerca del límite OOM estimado (~298k). "
-                                  f"Optimizar la memoria de frontera_sur o acortar la retención."})
-        elif n_ev >= CORPUS_WARN:
-            issues.append({"check": "corpus", "nivel": "warn",
-                           "msg": f"corpus {n_ev:,} events — vigilar (OOM estimado ~298k)."})
+        _tail = f" (corpus total {n_ev:,})"
+        if n_run >= RUN_BAD:
+            issues.append({"check": "corpus_input", "nivel": "bad",
+                           "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d — "
+                                  f"cerca del OOM (~85k/run). Acortar --ventana-dias o liberar RAM.{_tail}"})
+        elif n_run >= RUN_WARN:
+            issues.append({"check": "corpus_input", "nivel": "warn",
+                           "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d — "
+                                  f"vigilar (OOM ~85k/run).{_tail}"})
         else:
-            ok.append({"check": "corpus",
-                       "msg": f"corpus {n_ev:,} events (margen al OOM estimado ~298k)"})
+            ok.append({"check": "corpus_input",
+                       "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d (margen); "
+                              f"corpus {n_ev:,}"})
     except Exception as e:
         issues.append({"check": "corpus", "nivel": "warn", "msg": f"error corpus: {e}"})
 
