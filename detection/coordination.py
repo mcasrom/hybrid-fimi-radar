@@ -93,19 +93,22 @@ def build_edges(df, config):
 
                 M = sp.vstack([acc_vec[a] for a in alist])  # sparse, evita densificar
                 Mn = normalize(M, norm="l2", axis=1)
-                # sim dispersa umbralada (evita matriz densa A x A y bucle O(A^2) Python)
-                sim = Mn * Mn.T  # CSR dispersa
-                sim.setdiag(0)
-                # umbralar
-                sim.data[sim.data < near_thresh] = 0
-                sim.eliminate_zeros()
-                coo = sim.tocoo()
-                for i, j, v in zip(coo.row, coo.col, coo.data):
-                    if i < j:
-                        a = alist[i]
-                        b = alist[j]
-                        strong_links[(a, b)] += w["near_duplicate_text"]
-                        strong_ev[(a, b)].add("near_duplicate_text")
+                # sim por BLOQUES de filas: evita materializar la matriz A x A entera
+                # (con miles de cuentas era un pico de memoria grande). Mismo resultado.
+                A = Mn.shape[0]
+                blk = 2048
+                for i0 in range(0, A, blk):
+                    i1 = min(i0 + blk, A)
+                    sb = (Mn[i0:i1] @ Mn.T).tocsr()
+                    if sb.nnz:
+                        sb.data[sb.data < near_thresh] = 0
+                        sb.eliminate_zeros()
+                    coo = sb.tocoo()
+                    for i, j, _v in zip(coo.row, coo.col, coo.data):
+                        gi = i0 + i
+                        if gi < j:
+                            strong_links[(alist[gi], alist[j])] += w["near_duplicate_text"]
+                            strong_ev[(alist[gi], alist[j])].add("near_duplicate_text")
         except Exception as _e:
             import sys as _sys
             print("[warn] coordination near-dup fallo:", _e, file=_sys.stderr)

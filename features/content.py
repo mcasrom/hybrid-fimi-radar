@@ -125,35 +125,25 @@ def near_duplicate_ratio_all(df, config):
     Xn = normalize(X, norm="l2", axis=1)
 
     result = {a: 0.0 for a in df["author"].unique()}
-    block = 1024
+    N = Xn.shape[0]
     for author, (s, e) in author_slices.items():
         mine = Xn[s:e]  # m x Vocab
         m = mine.shape[0]
-        # construir matriz complementaria sin copiar todo si es grande: usar blocos
-        # Índices del resto
-        rest_mask = list(range(0, s)) + list(range(e, Xn.shape[0]))
-        if not rest_mask:
+        if m == 0 or N <= m:
             result[author] = 0.0
             continue
-        hits = 0
-        # producto por bloques para evitar densificar m x (N-m)
-        for b0 in range(0, len(rest_mask), block):
-            b1 = min(b0 + block, len(rest_mask))
-            rest_block = Xn[rest_mask[b0:b1]]
-            # mine (m x Voc) @ rest_block.T (Voc x bsize) -> m x bsize dispersa
-            sim_block = mine @ rest_block.T
-            # umbralar y eliminar ceros al instante
-            sim_block.data[sim_block.data < threshold] = 0
-            sim_block.eliminate_zeros()
-            # para cada fila, si tiene algún 1 -> hit
-            # sim_block es CSR
-            hits_block = (sim_block.getnnz(axis=1) > 0)
-            # acumular: fila hit si alguna vez tuvo sim >= thresh
-            if b0 == 0:
-                hit_mask = hits_block
-            else:
-                hit_mask = hit_mask | hits_block
-            if hit_mask.all():
-                break
+        # Un solo matmul contra TODOS (m x N, disperso) y luego se anula la parte
+        # self [s, e). Evita materializar listas de indices "resto" por autor
+        # (O(A·N) de memoria) y las conversiones de formato por bloque.
+        sim = (mine @ Xn.T).tocsr()
+        if sim.nnz:
+            cols = sim.indices
+            self_mask = (cols >= s) & (cols < e)
+            if self_mask.any():
+                sim.data[self_mask] = 0
+                sim.eliminate_zeros()
+            sim.data[sim.data < threshold] = 0
+            sim.eliminate_zeros()
+        hit_mask = (sim.getnnz(axis=1) > 0)
         result[author] = float(hit_mask.sum()) / m if m else 0.0
     return result
