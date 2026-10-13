@@ -12,14 +12,18 @@ cd /home/deploy/hybrid-fimi-radar
 #    <1pto en eeuu). Acota memoria/tiempo por ciclo; las señales viejas
 #    caducan (política documentada en /metodo.html). El almacenamiento sigue
 #    con retención 90d en mantenimiento.py.
-for tema in $(.venv/bin/python -c "
+for tv in $(.venv/bin/python -c "
 import yaml
 c = yaml.safe_load(open('config.yaml'))
 temas = c.get('temas', {}) or {}
-print(' '.join(t for t, m in temas.items() if m.get('estado', 'produccion') in ('produccion', 'piloto')))
+for t, m in temas.items():
+    m = m or {}
+    if m.get('estado', 'produccion') in ('produccion', 'piloto'):
+        print('%s:%d' % (t, int(m.get('ventana_dias', 45))))
 "); do
-  echo "=== run_fimi tema=$tema $(date -u +%H:%M) ===" >> logs/fimi.log
-  /usr/bin/time -a -o logs/fimi_rss.log -f "run tema=$tema: %e s  %M KB RSS" .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" --ventana-dias 45 >> logs/fimi.log 2>&1
+  tema="${tv%%:*}"; vent="${tv##*:}"
+  echo "=== run_fimi tema=$tema ventana=${vent}d $(date -u +%H:%M) ===" >> logs/fimi.log
+  /usr/bin/time -a -o logs/fimi_rss.log -f "run tema=$tema: %e s  %M KB RSS" .venv/bin/python detection/run_fimi.py --input data/radar.db --db data/radar.db --tema "$tema" --ventana-dias "$vent" >> logs/fimi.log 2>&1
 done
 # 2a) Contraste con verificadores (Maldita/Newtral -> posible_bulos; solo lectura
 #     del corpus + sus tablas propias; la tarjeta la renderiza el dashboard).

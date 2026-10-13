@@ -175,7 +175,9 @@ muestra el valor vivo):
   accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
   Es **contraste, no veredicto**: no atribuye actor ni confirma bulo. **Revisión 9-oct**: la tabla se rehace cada ciclo (DELETE+INSERT) y producía 435 filas para solo ~68 piezas; ahora el **panel, el detalle y el feed se deduplican por pieza** (URL), se ordenan por **fecha real de publicación** del verificador (no por `cycle_ts`, idéntico dentro del ciclo), marcan **«nuevo»** (primera vez visto hoy) e indican **con cuántos clústeres casa**; el detalle se muestra como **lista compacta** (no tabla).
 - **Ventana de observación 45 días** (13-oct; antes 60): el pipeline solo ve eventos de los
-  últimos 45 d (`run_fimi --ventana-dias 45`); las señales viejas caducan. El almacenamiento
+  últimos 45 d (`--ventana-dias`); las señales viejas caducan. La ventana es **configurable
+  por tema** (`temas.<tema>.ventana_dias`): **45 d por defecto** y **90 d** en `frontera_sur`
+  (historia del caso Ceuta), `defensa_espana` y `espana_elecciones` (campaña hacia el 29-N). El almacenamiento
   conserva 90 d (`mantenimiento.py`). **Motivo del cambio (medido, no estimado):** el run más
   pesado —la mayor ventana por tema, `oriente_medio`, 56,5 k ev a 60 d— consumía **2,27 GB de
   pico de RAM** (~40 KB/evento) sobre un servidor de 3,8 GB (con 19 apps + Postgres), con

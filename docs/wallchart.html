@@ -63,8 +63,8 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
     <div class="meta">github.com/mcasrom/hybrid-fimi-radar · AGPL-3.0 · v0.2 · <b>2026-10-13</b></div>
   </div>
   <div class="kpis">
-    <div class="kpi"><b>616</b><span>commits · 43 días</span></div>
-    <div class="kpi"><b>33.479</b><span>líneas · 144 .py</span></div>
+    <div class="kpi"><b>617</b><span>commits · 43 días</span></div>
+    <div class="kpi"><b>33.478</b><span>líneas · 144 .py</span></div>
     <div class="kpi"><b>222</b><span>tests</span></div>
     <div class="kpi"><b>7 + 2</b><span>activos + piloto</span></div>
     <div class="kpi"><b>6 h</b><span>ciclo de captura</span></div>
@@ -78,7 +78,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
     <div class="stage"><div class="bar">1<small>CAPTURA</small></div><div class="desc">collectors/capture.py<br>RSS (78 feeds), Bluesky, Telegram, Google News</div></div>
     <div class="stage"><div class="bar">2<small>NORMALIZA</small></div><div class="desc">normalizer/ ingesta, etiquetado por tema y esquema SQLite</div></div>
     <div class="stage"><div class="bar">3<small>FEATURES</small></div><div class="desc">features/ tiempos, contenido y señales de bot</div></div>
-    <div class="stage"><div class="bar">4<small>DETECCIÓN</small></div><div class="desc">detection/run_fimi.py <b>ventana de 45 días</b></div></div>
+    <div class="stage"><div class="bar">4<small>DETECCIÓN</small></div><div class="desc">detection/run_fimi.py <b>ventana 45 d</b> (90 d en temas de historia)</div></div>
     <div class="stage"><div class="bar">5<small>CLUSTERS</small></div><div class="desc">clustering/ grafo k-core (scipy sparse)</div></div>
     <div class="stage"><div class="bar">6<small>SCORING</small></div><div class="desc">scoring.py 0-100, bandas y topes anti-eco</div></div>
     <div class="stage"><div class="bar">7<small>ATRIBUCIÓN</small></div><div class="desc">attribution/ UNKNOWN por defecto; hipótesis H1-H6</div></div>
@@ -91,7 +91,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
   <!-- 2 FUENTES Y TEMAS -->
   <div class="box t2" style="flex:1.15">
     <h2><span class="num">2</span>FUENTES Y TEMAS</h2>
-    <li><span class="k">Corpus ≈ 256.497 eventos · 1.717 clusters</span></li>
+    <li><span class="k">Corpus ≈ 256.497 eventos · 1.722 clusters</span></li>
     <li>78 feeds RSS + 2 búsquedas de plataforma</li>
     <li>Bluesky + Google News ≈ 95 % del corpus</li>
     <li>Telegram: 6 canales públicos; Reddit aparcado (429)</li>
@@ -180,7 +180,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
     <h2><span class="num">8</span>STACK Y CALIDAD</h2>
     <div style="font-weight:800;font-size:9.5px">Pila</div>
     <div><span class="chip">Python 3.12</span><span class="chip">pandas</span><span class="chip">numpy</span><span class="chip">scikit-learn</span><span class="chip">networkx</span><span class="chip">SQLite · 17 tablas</span></div>
-    <li>Corpus: <b>256.497</b> eventos · <b>1.717</b> clusters · 88 fuentes</li>
+    <li>Corpus: <b>256.497</b> eventos · <b>1.722</b> clusters · 88 fuentes</li>
     <li>Despliegue: cron cada 6 h, nginx tras Cloudflare, RAM 3,8 GB</li>
     <li>CI local (pre-push): compileall, contrato, ruff, pip-audit, pytest</li>
     <li>Licencia AGPL-3.0 · SECURITY.md · código de conducta</li>
@@ -188,7 +188,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
 </div>
 
 <div class="foot">
-  <span>Fuente: análisis del repositorio github.com/mcasrom/hybrid-fimi-radar (HEAD <b>54dd749</b>, 2026-10-13) y config.yaml. Cifras vivas: se regeneran con <code>gen_wallchart.py</code>.</span>
+  <span>Fuente: análisis del repositorio github.com/mcasrom/hybrid-fimi-radar (HEAD <b>883a5e1</b>, 2026-10-13) y config.yaml. Cifras vivas: se regeneran con <code>gen_wallchart.py</code>.</span>
   <span class="wm">Mide comportamiento, no autoría</span>
 </div>
 </div></body></html>

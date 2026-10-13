@@ -251,7 +251,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
     <div class="stage"><div class="bar">1<small>CAPTURA</small></div><div class="desc">collectors/capture.py<br>RSS (@@FEEDS@@ feeds), Bluesky, Telegram, Google News</div></div>
     <div class="stage"><div class="bar">2<small>NORMALIZA</small></div><div class="desc">normalizer/ ingesta, etiquetado por tema y esquema SQLite</div></div>
     <div class="stage"><div class="bar">3<small>FEATURES</small></div><div class="desc">features/ tiempos, contenido y señales de bot</div></div>
-    <div class="stage"><div class="bar">4<small>DETECCIÓN</small></div><div class="desc">detection/run_fimi.py <b>ventana de 45 días</b></div></div>
+    <div class="stage"><div class="bar">4<small>DETECCIÓN</small></div><div class="desc">detection/run_fimi.py <b>ventana 45 d</b> (90 d en temas de historia)</div></div>
     <div class="stage"><div class="bar">5<small>CLUSTERS</small></div><div class="desc">clustering/ grafo k-core (scipy sparse)</div></div>
     <div class="stage"><div class="bar">6<small>SCORING</small></div><div class="desc">scoring.py 0-100, bandas y topes anti-eco</div></div>
     <div class="stage"><div class="bar">7<small>ATRIBUCIÓN</small></div><div class="desc">attribution/ UNKNOWN por defecto; hipótesis H1-H6</div></div>

@@ -997,6 +997,7 @@ temas:
   frontera_sur:
     estado: produccion
     nombre: Frontera Sur (España-Marruecos)
+    ventana_dias: 90  # conserva la historia del caso (Ceuta 30-jul); volumen bajo
   geopolitica_ue_marruecos:
     estado: cerrado
     nombre: Geopolítica UE-Marruecos
@@ -1352,9 +1353,11 @@ temas:
   defensa_espana:
     estado: piloto
     nombre: España — defensa y amenazas híbridas
+    ventana_dias: 90  # tema pequeño; conserva su historia
   espana_elecciones:
     estado: produccion
     nombre: España — elecciones generales
+    ventana_dias: 90  # conserva la campaña completa 5-oct -> 29-N (elecciones)
     # Tuning por tema: la coordinación humano/partidista legítima tiene
     # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
     # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,

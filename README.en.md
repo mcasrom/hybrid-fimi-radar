@@ -140,7 +140,9 @@ the live value):
   under the **"Bulos ▾"** nav menu, plus a **social card** `/bulos-og.png`. **Contrast, not verdict**:
   it attributes no actor and confirms no hoax.
 - **45-day observation window** (13-Oct; was 60): the pipeline only sees events from the last
-  45 d (`run_fimi --ventana-dias 45`); old signals expire. Storage keeps 90 d
+  45 d (`--ventana-dias`); old signals expire. The window is **per-topic**
+  (`temas.<topic>.ventana_dias`): **45 d by default** and **90 d** for `frontera_sur`
+  (Ceuta case history), `defensa_espana` and `espana_elecciones` (campaign to 29 Nov). Storage keeps 90 d
   (`mantenimiento.py`). **Why the change (measured, not estimated):** the heaviest run —the
   largest per-topic window, `oriente_medio`, 56.5 k events at 60 d— peaked at **2.27 GB RAM**
   (~40 KB/event) on a 3.8 GB server (with 19 apps + Postgres), risking **OOM at ~85 k
