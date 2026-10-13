@@ -36,6 +36,8 @@ done
 # 3) Dashboard
 .venv/bin/python detection/gen_fimi_html.py >> logs/fimi.log 2>&1
 .venv/bin/python detection/update_caso_ceuta_live.py >> logs/fimi.log 2>&1
+# 3f) Dataset publico del caso Ceuta (frozen V1 + live) -> JSON/CSV citables en /datos/casos/
+.venv/bin/python detection/export_caso_ceuta.py >> logs/fimi.log 2>&1
 .venv/bin/python detection/gen_caso_electoral.py >> logs/fimi.log 2>&1
 # 3b) Datasets abiertos por tema (CSV+JSON por cluster + datapackage/status; solo lectura)
 .venv/bin/python detection/gen_datasets.py >> logs/fimi.log 2>&1

@@ -1,0 +1,24 @@
+{
+  "caso": "ceuta-frontera-sur",
+  "version": "V1",
+  "url": "https://fimi.viajeinteligencia.com/casos/ceuta/",
+  "congelado_utc": "2026-10-01",
+  "nota": "Análisis V1 CONGELADO: snapshot fechado de la ventana 30-jul → 21-sep-2026. NO se recalcula (las cifras vivas van aparte, en el bloque 'live'). Sirve de registro citable/reproducible del caso.",
+  "periodo": { "desde": "2026-07-30", "hasta": "2026-09-21" },
+  "eventos": 13442,
+  "autores": 2445,
+  "fuentes": 28,
+  "urls": 7661,
+  "compartidas_2cuentas": 150,
+  "pct_medios": 75,
+  "candidatos": 37,
+  "mediana_min": 79,
+  "validacion_ciega": { "con_coordinacion": 3, "evaluables": 36, "pct": 8.3 },
+  "rafagas": { "total": 6, "confirmadas": 0, "nota": "3 de las 6 son el agregador briefly.co; 0 reúnen ≥3 cuentas independientes co-compartiendo ≥2 URLs en ≤60 s." },
+  "cobertura_plataforma": {
+    "bluesky": 7606, "prensa_rss": 3910, "otras_rss": 1386, "telegram": 552, "reddit": 5
+  },
+  "mapa": { "puntos": 48, "menciones": 2838 },
+  "criterio_coordinacion": "≥3 cuentas distintas co-compartiendo ≥2 URLs distintas en ≤60 s, sin cuenta dominante — no se da ninguna.",
+  "limites": "Subconjunto observable (~2 % de URLs; Bluesky + prensa). El pico llega tras los hechos y lo domina el eco de prensa; no se observa coordinación. La fase previa al 30-jul no es medible con esta captura. Origen (movilización en Facebook/darija): informe de Golden Owl; este observatorio mide el eco en España."
+}
