@@ -107,9 +107,10 @@ def write(conn, tema, rows, cycle_ts):
 
 
 def load_map(conn):
-    """Mapa {(tema_id, cluster_label): (first_seen, n_ciclos, jaccard)} para la UI."""
+    """Mapa {(tema_id, cluster_label): (first_seen, n_ciclos, jaccard, lineage_id)} para la UI."""
     out = {}
     for r in conn.execute(
-            "SELECT tema_id, cluster_label, first_seen, n_ciclos, jaccard FROM cluster_lineage"):
-        out[(r["tema_id"], r["cluster_label"])] = (r["first_seen"], r["n_ciclos"], r["jaccard"])
+            "SELECT tema_id, cluster_label, first_seen, n_ciclos, jaccard, lineage_id FROM cluster_lineage"):
+        out[(r["tema_id"], r["cluster_label"])] = (
+            r["first_seen"], r["n_ciclos"], r["jaccard"], r["lineage_id"])
     return out

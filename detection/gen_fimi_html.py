@@ -677,7 +677,7 @@ def _lineage_chip(linaje):
     if not linaje:
         return ""
     try:
-        first_seen, n_ciclos, jac = linaje
+        first_seen, n_ciclos, jac = linaje[0], linaje[1], linaje[2]
     except Exception:
         return ""
     try:
@@ -1205,6 +1205,52 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
          f'{_organico_chip(comps.get("coordination_score"), comps.get("anomaly_score"), comps.get("infrastructure_score"))}'
          f'</div>')
 
+    # --- Compartir / Copiar enlace al cluster (B2 + D1) ---
+    _share_html = ""
+    try:
+        _lbl = c["cluster_label"]
+        _lid = linaje[3] if (linaje and len(linaje) > 3 and linaje[3]) else None
+        if _lid:
+            _share_url = "/c/%s" % _lid
+        else:
+            _share_url = "#%s" % _lbl
+        _tema_nm = str(c["tema_id"]).replace("_", " ").title()
+        _score_txt = "%.0f/100" % overall
+        _band_txt = BAND_ES.get(band, band)
+        _share_text = "\U0001f4e1 %s \u2014 %s (%s) en %s \u00b7 fimi.viajeinteligencia.com%s" % (
+            _disp_label(c, disp_map), _score_txt, _band_txt, _tema_nm, _share_url)
+        import html as _sh_esc
+        _url_abs = "https://fimi.viajeinteligencia.com%s" % _share_url
+        _txt_enc = _sh_esc.escape(_share_text, quote=True)
+        _url_enc = _sh_esc.escape(_url_abs, quote=True)
+        _btn_st = ("background:#fff;border:1px solid #cbd5e1;border-radius:6px;"
+                   "padding:3px 10px;cursor:pointer;font-size:.78rem;font-family:inherit")
+        _net_st = ("border:none;border-radius:6px;padding:3px 10px;color:#fff;"
+                   "cursor:pointer;font-size:.78rem;font-family:inherit")
+        _share_html = (
+            '<div class="fimi-share" style="display:flex;flex-wrap:wrap;gap:6px;'
+            'margin:6px 0 10px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;'
+            'border-radius:8px;font-size:.78rem;align-items:center">'
+            '<span style="color:#475569;font-weight:600">Compartir:</span>'
+            '<button type="button" data-net="copy" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _btn_st + '">\U0001f517 Copiar enlace</button>'
+            '<button type="button" data-net="share" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#0ea5e9">\U0001f4e4 Compartir</button>'
+            '<button type="button" data-net="x" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#000">X</button>'
+            '<button type="button" data-net="mastodon" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#6364ff">Mastodon</button>'
+            '<button type="button" data-net="bluesky" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#0285ff">Bluesky</button>'
+            '<button type="button" data-net="linkedin" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#0a66c2">LinkedIn</button>'
+            '<button type="button" data-net="wa" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
+            ' onclick="fimiShare(this)" style="' + _net_st + ';background:#25d366">WhatsApp</button>'
+            '</div>')
+    except Exception as _e_share:
+        _share_html = ""
+        print("share cluster fallo: %s" % _e_share, flush=True)
+
     # O2 — lectura en lenguaje llano: qué significa este cluster (sin jerga).
     _lectura_html = (
         f'<div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;'
@@ -1448,7 +1494,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             'Revisa la evidencia antes de concluir · '
             '<a href="#transparencia" style="color:#c2410c;font-weight:600">Transparencia</a>.</div>')
 
-    return (h + content_html + _dom_html + _nota_alta_html + _lectura_html + _render_explicaciones(c) + _senal_html + _ev_html
+    return (h + _share_html + content_html + _dom_html + _nota_alta_html + _lectura_html + _render_explicaciones(c) + _senal_html + _ev_html
             + _score_html + svg_score_bar(overall, band) + bars + _matriz_evidencia_html(comps, a, band, amp_global)
             + attr + hyp_html)
 
@@ -5634,6 +5680,30 @@ if ('serviceWorker' in navigator) {{
 }}
 </script>
 <script>
+// --- B1: Onboarding modal (se muestra 1 vez, localStorage) ---
+(function() {{
+  var KEY = 'fimi_onboarded_v1';
+  if (localStorage.getItem(KEY)) return;
+  var html = '<div id="fimiOnboard" style="position:fixed;inset:0;background:rgba(15,23,42,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">' +
+    '<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">' +
+    '<div style="background:#c2410c;color:#fff;padding:18px 22px;font-weight:700;font-size:1.05rem">📡 Qué mide el Radar FIMI</div>' +
+    '<div style="padding:20px 22px;line-height:1.6;color:#1e293b">' +
+    '<p><b>Señal, no atribución.</b> Observamos <b>comportamiento coordinado</b> (cuentas que publican lo mismo a la vez, comparten enlaces, infraestructura). <b>No</b> identificamos actores ni probamos campañas.</p>' +
+    '<p><b>Bandas (0–100):</b> Normal · En observación · Amplificación anómala · Amplificación alta · Amplificación muy alta. Una banda alta = amplificación medida, <b>nunca</b> coordinación confirmada.</p>' +
+    '<p><b>Chips H1–H6:</b> hipótesis de compatibilidad (0–100%), no probabilidades. ⭐ = la que más encaja en ese cluster.</p>' +
+    '<p style="margin-top:12px"><b>Prueba ahora:</b> abre un caso real → <a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a> o <a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a>.</p>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #e2e8f0">' +
+    '<button id="fimiOnboardClose" style="flex:1;background:#c2410c;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Entendido, seguir</button>' +
+    '</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('fimiOnboardClose').addEventListener('click', function() {{
+    document.getElementById('fimiOnboard').remove();
+    localStorage.setItem(KEY, '1');
+  }});
+}})();
+</script>
+<script>
 (function(){{
   var shareMap = window.FIMI_SHARE || {{}};
   var estadoActivo = null;
@@ -5714,6 +5784,29 @@ if ('serviceWorker' in navigator) {{
     }});
   }}
   window.fimiResto=fimiResto;
+
+  // Compartir/copiar enlace de un cluster (B2 + D1). Función global porque las
+  // tarjetas del "resto" se cargan después por fetch (resto.html): el onclick
+  // inline funciona sobre HTML insertado dinámicamente.
+  window.fimiShare=function(btn){{
+    var url=btn.getAttribute('data-url')||'', text=btn.getAttribute('data-text')||'';
+    var net=btn.getAttribute('data-net');
+    function open(u){{ window.open(u,'_blank','noopener'); }}
+    if(net==='copy'){{
+      if(navigator.clipboard){{ navigator.clipboard.writeText(url).then(function(){{
+        var o=btn.textContent; btn.textContent='\u2705 Copiado';
+        setTimeout(function(){{ btn.textContent=o; }},1500);
+      }}).catch(function(){{ window.prompt('Copia el enlace:',url); }}); }}
+      else {{ window.prompt('Copia el enlace:',url); }}
+    }} else if(net==='share'){{
+      if(navigator.share){{ navigator.share({{title:'Radar FIMI',text:text,url:url}}).catch(function(){{}}); }}
+      else {{ window.prompt('Copia el enlace:',url); }}
+    }} else if(net==='x'){{ open('https://x.com/intent/post?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url)); }}
+    else if(net==='mastodon'){{ open('https://mastodon.social/share?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url)); }}
+    else if(net==='bluesky'){{ open('https://bsky.app/intent/compose?text='+encodeURIComponent(text+' '+url)); }}
+    else if(net==='linkedin'){{ open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url)); }}
+    else if(net==='wa'){{ open('https://wa.me/?text='+encodeURIComponent(text+' '+url)); }}
+  }};
   function fimiTail(det){{
     if(det.dataset.tailloaded) return;
     var key=det.getAttribute("data-tail");

@@ -14,9 +14,11 @@ import html
 import json
 import os
 import sqlite3
+import sys
 from datetime import date, datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)  # para `from detection.bandas import ...` al correr como script
 DB = os.path.join(ROOT, "data", "radar.db")
 YAML = os.path.join(ROOT, "data", "elecciones.yaml")
 OUT = "/var/www/fimi/casos/electoral/index.html"
@@ -218,6 +220,19 @@ def main():
     except Exception as e:  # noqa: BLE001
         print("CSV:", e)
 
+    _ld = json.dumps({
+        "@context": "https://schema.org", "@type": "Report",
+        "name": "Panorama electoral 2026",
+        "url": "https://fimi.viajeinteligencia.com/casos/electoral/",
+        "description": "Amplificación medida en varios procesos electorales de 2026. Panorama, no caso; señal, no atribución.",
+        "dateModified": datetime.now(timezone.utc).date().isoformat(),
+        "author": {"@type": "Person", "name": "M. Castillo"},
+        "publisher": {"@type": "Organization", "name": "Observatorio de amplificación",
+                      "url": "https://fimi.viajeinteligencia.com/"},
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "isPartOf": {"@type": "WebSite", "name": "Observatorio de amplificación",
+                     "url": "https://fimi.viajeinteligencia.com/"},
+    }, ensure_ascii=False)
     page = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Panorama electoral 2026 — Observatorio de amplificación</title>
@@ -226,6 +241,9 @@ def main():
 <meta property="og:title" content="Panorama electoral 2026 — amplificación medida">
 <meta property="og:description" content="Varios procesos electorales, una mirada de conjunto: amplificación medida; no coordinación confirmada.">
 <meta property="og:type" content="article">
+<meta name="robots" content="index, follow">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{_ld}</script>
 <link rel="stylesheet" href="/assets/leaflet/leaflet.css"/>
 <style>
  :root{{--ink:#1e293b;--mut:#64748b;--acc:#c2410c;--line:#e2e8f0}}

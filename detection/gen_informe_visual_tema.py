@@ -723,6 +723,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 <title>Informe visual — {esc(nombre)} · Observatorio de amplificación</title>
 <meta name="description" content="Informe visual del tema {esc(nombre)}: qué se observa, señales, hipótesis alternativas y límites. Señal, no atribución.">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
+<meta name="robots" content="index, follow">
+<script type="application/ld+json">{{"@context":"https://schema.org","@type":"Report","name":"Informe visual — {esc(nombre)}","url":"https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html","description":"Radiografía de la amplificación medida en el tema {esc(nombre)}: qué se observa, hipótesis alternativas y límites. Señal, no atribución.","dateModified":"{datetime.now(timezone.utc).date().isoformat()}","author":{{"@type":"Person","name":"M. Castillo"}},"publisher":{{"@type":"Organization","name":"Observatorio de amplificación","url":"https://fimi.viajeinteligencia.com/"}},"license":"https://creativecommons.org/licenses/by/4.0/","isPartOf":{{"@type":"WebSite","name":"Observatorio de amplificación","url":"https://fimi.viajeinteligencia.com/"}}}}</script>
 <meta property="og:type" content="article">
 <meta property="og:title" content="Informe visual — {esc(nombre)}">
 <meta property="og:description" content="Qué se observa, señales, hipótesis alternativas y límites. Amplificación medida, no coordinación confirmada.">
