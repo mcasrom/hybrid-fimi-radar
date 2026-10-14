@@ -2712,25 +2712,30 @@ def main():
     # hoy > hace48, o hay cluster HIGH/CRITICAL nuevo hoy que no estaba hace 48h.
     # findings.tema_id ahora existe (migración); los anteriores son frontera_sur.
     from datetime import timedelta as _td
-    _hoy_d = datetime.now(timezone.utc).date()
-    _hace48 = _hoy_d - _td(days=2)
+    _now_utc = datetime.now(timezone.utc)
+    _hoy_d = _now_utc.date()
+    # Ventana MÓVIL de 24 h vs las 24 h ANTERIORES (antes: "hoy" vs "hace 48 h",
+    # que de madrugada comparaba un día recién empezado con uno completo → falsos
+    # "Bajando"). Con ventana móvil no hay sesgo por la hora del regen.
+    _w24 = int((_now_utc - _td(hours=24)).timestamp())
+    _w48 = int((_now_utc - _td(hours=48)).timestamp())
     tendencias = {}
     try:
         for _t in temas:
             _hoy_n = con.execute(
-                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND date(fecha,'unixepoch')=?",
-                (_t, _hoy_d.isoformat())).fetchone()[0]
+                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND fecha>=?",
+                (_t, _w24)).fetchone()[0]
             _h48_n = con.execute(
-                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND date(fecha,'unixepoch')=?",
-                (_t, _hace48.isoformat())).fetchone()[0]
+                "SELECT COUNT(*) FROM findings WHERE tema_id=? AND fecha>=? AND fecha<?",
+                (_t, _w48, _w24)).fetchone()[0]
             # clusters HIGH/CRITICAL del tema HOY en vista activa
             _cl_tema = [c for c in clusters if _vt(c) == _t]
             _high_hoy = sum(1 for c in _cl_tema if (c["overall_score"] or 0) >= 60)
-            # clusters HIGH/CRITICAL hace 48h (findings cluster de ese tema con >=60)
+            # clusters HIGH/CRITICAL en las 24 h ANTERIORES (findings cluster >=60)
             _high_48 = con.execute(
                 "SELECT COUNT(*) FROM findings WHERE tema_id=? AND tipo='cluster'"
-                " AND date(fecha,'unixepoch')=? AND intensidad>=60",
-                (_t, _hace48.isoformat())).fetchone()[0]
+                " AND fecha>=? AND fecha<? AND intensidad>=60",
+                (_t, _w48, _w24)).fetchone()[0]
             # decidir tendencia, con ZONA MUERTA: un cambio de volumen <10 % se
             # lee como "estable" (evita que 292 vs 293 salga como "bajando").
             _base = max(_h48_n, 1)
@@ -2759,17 +2764,19 @@ def main():
     SPARK_DAYS = 14
     spark_data = {}
     try:
-        _t0 = int((datetime.now(timezone.utc) - _td(days=SPARK_DAYS - 1)).timestamp())
+        import bisect as _bs
+        _t0 = int((_now_utc - _td(days=SPARK_DAYS)).timestamp())
         for _t in temas:
-            _rows = con.execute(
-                "SELECT date(fecha,'unixepoch') d, COUNT(*) n FROM findings"
-                " WHERE tema_id=? AND fecha>=? GROUP BY d",
-                (_t, _t0)).fetchall()
-            _map = {r[0]: int(r[1]) for r in _rows}
+            _ts = sorted(int(r[0]) for r in con.execute(
+                "SELECT fecha FROM findings WHERE tema_id=? AND fecha>=?", (_t, _t0)).fetchall())
             _serie = []
             for _i in range(SPARK_DAYS):
-                _dd = _hoy_d - _td(days=SPARK_DAYS - 1 - _i)
-                _serie.append((_dd.isoformat(), _map.get(_dd.isoformat(), 0)))
+                # ventana móvil de 24 h terminada en cada punto: el ÚLTIMO punto
+                # es [ahora-24h, ahora] (completo) → sin falso bajón del día parcial.
+                _end = int((_now_utc - _td(days=SPARK_DAYS - 1 - _i)).timestamp())
+                _n = _bs.bisect_left(_ts, _end) - _bs.bisect_left(_ts, _end - 86400)
+                _dd = (_now_utc - _td(days=SPARK_DAYS - 1 - _i)).date()
+                _serie.append((_dd.isoformat(), _n))
             spark_data[_t] = _serie
     except Exception:
         spark_data = {_t: [] for _t in temas}
@@ -3102,13 +3109,13 @@ def main():
             if _estado_dial == "recopilando":
                 _frase = "sin datos suficientes aún (se está acumulando histórico)"
             elif _estado_dial == "subiendo":
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy frente a {_tr['hace48']} hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
                 if _tr["high_hoy"] > _tr["high_48"]:
-                    _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta hoy, +{_tr['high_hoy'] - _tr['high_48']} vs hace 48h"
+                    _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
             elif _estado_dial == "bajando":
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy frente a {_tr['hace48']} hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
             else:
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} hoy, sin cambio frente a hace 48h"
+                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h, sin cambio frente a las 24 h anteriores"
         return _estado_dial, _estilo, _frase
 
     # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
@@ -4588,7 +4595,7 @@ def main():
         f"{newsletter_form}"
         f"{sugerir_form}"
         f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
-        f"Tendencia: hallazgos de hoy frente a hace 48 h por tema. Actualizado cada 6 h.</div>"
+        f"Tendencia: hallazgos de las últimas 24 h frente a las 24 h anteriores, por tema. Actualizado cada 6 h.</div>"
         f"</div>")
     # el detalle completo queda oculto por defecto, detrás de "ver detalle"
     detalle_wrap_open = "<div id='vistaDetalle' hidden>"
