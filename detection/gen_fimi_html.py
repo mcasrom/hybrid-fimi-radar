@@ -1852,6 +1852,8 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 .fimi-brandbar a.nlink{{color:#475569;font-weight:700;font-size:.9rem;text-decoration:none;padding:7px 12px;border-radius:9px;border:1px solid transparent}}
 .fimi-brandbar a.nlink:hover{{color:#c2410c;background:#fff7ed}}
 .fimi-brandbar a.nlink.active{{color:#c2410c;background:#fff7ed;border-color:#fdba74}}
+.fimi-brandbar a.cta-consulta{{background:#fff7ed;color:#c2410c!important;border:1px solid #fdba74;font-weight:800}}
+.fimi-brandbar a.cta-consulta:hover{{background:#ffedd5;border-color:#fb923c}}
 .fimi-brandbar a.cta-ceuta{{background:#c2410c;color:#fff!important;border-color:#c2410c;font-weight:800;animation:pulseCeuta 2.2s ease-out infinite}}
 .fimi-brandbar a.cta-ceuta:hover{{background:#9a3412;border-color:#9a3412;color:#fff!important}}
 .fimi-brandbar details.navmenu{{position:relative}}
@@ -5272,6 +5274,7 @@ a{{color:#c2410c}}
     <span class="logo">📡</span> Observatorio
   </a>
   <a class="transp" href="/" title="Panel del radar (inicio)">Radar</a>
+  <a class="cta-consulta" href="/consulta.html" title="Pega una URL y te dice en llano si es eco de prensa, difusion de una fuente o amplificacion anomala">🔎 Consulta</a>
   <details class="navmenu">
     <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
     <div class="navmenu-panel">
