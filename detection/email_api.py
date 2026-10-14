@@ -1257,6 +1257,19 @@ class H(BaseHTTPRequestHandler):
             if "error" in d:
                 return self._send(400, d)
             return self._send(200, d)
+        if path == "/api/v1/consulta":
+            # «¿esto es orgánico, eco de prensa o amplificación anómala?» -> lectura en llano.
+            u = ((q.get("url") or q.get("q") or [""])[0] or "").strip()
+            if not u:
+                return self._send(400, {"error": "falta url"})
+            try:
+                from consulta import consulta as _consulta
+                d = _consulta(u)
+            except Exception as e:  # noqa: BLE001
+                print(f"[consulta] fallo: {e}", file=sys.stderr)
+                return self._send(500, {"error": "consulta no disponible"})
+            d["meta"] = _api_meta()
+            return self._send(200, d)
         if path.startswith("/api/v1/cluster/"):
             cid = path[len("/api/v1/cluster/"):].strip("/")
             if not re.match(r"^[a-z0-9_]+(_cluster_[0-9]{3})?$", cid):
