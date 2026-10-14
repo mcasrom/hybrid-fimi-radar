@@ -3,6 +3,8 @@
 Sin LLM ni embeddings remotos. Solo TF-IDF clásico + coseno.
 """
 import re
+
+import numpy as np
 from collections import Counter
 from urllib.parse import urlparse
 
@@ -126,24 +128,28 @@ def near_duplicate_ratio_all(df, config):
 
     result = {a: 0.0 for a in df["author"].unique()}
     N = Xn.shape[0]
+    ROWBLK = 256  # bloque de filas: acota el pico de memoria por autor
     for author, (s, e) in author_slices.items():
-        mine = Xn[s:e]  # m x Vocab
-        m = mine.shape[0]
+        m = e - s
         if m == 0 or N <= m:
             result[author] = 0.0
             continue
-        # Un solo matmul contra TODOS (m x N, disperso) y luego se anula la parte
-        # self [s, e). Evita materializar listas de indices "resto" por autor
-        # (O(A·N) de memoria) y las conversiones de formato por bloque.
-        sim = (mine @ Xn.T).tocsr()
-        if sim.nnz:
-            cols = sim.indices
-            self_mask = (cols >= s) & (cols < e)
-            if self_mask.any():
-                sim.data[self_mask] = 0
+        # matmul por bloques de filas contra TODOS (evita un unico m x N gigante:
+        # una sola cuenta con miles de textos generaba un pico de GB). Se anula
+        # la parte self [s, e) y se umbrala por bloque. Mismo resultado.
+        hits = []
+        for r0 in range(s, e, ROWBLK):
+            r1 = min(r0 + ROWBLK, e)
+            sim = (Xn[r0:r1] @ Xn.T).tocsr()  # (r1-r0) x N, dispersa
+            if sim.nnz:
+                cols = sim.indices
+                self_mask = (cols >= s) & (cols < e)
+                if self_mask.any():
+                    sim.data[self_mask] = 0
+                    sim.eliminate_zeros()
+                sim.data[sim.data < threshold] = 0
                 sim.eliminate_zeros()
-            sim.data[sim.data < threshold] = 0
-            sim.eliminate_zeros()
-        hit_mask = (sim.getnnz(axis=1) > 0)
+            hits.append(sim.getnnz(axis=1) > 0)
+        hit_mask = np.concatenate(hits) if hits else np.zeros(0, dtype=bool)
         result[author] = float(hit_mask.sum()) / m if m else 0.0
     return result
