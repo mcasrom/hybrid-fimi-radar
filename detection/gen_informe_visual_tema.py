@@ -842,6 +842,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 
 <section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusión</h2><p class="cs">{concl}</p>
   <p class="cs" style="margin-top:6px"><b>Señal, no atribución.</b> Actor: UNKNOWN · evaluación: no concluyente. La interpretación final requiere validación externa y análisis experto.</p></section>
+<p class='cs' style='font-size:.8rem;color:#64748b'>¿Ves alguna de estas URL circulando? <a href='/consulta.html'>Consulta su huella →</a> (eco de prensa, una fuente o amplificación anómala).</p>
 {_cap.captacion_block([tema])}
 </div>
 <div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)} · {esc(_sello)}) ·
