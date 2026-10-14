@@ -209,9 +209,11 @@ def render_bubble_chart(rows, temas, temas_cfg, width=1120):
             _jit = ((sum(ord(ch) for ch in str(r["label"])) % 5) - 2) * 7
             _y = yc + _jit
             col = BAND_COLORS.get(r["banda"], "#94a3b8")
+            _cl = r.get("cluster_label", "")
             p.append(
                 f"<circle cx='{_x:.0f}' cy='{_y:.0f}' r='{_r:.1f}' fill='{col}' "
-                f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1'>"
+                f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1' style='cursor:pointer' "
+                f"data-cluster='{_cl}' data-tema='{r['tema']}' onclick='fimiCluster(this)'>"
                 f"<title>{r['label']} · {r['score']:.0f}/100 {BAND_ES.get(r['banda'], r['banda'])} · "
                 f"{_pl(r['cuentas'],'cuenta','cuentas')}</title></circle>")
     # leyenda de tamaño (abajo-izquierda)
@@ -1456,17 +1458,18 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             _extra = (f'<span style="color:#94a3b8;font-size:.7rem">… y {total - len(rows)} más '
                       f'(¡descarga el export para verlos todos):</span>'
                       if total and total > len(rows) else "")
+            _ev_label = str(c["cluster_label"]) if "cluster_label" in c.keys() else ""
             _ev_html = (
-                f'<details style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
+                f'<details data-evlabel="{_ev_label}" ontoggle="fimiEvidencia(this)" '
+                f'style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
                 f'padding:4px 10px 8px;margin:6px 0">'
                 f'<summary style="cursor:pointer;font-size:.72rem;color:#64748b;font-weight:600;'
                 f'text-transform:uppercase;padding:4px 0">🔗 Cadena de evidencia '
-                f'({_pl(total,'evento','eventos')})</summary>'
+                f'({_pl(total,'evento','eventos')}) — pulsa para cargar</summary>'
                 f'<div style="border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:6px">'
                 f'<div style="font-size:.7rem;color:#94a3b8;margin-bottom:4px">Eventos que '
                 f'forman este cluster, en orden cronológico (primera → última aparición):</div>'
-                f'{_items}'
-                f'{_extra}'
+                f'<div class="fimi-ev-holder"><div style="font-size:.72rem;color:#94a3b8">Cargando al abrir…</div></div>'
                 f'</div></details>')
 
     # EVIDENCIA PRIMERO (25/Sep): la tarjeta muestra antes el CONTENIDO, los
@@ -4556,6 +4559,7 @@ def main():
         _bubble_rows.append({
             "tema": _vt(_c),
             "label": _disp_label(_c, disp_label_map),
+            "cluster_label": _c["cluster_label"],
             "score": float(_c["overall_score"] or 0),
             "cuentas": _acc,
             "banda": band_of(_c["overall_score"] or 0),
@@ -5134,6 +5138,91 @@ def main():
         '"creator": {"@type": "Organization", "name": "ViajeInteligencia / Observatorio", "url": "https://fimi.viajeinteligencia.com/"}}'
         "]}</script>"
     )
+
+    _drawer_html = r"""<div id="fimiDrawerBg" hidden onclick="fimiDrawerClose()" style="position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:900"></div>
+<aside id="fimiDrawer" hidden style="position:fixed;top:0;right:0;height:100vh;width:min(620px,95vw);background:#fff;box-shadow:-10px 0 46px rgba(15,23,42,.28);z-index:901;overflow-y:auto;-webkit-overflow-scrolling:touch" role="dialog" aria-label="Detalle del cluster">
+  <div id="fimiDrawerBody"></div>
+</aside>
+<script>
+window.fimiDrawerClose=function(){
+  var d=document.getElementById('fimiDrawer'); if(d) d.hidden=true;
+  var b=document.getElementById('fimiDrawerBg'); if(b) b.hidden=true;
+  document.body.style.overflow='';
+};
+(function(){
+  var BAND={'NORMAL':['Normal','#64748b'],'WATCH':['En observacion','#0ea5e9'],'ANOMALOUS':['Amplificacion anomala','#d97706'],'HIGH':['Amplificacion alta','#ea580c'],'CRITICAL':['Amplificacion muy alta','#b91c1c']};
+  var COMP=[['coordination_score','Sincronia'],['amplification_score','Amplificacion'],['anomaly_score','Anomalia'],['infrastructure_score','Infraestructura'],['network_density','Densidad de red']];
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function kpi(v,l){return '<div style="flex:1;min-width:88px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px"><div style="font-size:1.35rem;font-weight:800;color:#c2410c;line-height:1.1">'+v+'</div><div style="font-size:.7rem;color:#64748b">'+l+'</div></div>';}
+  function bar(name,val){var v=Math.max(0,Math.min(100,Number(val)||0));var col=v>=80?'#b91c1c':v>=60?'#ea580c':v>=40?'#d97706':v>=20?'#0ea5e9':'#64748b';return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:.76rem;color:#475569;margin-bottom:2px"><span>'+name+'</span><b style="color:'+col+'">'+v.toFixed(0)+'</b></div><div style="height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden"><div style="width:'+v+'%;height:100%;background:'+col+';border-radius:5px"></div></div></div>';}
+  function btn(){return 'display:inline-block;font-size:.76rem;font-weight:700;color:#c2410c;text-decoration:none;border:1px solid #fdba74;background:#fff7ed;border-radius:8px;padding:6px 12px;cursor:pointer';}
+  function render(d,tema,label){
+    var lid=(d.lineage&&d.lineage.lineage_id)?d.lineage.lineage_id:label;
+    var b=BAND[d.banda]||[d.banda||'---','#64748b'];
+    var h='<div style="position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e8f0;padding:15px 20px;display:flex;align-items:flex-start;gap:10px;z-index:2">';
+    h+='<div><div style="font-size:.68rem;color:#94a3b8;text-transform:uppercase;font-weight:800;letter-spacing:.05em">'+esc(d.tema)+' &middot; cluster</div>';
+    h+='<div style="font-size:1.15rem;font-weight:800;color:'+b[1]+'">'+esc(b[0])+' <span style="font-size:.9rem;color:#64748b">'+((d.overall_score||0).toFixed(0))+'/100</span></div>';
+    h+='<div style="font-size:.7rem;color:#94a3b8">foto del ultimo ciclo &middot; '+esc(d.snapshot_utc||'')+'</div></div>';
+    h+='<button onclick="fimiDrawerClose()" aria-label="Cerrar" style="margin-left:auto;background:#f1f5f9;border:none;border-radius:8px;width:34px;height:34px;font-size:17px;cursor:pointer">&#10005;</button></div>';
+    h+='<div style="padding:18px 20px">';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+kpi(d.n_autores||0,'cuentas')+kpi(d.n_eventos||0,'eventos')+kpi((d.fuentes||[]).length,'fuentes')+'</div>';
+    h+='<div style="font-size:.7rem;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.04em;margin:4px 0 2px">Componentes (0-100)</div>';
+    var c=d.components||{};
+    for(var i=0;i<COMP.length;i++){h+=bar(COMP[i][1],c[COMP[i][0]]);}
+    if(d.tipo&&d.tipo.lectura){h+='<div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px;font-size:.8rem;color:#334155"><b>Rol:</b> '+esc(d.tipo.lectura)+'</div>';}
+    if(d.alternative_explanations&&d.alternative_explanations.length){
+      h+='<div style="margin-top:13px"><div style="font-size:.7rem;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Lecturas alternativas</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+      for(var j=0;j<d.alternative_explanations.length;j++){var x=d.alternative_explanations[j];var col=x.status==='supported'?'#16a34a':x.status==='plausible'?'#d97706':'#94a3b8';h+='<span style="font-size:.72rem;border:1px solid '+col+';color:'+col+';border-radius:999px;padding:2px 9px">'+esc(x.label)+' ('+esc(x.status)+')</span>';}
+      h+='</div></div>';
+    }
+    if(d.eventos&&d.eventos.length){
+      h+='<div style="margin-top:15px"><div style="font-size:.7rem;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Cadena de evidencia ('+d.eventos.length+' eventos)</div>';
+      for(var k=0;k<d.eventos.length;k++){var e=d.eventos[k];var t='';try{t=new Date((e.ts||0)*1000).toISOString().slice(5,16).replace('T',' ');}catch(x){t='';}
+        h+='<div style="font-size:.76rem;color:#475569;border-bottom:1px solid #f1f5f9;padding:5px 0;display:flex;gap:8px"><span style="color:#94a3b8;white-space:nowrap;font-variant-numeric:tabular-nums">'+t+'</span><span style="min-width:0">'+esc(e.title||e.text||'')+(e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener noreferrer" style="color:#c2410c">&#8599;</a>':'')+'</span></div>';}
+      h+='</div>';
+    }
+    h+='<div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">';
+    h+='<a href="/informes/visual/'+encodeURIComponent(tema)+'.html" style="'+btn()+'">&#128196; Informe del tema</a>';
+    h+='<a href="/api/export?cluster='+encodeURIComponent(label)+'&fmt=csv" style="'+btn()+'">&#11015; CSV</a>';
+    h+='<a href="/api/export?cluster='+encodeURIComponent(label)+'&fmt=gexf" style="'+btn()+'">&#128376; GEXF</a>';
+    h+='<button onclick="var u=location.origin+String.fromCharCode(47,99,47)+encodeURIComponent('+JSON.stringify(lid)+');if(navigator.clipboard){navigator.clipboard.writeText(u);this.textContent=String.fromCharCode(10003,32,67,111,112,105,97,100,111);}" style="'+btn()+'">&#128279; Copiar enlace</button>';
+    h+='</div>';
+    h+='<div style="margin-top:12px;font-size:.72rem;color:#94a3b8;line-height:1.5">&#9878; Senal, no atribucion. Una banda alta = amplificacion medida, <b>no</b> coordinacion confirmada. Los identificadores de cluster no son estables entre ciclos.</div>';
+    h+='</div>';
+    return h;
+  }
+  window.fimiCluster=function(el){
+    var label=el.getAttribute('data-cluster')||'';
+    var tema=el.getAttribute('data-tema')||'';
+    var dr=document.getElementById('fimiDrawer');
+    var bg=document.getElementById('fimiDrawerBg');
+    var body=document.getElementById('fimiDrawerBody');
+    body.innerHTML='<div style="padding:28px;color:#64748b">Cargando el cluster...</div>';
+    dr.hidden=false; bg.hidden=false; document.body.style.overflow='hidden';
+    fetch('/api/v1/cluster/'+encodeURIComponent(label)).then(function(r){return r.json();}).then(function(d){
+      if(d&&d.error){body.innerHTML='<div style="padding:28px;color:#b91c1c">No encontrado.</div>';return;}
+      body.innerHTML=render(d,tema,label); dr.scrollTop=0;
+    }).catch(function(){body.innerHTML='<div style="padding:28px;color:#b91c1c">No se pudo cargar el detalle.</div>';});
+  };
+  window.fimiEvidencia=function(det){
+    if(!det||det.dataset.evloaded) return;
+    var label=det.getAttribute('data-evlabel')||'';
+    var holder=det.querySelector('.fimi-ev-holder');
+    if(!holder||!label){return;}
+    det.dataset.evloaded='1';
+    fetch('/api/v1/cluster/'+encodeURIComponent(label)).then(function(r){return r.json();}).then(function(d){
+      var ev=(d&&d.eventos)||[];
+      if(!ev.length){holder.innerHTML='<div style="font-size:.72rem;color:#94a3b8">(sin eventos en este ciclo)</div>';return;}
+      var h='';
+      for(var i=0;i<ev.length;i++){var e=ev[i];var t='';try{t=new Date((e.ts||0)*1000).toISOString().slice(5,16).replace('T',' ');}catch(x){t='';}
+        h+='<div style="font-size:.73rem;color:#475569;line-height:1.35;padding:2px 0;display:flex;gap:8px;align-items:baseline"><span style="color:#94a3b8;white-space:nowrap;font-variant-numeric:tabular-nums">'+t+'</span><span style="min-width:0;flex:1">'+esc(e.title||e.text||'')+(e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener noreferrer" style="color:#c2410c;font-size:.7rem">&#8599;</a>':'')+' <span style="color:#94a3b8">'+String.fromCharCode(183)+' '+esc(e.source||'')+(e.author?' '+String.fromCharCode(183)+' '+esc(e.author):'')+'</span></span></div>';}
+      holder.innerHTML=h;
+    }).catch(function(){holder.innerHTML='<div style="font-size:.72rem;color:#b91c1c">No se pudo cargar la evidencia.</div>';});
+  };
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){window.fimiDrawerClose();}});
+})();
+</script>
+"""
 
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
@@ -6011,6 +6100,7 @@ if ('serviceWorker' in navigator) {{
   if(hash && document.querySelector('.fimi-pane[data-tema="'+hash+'"]')){{ abrirDetalle(hash); }}
 }})();
 </script>
+{_drawer_html}
 </body></html>"""
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

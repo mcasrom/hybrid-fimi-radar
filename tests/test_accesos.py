@@ -172,7 +172,7 @@ def test_parse_line_formato_real():
     from detection.accesos import parse_line
     linea = ('2001:db8::1 - - [27/Sep/2026:00:00:09 +0000] '
              '"GET / HTTP/1.1" 200 1001758 "-" '
-             '"Mozilla/5.0 (X11; Linux x86_64) canary-urls/1.0"" '
+             '"Mozilla/5.0 (X11; Linux x86_64) canary-urls/1.0" "/" '
              'host=fimi.viajeinteligencia.com')
     r = parse_line(linea)
     assert r is not None, "no parsea una linea real del log"
@@ -270,7 +270,7 @@ def test_una_pagina_sola_no_es_lector():
 
 def _linea(ip, ts, ruta, referer="-", ua=CHROME, status=200):
     return (f'{ip} - - [{ts}] "GET {ruta} HTTP/1.1" {status} 512 "{referer}" '
-            f'"{ua}"" host=fimi.viajeinteligencia.com')
+            f'"{ua}" "{ruta}" host=fimi.viajeinteligencia.com')
 
 
 def test_referer_se_guarda_y_llega_al_daily():

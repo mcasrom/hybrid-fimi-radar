@@ -34,6 +34,8 @@ import hashlib
 import ipaddress
 import os
 import re
+import sys
+import urllib.parse
 import socket
 import sqlite3
 import time
@@ -402,7 +404,13 @@ CREATE TABLE IF NOT EXISTS accesos (
     es_scan      INTEGER NOT NULL DEFAULT 0,
     es_profundo  INTEGER NOT NULL DEFAULT 0,
     referer      TEXT,
-    fuente       TEXT NOT NULL DEFAULT 'nginx'
+    fuente       TEXT NOT NULL DEFAULT 'nginx',
+    request_uri  TEXT,
+    utm_source   TEXT,
+    utm_medium   TEXT,
+    utm_campaign TEXT,
+    utm_content  TEXT,
+    utm_term     TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_accesos_dia ON accesos(dia);
 CREATE INDEX IF NOT EXISTS ix_accesos_pseudo ON accesos(ip_pseudo);
@@ -466,7 +474,13 @@ def _migrar(con):
     for tabla, col, decl in (("cursor_log", "leidas", "INTEGER DEFAULT 0"),
                              ("cursor_log", "ok", "INTEGER DEFAULT 0"),
                              ("cursor_log", "bytes", "INTEGER DEFAULT 0"),
-                             ("accesos", "referer", "TEXT")):
+                             ("accesos", "referer", "TEXT"),
+                             ("accesos", "request_uri", "TEXT"),
+                             ("accesos", "utm_source", "TEXT"),
+                             ("accesos", "utm_medium", "TEXT"),
+                             ("accesos", "utm_campaign", "TEXT"),
+                             ("accesos", "utm_content", "TEXT"),
+                             ("accesos", "utm_term", "TEXT")):
         cols = {f["name"] for f in con.execute(f"PRAGMA table_info({tabla})")}
         if col not in cols:
             con.execute(f"ALTER TABLE {tabla} ADD COLUMN {col} {decl}")
@@ -518,7 +532,8 @@ def conectar(path=DB_PATH):
 # backfill devolvía 0 sobre 9.004 líneas reales. El `+` tolera 1 o 2 comillas.
 LINE_RE = re.compile(
     r"^(?P<ip>\S+) - - \[(?P<ts>[^\]]+)\] \"(?P<request>[^\"]*)\" "
-    r"(?P<status>\d+) \S+ \"(?P<referer>[^\"]*)\" \"(?P<ua>[^\"]*)\"+"
+    r"(?P<status>\d+) \S+ \"(?P<referer>[^\"]*)\" \"(?P<ua>[^\"]*)\" "
+    r"\"(?P<request_uri>[^\"]*)\" "
     r"(?:\s*host=(?P<host>\S+))?\s*$"
 )
 
@@ -531,6 +546,20 @@ def parse_line(line):
     if not m:
         return None
     g = m.groupdict()
+    request_uri = g.get("request_uri") or ""
+    utm_source = utm_medium = utm_campaign = utm_content = utm_term = ""
+    if request_uri and "?" in request_uri:
+        try:
+            q = urllib.parse.urlparse(request_uri).query
+            params = urllib.parse.parse_qs(q)
+            utm_source = params.get("utm_source", [""])[0]
+            utm_medium = params.get("utm_medium", [""])[0]
+            utm_campaign = params.get("utm_campaign", [""])[0]
+            utm_content = params.get("utm_content", [""])[0]
+            utm_term = params.get("utm_term", [""])[0]
+        except (ValueError, UnicodeError) as _e:
+            print(f"[accesos] request_uri no parseable: {request_uri[:60]!r}: {_e}",
+                  file=sys.stderr, flush=True)
     partes = (g["request"] or "").split(" ")
     metodo = partes[0] if partes else ""
     ruta = partes[1] if len(partes) > 1 else "/"
@@ -555,6 +584,12 @@ def parse_line(line):
         "status": status,
         "ua": g.get("ua") or "",
         "referer": g.get("referer") or "",
+        "request_uri": request_uri,
+        "utm_source": utm_source,
+        "utm_medium": utm_medium,
+        "utm_campaign": utm_campaign,
+        "utm_content": utm_content,
+        "utm_term": utm_term,
     }
 
 
@@ -653,11 +688,19 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
             salt_obj.execute(
                 "INSERT INTO accesos (ts, dia, host, metodo, ruta, ruta_base,"
                 " status, bytes, ip_pseudo, ua, categoria, es_scan, es_profundo,"
-                " referer, fuente) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                " referer, fuente, request_uri, utm_source, utm_medium,"
+                " utm_campaign, utm_content, utm_term)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (r["ts"], r["dia"], r["host"], r["metodo"], r["ruta"],
                  r["ruta"].split("?")[0], r["status"], 0, r["ip_pseudo"],
                  r["ua"], r["categoria"], r["es_scan"], r["es_profundo"],
-                 (r.get("referer") or "")[:300], "nginx"),
+                 (r.get("referer") or "")[:300], "nginx",
+                 r.get("request_uri", ""),
+                 r.get("utm_source", ""),
+                 r.get("utm_medium", ""),
+                 r.get("utm_campaign", ""),
+                 r.get("utm_content", ""),
+                 r.get("utm_term", "")),
             )
             salt_obj.execute(
                 "INSERT INTO ip_dia (ip_pseudo, dia, categoria, requests, profundas,"

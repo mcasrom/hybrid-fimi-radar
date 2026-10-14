@@ -17,6 +17,12 @@ import argparse
 import json
 import random
 import sqlite3
+import sys
+sys.path.insert(0, "/home/deploy/scripts")
+try:
+    from engagement_poll import registrar_post
+except Exception:
+    registrar_post = None
 import subprocess
 import sys
 import time
@@ -33,11 +39,11 @@ WEB = "https://fimi.viajeinteligencia.com"
 
 PLANTILLAS = [
     ("📡 {nombre}: {senales} en banda alta. {top}. "
-     "Mapa y evidencia: {web}/#{tema}"),
+     "Mapa y evidencia: {web}/#{tema}?utm_source=radar&utm_medium=social&utm_campaign=radar_{tema}"),
     ("🛰️ Radar FIMI · {nombre}: {senales} en alerta (≥60). {top}. "
-     "{web}/#{tema}"),
+     "{web}/#{tema}?utm_source=radar&utm_medium=social&utm_campaign=radar_{tema}"),
     ("📊 Así está {nombre} en el radar: {senales}. {top}. "
-     "Método abierto: {web}/#{tema}"),
+     "Método abierto: {web}/#{tema}?utm_source=radar&utm_medium=social&utm_campaign=radar_{tema}"),
 ]
 
 
@@ -82,6 +88,8 @@ def _guardar_estado(st):
 def _publicar(texto, img_url):
     """Publica en Mastodon + Bluesky. Devuelve (ok_masto, ok_bsky)."""
     out = []
+    mastodon_url = ""
+    bluesky_url = ""
     for cmd in (
         ["python3", "/home/deploy/social-poster/publish_mastodon.py", texto, img_url],
         ["python3", "/home/deploy/social-poster/publish_bluesky.py", "-t", texto, "-s", img_url],
@@ -90,9 +98,25 @@ def _publicar(texto, img_url):
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
             out.append(r.returncode == 0)
             print(f"[pub] {cmd[1].split('/')[-1]}: rc={r.returncode} {r.stdout.strip()[:80]} {r.stderr.strip()[:80]}")
+            if "publish_mastodon" in cmd[1]:
+                m = re.search(r"(https?://\S+/status/\d+)", r.stdout)
+                if m:
+                    mastodon_url = m.group(1)
+            elif "publish_bluesky" in cmd[1]:
+                m = re.search(r"(https?://bsky.app/\S+)", r.stdout)
+                if m:
+                    bluesky_url = m.group(1)
         except Exception as e:
             out.append(False)
             print(f"[pub] {cmd[1].split('/')[-1]}: error {e}")
+    # Registrar en engagement tracker si ambos OK
+    if all(out) and registrar_post:
+        if mastodon_url:
+            mid = mastodon_url.rsplit("/", 1)[-1]
+            registrar_post("mastodon", mid, mastodon_url, "radar_social")
+        if bluesky_url:
+            bid = bluesky_url.rsplit("/", 1)[-1]
+            registrar_post("bluesky", bid, bluesky_url, "radar_social")
     return out
 
 
