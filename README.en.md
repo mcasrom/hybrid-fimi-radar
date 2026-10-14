@@ -155,6 +155,11 @@ the live value):
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
+- **Link lookup** (14-Oct): paste a **URL or domain** at
+  [fimi.viajeinteligencia.com/consulta.html](https://fimi.viajeinteligencia.com/consulta.html) and
+  get a **plain-language reading** —distinct **accounts**, pieces and the **pattern** (press echo,
+  single-source feed or **anomalous amplification**)—. Same signal via API:
+  `/api/v1/consulta?url=<url>`. Read-only; **signal, not attribution** (not appearing ≠ false).
 - **Per-cluster graph export** (10-Oct): `/api/export?cluster=<label>&fmt=gexf|graphml`
   (account↔account graph, anonymised nodes `cuenta-N`, edges = same shared URL) for
   Gephi/GraphML; the cluster detail links **"GEXF (Gephi)"**.

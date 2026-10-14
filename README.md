@@ -191,6 +191,11 @@ muestra el valor vivo):
 - **API para periodistas** (6-oct): serie diaria por tema (`/api/v1/tema/<slug>/serie?dias=30`,
   solo agregados) y búsqueda de clusters (`/api/v1/buscar?q=&tema=&limite=`, fragmentos
   redactados, sin autores). Documentadas en `/api.html` y el OpenAPI.
+- **Consulta de enlace** (14-oct): pega una **URL o dominio** en
+  [fimi.viajeinteligencia.com/consulta.html](https://fimi.viajeinteligencia.com/consulta.html) y
+  obtienes una **lectura en lenguaje llano** —nº de **cuentas distintas**, piezas y el **patrón**
+  (eco de prensa, difusión de una fuente o **amplificación anómala**)—. La misma señal por API:
+  `/api/v1/consulta?url=<url>`. Read-only; **señal, no atribución** (no aparecer ≠ falso).
 - **Export de grafo por clúster** (10-oct): `/api/export?cluster=<label>&fmt=gexf|graphml`
   (grafo cuenta↔cuenta, nodos anonimizados `cuenta-N`, aristas = misma URL compartida) para
   Gephi/GraphML; el detalle del clúster enlaza **«GEXF (Gephi)»**.
