@@ -155,7 +155,8 @@ the live value):
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
-- **Link lookup** (14-Oct): paste a **URL or domain** at
+- **Link lookup** (14-Oct, **🔎 Consulta** button in the dashboard nav): paste the
+  **link you saw** (a **URL or domain**) at
   [fimi.viajeinteligencia.com/consulta.html](https://fimi.viajeinteligencia.com/consulta.html) and
   get a **plain-language reading** —distinct **accounts**, pieces and the **pattern** (press echo,
   single-source feed or **anomalous amplification**)—. Same signal via API:
