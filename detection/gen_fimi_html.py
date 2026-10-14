@@ -4570,10 +4570,14 @@ def main():
             f"<div style='margin-top:16px;border-top:1px solid #fed7aa;padding-top:12px'>"
             f"<div style='font-size:.72rem;color:#9a3412;font-weight:700;margin-bottom:6px'>"
             f"Clusters por tema · cada burbuja es un cluster "
-            f"(tamaño = nº de cuentas · color = banda)</div>"
+            f"(tamaño = nº de cuentas · color = banda) "
+            f"<span style='display:inline-block;background:#c2410c;color:#fff;font-size:.66rem;"
+            f"border-radius:999px;padding:2px 10px;margin-left:4px;vertical-align:middle;"
+            f"animation:pilotPulse 2s ease-in-out infinite'>👆 pulsa para el detalle</span></div>"
             f"{render_bubble_chart(_bubble_rows, temas, temas_cfg)}"
             f"<div style='font-size:.68rem;color:#94a3b8;margin-top:6px'>Eje X = score. "
-            f"Pasa el cursor por una burbuja para ver el detalle. Sin duplicados entre temas.</div></div>")
+            f"<b style='color:#c2410c'>Pulsa una burbuja</b> para abrir su detalle "
+            f"(componentes, hipótesis, evidencia y acciones). Sin duplicados entre temas.</div></div>")
     _panel_html = (
         f"<div id='situacion' style='background:linear-gradient(180deg,#ffffff,#fffaf5);border:1.5px solid #fed7aa;"
         f"border-radius:16px;padding:16px 18px;margin:0 0 18px'>"
