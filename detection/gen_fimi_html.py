@@ -4309,16 +4309,24 @@ def main():
 
     # --- NEWSLETTER: tarjeta-CTA a la página dedicada /suscribirse.html ---
     # (fuente canónica única: el formulario completo vive en /suscribirse.html)
+    # Formulario INLINE en la portada (antes solo enlace a /suscribirse.html → 0 captación
+    # desde el hub). Reutiliza el bloque de `captacion.py` (fetch POST /api/subscribe, doble opt-in).
+    try:
+        from detection.captacion import captacion_block as _cap_block
+        _cap_inline = _cap_block([str(t) for t in (temas or ["frontera_sur"])])
+    except Exception as _e_cap:
+        print(f"[warn] captacion_block fallo: {_e_cap}", flush=True)
+        _cap_inline = ""
     newsletter_form = (
         "<div style='margin-top:20px;padding:18px 20px;border:1px solid #fed7aa;"
         "border-radius:14px;background:#fff7ed'>"
         "<div style='font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:2px'>"
         "📬 Newsletter semanal</div>"
         "<div style='font-size:.82rem;color:#7c2d12;margin-bottom:10px'>Resumen cada lunes del "
-        "estado de los temas que elijas (todos disponibles). Doble opt-in; baja en un clic.</div>"
-        "<a href='/suscribirse.html' style='display:inline-block;background:#c2410c;color:#fff;"
-        "border-radius:8px;padding:9px 16px;font-weight:700;font-size:.85rem;text-decoration:none'>"
-        "Configurar mi suscripción →</a>"
+        "estado de los temas (doble opt-in; baja en un clic).</div>"
+        + _cap_inline +
+        "<div style='font-size:.74rem;color:#94a3b8;margin-top:6px'>¿Quieres elegir temas o "
+        "frecuencia? <a href='/suscribirse.html' style='color:#c2410c;font-weight:600'>Configurar</a>.</div>"
         "</div>")
     # --- SUGERIR TEMA (vista resumen): textarea + envío a /api/sugerir (rate-limit por IP) ---
     # Las sugerencias van a la tabla `sugerencias` (radar.db) y se reenvían al administrador
