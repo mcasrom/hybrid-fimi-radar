@@ -181,6 +181,11 @@ the live value):
   (`detection/metricas_tema.py`: topic events · cluster accounts · days running). It also shows the
   **cluster rhythm vs the topic baseline**, **platform coverage**, **qualitative bands** and
   **accessibility** (alternative table to the radar).
+- **Interactive bubble map** (14-Oct): each bubble (accounts vs score) is **clickable** → opens a
+  **side panel** with the cluster detail (band, **5 components**, role, **alternative explanations**,
+  **evidence chain**) and actions: **topic report**, **CSV/GEXF** export and **permalink**
+  `/c/<lineage_id>`. The card evidence is **lazy-loaded** on open → the home page drops to
+  **~147 KB brotli** (−12 %) while keeping full functionality.
 - Latest release: **v0.2.1** (includes the dataset snapshot with DOI).
 
 ## 5. Known limitations

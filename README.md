@@ -218,6 +218,11 @@ muestra el valor vivo):
   **ritmo del cluster + línea base del tema** (eventos/día vs volumen del tema), **cobertura por
   plataforma**, **bandas cualitativas** y **umbrales**, **accesibilidad** (tabla alternativa al radar)
   y marca de **muestra pequeña**.
+- **Mapa de burbujas interactivo** (14-oct): cada burbuja del mapa global (nº de cuentas vs score) es
+  **clicable** → abre un **panel lateral** con el detalle del cluster (banda, **5 componentes**, rol,
+  **lecturas alternativas**, **cadena de evidencia**) y acciones: **informe del tema**, export
+  **CSV/GEXF** y **permalink** `/c/<lineage_id>`. La evidencia de las tarjetas se carga **al abrir**
+  (diferida) → la portada baja a **~147 KB brotli** (−12 %) manteniendo toda la funcionalidad.
 - Última release: **v0.2.1** (incluye el snapshot de dataset con DOI).
 
 ## 5. Limitaciones conocidas
