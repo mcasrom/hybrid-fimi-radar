@@ -333,6 +333,8 @@ def main():
     if frozen is None:
         frozen = {"tipo": "subcaso_tematico", "version": "V1", "congelado_utc": "2026-10-14",
                   "nota": "Subcaso tematico. Bloque 'live' se recalcula cada ciclo.", "manual_sha256": hash_manual}
+    else:
+        frozen["manual_sha256"] = hash_manual  # el manual es la narrativa; mantiene el hash al dia
     doc = {"caso": "frontera_sur_hibridos",
            "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
            "meta": {"generado_utc": now, "frozen_version": frozen.get("version", "V1"),
