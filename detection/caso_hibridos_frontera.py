@@ -828,15 +828,37 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
 
     _mar_samp_rows = _samp_rows(_pre.get("mar_samp", []))
     _hist = list(hist or [])
+    _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
+                            rowh=18, color="#c1440e")
     _hist_rows = ""
+    _prev = None
     for _r in _hist[-30:][::-1]:
+        _dd = ""
+        if _prev is not None:
+            _dif = _r.get("nucleo", 0) - _prev
+            _dd = ("%+d" % _dif) if _dif else "="
         _ind = "; ".join("%s: %s" % (k, v) for k, v in (_r.get("indic") or {}).items() if v)
-        _hist_rows += ("<tr><td>%s</td><td class='num'>%s</td><td class='num'>%s</td>"
+        _hist_rows += ("<tr><td>%s</td><td class='num'>%s</td><td class='num'>%s</td><td class='num'>%s</td>"
                        "<td class='num'>%s</td><td class='num'>%s</td><td>%s</td></tr>"
-                       % (_r.get("fecha", ""), _n(_r.get("nucleo", 0)), _n(_r.get("autores", 0)),
+                       % (_r.get("fecha", ""), _n(_r.get("nucleo", 0)), _dd, _n(_r.get("autores", 0)),
                           _n(_r.get("clusters", 0)), _n(_r.get("urls_compartidas", 0)), _ind))
+        _prev = _r.get("nucleo", 0)
     if not _hist_rows:
-        _hist_rows = "<tr><td colspan=6>sin histórico todavía (empieza hoy)</td></tr>"
+        _hist_rows = "<tr><td colspan=7>sin histórico todavía (empieza hoy)</td></tr>"
+    from collections import defaultdict as _ddict
+    import datetime as _dtm
+    _wk = _ddict(list)
+    for _r in _hist:
+        try:
+            _iso = _dtm.date.fromisoformat(_r.get("fecha", ""))
+            _y, _w, _wd = _iso.isocalendar()
+            _wk["%d-S%02d" % (_y, _w)].append(_r.get("nucleo", 0))
+        except Exception:
+            pass
+    _wk_rows = "".join("<tr><td>%s</td><td class='num'>%d</td><td class='num'>%d</td><td class='num'>%d</td></tr>"
+                       % (k, len(v), sum(v), max(v)) for k, v in sorted(_wk.items(), reverse=True))
+    if not _wk_rows:
+        _wk_rows = "<tr><td colspan=4>&mdash;</td></tr>"
     _chi_corpus = ", ".join("%s: %s" % (s, _n(k)) for s, k in (_pre.get("chi_corpus") or []))
     if _chi_corpus:
         _chi_note = ("<b>Hueco declarado:</b> medios chinos estatales presentes en el corpus (%s) pero "
@@ -1165,9 +1187,15 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Núcleo = indicadores híbridos (exige <b>ancla geográfica</b>: {' · '.join(ANCLAS[:10])}…); contexto = trasfondo migratorio/diplomático. Fuentes: prensa ES/MA/AR/FR, agencias, Bluesky, Google News. <a href="datos.csv" download>Descargar CSV ↩</a></p>
 </details>
 
-<h2>Evolución (histórico diario)</h2>
-<p class="sub">Un registro por día (se conserva todo). Sirve para revisar si el foco sube, baja o cambia de mezcla. Serie completa: <a href="/api/v1/caso/frontera_sur_hibridos/historial">API</a>.</p>
-<table><thead><tr><th>Fecha</th><th class="num">Núcleo</th><th class="num">Autores</th><th class="num">Clústeres</th><th class="num">URLs comp.</th><th>Indicadores (n)</th></tr></thead><tbody>{_hist_rows}</tbody></table>
+<h2>Evolución · diario / semanal / histórico</h2>
+<p class="sub">Se guarda <b>un registro por día</b> (se conserva todo). <b>Diario</b> = cada jornada; <b>semanal</b> = agregado por semana ISO; <b>histórico</b> = la serie completa; <b>revisión</b> = Δ frente al día anterior. Comparación entre fechas, en la tabla. Serie descargable: <a href="/api/v1/caso/frontera_sur_hibridos/historial">JSON</a> · <a href="/api/v1/caso/frontera_sur_hibridos/historial.csv">CSV</a>.</p>
+{_hist_chart}
+<details class="seccion" open><summary>Diario (revisión: Δ vs día anterior)</summary>
+<table><thead><tr><th>Fecha</th><th class="num">Núcleo</th><th class="num">Δ</th><th class="num">Autores</th><th class="num">Clústeres</th><th class="num">URLs comp.</th><th>Indicadores (n)</th></tr></thead><tbody>{_hist_rows}</tbody></table>
+</details>
+<details class="seccion"><summary>Semanal (agregado ISO)</summary>
+<table><thead><tr><th>Semana</th><th class="num">Días</th><th class="num">Σ núcleo</th><th class="num">Máx/día</th></tr></thead><tbody>{_wk_rows}</tbody></table>
+</details>
 
 <h2>Como leerlo</h2>
 <ul>

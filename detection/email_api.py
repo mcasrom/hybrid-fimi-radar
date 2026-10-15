@@ -1281,6 +1281,23 @@ class H(BaseHTTPRequestHandler):
             slug = parts[0]
             if not re.match(r"^[a-z0-9_]+$", slug):
                 return self._send(400, {"error": "caso invalido"})
+            if len(parts) == 2 and parts[1] in ("historial", "historial.json", "historial.csv"):
+                hp = ROOT / "data" / ("caso_" + slug) / "historial.jsonl"
+                if not hp.exists():
+                    return self._send(404, {"error": "sin historial para " + slug})
+                rows = []
+                try:
+                    rows = [json.loads(l) for l in hp.read_text(encoding="utf-8").splitlines() if l.strip()]
+                except Exception:
+                    rows = []
+                if parts[1] == "historial.csv":
+                    cols = ["fecha", "nucleo", "autores", "clusters", "urls_compartidas"]
+                    out = [",".join(cols)]
+                    for r in rows:
+                        out.append(",".join(str(r.get(c, "")) for c in cols))
+                    return self._send_download(200, ("\n".join(out) + "\n").encode("utf-8"),
+                                               "text/csv", slug + "-historial.csv")
+                return self._send(200, {"caso": slug, "n": len(rows), "historial": rows})
             if len(parts) == 2 and parts[1] in ("datos.csv", "csv", "eventos.csv"):
                 csvp = Path("/var/www/fimi/casos") / slug / "datos.csv"
                 if csvp.exists():
