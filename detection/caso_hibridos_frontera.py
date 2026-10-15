@@ -805,6 +805,25 @@ def _svg_doble(serie):
     return "".join(p)
 
 
+
+def compute_periodos(ids, now):
+    """Conteos por periodo: 30 d, 90 d y acumulado (30-jul). Para el selector."""
+    con = sqlite3.connect(DB)
+    chq = ",".join("?" * len(ids)) if ids else None
+    out = {}
+    for etq, dias in (("30", 30), ("90", 90), ("acum", None)):
+        since = (now - dias * 86400) if dias else TS_CASE
+        nucl = aut = 0
+        if chq:
+            r = con.execute("SELECT COUNT(*), COUNT(DISTINCT author) FROM events WHERE id IN (" + chq + ") AND timestamp>=?",
+                            list(ids) + [since]).fetchone()
+            nucl, aut = r[0], r[1]
+        out[etq] = {"nucleo": nucl, "autores": aut,
+                    "indic": compute_indicadores(TEMA, since)}
+    con.close()
+    return out
+
+
 def compute_prensa(tema):
     """Volumen + titulares de la esfera marroqui y china en el tema (y su hueco)."""
     con = sqlite3.connect(DB)
@@ -868,15 +887,19 @@ INDIC = [
 ]
 
 
-def compute_indicadores(tema):
+def compute_indicadores(tema, since=None):
     con = sqlite3.connect(DB)
     out = []
     for lbl, words, lin in INDIC:
         like = " OR ".join(["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in words])
         p = [tema] + [f"%{w}%" for w in words for _ in ("a", "b")]
+        extra = ""
+        if since:
+            extra = " AND e.timestamp>=?"
+            p.append(since)
         cnt = con.execute(
             "SELECT COUNT(DISTINCT e.id) FROM events e JOIN event_temas et ON et.event_id=e.id "
-            "WHERE et.tema_id=? AND (" + like + ")", p).fetchone()[0]
+            "WHERE et.tema_id=? AND (" + like + ")" + extra, p).fetchone()[0]
         out.append({"lbl": lbl, "n": cnt, "linea": lin})
     con.close()
     return out
@@ -903,7 +926,11 @@ def _barchart(items, w=640, rowh=22, color="#0d1b2a"):
     return "".join(p)
 
 
-def build_html(manual_txt, d, hechos, prensa, indic, hist, series, meta):
+_SELPER_HTML = """<style>.spb{border:1px solid #cbd5e1;background:#fff;border-radius:14px;padding:3px 12px;font-size:.85rem;cursor:pointer}.spb-on{background:#0d1b2a;color:#fff;border-color:#0d1b2a}</style>
+<script>function selP(k){var b=document.querySelectorAll(".spb");for(var i=0;i<b.length;i++)b[i].className="spb"+(i==k?" spb-on":"");var el=document.querySelectorAll(".np");for(var j=0;j<el.length;j++){var v=JSON.parse(el[j].getAttribute("data-p"));el[j].textContent=v[k].toLocaleString("es-ES");}var n=document.getElementById("perNota");if(n)n.textContent=["(30 dias)","(90 dias)","(todo el caso)"][k];}</script>"""
+
+
+def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, meta):
     def tbl(grupo):
         rows = []
         for k, lbl, _w, _e, g in CATS:
@@ -915,9 +942,16 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, meta):
     amp = d.get("amplificacion", {})
 
     # --- piezas del caso (catálogo + Radar A + prensa) ---
+    _per = periodos or {}
+    def _per_val(i, etq, default):
+        lst = (_per.get(etq) or {}).get("indic") or []
+        return lst[i]["n"] if i < len(lst) else default
     _indic_rows = "".join(
-        "<tr><td>%s</td><td>%s</td><td>mención</td><td class='num'>%s</td></tr>" % (it["lbl"], it["linea"], _n(it["n"]))
-        for it in (indic or [])) or "<tr><td colspan=3>sin datos</td></tr>"
+        "<tr><td>%s</td><td>%s</td><td>mención</td>"
+        "<td class='num np' data-p='[[%s|%s|%s]]'>%s</td></tr>"
+        % (it["lbl"], it["linea"], _per_val(_i, "30", it["n"]), _per_val(_i, "90", it["n"]),
+           _per_val(_i, "acum", it["n"]), _n(it["n"]))
+        for _i, it in enumerate(indic or [])) or "<tr><td colspan=4>sin datos</td></tr>"
     _hh = (hechos or {}).get("historias", [])
     _hechos_n = _n((hechos or {}).get("n", len(_hh)))
     _hechos_pub = _n((hechos or {}).get("publicaciones", 0))
@@ -1162,6 +1196,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, meta):
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Frontera Sur: actividad militar, presión fronteriza y amplificación informativa — Observatorio de amplificación</title>
+{_SELPER_HTML}
 <meta name="description" content="Observación de publicaciones sobre un núcleo de indicadores (buques, drones, bloqueo, hostigamiento, migración, soberanía) en el entorno de Ceuta, Melilla y Canarias, y su amplificación. Evalúa hipótesis de presión híbrida; no confirma autoría, intención ni operación.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
@@ -1266,11 +1301,12 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Cuota núcleo/(núcleo+contexto): <b>{d.get('cuota_pct', 0)}%</b> · Dependencia del pico (top-3 autores de la última semana): <b>{_pt3_txt}</b> · Medios distintos en el núcleo (google-news resuelto al medio): <b>{d.get('medios_indep', 0)}</b>.</p>
 </div>
 
+<div class="selper" style="margin:10px 0"><b>Periodo:</b> <button onclick="selP(0)" class="spb spb-on">30 d</button> <button onclick="selP(1)" class="spb">90 d</button> <button onclick="selP(2)" class="spb">Todo el caso</button> <span class="sub" id="perNota">(30 días)</span></div>
 <h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
 <p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.<br><b>Ámbito:</b> cifras del <b>tema (90 d)</b>. El bloque «<b>Radar B</b>» cuenta el <b>núcleo</b> (subconjunto estricto con ancla geográfica): por eso algunas cifras difieren (p. ej. <i>drones</i>). Cada tabla declara su ámbito.</p>
 {_indic_chart}
 <details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
-<table><thead><tr><th>Indicador</th><th>Línea</th><th>Nivel</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
+<table><thead><tr><th>Indicador</th><th>Línea</th><th>Nivel</th><th class="num">Publicaciones</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
 <h2>Evolución diaria · publicaciones vs acontecimientos nuevos</h2>
@@ -1453,6 +1489,7 @@ def main():
     series = compute_series(_ids0, hechos)
     prensa = compute_prensa(TEMA)
     indic = compute_indicadores(TEMA)
+    periodos = compute_periodos(_ids0, d.get("now_ts") or 0)
     hist = snapshot(d, indic)
     ids = d.pop("_ids", {})
     manual_txt = open(MANUAL, encoding="utf-8").read() if os.path.exists(MANUAL) else ""
@@ -1505,7 +1542,7 @@ def main():
 
     os.makedirs(HTML_DIR, exist_ok=True)
     open(HTML_OUT, "w", encoding="utf-8").write(
-        build_html(manual_txt, d, hechos, prensa, indic, hist, series, {"generado_utc": now, "hash_manual": hash_manual}))
+        build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, {"generado_utc": now, "hash_manual": hash_manual}))
     print("[caso-hibridos] HTML ->", HTML_OUT)
     _c = sqlite3.connect(DB)
     _write_csv(_c, ids, os.path.join(HTML_DIR, "datos.csv"))
