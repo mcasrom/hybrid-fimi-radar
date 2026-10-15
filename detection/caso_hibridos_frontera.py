@@ -754,6 +754,27 @@ def compute_indicadores(tema):
     return out
 
 
+
+def _barchart(items, w=640, rowh=22, color="#0d1b2a"):
+    """Grafico de barras horizontal (SVG) para (etiqueta, valor)."""
+    items = [(str(a), float(b or 0)) for a, b in (items or [])]
+    if not items:
+        return ""
+    mx = max(v for _, v in items) or 1
+    h = rowh * len(items) + 8
+    lw = 250
+    p = ['<svg viewBox="0 0 %d %d" width="100%%" style="max-width:%dpx;height:auto" '
+         'role="img" aria-label="grafico de barras">' % (w, h, w)]
+    for i, (lab, val) in enumerate(items):
+        y = 4 + i * rowh
+        bw = max(1.0, (w - lw - 56) * (val / mx))
+        p.append('<text x="0" y="%d" font-size="12" fill="#334155">%s</text>' % (y + 15, lab[:40]))
+        p.append('<rect x="%d" y="%d" width="%.1f" height="%d" fill="%s" rx="2"/>' % (lw, y + 3, bw, rowh - 8, color))
+        p.append('<text x="%.1f" y="%d" font-size="12" fill="#334155">%s</text>' % (lw + bw + 6, y + 15, _n(val)))
+    p.append('</svg>')
+    return "".join(p)
+
+
 def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     def tbl(grupo):
         rows = []
@@ -791,6 +812,8 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     _prows += [_prow("Internacional / EE.UU.", it) for it in (_pre.get("int", []) or [])]
     _prows.append("<tr><td>China (estatal)</td><td>CGTN / Global Times</td><td class='num'>0</td></tr>")
     _prensa_rows = "".join(_prows)
+    _indic_chart = _barchart([(it['lbl'], it['n']) for it in (indic or [])])
+    _prensa_chart = _barchart([(s, k) for s, k, _u in ((_pre.get('mar', []) or []) + (_pre.get('int', []) or []))])
 
     def _samp_rows(lst):
         if not lst:
@@ -1024,7 +1047,6 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <li><b>L7</b> societal / demográfico (asentamiento, empadronamiento, nacionalidad, natalidad, matrimonios) + ambigüedad</li>
 </ul>
 <p class="sub"><b>Nota de encuadre (L7):</b> las dimensiones <b>demográfico-societales</b> se muestran como <b>narrativa observada</b> (lo que circula, con su volumen y fuentes) y como <b>hipótesis a evaluar</b>; <b>no</b> se afirman como táctica verificada por este observatorio.</p>
-<p class="sub"><b>Espectro híbrido &harr; cinético.</b> La presión híbrida va de lo <b>no cinético</b> (desinformación, presión económica, demografía) a lo <b>cinético</b> (bloqueo naval, incursión de buques, uso de la fuerza). <b>Ejemplos de referencia:</b> el <b>cerco/bloqueo que China ensaya sobre Taiwán</b> y el <b>bloqueo de EE.UU. a Cuba</b> (desde 1962) &mdash; coerción sostenida que es <b>a la vez económica, híbrida y cinética</b>. Aquí el catálogo se ordena en ese espectro.</p>
 </div>
 <div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad:</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
@@ -1043,7 +1065,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
 <p class="sub">Eventos del tema por indicador (pueden solaparse). <b>Cada cifra con su soporte real</b>; lo que no se captura se dice.</p>
+{_indic_chart}
+<details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
 <table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Eventos</th></tr></thead><tbody>{_indic_rows}</tbody></table>
+</details>
 
 <details class="seccion"><summary>Radar A · Hechos publicados &mdash; <b>{_hechos_n}</b> historias de <b>{_hechos_med}</b> medios (con fuente, no verificados) &middot; <b>clic para abrir</b></summary>
 <p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones. Cada fila enlaza a la noticia original (lista completa en el CSV).</p>
@@ -1052,7 +1077,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Prensa marroquí y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
+{_prensa_chart}
+<details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
 <table><thead><tr><th>Esfera</th><th>Medio</th><th class="num">Eventos</th></tr></thead><tbody>{_prensa_rows}</tbody></table>
+</details>
 <p class="sub">{_chi_note}</p>
 <p class="sub"><b>Hueco EE.UU.:</b> el radar no captura diarios estadounidenses (The New York Times, The Washington Post, WSJ, NPR) en este tema; lo que llega de EE.UU. va agregado dentro de Google News. Se dice, no se inventa.</p>
 
@@ -1212,6 +1240,8 @@ def main():
                   "nota": "Subcaso tematico. Bloque 'live' se recalcula cada ciclo.", "manual_sha256": hash_manual}
     else:
         frozen["manual_sha256"] = hash_manual  # el manual es la narrativa; mantiene el hash al dia
+    d["catalogo"] = indic
+    d["prensa"] = {k: v for k, v in (prensa or {}).items() if k != "mar_samp"}
     doc = {"caso": "frontera_sur_hibridos",
            "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
            "meta": {"generado_utc": now, "frozen_version": frozen.get("version", "V1"),

@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 14:43 UTC",
+    "generado_utc": "2026-10-15 14:45 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -922,6 +922,206 @@
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"
+    },
+    "catalogo": [
+      {
+        "lbl": "Buques de guerra / aguas españolas",
+        "n": 118,
+        "linea": "L1"
+      },
+      {
+        "lbl": "Drones",
+        "n": 115,
+        "linea": "L1"
+      },
+      {
+        "lbl": "Bloqueo naval / aéreo",
+        "n": 2,
+        "linea": "L1"
+      },
+      {
+        "lbl": "Ejercicios militares con terceros",
+        "n": 0,
+        "linea": "L1"
+      },
+      {
+        "lbl": "Presión energética",
+        "n": 13,
+        "linea": "L2"
+      },
+      {
+        "lbl": "Bulos / desinformación",
+        "n": 298,
+        "linea": "L3"
+      },
+      {
+        "lbl": "Discurso oficial / rey",
+        "n": 234,
+        "linea": "L4"
+      },
+      {
+        "lbl": "Soberanía / reivindicación Ceuta-Melilla",
+        "n": 425,
+        "linea": "L4"
+      },
+      {
+        "lbl": "Cadáveres / repatriación",
+        "n": 34,
+        "linea": "L4"
+      },
+      {
+        "lbl": "Presión migratoria (Ceuta/Melilla/Canarias)",
+        "n": 424,
+        "linea": "L5"
+      },
+      {
+        "lbl": "Acuerdos tecnología/armas (China/EEUU/Israel/Emiratos)",
+        "n": 19,
+        "linea": "L6"
+      },
+      {
+        "lbl": "Colonización / asentamiento territorial",
+        "n": 213,
+        "linea": "L7"
+      },
+      {
+        "lbl": "Narrativa demográfica (reemplazo/natalidad/matrimonios)",
+        "n": 59,
+        "linea": "L7"
+      }
+    ],
+    "prensa": {
+      "mar": [
+        [
+          "rss:Yabiladi Maroc (FR)",
+          145,
+          "https://www.yabiladi.com/articles/details/204987/ceuta-bruxelles-refuse-commenter-l-incursion.html"
+        ],
+        [
+          "rss:Hespress (AR)",
+          20,
+          "https://www.hespress.com/%d9%85%d9%87%d9%86%d9%8a%d9%88%d9%86-%d8%a5%d8%b3%d8%a8%d8%a7%d9%86-%d9%8a%d9%86%d9%81%d9%88%d9%86-%d8%a5%d9%84%d8%ba%d8%a7%d8%a1-%d8%ad%d8%ac%d9%88%d8%b2%d8%a7%d8%aa-%d8%b3%d9%8a%d8%a7%d8%ad%d9%8a-1809342.html"
+        ],
+        [
+          "rss:Hespress Maroc (FR)",
+          9,
+          "https://fr.hespress.com/492262-a-melilla-felipe-vi-plaide-pour-le-bon-voisinage-et-la-bonne-foi-avec-le-maroc.html"
+        ],
+        [
+          "rss:La Nouvelle Tribune",
+          7,
+          "https://lanouvelletribune.info/2026/10/maroc-espagne-un-incident-militaire-evite-de-justesse-au-large-de-ceuta/"
+        ]
+      ],
+      "int": [
+        [
+          "rss:Al Jazeera",
+          22,
+          "https://www.aljazeera.com/video/newsfeed/2026/10/13/spains-king-felipe-makes-first-visit-to-ceuta-amid-migrant-crisis?traffic_source=rss"
+        ],
+        [
+          "rss:France 24",
+          18,
+          "https://www.france24.com/fr/europe/20261013-le-roi-espagne-felipe-vi-en-visite-ceuta-enclave-espagnole-trois-mois-apr%C3%A8s-la-crise-migratoire-maroc-diplomatie"
+        ],
+        [
+          "rss:RFI France",
+          18,
+          "https://www.rfi.fr/fr/afrique/20261014-%C3%A0-ceuta-le-roi-d-espagne-r%C3%A9affirme-que-l-int%C3%A9grit%C3%A9-territoriale-du-pays-n-est-pas-n%C3%A9gociable"
+        ],
+        [
+          "rss:EUobserver",
+          9,
+          "https://euobserver.com/242640/he-seemed-happy-families-still-waiting-for-news-of-vanished-ceuta-migrants-as-eu-leaders-discuss-stronger-borders/"
+        ],
+        [
+          "rss:TSA Algerie (FR)",
+          8,
+          "https://www.tsa-algerie.com/a-ceuta-felipe-vi-hausse-le-ton-rabat-garde-le-silence/"
+        ],
+        [
+          "rss:FAZ (DE)",
+          7,
+          "https://www.faz.net/aktuell/politik/ausland/spaniens-koenig-felipe-sendet-in-ceuta-eine-deutliche-botschaft-an-marokko-201316783.html"
+        ],
+        [
+          "rss:BBC Mundo",
+          6,
+          "https://www.bbc.com/mundo/articles/crgqdgxx177go?at_medium=RSS&at_campaign=rss"
+        ],
+        [
+          "rss:RT en Español",
+          5,
+          "https://actualidad.rt.com/actualidad/628625-tension-ceuta-migrante-arroja-ladrillo?utm_source=rss&utm_medium=rss&utm_campaign=all"
+        ],
+        [
+          "rss:Politico EU",
+          4,
+          "https://www.politico.eu/podcast/brussels-playbook-podcast/the-ceuta-fears-shaping-spains-election/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication"
+        ],
+        [
+          "rss:Tagesschau (DE)",
+          4,
+          "https://www.tagesschau.de/video/video-1665568.html"
+        ],
+        [
+          "rss:Sputnik Mundo",
+          3,
+          "https://noticiaslatam.lat/20261013/el-alza-en-la-migracion-en-el-reino-unido-eleva-fuertemente-los-precios-de-las-viviendas-1175416958.html"
+        ],
+        [
+          "rss:Deutsche Welle (EN)",
+          2,
+          "https://www.dw.com/en/spain-s-king-felipe-and-queen-letizia-visit-ceuta/a-79649468?maca=en-rss-en-all-1573-rdf"
+        ],
+        [
+          "rss:Middle East Eye",
+          2,
+          "https://www.middleeasteye.net/live-blog/live-blog-update/irans-government-opposes-parliamentary-bill-expand-definition-enemy"
+        ],
+        [
+          "rss:TASS (EN)",
+          2,
+          "https://tass.com/society/2192239"
+        ],
+        [
+          "rss:Algerie360 (FR)",
+          1,
+          "https://www.algerie360.com/fmi-pib-algerie-331-milliards-dollars/"
+        ],
+        [
+          "rss:Dagens Nyheter (SV)",
+          1,
+          "https://www.dn.se/varlden/nathan-shachar-kungligt-besok-i-ceuta-del-av-omtalig-politisk-kalkyl/"
+        ],
+        [
+          "rss:Der Spiegel (DE)",
+          1,
+          "https://www.spiegel.de/sport/fussball/kylian-mbappe-real-madrid-star-verteidigt-umgang-mit-ceuta-shirts-a-6fdd8165-aaa6-45d3-a264-4943a8a4f535#ref=rss"
+        ],
+        [
+          "rss:Le Monde Diplomatique",
+          1,
+          "https://www.monde-diplomatique.fr/2026/10/PERES/70104"
+        ],
+        [
+          "rss:Svenska Dagbladet (SV)",
+          1,
+          "https://www.svd.se/a/Grl01l/efter-ceuta-hardare-eu-tag-mot-migration?utm_medium=rss"
+        ],
+        [
+          "telegram:PressTV",
+          1,
+          ""
+        ]
+      ],
+      "chi": [],
+      "chi_corpus": [
+        [
+          "rss:CGTN (EN)",
+          292
+        ]
+      ]
     }
   },
   "social": {
