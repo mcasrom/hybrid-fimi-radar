@@ -552,6 +552,15 @@ def build_html(manual_txt, d, meta):
         f"<tr><td>{k}</td><td class='num'>{_n(v)}</td></tr>"
         for k, v in sorted(fo.items(), key=lambda kv: -kv[1]))
     _medios_txt = ", ".join(f"{m} ({c})" for m, c in d.get("top_medios", [])) or "—"
+    import urllib.parse as _up
+    _page = "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
+    _stxt = (f"Indicadores de presión híbrida en Frontera Sur (Marruecos): "
+             f"{d.get('clusters_nucleo', 0)} clusters núcleo · señal, no atribución.")
+    _sq = _up.quote
+    _sx = f"https://twitter.com/intent/tweet?text={_sq(_stxt)}&url={_sq(_page)}"
+    _sm = f"https://mastodon.social/share?text={_sq(_stxt + ' ' + _page)}"
+    _sb = f"https://bsky.app/intent/compose?text={_sq(_stxt + ' ' + _page)}"
+    _sw = f"https://wa.me/?text={_sq(_stxt + ' ' + _page)}"
     _tot_fo = sum(fo.values()) or 1
     _social_pct = round(100 * fo.get("social", 0) / _tot_fo)
     _agg_pct = round(100 * fo.get("agregador (google-news)", 0) / _tot_fo)
@@ -613,8 +622,17 @@ def build_html(manual_txt, d, meta):
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Indicadores de presión híbrida en Frontera Sur (Marruecos) — Observatorio de amplificacion</title>
-<meta name="description" content="Subcaso: nucleo hibrido (drones, buques, maniobras, hostigamiento, bloqueo) vs contexto, con linea base. Senal, no atribucion.">
+<meta name="description" content="Subcaso: núcleo híbrido (drones, buques, ejercicios militares, hostigamiento, bloqueo) vs contexto, con línea base, amplificación, polaridad y contraste de hipótesis. Señal, no atribución.">
 <meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Indicadores de presión híbrida en Frontera Sur (Marruecos)">
+<meta property="og:description" content="Núcleo híbrido vs contexto: clusters, z-score, amplificación, polaridad y contraste H1-H4. Señal, no atribución.">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
 <style>
 :root{{--navy:#0d1b2a;--ink:#1b263b;--mut:#5c6b7a;--line:#dbe2ea;--bg:#f7f9fc;--acc:#c1440e}}
 *{{box-sizing:border-box}}body{{margin:0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}}
@@ -629,6 +647,11 @@ h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;bo
 .topnav{{background:#08111c;font-size:.9rem}}
 .topnav .wrap{{display:flex;flex-wrap:wrap;gap:14px;padding:8px 20px}}
 .topnav a{{color:#c1cfe0;text-decoration:none}}.topnav a:hover{{color:#fff}}
+.share{{margin-left:auto}}.share summary{{cursor:pointer;color:#c1cfe0}}.share summary:hover{{color:#fff}}
+.shpanel{{display:flex;flex-wrap:wrap;gap:10px;padding:8px 0}}
+details.seccion{{border:1px solid var(--line);border-radius:8px;padding:6px 14px;margin:16px 0;background:#fff}}
+details.seccion>summary{{cursor:pointer;font-weight:700;color:var(--navy);padding:8px 0;font-size:1.05rem}}
+details.seccion>summary::marker{{color:var(--acc)}}
 .kpis{{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}}
 .kpi{{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:130px}}
 .kpi b{{display:block;font-size:1.5rem;color:var(--navy)}}
@@ -647,6 +670,13 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <a href="/consulta.html">Consulta</a>
 <a href="/api.html">API</a>
 <a href="/metodo.html">Método</a>
+<details class="share"><summary>Compartir ▾</summary><div class="shpanel">
+<a href="{_sx}" target="_blank" rel="noopener">X</a>
+<a href="{_sm}" target="_blank" rel="noopener">Mastodon</a>
+<a href="{_sb}" target="_blank" rel="noopener">Bluesky</a>
+<a href="{_sw}" target="_blank" rel="noopener">WhatsApp</a>
+<a href="#" onclick="navigator.clipboard.writeText('{_page}');return false">Copiar enlace</a>
+</div></details>
 </div></nav>
 <header><div class="wrap">
 <h1>Indicadores de presión híbrida en Frontera Sur (Marruecos)</h1>
@@ -735,8 +765,9 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tbody>{tbl('contexto')}</tbody></table>
 <p class="sub">Suma de categorías {_n(_sum_ctx)} (con solapes) → <b>unión {_n(d['contexto']['eventos'])}</b>.</p>
 
-<h2>Que se observa</h2>
+<details class="seccion" open><summary>Qué se observa (análisis V1)</summary>
 {manual_html}
+</details>
 
 <h2>Como leerlo</h2>
 <ul>
