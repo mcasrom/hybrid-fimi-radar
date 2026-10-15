@@ -383,6 +383,23 @@ def compute():
                            "polaridad": max(pcs, key=pcs.get) if pcs else "—"})
         fichas.sort(key=lambda x: -x["eventos"])
 
+    # --- H4: control de cobertura (¿el pico es del fenómeno o de la observación?) ---
+    h4 = {}
+    if ids_n:
+        lim = now_ts - SEM
+        _ch4 = ",".join("?" * len(ids_n))
+        r = con.execute(
+            f"SELECT COUNT(*), COUNT(DISTINCT url), COUNT(DISTINCT source), COUNT(DISTINCT author)"
+            f" FROM events WHERE id IN ({_ch4}) AND timestamp>=?", ids_n + [lim]).fetchone()
+        h4 = {"eventos": r[0], "urls": r[1], "fuentes": r[2], "autores": r[3]}
+        top = con.execute(
+            f"SELECT COUNT(*) FROM events WHERE id IN ({_ch4}) AND timestamp>=?"
+            " AND COALESCE(url,'')<>'' AND url<>'-' GROUP BY url ORDER BY 1 DESC LIMIT 1",
+            ids_n + [lim]).fetchone()
+        h4["top_url"] = top[0] if top else 0
+        h4["top_url_pct"] = round(100 * top[0] / r[0]) if top and r[0] else 0
+        h4["ev_por_url"] = round(r[0] / r[1], 2) if r[1] else 0
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -409,6 +426,7 @@ def compute():
         "h1": h1,
         "placebo": placebo,
         "fichas": fichas,
+        "h4": h4,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -520,6 +538,11 @@ def build_html(manual_txt, d, meta):
         f"<td class='num'>{_n(f.get('eventos'))}</td><td class='num'>{_n(f.get('autores'))}</td>"
         f"<td>{f.get('fuente')}</td><td>{f.get('polaridad')}</td></tr>"
         for f in fichas[:12])
+    _h4 = d.get("h4", {})
+    _h4_txt = ("sin datos." if not _h4 else
+               f"Última semana: {_n(_h4.get('eventos'))} eventos · <b>{_n(_h4.get('urls'))}</b> URLs · "
+               f"{_n(_h4.get('fuentes'))} fuentes · {_n(_h4.get('autores'))} autores · "
+               f"ratio ev/URL = <b>{_h4.get('ev_por_url')}</b> · URL top = {_h4.get('top_url_pct')}%.")
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -619,7 +642,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td><b>H1</b> · la actividad de drones sube tras eventos migratorios (retardo ≤7 d)</td><td>{_h1_txt}</td></tr>
 <tr><td><b>H2</b> · los picos coinciden con hitos exógenos (placebo)</td><td>{_plc_txt}</td></tr>
 <tr><td><b>H3</b> · amplificación coordinada por URLs</td><td><b>Refutada</b> en esta ventana: solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))}).</td></tr>
-<tr><td><b>H4</b> · el incremento responde a cambios de cobertura (control)</td><td>No evaluada aquí; ver «Lectura» (redes/agregador) y la cuota normalizada.</td></tr>
+<tr><td><b>H4</b> · el incremento responde a cambios de cobertura (control)</td><td>{_h4_txt} <b>Lectura:</b> muchas URLs/fuentes → actividad; pocas URLs con muchas repeticiones → eco de una noticia.</td></tr>
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 
