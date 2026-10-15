@@ -712,7 +712,8 @@ def compute_prensa(tema):
             "SELECT source, COUNT(*) FROM events WHERE " +
             " OR ".join(["LOWER(source) LIKE ?"] * len(CHINA_SRC)),
             ["%" + c + "%" for c in CHINA_SRC]).fetchall()
-    except sqlite3.Error:
+    except sqlite3.Error as _e:
+        print("[caso-hibridos] chi_corpus:", _e, file=sys.stderr)
         chi_corpus = []
     _mar_samp = _samp(MARRUECOS_SRC)
     _mar = _pick(MARRUECOS_SRC)
@@ -853,8 +854,8 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
             _iso = _dtm.date.fromisoformat(_r.get("fecha", ""))
             _y, _w, _wd = _iso.isocalendar()
             _wk["%d-S%02d" % (_y, _w)].append(_r.get("nucleo", 0))
-        except Exception:
-            pass
+        except Exception as _e:
+            print("[caso-hibridos] semana ISO:", _e, file=sys.stderr)
     _wk_rows = "".join("<tr><td>%s</td><td class='num'>%d</td><td class='num'>%d</td><td class='num'>%d</td></tr>"
                        % (k, len(v), sum(v), max(v)) for k, v in sorted(_wk.items(), reverse=True))
     if not _wk_rows:
