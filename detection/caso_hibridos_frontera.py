@@ -143,12 +143,14 @@ POL_COOP = ["ejercicio conjunto", "maniobras conjuntas", "cooperaci", "navantia"
             "african lion", "entrega de", "entrega a", "venta de", "venta a",
             "normalidad", "reabre", "colaboraci", "acuerdo bilateral", "comercio bilateral",
             "visita oficial", "cumbre bilateral", "patrullera", "astillero"]
-POL_HOST = ["violaci", "incursi", "amenaz", "hostigamiento", "hostilid", "agresi",
-            "asedi", "bloqueo", "ciberataque", "injerencia", "espionaje", "sabotaje",
+POL_HOST = ["violaci", "incursi", "intrusi", "amenaz", "hostigamiento", "hostilid", "agresi",
+            "asedi", "bloqueo", "bloquear el espacio", "ciberataque", "injerencia", "espionaje", "sabotaje",
             "chantaje", "derribo", "ataque", "disparo", "enfrentamiento", "provocaci",
             "invas", "ocupaci", "reivindica", "coerci", "coacci", "intimidaci",
             "desestabiliz", "asfixi", "presi\u00f3n migratoria", "asalto", "irredentismo",
-            "misil", "militarizaci", "incursi\u00f3n a\u00e9rea", "derribo"]
+            "militarizaci", "incursi\u00f3n a\u00e9rea", "entrada de", "interfiere", "interferencia",
+            "dron marroqu", "drones marroqu", "fragata marroqu", "fragatas marroqu",
+            "buques marroqu", "barcos de guerra marroqu", "basta ya"]
 
 
 def _polaridad(text, title):
@@ -807,7 +809,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <h2>Polaridad del núcleo (heurística)</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
-<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / amenaza / hostigamiento / bloqueo…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo / visita…; resto = <b>neutro</b>. <b>Heurística, pendiente de validación manual.</b> Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
+<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Heurística validada a mano: 158/165 = 96 %.</b> Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 
 <h2>Contraste de hipótesis (H1–H4)</h2>
 <table>

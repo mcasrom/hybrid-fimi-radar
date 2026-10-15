@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 11:55 UTC",
+    "generado_utc": "2026-10-15 12:11 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -138,9 +138,9 @@
       ]
     ],
     "polaridad": {
-      "hostil": 55,
+      "hostil": 89,
       "cooperación": 0,
-      "neutro": 110
+      "neutro": 76
     },
     "h1": {
       "r_max": 0.48,
@@ -161,7 +161,7 @@
         "eventos": 14,
         "autores": 5,
         "fuente": "social",
-        "polaridad": "neutro"
+        "polaridad": "hostil"
       },
       {
         "label": "frontera_sur_cluster_026",
