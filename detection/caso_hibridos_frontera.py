@@ -803,13 +803,13 @@ def _svg_lineas(indic):
     y0 = 46
     for i, (lin, val) in enumerate(filas):
         y = y0 + i * rowh
-        bw = (W - LBL - 90) * val / mx
+        bw = (W - LBL - 170) * val / mx
         etq = "%s · %s" % (lin, _LINEAS.get(lin, ""))
         p.append('<text x="0" y="%d" font-size="11.5" fill="#334155">%s</text>' % (y + 18, etq[:46]))
         p.append('<rect x="%d" y="%d" width="%.1f" height="18" fill="#0d1b2a" rx="3"/>' % (LBL, y + 4, max(1.0, bw)))
         p.append('<text x="%.1f" y="%d" font-size="11.5" fill="#0d1b2a" font-weight="600">%s</text>'
                  % (LBL + max(1.0, bw) + 8, y + 18, _n(val)))
-        p.append('<text x="%d" y="%d" font-size="10" fill="#8a97a6">(%d ind.)</text>' % (W - 2, y + 18, nind[lin]))
+        p.append('<text x="%d" y="%d" font-size="10" fill="#8a97a6" text-anchor="end">(%d ind.)</text>' % (W - 4, y + 18, nind[lin]))
         p.append('<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#eef2f7"/>' % (LBL, y + rowh - 2, W - 60, y + rowh - 2))
     p.append('</svg>')
     return "".join(p)
