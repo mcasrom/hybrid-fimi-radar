@@ -100,6 +100,15 @@ def _origen(source):
     return "española"
 
 
+def _medio_titulo(title):
+    """Resuelve el medio original del titular de google-news ('... - La Razón')."""
+    t = (title or "").strip()
+    for sep in (" - ", " – ", " | ", " — "):
+        if sep in t:
+            return t.rsplit(sep, 1)[-1].strip()[:40]
+    return ""
+
+
 def compute():
     con = sqlite3.connect(DB)
     per_cat, grups = {}, {}
@@ -210,6 +219,37 @@ def compute():
             k = _origen(src)
             fo[k] = fo.get(k, 0) + cnt
 
+    # --- fase 1: cuota normalizada, dependencia del pico, medios independientes ---
+    ids_c = list(contexto)
+    serie_ctx = [0] * len(serie)
+    if ids_c and serie:
+        _chc = ",".join("?" * len(ids_c))
+        for (ts,) in con.execute(f"SELECT timestamp FROM events WHERE id IN ({_chc})", ids_c).fetchall():
+            b = int((now_ts - ts) // SEM)
+            if 0 <= b < len(serie):
+                serie_ctx[len(serie) - 1 - b] += 1
+    cuota_pct = round(100.0 * len(nucleo) / (len(nucleo) + len(contexto)), 1) if (nucleo or contexto) else 0
+    cuota_sem = [round(100.0 * nu / (nu + nc)) if (nu + nc) else 0 for nu, nc in zip(serie, serie_ctx)]
+
+    pico_top3 = None
+    medios = {}
+    if ids_n:
+        _chp = ",".join("?" * len(ids_n))
+        rows_p = con.execute(
+            f"SELECT author, COUNT(*) FROM events WHERE id IN ({_chp}) AND timestamp>=?"
+            " GROUP BY author ORDER BY 2 DESC", ids_n + [now_ts - SEM]).fetchall()
+        tot_p = sum(r[1] for r in rows_p)
+        if tot_p:
+            pico_top3 = round(100.0 * sum(r[1] for r in rows_p[:3]) / tot_p, 1)
+        for src, tit, cnt in con.execute(
+                f"SELECT source, title, COUNT(*) FROM events WHERE id IN ({_chp})"
+                " GROUP BY source, title", ids_n).fetchall():
+            if "google-news" in (src or "").lower():
+                mm = _medio_titulo(tit)
+                if mm:
+                    medios[mm] = medios.get(mm, 0) + cnt
+    top_medios = sorted(medios.items(), key=lambda kv: -kv[1])[:5]
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -227,6 +267,11 @@ def compute():
         "z_score": z,
         "mediana28": mm28,
         "fuentes_origen": fo,
+        "serie_contexto": serie_ctx,
+        "cuota_pct": cuota_pct,
+        "pico_top3_pct": pico_top3,
+        "medios_indep": len(medios),
+        "top_medios": top_medios,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -302,6 +347,24 @@ def build_html(manual_txt, d, meta):
     fo_html = "".join(
         f"<tr><td>{k}</td><td class='num'>{_n(v)}</td></tr>"
         for k, v in sorted(fo.items(), key=lambda kv: -kv[1]))
+    _tot_fo = sum(fo.values()) or 1
+    _social_pct = round(100 * fo.get("social", 0) / _tot_fo)
+    _agg_pct = round(100 * fo.get("agregador (google-news)", 0) / _tot_fo)
+    _prensa_pct = round(100 * (fo.get("española", 0) + fo.get("marroquí", 0)) / _tot_fo)
+    _ratio = ("%.1f×" % (d["sem_actual_nucleo"] / d["media8_nucleo"])) if d.get("media8_nucleo") else "—"
+    _sum_nuc = sum(d["por_categoria"].get(k, 0)
+                   for k in ("drones", "buques_guerra", "maniobras", "hostigamiento", "bloqueo"))
+    _sum_ctx = sum(d["por_categoria"].get(k, 0)
+                   for k in ("valla_incidente", "postura_oficial", "critica_a_marruecos", "soberania"))
+    _pt3 = d.get("pico_top3_pct")
+    _pt3_txt = ("%s%%" % _pt3) if _pt3 is not None else "n/d"
+    _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
+                f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
+                f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
+                f"Top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; top-3 de la última semana = "
+                f"<b>{_pt3_txt}</b>; solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas. "
+                f"<b>Lectura:</b> pico de conversación con corroboración limitada y sin evidencia "
+                f"de coordinación por URLs.")
     if delta is None:
         delta_html = "<b>—</b><span>vs media 8 sem (núcleo)</span>"
     else:
@@ -325,6 +388,8 @@ h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;bo
 .sub{{color:#c9d6e2;font-size:.95rem}}
 .aviso{{background:#fff3cd;border:1px solid #ffe08a;border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.94rem}}
 .marco{{background:#eef4fb;border-left:4px solid var(--navy);border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.93rem}}
+.lectura{{background:#0d1b2a;color:#fff;border-radius:8px;padding:14px 16px;margin:16px 0}}
+.lectura .sub{{color:#c1cfe0;font-size:.85rem}}
 .kpis{{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}}
 .kpi{{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:130px}}
 .kpi b{{display:block;font-size:1.5rem;color:var(--navy)}}
@@ -351,6 +416,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Cita: OTAN (2018). <i>Brussels Summit Declaration</i>, PR/CP(2018)074, 11 de julio de 2018, p&aacute;rr. 21. <a href="https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2018/07/11/brussels-summit-declaration">nato.int (HTML)</a> &middot; <a href="https://www.nato.int/nato_static_fl2014/assets/pdf/pdf_2018_07/20180713_180711-summit-declaration-eng.pdf">PDF</a> (consultado el 15-oct-2026).</p>
 </div>
 
+<div class="lectura">
+<p><b>Lectura de la semana.</b> {_lectura}</p>
+<p class="sub">Cuota núcleo/(núcleo+contexto): <b>{d.get('cuota_pct', 0)}%</b> · Dependencia del pico (top-3 autores de la última semana): <b>{_pt3_txt}</b> · Medios distintos en el núcleo (google-news resuelto al medio): <b>{d.get('medios_indep', 0)}</b>.</p>
+</div>
+
 <h2>Nucleo hibrido</h2>
 <div class="kpis">
 <div class="kpi"><b>{_n(d['clusters_nucleo'])}</b><span>clusters nucleo</span></div>
@@ -363,6 +433,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 {_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
 <table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
+<p class="sub">Suma de categorías {_n(_sum_nuc)} (con solapes; un evento puede caer en dos) → <b>unión {_n(d['nucleo']['eventos'])}</b>.</p>
 
 <h2>Amplificación (núcleo)</h2>
 <div class="kpis">
@@ -394,6 +465,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Se muestra aparte para no inflar el nucleo: {_n(d['contexto']['eventos'])} eventos de contexto no se cuentan como senal hibrida.</p>
 <table class="contexto"><thead><tr><th>Categoria (contexto)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('contexto')}</tbody></table>
+<p class="sub">Suma de categorías {_n(_sum_ctx)} (con solapes) → <b>unión {_n(d['contexto']['eventos'])}</b>.</p>
 
 <h2>Que se observa</h2>
 {manual_html}

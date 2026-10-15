@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 07:51 UTC",
+    "generado_utc": "2026-10-15 07:59 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -98,6 +98,45 @@
       "española": 5,
       "marroquí": 3
     },
+    "serie_contexto": [
+      0,
+      3,
+      3,
+      3,
+      6,
+      85,
+      191,
+      136,
+      215,
+      91,
+      59,
+      240
+    ],
+    "cuota_pct": 20.2,
+    "pico_top3_pct": 45.5,
+    "medios_indep": 45,
+    "top_medios": [
+      [
+        "The Objective",
+        8
+      ],
+      [
+        "ABC",
+        4
+      ],
+      [
+        "Canarias en Pleno",
+        3
+      ],
+      [
+        "OkDiario",
+        2
+      ],
+      [
+        "Atl",
+        2
+      ]
+    ],
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"
