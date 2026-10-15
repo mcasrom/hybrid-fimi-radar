@@ -85,30 +85,51 @@ def _guardar_estado(st):
     ESTADO.write_text(json.dumps(st, ensure_ascii=False, indent=2))
 
 
-def _publicar(texto, img_url):
-    """Publica en Mastodon + Bluesky. Devuelve (ok_masto, ok_bsky)."""
-    out = []
+def _log(msg):
+    """Loguea a logs/social_rotacion.log (el bot no captura stdout)."""
+    try:
+        with open(ROOT / "logs" / "social_rotacion.log", "a", encoding="utf-8") as fh:
+            fh.write(f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')} {msg}\n")
+    except OSError as e:
+        print(f"[log?] {e}", file=sys.stderr)
+
+
+def _publicar(texto, img_url, intentos=3):
+    """Publica en Mastodon + Bluesky. Devuelve (ok_masto, ok_bsky).
+    Reintenta ante fallos transitorios (5xx/timeout) con backoff 5s/10s."""
     mastodon_url = ""
     bluesky_url = ""
+    out = []
     for cmd in (
         ["python3", "/home/deploy/social-poster/publish_mastodon.py", texto, img_url],
         ["python3", "/home/deploy/social-poster/publish_bluesky.py", "-t", texto, "-s", img_url],
     ):
-        try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-            out.append(r.returncode == 0)
-            print(f"[pub] {cmd[1].split('/')[-1]}: rc={r.returncode} {r.stdout.strip()[:80]} {r.stderr.strip()[:80]}")
-            if "publish_mastodon" in cmd[1]:
-                m = re.search(r"(https?://\S+/status/\d+)", r.stdout)
-                if m:
-                    mastodon_url = m.group(1)
-            elif "publish_bluesky" in cmd[1]:
-                m = re.search(r"(https?://bsky.app/\S+)", r.stdout)
-                if m:
-                    bluesky_url = m.group(1)
-        except Exception as e:
-            out.append(False)
-            print(f"[pub] {cmd[1].split('/')[-1]}: error {e}")
+        nombre = cmd[1].split("/")[-1]
+        ok = False
+        intento = 0
+        while intento < intentos and not ok:
+            intento += 1
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+                _log(f"[pub] {nombre}: intento {intento}/{intentos} rc={r.returncode} "
+                     f"OUT={(r.stdout or '').strip()[:200]!r} ERR={(r.stderr or '').strip()[:200]!r}")
+                if r.returncode == 0:
+                    ok = True
+                    if "publish_mastodon" in cmd[1]:
+                        mm = re.search(r"(https?://\S+/status/\d+)", r.stdout or "")
+                        if mm:
+                            mastodon_url = mm.group(1)
+                    else:
+                        mm = re.search(r"(https?://bsky.app/\S+)", r.stdout or "")
+                        if mm:
+                            bluesky_url = mm.group(1)
+            except Exception as e:
+                _log(f"[pub] {nombre}: intento {intento}/{intentos} error {e!r}")
+            if not ok and intento < intentos:
+                time.sleep(5 * intento)
+        out.append(ok)
+        if not ok:
+            _log(f"[pub] {nombre}: AGOTADOS {intentos} intentos (NO publicado)")
     # Registrar en engagement tracker si ambos OK
     if all(out) and registrar_post:
         if mastodon_url:
