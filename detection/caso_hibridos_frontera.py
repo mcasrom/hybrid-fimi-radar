@@ -768,6 +768,53 @@ def compute_series(ids, hechos, dias=30):
     return {"dias": dz, "pub": [pub.get(k, 0) for k in dz], "his": [his.get(k, 0) for k in dz]}
 
 
+
+_LINEAS = {
+    "L1": "Coerción militar (buques, drones, bloqueo)",
+    "L2": "Presión energética",
+    "L3": "Guerra informativa / desinformación",
+    "L4": "Presión diplomática / jurídica",
+    "L5": "Migración como arma",
+    "L6": "Alineamientos exteriores y tecnología",
+    "L7": "Societal / demográfico",
+}
+
+
+def _svg_lineas(indic):
+    """Barras horizontales por línea de esfuerzo (volumen de publicaciones)."""
+    from collections import defaultdict
+    tot, nind = defaultdict(int), defaultdict(int)
+    for it in (indic or []):
+        tot[it["linea"]] += it["n"]
+        nind[it["linea"]] += 1
+    if not tot:
+        return ""
+    filas = sorted(tot.items(), key=lambda kv: -kv[1])
+    rowh, W, LBL = 34, 720, 250
+    H = rowh * len(filas) + 46
+    mx = max(v for _, v in filas) or 1
+    p = ['<svg viewBox="0 0 %d %d" width="100%%" style="max-width:%dpx;height:auto" '
+         'role="img" aria-label="Publicaciones por linea de esfuerzo">' % (W, H, W)]
+    p.append('<text x="0" y="16" font-size="12.5" font-weight="700" fill="#0d1b2a">'
+             'Volumen de publicaciones por línea de esfuerzo</text>')
+    p.append('<text x="0" y="32" font-size="10.5" fill="#5c6b7a">'
+             'Cada línea agrupa distinto nº de indicadores y los eventos se solapan: '
+             'mide cobertura, no intensidad de amenaza.</text>')
+    y0 = 46
+    for i, (lin, val) in enumerate(filas):
+        y = y0 + i * rowh
+        bw = (W - LBL - 90) * val / mx
+        etq = "%s · %s" % (lin, _LINEAS.get(lin, ""))
+        p.append('<text x="0" y="%d" font-size="11.5" fill="#334155">%s</text>' % (y + 18, etq[:46]))
+        p.append('<rect x="%d" y="%d" width="%.1f" height="18" fill="#0d1b2a" rx="3"/>' % (LBL, y + 4, max(1.0, bw)))
+        p.append('<text x="%.1f" y="%d" font-size="11.5" fill="#0d1b2a" font-weight="600">%s</text>'
+                 % (LBL + max(1.0, bw) + 8, y + 18, _n(val)))
+        p.append('<text x="%d" y="%d" font-size="10" fill="#8a97a6">(%d ind.)</text>' % (W - 2, y + 18, nind[lin]))
+        p.append('<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#eef2f7"/>' % (LBL, y + rowh - 2, W - 60, y + rowh - 2))
+    p.append('</svg>')
+    return "".join(p)
+
+
 def _svg_doble(serie):
     """Grafico de doble serie: barras=publicaciones/dia, linea+dots=historias nuevas/dia."""
     dias = (serie or {}).get("dias") or []
@@ -1316,11 +1363,12 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Cuota núcleo/(núcleo+contexto): <b>{d.get('cuota_pct', 0)}%</b> · Dependencia del pico (top-3 autores de la última semana): <b>{_pt3_txt}</b> · Medios distintos en el núcleo (google-news resuelto al medio): <b>{d.get('medios_indep', 0)}</b>.</p>
 </div>
 
-<div class="selper" style="margin:10px 0"><b>Periodo:</b> <button onclick="selP(0)" class="spb spb-on">30 d</button> <button onclick="selP(1)" class="spb">90 d</button> <button onclick="selP(2)" class="spb">Todo el caso</button> <span class="sub" id="perNota">(30 días)</span></div>
 <h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
 <p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.<br><b>Ámbito:</b> cifras del <b>tema (90 d)</b>. El bloque «<b>Radar B</b>» cuenta el <b>núcleo</b> (subconjunto estricto con ancla geográfica): por eso algunas cifras difieren (p. ej. <i>drones</i>). Cada tabla declara su ámbito.</p>
 {_indic_chart}
+<div style="margin:8px 0 14px">{_svg_lineas(indic)}</div>
 <details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
+<div class="selper" style="margin:8px 0 4px"><b>Periodo:</b> <button onclick="selP(0)" class="spb">30 d</button> <button onclick="selP(1)" class="spb">90 d</button> <button onclick="selP(2)" class="spb spb-on">Todo el caso</button> <span class="sub" id="perNota">(todo el caso)</span> · el valor de la tabla cambia sin recargar</div>
 <table><thead><tr><th>Indicador</th><th>Línea</th><th>Nivel</th><th class="num">Publicaciones</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
