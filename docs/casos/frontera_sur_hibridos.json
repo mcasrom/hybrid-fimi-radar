@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 10:50 UTC",
+    "generado_utc": "2026-10-15 10:55 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -236,6 +236,698 @@
       "top_url_pct": 8,
       "ev_por_url": 1.65
     },
+    "evidencia": [
+      {
+        "ts": 1792036225,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "La licitación de drones para el control de migración en Canarias queda desierta - Canarias en Pleno",
+        "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE5MYlhZdzYzVHZDS2RZWTNPRmYyT3hXbFdTSjZpb0Y2MTZ0X1ZDbDRISGdVbE1jaXN4eTZxaW1kdGhZa0VBdGV3bG9KdXhSNVBUbi15MkhvQzIyWlFHUDVHckJMV1FBaWE3NmFJdkZWRW50QVZvaDhR?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792035901,
+        "author": "rss:El Pais Espana",
+        "source": "rss:El Pais Espana",
+        "title": "Lo que pasó en el mar mientras miles de personas entraban en Ceuta: “Estuvieron a punto de chocar una patrullera español",
+        "url": "https://elpais.com/podcasts/hoy-en-el-pais/2026-10-15/lo-que-paso-en-el-mar-mientras-miles-de-personas-entraban-en-ceuta-estuvieron-a-punto-de-chocar-una-patrullera-espanola-y-una-marroqui.html",
+        "bsky": ""
+      },
+      {
+        "ts": 1792031100,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "La fragata Mohamed VI que entró en aguas de Ceuta tiene capacidad de ataque de largo alcance - El Debate",
+        "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPR2hZbElXbG9Yai16LVBiNlhvZXVzMlFRRzdoZTREdTBYQ2VtUERmbWNCLWVWLU9IaHdRZERzRG5XWThNc05NRnZMSjI4MHJpV3B5SWh2MUQ0QS1ROEVQZnBJeDFUMzVEZlIwdXhNa0JtdE9HWWd4b2k0cG1lWTFSRDlxcVNwS3kwb2dyTGtRSzg1WlV3VFF3WjBZRE9JRkhoOW5EMkNpbmtJX1pacjNBcTBKQ1FCaHhTMDlDY1poOU1vbUN0ZTRiQ1kzLTlfNXfSAdQBQVVfeXFMT0xHaWl1cklhRURWSkVCeXRkSms3MWlQbEoyeWUzcWE5REtHY2UwM1VKeXVaTDZkcXQxOXQ0Mm9WRzNrVFF1Z1ZPN1JBLXQ3aFo3ZFN0ZkpsWlowdnhKQ2hwSnp6ZldSS2hyZV9RZ3ZxQ2dObjY1b04xU1M4aEJwTUFiVGxLTDVXdk5WVnVHMi01T25tUW9iekI0YTRudllMRmpVNUJoOU11SkRVNGFqVUEtNUtPTVZnQ1pMeUUtb2c3UXVjblBOQTBHeHdERng1RWk3TjQ?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792023723,
+        "author": "bsky:neighinghorse.bsky.social",
+        "source": "bluesky",
+        "title": "El delegado de la Encina ha explicado que la incursión de la fragata marroquí fue un \"patrullaje ordinario\". El delegado",
+        "url": "",
+        "bsky": "at://did:plc:7kdox6yu327vutzjnhdq4akj/app.bsky.feed.post/3mxus6rwnld2l"
+      },
+      {
+        "ts": 1792020423,
+        "author": "bsky:rifenio.bsky.social",
+        "source": "bluesky",
+        "title": "remotos de 25 mm. Todo eso acompañado de 4/6 patrulleras (esto no está del todo claro).  Según los traidores solo fue un",
+        "url": "",
+        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxup4gl2lp22"
+      },
+      {
+        "ts": 1792020420,
+        "author": "bsky:rifenio.bsky.social",
+        "source": "bluesky",
+        "title": "principios de agosto de 2026, varias unidades navales del Reino de Marruecos, entre ellas al menos una fragata de la cla",
+        "url": "",
+        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxup4dyuot2d"
+      },
+      {
+        "ts": 1792008117,
+        "author": "bsky:andrebutter.eurosky.social",
+        "source": "bluesky",
+        "title": "Marokkaanse oorlogsschepen drongen Spanje binnen tijdens massale migratiestroom Ceuta nieuwrechts.nl/113654-marok...",
+        "url": "https://nieuwrechts.nl/113654-marokkaanse-oorlogsschepen-drongen-spanje-binnen-tijdens-massale-migratiestroom-ceuta",
+        "bsky": "at://did:plc:j2kupjndvdzorocfp4ydulmx/app.bsky.feed.post/3mxudno6vik2z"
+      },
+      {
+        "ts": 1792007693,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Las dos fragatas de la Armada con base en Rota (Cádiz) se activan por buques marroquíes en aguas de Ceuta - www.moncloa.",
+        "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQOF9RUEYyS2kxYmRkRnFUZTlWMnVMUGxzRnFrUlhZZFB6Wm5nN3VtV01nLThyM18wdUIzS21CaWxTWDZXNEdJc05QcTFCOXNXSVc0RzFZV2o5TnE0ekV5MVlSNjJyT2RyU0h3QUUtQXZHQzAxWDl3ZXppX2JfOUtVaFpxUTYtUjg?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792004489,
+        "author": "bsky:rifenio.bsky.social",
+        "source": "bluesky",
+        "title": "«¡Basta ya!»: así fue la llamada de la Armada tras la intrusión de fragatas marroquíes en Ceuta. Pues ¡menos mal que fue",
+        "url": "",
+        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxuabkm7fx22"
+      },
+      {
+        "ts": 1792002700,
+        "author": "bsky:mascarpone79.bsky.social",
+        "source": "bluesky",
+        "title": "entre los inmigrantes en Ceuta y pronosticó que podrían aparecer más datos sobre la entrada de drones y la permanencia d",
+        "url": "",
+        "bsky": "at://did:plc:cfc625lht3caomta2vf5pvx7/app.bsky.feed.post/3mxu6malq5p2c"
+      },
+      {
+        "ts": 1792000250,
+        "author": "bsky:calata68.bsky.social",
+        "source": "bluesky",
+        "title": "Instrucciones para esconder un buque de guerra Gran incógnita que debe resolver el Gobierno Cuál es la verdadera relació",
+        "url": "https://elpais.com/opinion/2026-10-14/instrucciones-para-esconder-un-buque-de-guerra.html",
+        "bsky": "at://did:plc:tdbifjaaksapr5lvylsrwhs2/app.bsky.feed.post/3mxu4d7y6sc2f"
+      },
+      {
+        "ts": 1791975537,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Tensión naval en Ceuta: el duro mensaje de la Armada tras la incursión de fragatas marroquíes - El Toro TV",
+        "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPQng1aGxtRE0tRG04SXpxaEtrclA0cnlQY3JKYTlJNXR0cHJBLTBNR0ZJV0lEX05ORmpuZDlCdzJRdEtCQ2luaWFRQ1hCX0oyVG5Da3U2emYwZ2NWU3VWT2piZFViSnN4Mm1kTEs1RXFMRWotSk1xa3BQOUUxZi1yNUgwS3htelQxbU96NXY1ZWxodEdoelpJNzFKcUVWWl9YbWFDcXhWRG1NMjJmVlVfQ1hhRWhCc2RMX0E2LUtMbkNTdTVMVE05X0tpcw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791975462,
+        "author": "tg:elfarodeceuta",
+        "source": "telegram:elfarodeceuta",
+        "title": "◼️   Incluye vídeo   ▶   El delegado del Gobierno en Ceuta niega provocación en la entrada de buques marroquíes en la in",
+        "url": "",
+        "bsky": ""
+      },
+      {
+        "ts": 1791971496,
+        "author": "bsky:larazonlr.bsky.social",
+        "source": "bluesky",
+        "title": "Alejandro del Valle, catedrático de Derecho Internacional, habló de Rabat y no se corta: «Marruecos nos considera un adv",
+        "url": "https://www.larazon.es/tecnologia-consumo/alejandro-valle-catedratico-derecho-internacional-hablo-rabat-no-se-corta-marruecos-nos-considera-adversario-estrategico-abatir_202610146acf3b06cfd4076f0c7a9681.html?utm_campaign=mrf-bluesky-larazonlr.bsky.social&utm_source=bluesky&utm_medium=social&mrfcid=202610146acc23008bfa9f311c7595e2",
+        "bsky": "at://did:plc:oiiuluhfgahopmh3ifpykwnj/app.bsky.feed.post/3mxtbkcvyfy2l"
+      },
+      {
+        "ts": 1791968760,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Un “patrullaje ordinario”: así explica el delegado la incursión de la fragata marroquí - El Pueblo de Ceuta",
+        "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNN3ZzejM1TkllSk9UaWZuWm9wVTJaOW9aaG5LNlV1WE1sR0tPOUUzT2Ewakk0NlhYcVVCbWFWSXR4RDUtWDY3cU5GV19fSHRtdlhTeGJUNzc3eVJlN0RTSHFXdmtGeEd1M0xGcFpuWS04TzV4VzF3S2FMSGczZmN5cjIxdEFKQWI1T3hRV1VNVzBDck5oMVM4b0M2SkJ5WmtydHl4bDJESXZIdw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791965100,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El BAM rayo, buque militar con base en Canarias, se dirigió a Ceuta tras la entrada de barcos de guerra marroquíes - Atl",
+        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNM1V2MWFrSnpqUHZKRUJfUHh3N09JLUE1V0diX0hkTndycThhZUhRZm5xTkJYaEt6RmJ4WmtYZ3dILTVkdVByWXYzR19oUXpiOUJwQUNCeW51YWR2N09wNUNSYUxqWm1pRXBKM256NEQ4YVEtYzBpbnpVR1M0dW4xWWs1dFVWVHdKX2VrcDVYWFp1ank0TmktcDJ4WHVUQ1UwbXFFRV9seE02bmJRaC1QeWxWVHA2QVg4bG1ibVhIdE9rMkV4cnFWa29qUzh4VkEtNUNPSFdHVEwtVjhYT213LXZR?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791961301,
+        "author": "bsky:demetrioymedio.bsky.social",
+        "source": "bluesky",
+        "title": "#vox #lanoche24h #codigo10 #horizonte #partidopopular #mafiapp #abascal #Fascismo #voxesmierda #ultraderecha #ultimahora",
+        "url": "",
+        "bsky": "at://did:plc:d5mitcvf6g7ghwd6iauem45c/app.bsky.feed.post/3mxsy2gt5722y"
+      },
+      {
+        "ts": 1791960259,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Las fragatas de Rota ‘Santa María’ y ‘Navarra’ reforzaron la vigilancia en Ceuta tras la entrada de buques marroquíes - ",
+        "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNbWlJUjNNSXg3NFk4U3N2VlNvMmgyQ0V2WVN3WFUyd0Z5X1VRampUOGppSGc0ckRWMjMwV1hPVG9fRE1qZ1FJQ2JvQ1hVQzVPNVlrcVdYZDN6M0dkcVNLV0htX2ltRThuVE93UVBmTjY1aWdZdnBXTjAxanJKNHotTnlaT1V6RkFXQ0UxRms4WlcyU1M3N0F3?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791958735,
+        "author": "bsky:ensonhbr.bsky.social",
+        "source": "bluesky",
+        "title": "Europe Today: Spanish FM on Euronews, Black Sea drone attacks, EU-China reset Spain is under pressure on multiple fronts",
+        "url": "",
+        "bsky": "at://did:plc:sxqxtfaf3abb2b4e76q3erha/app.bsky.feed.post/3mxsvnyl4de25"
+      },
+      {
+        "ts": 1791955203,
+        "author": "bsky:theobjective-es.bsky.social",
+        "source": "bluesky",
+        "title": "«¡Basta ya!»: así fue la llamada de la Armada tras la intrusión de fragatas marroquíes en Ceuta.  Una noticia de Antonio",
+        "url": "https://theobjective.com/espana/politica/2026-10-14/armada-fragatas-marroquies-ceuta/",
+        "bsky": "at://did:plc:kcq2mii7wmovfev3iqnf7nib/app.bsky.feed.post/3mxsseqhot522"
+      },
+      {
+        "ts": 1791954064,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Dos fragatas de la Armada con base en Rota se activaron tras la entrada de buques de Marruecos en aguas de Ceuta - Diari",
+        "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPU09McjUzNVFzTncxUUJFZVFDcGJYRnQ2MGIyYnRXODIxdjZFWmRnUk91d3dnNGdIYkpTSHBuU2J2RmFIVmJDNzVlaE5fTndUb2RwY25GTEJSbEI3RHVudmtQblotY0M1cHhLaVZSbEJhb0c2OXNoM2FTcU9WQlNxZ29ncEwzMndKN0NLRDlWYWgwVXg3bW5BQ1FrcHB5eU9veHMySDZzSWdvTlNOZnJSejJqQlhlWXZ3Y2dxZNIBwgFBVV95cUxNeXJZMWs2ZXFfNndrY210S0pTbTBJbnNUbC1VNDhaY0ZSR193cFYyYlo2bjJVN0RQd3lkV1J2RlNUS1JyWXdTQ2FZMDg4Z0tXN0ttV1BnazJSVWE1SUEyemhMTVJheEdmYUdqQ1p3VUlkdWNnTXVMbFpLSGpYQUplellZcklqOHB3OVBNSzZEczk3dnNscUFoZVc0VXdWOGtaQUUzcGpKbGd4d0o3ek5FQ0lFb3poOFNISFFpcThmRFZyUQ?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791952200,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El despliegue español que respondió al buque de guerra de Marruecos en Ceuta: de la activación del BAM ‘Rayo’ al paso ad",
+        "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxOd3BzQW5LaXNNeDlOeVZVX3AwdHRqVHFXNmtRVHdUMXEzVU5nNkVEMWM1M2p4emlJSXpLSnFfODB2dkgyajllSk9wME5uNnJhdWRWTzhlaUNTLVVIdl85cGhsLXNNcjhBNlIzU2JnUjJSUFRuYnU5bmFsbmtWWXo2dUYtYnlRQXpzeEk4Zk84NjdHRkxvRGtLcS11YkZiczU4YzJfUzV5SmNHSUt3eV9TNURjOHE3SERKNUFYR2UxWVRxMjN6TFBTWkZmaEJxV1VkWWFaZzY2ME5DcXE2dy0zN3hSOFVoMHM0Q3hCdzh2VWJKTzB6QWhFSnpXeDFmRFV3cGItS1FJNGg5eHpfd2lfTdIBqwJBVV95cUxQQ0FfZ2ZyaWNHSW9saDVnc21uczU4VGpjMkpZY2lKMlllMzBWQmdUMnljQWFNdTlTd2ZMVy1KcE9rX1F0cVVsOUdocldPMXNkUDRiNU1FcmktYzdmVHhyZUpJSFo0TkR1R0ttWjJTTF9FOFZHOVE3OU9RMUNpTlNfMnlDSmJhSzBPMWF5Nmc0YWNzRHBWRElHRXYtTDhOTHJydkhvT3lXUUtNQ1U0TXU2bXlHYU03Z1d4aFg4MHdIbzRWLWN6MEd0Q1ZaOGZzQVFjRzZ2NFNpc2ZVTnJoUDl2Y2dqMU9WU01qWjZKYmFNc3lMSUlJYXVCU0NlVE1NNEdNM012T3ZkXzRQekdKWTBPWXpyaGhWVEJrQTh4dk8yamtkeDdNb0d1S1BtYw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791949083,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El despliegue español que respondió al buque de guerra de Marruecos en Ceuta: de la activación del BAM ‘Rayo’ al paso ad",
+        "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxOd3BzQW5LaXNNeDlOeVZVX3AwdHRqVHFXNmtRVHdUMXEzVU5nNkVEMWM1M2p4emlJSXpLSnFfODB2dkgyajllSk9wME5uNnJhdWRWTzhlaUNTLVVIdl85cGhsLXNNcjhBNlIzU2JnUjJSUFRuYnU5bmFsbmtWWXo2dUYtYnlRQXpzeEk4Zk84NjdHRkxvRGtLcS11YkZiczU4YzJfUzV5SmNHSUt3eV9TNURjOHE3SERKNUFYR2UxWVRxMjN6TFBTWkZmaEJxV1VkWWFaZzY2ME5DcXE2dy0zN3hSOFVoMHM0Q3hCdzh2VWJKTzB6QWhFSnpXeDFmRFV3cGItS1FJNGg5eHpfd2lfTdIBqwJBVV95cUxQQ0FfZ2ZyaWNHSW9saDVnc21uczU4VGpjMkpZY2lKMlllMzBWQmdUMnljQWFNdTlTd2ZMVy1KcE9rX1F0cVVsOUdocldPMXNkUDRiNU1FcmktYzdmVHhyZUpJSFo0TkR1R0ttWjJTTF9FOFZHOVE3OU9RMUNpTlNfMnlDSmJhSzBPMWF5Nmc0YWNzRHBWRElHRXYtTDhOTHJydkhvT3lXUUtNQ1U0TXU2bXlHYU03Z1d4aFg4MHdIbzRWLWN6MEd0Q1ZaOGZzQVFjRzZ2NFNpc2ZVTnJoUDl2Y2dqMU9WU01qWjZKYmFNc3lMSUlJYXVCU0NlVE1NNEdNM012T3ZkXzRQekdKWTBPWXpyaGhWVEJrQTh4dk8yamtkeDdNb0d1S1BtYw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791948300,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "«¡Basta ya!»: así fue la llamada de la Armada tras la intrusión de fragatas marroquíes en Ceuta - The Objective",
+        "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQTTllZDNMZFF6T2lwNVZCU21TTUJORWxsdTlOSkJwWEFlZXZTWWdPVVZmOFo4NFRkeGRXdHk4ejMyLVlTS05FM0Rxd0ZISlhxMm5hR1duMUp2YXU0bnZNWXZqb0NZR3RpX0dfZlZuWmpuV1I2c3hPSWxxWHhmZTRJUnlyNS1xTzZlV0Y0TW1n0gGTAUFVX3lxTE1iTzk2NW9MTzFjRVFIaHBfOEFqbkRTajd2UVU5UzJSM1hCaTNremg0b29LLUowMlNmZXB6S0pPNWtJX2hta0FOYlFGNnNhUXlGWEN6NE5oZ19BVTBPb3A2QzRrM1ZEMDlxTDZDdHpKdmViSTR2UTU0VDcyNm43RlI3RlJTN1AwTXhtVDJaclVBQ3hidw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791934166,
+        "author": "bsky:mascarpone79.bsky.social",
+        "source": "bluesky",
+        "title": "Infodefensa ha fotografiado la salida de la fragata Hassan II desde Ksar Sghir el mismo día que la Marina marroquí entró",
+        "url": "",
+        "bsky": "at://did:plc:cfc625lht3caomta2vf5pvx7/app.bsky.feed.post/3mxs6rrubwh2c"
+      },
+      {
+        "ts": 1791934135,
+        "author": "bsky:rifenio.bsky.social",
+        "source": "bluesky",
+        "title": "julio.  Se están analizando los movimientos navales registrados durante la crisis, la posible presencia de una fragata m",
+        "url": "",
+        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxs6qtkiyh2k"
+      },
+      {
+        "ts": 1791924010,
+        "author": "bsky:alertaroja24h.bsky.social",
+        "source": "bluesky",
+        "title": "La fragata Mohamed VI de Marruecos se ha convertido en el mayor barco de guerra de África en adentrarse en las aguas de ",
+        "url": "",
+        "bsky": "at://did:plc:wyx7tkgieobapwoxgcfpe2xp/app.bsky.feed.post/3mxrvd3t2kk26"
+      },
+      {
+        "ts": 1791902946,
+        "author": "bsky:noticiesaldia.bsky.social",
+        "source": "bluesky",
+        "title": "Així és la Fragata Mohamed VI del Marroc, el major vaixell de guerra d'Àfrica que es va endinsar en les aigües de Ceuta",
+        "url": "https://grower.cat/noticia/c58e57fe01f3.html",
+        "bsky": "at://did:plc:xps3a3y2wavbn4ago4c56zbt/app.bsky.feed.post/3mxrbpdttrl2w"
+      },
+      {
+        "ts": 1791902041,
+        "author": "bsky:jmdaweb.comunidad.nvda.es.ap.brid.gy",
+        "source": "bluesky",
+        "title": "Hay que aceptarlo: incluso si el buque de guerra marroquí hubiera tenido un cartel con el texto \"os vamos a invadir espa",
+        "url": "https://comunidad.nvda.es/@jmdaweb/117434092219788698",
+        "bsky": "at://did:plc:f4qdlqalrgsylpsd3inkkylx/app.bsky.feed.post/3mxraugvpww32"
+      },
+      {
+        "ts": 1791898236,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "La fragata Mohamed VI: así es el buque de guerra más potente de África que navegó junto a Ceuta - estenerife.com",
+        "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOMDhmQmhiRUJKWlFGMXRCcWgyNTNlUWgyMjZFbEVXRUNCblZMTEY4TXhpU193emU2bFZZZEhjblNPcjFYVFZabTROVG9uSlpNd2JuREFYY2FWekZWYnVORVBGR1N0alJSSTNYTmh5VzdBdlNJaWlud05rVkJsWDhsTWt3?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791896543,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Así es la Fragata Mohamed VI de Marruecos, el mayor barco de guerra de África que se adentró en las aguas de Ceuta - 20M",
+        "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNb0U0d09lS29hN3A4TGJWOTZpM19kU0VDV29QakNlWnpDcmExT3dzUlV6cV9uSHRyZk10czBXRVQ0RkpwYjAzZVAyblJ3M0FPOUI3T0ZhbVZVTG5zRmVNSF9FNy1ORlg5QlQtNTNvQmVBeUJocWJtbEJYY3JlYkRZck1ydU1OcW5idjlvVElsQjdpS3VuSFBzSlh1ajNMTnFxR0tVdVVwc051b3pxbFVHM2RZYVpsRGYwQ1dCdGxPRHdfWnhWM2Uw0gHMAUFVX3lxTE1iOXJ3SXhjVjlTZHk5LUR5R1NWNGdzU3ZuTDNyZFZYa0tnUkcwRUIxZEpqQS12dWJ0eXNWYXQyeEhRbGozWGRWV2MtcHRtM1NHMDlsaHpkbm1jNmJrS1ZMcVI1TWVENkdRamxqTUhucExqVzd2V1dGTzRJZDJacGtIX0d4RVlSa3NJODR5d1A3VG9VNlNWVDFCOEVQcEtRY1lCdG1XMy1aM0tPVVlXbjN0YV9nLW16TV9yTXdjTVo0TFhxUGczaGtnQ0Z3cw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791896543,
+        "author": "rss:20Minutos",
+        "source": "rss:20Minutos",
+        "title": "Así es la Fragata Mohamed VI de Marruecos, el mayor barco de guerra de África que se adentró en las aguas de Ceuta",
+        "url": "https://www.20minutos.es/internacional/fragata-mohamed-vi-marruecos-mayor-barco-guerra-africa-adentro-aguas-ceuta_7048217_0.html",
+        "bsky": ""
+      },
+      {
+        "ts": 1791892670,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "\"Los días 30 y 31 de agosto no solo invadieron Ceuta 80.000 personas, sino que dos patrulleras y una fragata marroquíes ",
+        "url": "https://news.google.com/rss/articles/CBMi_gJBVV95cUxNRFhCTWRyMEN3dWgySFRJUTM0OTRBYVNGRlpZNDRQdzNuSXNNSnhPMjdLcG5QeUczZGx4X0toQ254VGhmX2lNZC0xeHdwald2UHFLRklQT1A1bHlHQ3JJTXJndUpocmdqU1JYTEp2SHN4N3lDd3R3V3Mta0VqQVNLa0Z3MjNuYmNTWnVBNEVkR0FIZWEwbXNsLWxhZU8wZlhhZmlOUVlFN3p3aTZlNzVDYk14VFA2VW1KWlJTbmc2bk9kXzFqbk43VDdVVk9WVnZUSVI5NjNVWUcxUGpWNWo0R0x5T0luS3BwaEhYV3U3ajRxMG52aDItSXU4TmlXU01sV2JGejZja1pfT21pZUk0bHJFTFpTVElRUG5SWWdkU3Z6Zk9zSG1OUG1EVkhYX3hVbnF0NGxvTlNDSWd3Ti11OVMySmFQUzJKLUljcUJTSGtsYXRNM0Uwb0RuZGk0REQ1QzZNSC1XT3NvQzd5eVpIM1lqLXdFclUyM2R1aDJB0gGDA0FVX3lxTE1yMEdoVVFleFNDcmVTYW5yNGd6V1ZpRnJXTVJlT2xkcWdSaUdDaHFOeEpDcWNiM0hlMlR4TmFXemhITFVsc0oyb0tmNjd0Z1RJVHl2RzRZVHBUVjJkbjNBTlFEa0UxYmlqSHRkZDBRRkpsT1hxeFA3cUd2MjFaV0VXZkFZQ2VxRFB0R21wR0tZQm1OVHZMS2RvUXdiUk9RbWRodXZad2p6Uzk1QXF3c0JuR19yckpjRkRIWEMtX040QUl2RGdPYURBX1BRN3RiT1RLOXp6NXZfZU0xUVQ3a3BBVlZsRjR0SzlUbmZOZjAwaG5xWWZicFQzLTZMNm9mVjVVQnAzVVpFRElMcW1nTld5aEVYWlV6aUJzY1daZnF6aFYtVTRmRWdHRW1rWG5iZF9oay1jS2w3TFJBTk52NnJ2MFJVdHU0bTNsOXZHVlNRLUkwenZZMUJtYnM0V2VfdHl6d2xyUXFlUUROSnNoOVhMbUcySnJJNUVqSThnWnVJWGQ0QQ?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791884768,
+        "author": "bsky:diariosabemos.bsky.social",
+        "source": "bluesky",
+        "title": "La irrupción coordinada de fragatas y patrulleras de la Marina Real marroquí en aguas territoriales de Ceuta, sumada a l",
+        "url": "https://diariosabemos.com/analisis/prueba-definitiva-marruecos-es-responsable-ataque-hibrido-contra-ceuta_519323_102.html",
+        "bsky": "at://did:plc:kald57kzktp5nihkabn7vdt6/app.bsky.feed.post/3mxqqrlyhzw2n"
+      },
+      {
+        "ts": 1791882840,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El buque insignia de la armada marroquí, la fragata Mohamed VI, entró en aguas ceutíes los días del asalto a la ciudad -",
+        "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQMEdnYXZDNGtmQzdoVzAyQlVsUVAwMndLOUVzVzh0b2hrNUVuT2lWYWJEZ0kzY3Jfb0JaeFZoeklBYUJoZEtPc0x2NXJZX0ZnT2lmMVBCbWNKMXJ6eDJWTU5VZHBWbXRaT1RsYW9XVWRmZXhmSHNLNmZXLUduMkJITWstUmJGMkljbHdiTmZSS1lGODY1UFNHLTAtNE5ZZEF0ckE4NjlmV3hkMGFyR3RoanFXTQ?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791882600,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Feijóo dice que el Ejército debió desplegarse en Ceuta ante la incursión de fragatas marroquíes - Servimedia",
+        "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPMzg4bFNGYVMzRG9ISkZOUlVQVUdtYjhoalRBajhsSE93S2QxS3c1S0VhcmFyeE5DTzg3V01rY0Fud0t1QVNyU1NnZ1dPenBBbjNaSU9BQjFOT0N6QnhWNV9GbkJ3eXNNb1ZFU3BMMFRhOG5zTW1HVzZZNVlCTUktX2JzVTlFYmJ4UndfaWwxTHdhZkhLVE9PU0ZUQUtnSUxzWmROQzVLc0tGMnBmcGVaR2lneDdwTEpCZVJzVA?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791881374,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Antes de Felipe y Letizia, otro miembro de la familia real estuvo en Ceuta: así fue la discreta visita de Leonor hace un",
+        "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQTl9sd3BJXzMwTm9uYnJiT05pVGZyME1Xb3VpSC04VEZwX1B0Qk9vamlLQXN4NmlzejRRTjh5bC1iQXlfdWpicXdyVXBjNUZ3T0hTMzlVNC1wYUFWeEpwY3hoUldEZ0VvbHMwMG1fSnotaHVmR2NnNzBjOFdjWjdrQ2lLWFV4TGhVUGNFdDQyU1JlZXVUQ01leW1QTHNSRzBWX1FtLTFzM0gzcU5wVVE?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791876894,
+        "author": "bsky:yayuchu.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:6iqaula7lnzrxoqgsyutgapu/app.bsky.feed.post/3mxqjgw6qkk2y"
+      },
+      {
+        "ts": 1791861606,
+        "author": "bsky:neighinghorse.bsky.social",
+        "source": "bluesky",
+        "title": "La Defensa desplegó un buque y una fragata para responder a la entrada de buques de guerra marroquíes en las aguas de Ce",
+        "url": "",
+        "bsky": "at://did:plc:7kdox6yu327vutzjnhdq4akj/app.bsky.feed.post/3mxq37cg3h727"
+      },
+      {
+        "ts": 1791861051,
+        "author": "bsky:alertaroja24h.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada respondió con fragatas a la presencia de buques de Marruecos en aguas de Ceuta, un operativo que el presidente",
+        "url": "",
+        "bsky": "at://did:plc:wyx7tkgieobapwoxgcfpe2xp/app.bsky.feed.post/3mxq2orxjcu2r"
+      },
+      {
+        "ts": 1791836885,
+        "author": "bsky:sergidoseo.bsky.social",
+        "source": "bluesky",
+        "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de inmigrantes  La Armada envi",
+        "url": "",
+        "bsky": "at://did:plc:jihjhotxhsgyf2dmfrywvoqp/app.bsky.feed.post/3mxpe6l35ls2y"
+      },
+      {
+        "ts": 1791836092,
+        "author": "bsky:324cat.eurosky.social",
+        "source": "bluesky",
+        "title": "Vaixells de guerra marroquin El govern espanyol confirma que va enviar una fragata per frenar les incursions de la Marin",
+        "url": "https://www.3cat.cat/3catinfo/vaixells-de-guerra-marroquins-van-entrar-a-ceuta-coincidint-amb-larribada-massiva-de-migrants/noticia/3433682/",
+        "bsky": "at://did:plc:gkh6hm3lbzvjbmpqoejcxywr/app.bsky.feed.post/3mxpdgwjllc2g"
+      },
+      {
+        "ts": 1791821340,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El BAM rayo, buque militar con base en Canarias, se dirigió a Ceuta tras la entrada de barcos de guerra marroquíes - Atl",
+        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNM1V2MWFrSnpqUHZKRUJfUHh3N09JLUE1V0diX0hkTndycThhZUhRZm5xTkJYaEt6RmJ4WmtYZ3dILTVkdVByWXYzR19oUXpiOUJwQUNCeW51YWR2N09wNUNSYUxqWm1pRXBKM256NEQ4YVEtYzBpbnpVR1M0dW4xWWs1dFVWVHdKX2VrcDVYWFp1ank0TmktcDJ4WHVUQ1UwbXFFRV9seE02bmJRaC1QeWxWVHA2QVg4bG1ibVhIdE9rMkV4cnFWa29qUzh4VkEtNUNPSFdHVEwtVjhYT213LXZR?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791820026,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "España tuvo que desplegar una fragata para frenar a buques marroquíes en aguas de Ceuta - La Gaceta de Canarias",
+        "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxORHVNV21neGwxNDFFUC12Tkd5azZTRUIxZ3JjaVhidkJ3bTltWHM2Y2xIQUJiUWJIcXVJcXJwZkxBNm5uLTljR0lzcHVTZDBKU0tfNHBZanliSzhDTGxNczkyN1hidjZZZDhxbEFhdVZ6UGNmUVFCelBIVmJYMnFIVTg5T0h4N3dZOUpUSlpaU3NkZzVpTnNWWlJrOXRxMm4yUWhLcTAtQnRWUUE3Sk1SbzRtbDViVTBUYlJz?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791820012,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "España tuvo que desplegar una fragata para frenar a buques marroquíes en aguas de Ceuta - La Gaceta de Canarias",
+        "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxORHVNV21neGwxNDFFUC12Tkd5azZTRUIxZ3JjaVhidkJ3bTltWHM2Y2xIQUJiUWJIcXVJcXJwZkxBNm5uLTljR0lzcHVTZDBKU0tfNHBZanliSzhDTGxNczkyN1hidjZZZDhxbEFhdVZ6UGNmUVFCelBIVmJYMnFIVTg5T0h4N3dZOUpUSlpaU3NkZzVpTnNWWlJrOXRxMm4yUWhLcTAtQnRWUUE3Sk1SbzRtbDViVTBUYlJz?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791819602,
+        "author": "bsky:telecinco-es.bsky.social",
+        "source": "bluesky",
+        "title": "Defensa respondió con un buque y una fragata ante la entrada de buques de guerra marroquíes en Ceuta a finales de julio ",
+        "url": "https://ver.tw/2vjlf3",
+        "bsky": "at://did:plc:pcag5hwt5swuugls5rhtaln3/app.bsky.feed.post/3mxou3iidam2z"
+      },
+      {
+        "ts": 1791816226,
+        "author": "bsky:calata68.bsky.social",
+        "source": "bluesky",
+        "title": "Poquito a poco. ¿Era o no un intento de invasión? Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo co",
+        "url": "https://elpais.com/espana/2026-10-12/buques-de-guerra-marroquies-invadieron-aguas-de-ceuta-coincidiendo-con-la-entrada-masiva-de-inmigrantes.html",
+        "bsky": "at://did:plc:tdbifjaaksapr5lvylsrwhs2/app.bsky.feed.post/3mxoqwv33yc2g"
+      },
+      {
+        "ts": 1791816145,
+        "author": "bsky:noticies.apuntmedia.es",
+        "source": "bluesky",
+        "title": "La Marina de guerra marroquina va entrar en aigües de Ceuta el dia de l'entrada massiva.  El president Sánchez admet la ",
+        "url": "https://www.apuntmedia.es/1_1d0295",
+        "bsky": "at://did:plc:iho2utcnulwv32huepi2ydw7/app.bsky.feed.post/3mxoquiao6p2z"
+      },
+      {
+        "ts": 1791814027,
+        "author": "bsky:aidoo-noticias.bsky.social",
+        "source": "bluesky",
+        "title": "Buques marroquíes navegaron en aguas de Ceuta en plena llegada masiva de migrantes. España desplegó un BAM y fragatas; S",
+        "url": "https://aidoo.news/noticia/Wd0MlZ",
+        "bsky": "at://did:plc:ly2qmr6h65qfwervjkr6on4s/app.bsky.feed.post/3mxoove77e224"
+      },
+      {
+        "ts": 1791813607,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Defensa respondió con un buque y una fragata ante la entrada de buques de guerra marroquíes en Ceuta a finales de julio ",
+        "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNd1pRcGxOb21TcFZOWXExUXBIYi1sbUdTQWc1UWlpb1RIM0lHaHlvcjkxamFxMElXRWRxdjEwVFNOczhiOU94dnhIOFVUYW9oQ0U0TGtHd1l6Y3BOV1Zjbm81eXFlN2tLS1ZMSVFwSFpCeDVjdjNBb1RYOGViR18yOW9wekZFUzhIN0RGZnFBb0hkaVM5ZkI4d1F2eDFwSHIxamZCRUgyQnBFWGp6LWRZUlFSTTIxenN5bjU1c2xiZFJ0S1YzdnNnNWZBd3B0d0htdGdxUQ?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791812016,
+        "author": "bsky:diariodenavarra.bsky.social",
+        "source": "bluesky",
+        "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de migrantes: la Armada envió ",
+        "url": "https://www.diariodenavarra.es/noticias/actualidad/nacional/2026/10/12/buques-guerra-marroquies-entraron-aguas-ceuta-coincidiendo-llegada-masiva-migrantes-armada-envio-fragata-navarra-frenar-incursion-838495-28.html?utm_campaign=mrf-bluesky-diariodenavarra.bsky.social&utm_source=bluesky&utm_medium=social&mrfcid=202610126ac9f0808bfa9f311c7427f3",
+        "bsky": "at://did:plc:44qw3kabkua4w2o3nkcj33vw/app.bsky.feed.post/3mxomzgtnb62c"
+      },
+      {
+        "ts": 1791811690,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de migrantes: la Armada envió ",
+        "url": "https://news.google.com/rss/articles/CBMiuwJBVV95cUxQQ2JmeTBCYm9TZTNmU1JOVGc0YUxMc3g2dkEtTVZVNjc5cEZ1ZVZrMS1sN015Sy1kVjBaNkV3bElUVFlSb0VLOWxCQ3ZoTjNYcE9hM0lCRF9XMVBZVURCelQ3RFlKUklXVkMweWg5MUJ1RFFEeEtXZGNmSWNMN2JxLVRCRExzWVB3VTZ4ZjVpT2RFdHBPeVV5dklyaHVlUEMtcEFrcHBFZFdqY1N6NlpXQ3hnY1ZEd1lFYVZudnVMX0R3X3NGaWx4ZnV0c09HV3R4dTJSSGhvSVNmaVhGTzdvZjR1YnV4OFdrOHpJcy05ekRCeXVjdDRONXQwa2dULXNyVkhobnBEbFFjWEZza1ZMa0hiNG4yMjBIXzlJZ0hmVTQweENWTkxBdDRxWWJBeWt5UGREejhzcHhpeTg?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791807306,
+        "author": "bsky:ferna1diez.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:dx5je5myk3uavb23e56nivhy/app.bsky.feed.post/3mxoimzpwls2u"
+      },
+      {
+        "ts": 1791806968,
+        "author": "bsky:mmadrigal.bsky.social",
+        "source": "bluesky",
+        "title": "Me hicieron saber que no enviara informes sobre Ceuta ,  pero aún así hay 4 mensajes, con credibilidad BAJA y anónimos, ",
+        "url": "",
+        "bsky": "at://did:plc:vp2o3prnqcez3eqje4etsxcw/app.bsky.feed.post/3mxoicy2f222r"
+      },
+      {
+        "ts": 1791806116,
+        "author": "bsky:mmadrigal.bsky.social",
+        "source": "bluesky",
+        "title": "Me hicieron saber que no enviara informes sobre Ceuta ,  pero aún así hay 4 mensajes, con credibilidad BAJA y anónimos, ",
+        "url": "",
+        "bsky": "at://did:plc:vp2o3prnqcez3eqje4etsxcw/app.bsky.feed.post/3mxohjl4hq22r"
+      },
+      {
+        "ts": 1791801679,
+        "author": "bsky:ecac1944.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:jkuosh7qijhpskhonr5fvphi/app.bsky.feed.post/3mxodfdomgc2e"
+      },
+      {
+        "ts": 1791801652,
+        "author": "bsky:malasombra999.bsky.social",
+        "source": "bluesky",
+        "title": "Que bonito nos lo está poniendo Trump.  La Armada española desplegó fragatas en julio y agosto por la entrada de buques ",
+        "url": "https://www.eldiario.es/1_cf33ea",
+        "bsky": "at://did:plc:svrt6depkf5brqcxe5zbrd5v/app.bsky.feed.post/3mxodejteqk2g"
+      },
+      {
+        "ts": 1791801217,
+        "author": "bsky:rifenio.bsky.social",
+        "source": "bluesky",
+        "title": "Buques de guerra marroquíes, incluyendo al menos una fragata y varias patrulleras de la Marina Real de Marruecos, invadi",
+        "url": "",
+        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxocxm47ml2d"
+      },
+      {
+        "ts": 1791801004,
+        "author": "bsky:civitanodelamondo.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:ptd7felyg66rdbrqmvek2zui/app.bsky.feed.post/3mxocr7xbpk2x"
+      },
+      {
+        "ts": 1791795979,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Infodefensa fotografió a la fragata Hassan II saliendo de Ksar Sghir el día que la Marina marroquí entró en aguas de Ceu",
+        "url": "https://news.google.com/rss/articles/CBMi_wFBVV95cUxPZDU4eXc3Z216RUZGVWFlc1BqQ0lhWkNRbjU4Q1U5Tk5hcGtSWUZLY25GaGFKMjZpb1lnRnNsNlRnVm96SkpHc3RNaS03ZFVBQ0lZdVZMX3FEQmNLVzJIdV9aWWI0bHdKd0VGZ0hRYmdsLW1mMmZsdTBkd0JCYTBhcU85T0NpS004Q2NnN1o2OWVYNXEzejJrMk9rNGQ2aUpUY043cV9iU0VtM2pyQWNmZDZJYXJYWmtGSW12bG9EUVFNVFdpUjZtZzJMZVRmWW55UXZscGllY1QtcmxVZ25zaWtrRHlRQk1vR1hSdHRheENSNmhhdWtkZ0VacXoyTzA?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791795979,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Infodefensa fotografió la fragata Hassan II saliendo de Ksar Sghir el día que la Marina marroquí entró en aguas de Ceuta",
+        "url": "https://news.google.com/rss/articles/CBMi_wFBVV95cUxPZDU4eXc3Z216RUZGVWFlc1BqQ0lhWkNRbjU4Q1U5Tk5hcGtSWUZLY25GaGFKMjZpb1lnRnNsNlRnVm96SkpHc3RNaS03ZFVBQ0lZdVZMX3FEQmNLVzJIdV9aWWI0bHdKd0VGZ0hRYmdsLW1mMmZsdTBkd0JCYTBhcU85T0NpS004Q2NnN1o2OWVYNXEzejJrMk9rNGQ2aUpUY043cV9iU0VtM2pyQWNmZDZJYXJYWmtGSW12bG9EUVFNVFdpUjZtZzJMZVRmWW55UXZscGllY1QtcmxVZ25zaWtrRHlRQk1vR1hSdHRheENSNmhhdWtkZ0VacXoyTzA?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791795577,
+        "author": "bsky:jecheverri45.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio-agosto  Al menos una fragata y varias patrulleras de Marruecos navegaron p",
+        "url": "https://tinyurl.com/3ahjxb2d",
+        "bsky": "at://did:plc:dbyk6p535jt5jd2m7ermg7iy/app.bsky.feed.post/3mxo5piaiys2r"
+      },
+      {
+        "ts": 1791793629,
+        "author": "bsky:agustin70.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:6234qbqvppugc2zwaxwzahsl/app.bsky.feed.post/3mxo3vh3cms2x"
+      },
+      {
+        "ts": 1791793330,
+        "author": "bsky:eldiario.es",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/politica/armada-espanola-desplego-fragatas-julio-agosto-despues-buques-guerra-marruecos-entraran-aguas-ceuta-autorizacion_1_13579242.html",
+        "bsky": "at://did:plc:sv2ivxvf7fxchmo2xamo3wwx/app.bsky.feed.post/3mxo3mjfcok2e"
+      },
+      {
+        "ts": 1791792753,
+        "author": "bsky:calata68.bsky.social",
+        "source": "bluesky",
+        "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de inmigrantes La Armada españ",
+        "url": "https://elpais.com/espana/2026-10-12/buques-de-guerra-marroquies-invadieron-aguas-de-ceuta-coincidiendo-con-la-entrada-masiva-de-inmigrantes.html",
+        "bsky": "at://did:plc:tdbifjaaksapr5lvylsrwhs2/app.bsky.feed.post/3mxo33ddmrk2l"
+      },
+      {
+        "ts": 1791792361,
+        "author": "bsky:jedirepublicano.bsky.social",
+        "source": "bluesky",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
+        "bsky": "at://did:plc:d4tmpguepxqqwb5vquq53qro/app.bsky.feed.post/3mxo2pnkhws2d"
+      },
+      {
+        "ts": 1791791774,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxPcFJPZ0tycjZsZms3V2xBcTNLYTVPZXF3bExJVWx5cERZU01xamZzUTl5cnpaemY1U1czbTBhZ3N5dlRaY1ZLaVYxS0xkM1ZIdmU1eGJCeHZXd2dlaDg5cG1pSDV6WVRVenJldlJIN2xHVndTVmhRRDQxVUUwTlktVVl6ODY0Ri1RYWhtRUdUUzR3amwyWlBJekQwc1hnWFFMSHc4X1BldUhuRm5MYUxsamZXbHZaVTM1ZkNvTV9ibHVjdlVVM0l6Rl9IcFh6NnVhRjBwaWJQYlppUkN6T2w4allyUEZZckN3c1dfV2ZhWjlqN2_SAfgBQVVfeXFMUFhxOUdFTDJCU1ZWZmtuUlVvcmFaa0NFMkZyc2xDQ2NNYnctOTFrZVdiN0VjTE8wLVBoZ2JsZ3p2Q3VrUUFUMGJuNFMxOUlTVTRYUi16QnVybHY3TGtOZFVxWlRqUlZGRGk4b29UdnJ0LU9RTXlJSHI5SVhCNjQxdTk5X25lLUg0UmRsVGJSMXZKekZUOW5SSDhMSUZnbXFOenBCSFNPMEppaFk1NGctN1RYWjJLR21pMGxEVGc5Q1pqVUNabTBpTzRveDlMeVVJWFBaZHV1cjJadXN5SFVMMENxNzUzM0RMWGNuR3VLdWxranVfUENoNFI?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791791774,
+        "author": "rss:ElDiario.es",
+        "source": "rss:ElDiario.es",
+        "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
+        "url": "https://www.eldiario.es/politica/armada-espanola-desplego-fragatas-julio-agosto-despues-buques-guerra-marruecos-entraran-aguas-ceuta-autorizacion_1_13579242.html",
+        "bsky": ""
+      },
+      {
+        "ts": 1791791774,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "La Armada española desplegó fragatas en julio y agosto después de que buques de guerra de Marruecos entraran en aguas de",
+        "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxQWHE5R0VMMkJTVlZma25SVW9yYVprQ0UyRnJzbENDY01idy05MWtlV2I3RWNMTzAtUGhnYmxnenZDdWtRQVQwYm40UzE5SVNVNFhSLXpCdXJsdjdMa05kVXFaVGpSVkZEaThvb1R2cnQtT1FNeUlIcjlJWEI2NDF1OTlfbmUtSDRSZGxUYlIxdkp6RlQ5blJIOExJRmdtcU56cEJIU08wSmloWTU0Zy03VFhaMktHbWkwbERUZzlDWmpVQ1ptMGlPNG94OUx5VUlYUFpkdXVyMlp1c3lIVUwwQ3E3NTMzRExYY25HdUt1bGtqdV9QQ2g0UtIB-AFBVV95cUxQWHE5R0VMMkJTVlZma25SVW9yYVprQ0UyRnJzbENDY01idy05MWtlV2I3RWNMTzAtUGhnYmxnenZDdWtRQVQwYm40UzE5SVNVNFhSLXpCdXJsdjdMa05kVXFaVGpSVkZEaThvb1R2cnQtT1FNeUlIcjlJWEI2NDF1OTlfbmUtSDRSZGxUYlIxdkp6RlQ5blJIOExJRmdtcU56cEJIU08wSmloWTU0Zy03VFhaMktHbWkwbERUZzlDWmpVQ1ptMGlPNG94OUx5VUlYUFpkdXVyMlp1c3lIVUwwQ3E3NTMzRExYY25HdUt1bGtqdV9QQ2g0Ug?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791783983,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "España desplegó fragatas ante incursiones de buques marroquíes en Ceuta - Demócrata",
+        "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNNHhHZHR0RmpmMk9aemdhSUxVaG9JdUlvVmtub2lRcFJrZUFDRVFNckpTTFRrTXAyeFhPdFVQUDhzWXdDUGMzTnZqRGlQNUUyVDdDNzdKbmdzcTBubER4eGdZM2JNb2JFa1ZQeGxEM2lyVDdrUHNQZWU1YmdQV1RfZVlqLXBJUWFMb2JLNFBZMVNlb0ZEM0NsUmREWnBYUdIBowFBVV95cUxPNWt0ek43dWpUR29DeGh1QnQ1S1I4X1l6dS1TREFqam9nWE83YnFhRVZleXdZemJNajM0R19qOFJoVnZFTTY1RWxZamt5NEVkV1ZEMWtjZmhBckpiLUFZN2J1WFkxQnU3bnc3LTNYRjhkSFVlV3J0R29GQWNmMEhuQXEwWHlBdDRqM0dMVDQzVHFzSDhHXzNzS2VLQ2FJeGdHcG84?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791749566,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El Gobierno no controla los empadronamientos fraudulentos mientras la UCRIF detiene a 2.291 personas - Canarias en Pleno",
+        "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE81T0RGa1VhZ1ZpSVZtdXVleTJOeGlMX2w2MG56T2lsdGpKTjA3STFIcmJLR0Z3bzNfNmpMSS04dS1vVE9KbjRwRHRDTkNhLTlGRjcxVkxobDNoVUQ0SnQ1UVJqbjY3WGo3dkxuMA?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791748230,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Hasta 2.000 kilómetros de alcance sin GPS ni piloto: así son los drones Irifi de Marruecos que tienen a España en su rad",
+        "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxNekRuRENNbU9aLTRScFprUmE3eGlYQy0tRzVrMXVfNVVNMUd1RHNHT1BBUFJMVGkwZEs5cU5ZdzdUNVg5Z3U1c1paRnVGMVR0TGxWQ2pBcHFaUlkyUFFxekpFdVYzN3ViR0NaQms5S0pnR2tIVXdoV2pRakQ1WlFkeHFyM0N6VEhnc19kUmhKYk1TdGZyZXFOOS15LWFYR0FnT3BTSk5xcjJXMy1wem5UaTlWSW5Hdy15dnJZMW1xbDlndkhoeV9ydkZzSVJDY1JqVzMzSWNuUlJ0TUpkTjVsTGk0NmpsUUdvS3lBUkxCMDVYTllQX3ppUDlrQlMxUkgyVXNxaHJLdGRzeXk5WHfSAY4CQVVfeXFMUEF2ckpuS0R1bC13VTZVZGNkcEJKallZZWV6S0JuUGZTaTlGdV8yb01ROG4zODBjeUt5UmpzWmE0TEkzeElBd0N6d3BlMGlja2M5YTJiNS0yNVhjMjAwZW5seWh4Q0loWTlfa2p0bEJaUU5Qa21VY04wSmFVdjFKeW01Z2NsVDUtLWJQbHRfaXRPYjRJLUhFb1pFM0pOUTBkQUpId1J3QWV2ZTJycGtyV0o5LV9vOEw2RzI0T1V6bko3cUpkVkE2LTRaMGl2bzVZc1ZGSjNWUllBYTNVSUw2UzNWQVRIdGtwNjduUFp0YXRqcTJIT01rQXF2cVYxSk9UNkFnTHNQeEViVGVGRG1R?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791732361,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "El Gobierno no controla los empadronamientos fraudulentos mientras la UCRIF detiene a 2.291 personas - Canarias en Pleno",
+        "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE81T0RGa1VhZ1ZpSVZtdXVleTJOeGlMX2w2MG56T2lsdGpKTjA3STFIcmJLR0Z3bzNfNmpMSS04dS1vVE9KbjRwRHRDTkNhLTlGRjcxVkxobDNoVUQ0SnQ1UVJqbjY3WGo3dkxuMA?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791696471,
+        "author": "bsky:oscarsumano.bsky.social",
+        "source": "bluesky",
+        "title": "Amig@s, buenos días... Efemérides 10/10/2026: Feijóo... sacrificaros vasallos. Trump... realiza limpieza anal a Putín. A",
+        "url": "",
+        "bsky": "at://did:plc:5kazmqfmib63mqsqqg77prtb/app.bsky.feed.post/3mxlbfvxsqk2p"
+      },
+      {
+        "ts": 1791669854,
+        "author": "bsky:uroboros-0.bsky.social",
+        "source": "bluesky",
+        "title": "Posición,junto a su papanatismo trumpista, incompatible con plantarle cara al tercer aliado,el rey de Marruecos,algo imp",
+        "url": "",
+        "bsky": "at://did:plc:ubcnfub7um5fmi5vkhnfsfzr/app.bsky.feed.post/3mxkimny2qc23"
+      },
+      {
+        "ts": 1791659102,
+        "author": "bsky:jcuerre.bsky.social",
+        "source": "bluesky",
+        "title": "Será que estoy empapado de Homeland, pero me llama la atención que nadie esté anticipando un drama con la visita de los ",
+        "url": "",
+        "bsky": "at://did:plc:jpmgkcdpf4mrpmjdinudklcj/app.bsky.feed.post/3mxk6ma7egk26"
+      },
+      {
+        "ts": 1791642718,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "España fabricará drones de combate con EDGE, empresa emiratí que vende armamento a Marruecos - La Gaceta de la Iberosfer",
+        "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxOb3U2Y0g2SUZELUFLcl9hNzR6cW1laWVMZWN4aXFMellKZFh0NXlNdWVTN0ZJWHgyNkpYLUw3UXBWLTNIMFI0VlFBVC1tSDd6d1dnTi0xTzM2eXhIeG9Wb19sMWNpOThsWERlTnZtV3o0WEQwZ0t0NEg5bGxCQ3Q2YnFLeW1RaVE0SmRSUGJJYmU2am1ReF9IS1lNbFNaOWlaZWNyRFJndHh4bkJLUTh2TnBKSzEwV0pBWmlSSVFVNzUwOW85RWN5RS1hMNIB0AFBVV95cUxPZ2RCQVJEd0Y4QjF0bkp5Z2lOaFgxdHJzaFNtekdGSHhqREVlWGJ4c2IxalJ1cF8zQUJDaEplY2c5Ql9uX0NkNEpFd2ZZbS0wUElzOFNMLXUxSm5qcU5GeVpNQkY0c3ZOUDlDQmNWQmFUel95YWtLbG1WUkJrREJJNU9INTRmdkVnNWpGb0tSalQzMVlaSEs4VWRwODlwckppdE5fcWZXbjh2TlJ0YzNYTUFYUENrRTQwdlowN1RHS2lINFlkLWlMRFp0SkpHTFZ6?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791582070,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Luis de la Corte, director de Inteligencia: \"Marruecos no reconoce la españolidad de Ceuta y Melilla, hay que preparar a",
+        "url": "https://news.google.com/rss/articles/CBMisgJBVV95cUxNTXBYSDk0QUdrMWJ4eUdTeWQ0aGZXbml2eklIdS1pajBhZk5tcnVDMFJoSGFpVzN6UWxiWkJrOWRZUldQQmJRdnk2YTkwZ1dEMlpWdndEaXVaTGFPMldFTjY1MDNLcWFwN1BmVnJtZU5RYmhyVGNIaTV3b05WelNEM0psejZHQ2pzc3hPX01odGZWSWdjXzRIa3lCRTV4RW5QcDRtaEhHSVhkbjhid0VCaHNCakloSG8wZ3pKV0NVV1oxbHVnaUNsbkE3Mm0xM19WMG5LYWVfaFZlQ3FCRGJweW9la2l2aDdxZVpPUnIzcFp1REV1ZmlhTTZINVp1UDRQN3k5d09YY01fY3laNXdkTEhjZnh6OTBmN05hTzQ1SGtpR1VYNHR6b2J5bEx1ZjRhMHfSAbcCQVVfeXFMTmxaQ2RySWRzYTZBTlotZlZ3RFo3dW1lOG1qc1NESTVMdVJQaVlYaXVpekRtYjRzX3V1SnpsS01uWVFEb29EYlNkaHJENmk3NEYwY25zNlhCcW5BVHlteWc1OWFGRURDc045Vm9xWGJBYVg3U1dwendrS1BsR2I2b0J6Zlc0bnZvbmg4VTBaREs4aUsxTVd5aG9XUFFRSTRKekgyUDBMWTRsWC1rbWNTYXN4MkdOZWpIVE1Xdnd2Uk5BeTVrSU9lcXBBaC1PY2lyMmx0XzA5RW53Ny1pdHdhXzU1NHg3T19vMU1JOFhjM05lTkdVMVhtMXVMOEpHYV9TNHJtdmRvQVY2bmtKX2t5OVRrTzJQT29kbDhYOEZfV2E4M0JOWktpQlgtdVkxR1l5ZXpwUldPbWM?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1791477337,
+        "author": "bsky:electomania.es",
+        "source": "bluesky",
+        "title": "Abascal 🥦 llama a recordar la crisis de #Ceuta 🇪🇸   \"Ni una sola de las maniobras de distracción de la mafia criminal de",
+        "url": "https://electomania.es/abascal-llama-a-recordar-la-crisis-de-ceuta-a-pesar-de-las-maniobras-de-distraccion-del-gobierno/",
+        "bsky": "at://did:plc:wyw23dnvqzfzonok6fwcwt6m/app.bsky.feed.post/3mxevd7wbho2g"
+      },
+      {
+        "ts": 1791376878,
+        "author": "bsky:gglapresa.bsky.social",
+        "source": "bluesky",
+        "title": "Entendamos, por cierto, que lo más probable será ver una nueva maniobra de Marruecos en Ceuta o Melilla y/o novedades go",
+        "url": "",
+        "bsky": "at://did:plc:e5eh2ygu2sh5uzyr4vpffnna/app.bsky.feed.post/3mxbxrchy7k2g"
+      }
+    ],
+    "cuentas": [
+      {
+        "author": "news:google",
+        "n": 78
+      },
+      {
+        "author": "bsky:rifenio.bsky.social",
+        "n": 12
+      },
+      {
+        "author": "bsky:mascarpone79.bsky.social",
+        "n": 6
+      },
+      {
+        "author": "tg:elfarodeceuta",
+        "n": 5
+      },
+      {
+        "author": "bsky:jauquim.bsky.social",
+        "n": 4
+      },
+      {
+        "author": "bsky:bochecas.bsky.social",
+        "n": 4
+      },
+      {
+        "author": "bsky:autodefensas.bsky.social",
+        "n": 4
+      },
+      {
+        "author": "bsky:alertaroja24h.bsky.social",
+        "n": 4
+      },
+      {
+        "author": "rss:Yabiladi Maroc (FR)",
+        "n": 3
+      },
+      {
+        "author": "bsky:theobjective-es.bsky.social",
+        "n": 3
+      },
+      {
+        "author": "bsky:demetrioymedio.bsky.social",
+        "n": 3
+      },
+      {
+        "author": "bsky:calata68.bsky.social",
+        "n": 3
+      }
+    ],
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"

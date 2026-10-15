@@ -404,6 +404,21 @@ def compute():
         h4["top_url_pct"] = round(100 * top[0] / r[0]) if top and r[0] else 0
         h4["ev_por_url"] = round(r[0] / r[1], 2) if r[1] else 0
 
+    # evidencia abierta (nucleo): eventos con enlace a la fuente + cuentas top
+    evid, cuentas = [], []
+    if ids_n:
+        _che = ",".join("?" * len(ids_n))
+        for r in con.execute(
+                f"SELECT timestamp, author, source, title, url, bsky_uri FROM events"
+                f" WHERE id IN ({_che}) ORDER BY timestamp DESC LIMIT 80", ids_n).fetchall():
+            evid.append({"ts": int(r[0] or 0), "author": r[1] or "", "source": r[2] or "",
+                         "title": (r[3] or "").replace("\n", " ")[:130],
+                         "url": r[4] or "", "bsky": r[5] or ""})
+        for r in con.execute(
+                f"SELECT author, COUNT(*) FROM events WHERE id IN ({_che})"
+                " GROUP BY author ORDER BY 2 DESC LIMIT 12", ids_n).fetchall():
+            cuentas.append({"author": r[0] or "", "n": r[1]})
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -431,6 +446,8 @@ def compute():
         "placebo": placebo,
         "fichas": fichas,
         "h4": h4,
+        "evidencia": evid,
+        "cuentas": cuentas,
         "_ids": {"nucleo": sorted(nucleo), "contexto": sorted(contexto)},
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
@@ -609,6 +626,32 @@ def build_html(manual_txt, d, meta):
     kw_html = "".join(
         f"<tr><td>{lbl}</td><td style='font-size:.82rem'>{' · '.join(w)}</td><td>{g}</td></tr>"
         for k, lbl, w, e, g in CATS)
+
+    def _acct(a):
+        a = a or ""
+        if a.startswith("bsky:"):
+            h = a[5:]
+            return f'<a href="https://bsky.app/profile/{h}" target="_blank" rel="noopener">{h}</a>'
+        return a
+
+    def _lnk(e):
+        u = e.get("url") or ""
+        b = e.get("bsky") or ""
+        if not u and b.startswith("at://"):
+            p = b.split("/")
+            if len(p) >= 5:
+                u = f"https://bsky.app/profile/{p[2]}/post/{p[-1]}"
+        return u
+
+    evid_rows = []
+    for e in d.get("evidencia", [])[:40]:
+        u = _lnk(e)
+        src = f'<a href="{u}" target="_blank" rel="noopener">fuente</a>' if u else "—"
+        evid_rows.append(
+            f"<tr><td>{_fecha(e['ts'])}</td><td>{_acct(e['author'])}</td>"
+            f"<td>{e['title']}</td><td>{src}</td></tr>")
+    evid_html = "".join(evid_rows)
+    cuentas_txt = " · ".join(f"{_acct(c['author'])} ({c['n']})" for c in d.get("cuentas", [])[:8])
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -782,6 +825,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <details class="seccion" open><summary>Qué se observa (análisis V1)</summary>
 {manual_html}
+</details>
+
+<details class="seccion"><summary>Evidencia abierta · eventos del núcleo (enlace a la fuente)</summary>
+<table><thead><tr><th>Fecha</th><th>Cuenta</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{evid_html or '<tr><td colspan=4>sin eventos</td></tr>'}</tbody></table>
+<p class="sub">Cada fila enlaza al <b>post o noticia original</b> (o al perfil en Bluesky). Top cuentas del núcleo: {cuentas_txt}.</p>
 </details>
 
 <details class="seccion"><summary>Metodología · categorías y keywords</summary>
