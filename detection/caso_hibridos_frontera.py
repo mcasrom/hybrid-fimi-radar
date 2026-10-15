@@ -948,7 +948,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         return lst[i]["n"] if i < len(lst) else default
     _indic_rows = "".join(
         "<tr><td>%s</td><td>%s</td><td>mención</td>"
-        "<td class='num np' data-p='[[%s|%s|%s]]'>%s</td></tr>"
+        "<td class='num np' data-p='[%s,%s,%s]'>%s</td></tr>"
         % (it["lbl"], it["linea"], _per_val(_i, "30", it["n"]), _per_val(_i, "90", it["n"]),
            _per_val(_i, "acum", it["n"]), _n(it["n"]))
         for _i, it in enumerate(indic or [])) or "<tr><td colspan=4>sin datos</td></tr>"
