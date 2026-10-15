@@ -859,7 +859,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
 
     # --- piezas del caso (catálogo + Radar A + prensa) ---
     _indic_rows = "".join(
-        "<tr><td>%s</td><td>%s</td><td class='num'>%s</td></tr>" % (it["lbl"], it["linea"], _n(it["n"]))
+        "<tr><td>%s</td><td>%s</td><td>mención</td><td class='num'>%s</td></tr>" % (it["lbl"], it["linea"], _n(it["n"]))
         for it in (indic or [])) or "<tr><td colspan=3>sin datos</td></tr>"
     _hh = (hechos or {}).get("historias", [])
     _hechos_n = _n((hechos or {}).get("n", len(_hh)))
@@ -1212,7 +1212,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.<br><b>Ámbito:</b> cifras del <b>tema (90 d)</b>. El bloque «<b>Radar B</b>» cuenta el <b>núcleo</b> (subconjunto estricto con ancla geográfica): por eso algunas cifras difieren (p. ej. <i>drones</i>). Cada tabla declara su ámbito.</p>
 {_indic_chart}
 <details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
-<table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
+<table><thead><tr><th>Indicador</th><th>Línea</th><th>Nivel</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
 <h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
@@ -1271,13 +1271,13 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <thead><tr><th>Hipótesis</th><th>Evidencia a favor</th><th>Evidencia en contra</th><th>Estado</th></tr></thead>
 <tbody>
 <tr><td><b>HC</b> · las acciones responden a un <b>plan de presión híbrida</b> sobre Ceuta/Melilla/Canarias (¿anexión?, inferencia)</td><td>Coincidencia temporal (buques + drones + cobertura); <b>Navantia entrega una patrullera "sin pompa" en plena crisis</b>; F-35/EE.UU., Israel (24 % del armamento), EDGE/Emiratos en el periodo</td><td><b>Sin coordinación medida</b> por URLs; deltas contaminados por la captura; existe <b>cooperación</b> real (ejercicios, comercio); «anexión» no es texto literal (27)</td><td><b>En evaluación</b></td></tr>
-<tr><td><b>H1</b> · drones suben tras eventos migratorios</td><td>{_h1_txt}</td><td>Permutación simple → p optimista (autocorrelación)</td><td><b>En evaluación</b></td></tr>
-<tr><td><b>H2</b> · los picos coinciden con hitos</td><td>{_plc_txt}</td><td>«Hitos» <b>derivados</b> del corpus → circular</td><td><b>Inconclusa</b></td></tr>
+<tr><td><b>H1</b> · drones suben tras eventos migratorios <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_h1_txt}</td><td>Permutación simple → p optimista (autocorrelación)</td><td><b>En evaluación</b></td></tr>
+<tr><td><b>H2</b> · los picos coinciden con hitos <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_plc_txt}</td><td>«Hitos» <b>derivados</b> del corpus → circular</td><td><b>Inconclusa</b></td></tr>
 <tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b></td><td>&mdash;</td><td>{amp.get('urls_compartidas', 0)} URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))})</td><td><b>Sin evidencia</b></td></tr>
 <tr><td><b>H4</b> · el incremento responde a cambios de cobertura</td><td>{_h4_txt}</td><td>Captura global creció mucho en el periodo</td><td><b>Sesgo probable</b></td></tr>
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
-<details class="seccion"><summary>Método de H1 y H2 (auditable)</summary>
+<details class="seccion" id="metodo-h"><summary>Método de H1 y H2 (auditable)</summary>
 <ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias</b>. Se prueban retardos 0–14 d y se informa el máximo; el nulo (500 permutaciones) <b>también</b> maximiza sobre retardos.</li>
 <li><b>H1 · límites:</b> la permutación simple <b>no corrige la autocorrelación</b> → p optimista; correlación ≠ causalidad (puede haber causa común o eco mediático).</li>
 <li><b>H2 · método:</b> «hitos» = <b>primera aparición</b> del término en el corpus (valla, ejercicios, Navantia). <b>No son externos</b> → prueba <b>circular</b>; debe repetirse con hitos fechados por fuente externa.</li>
@@ -1328,6 +1328,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Evolución · diario / semanal / histórico</h2>
 <p class="sub">Se guarda <b>un registro por día</b> (se conserva todo). <b>Diario</b> = cada jornada; <b>semanal</b> = agregado por semana ISO; <b>histórico</b> = la serie completa; <b>revisión</b> = Δ frente al día anterior. Comparación entre fechas, en la tabla. Serie descargable: <a href="/api/v1/caso/frontera_sur_hibridos/historial">JSON</a> · <a href="/api/v1/caso/frontera_sur_hibridos/historial.csv">CSV</a>.</p>
+<p style="background:#eef4fb;border-left:4px solid #0d1b2a;border-radius:8px;padding:10px 14px;margin:10px 0"><b>Pregunta guía:</b> ¿los picos reflejan <b>acontecimientos nuevos</b> o, sobre todo, <b>mayor difusión de lo ya conocido</b>?</p>
 {_hist_chart}
 <details class="seccion" open><summary>Diario (revisión: Δ vs día anterior)</summary>
 <table><thead><tr><th>Fecha</th><th class="num">Núcleo</th><th class="num">Δ</th><th class="num">Autores</th><th class="num">Clústeres</th><th class="num">URLs comp.</th><th>Indicadores (n)</th></tr></thead><tbody>{_hist_rows}</tbody></table>
