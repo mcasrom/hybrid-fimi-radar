@@ -595,6 +595,9 @@ def _md(text):
 MARRUECOS_SRC = ("yabiladi", "hespress", "le360", "le 360", "medias24", "telquel",
                  "nouvelle tribune", "akhbar", "assabah", "2m", "map ", "maroc")
 CHINA_SRC = ("cgtn", "global times", "xinhua", "people's daily", "china daily", "cri ", "cctv")
+INT_SRC = ("al jazeera", "rfi", "france 24", "euobserver", "tsa algerie", "algerie360", "faz", "bbc",
+           "tagesschau", "deutsche welle", "politico", "middle east", "le monde", "der spiegel",
+           "svenska", "dagens", "rt ", "sputnik", "tass", "presstv", "euronews", "reuters", "afp")
 
 
 def compute_hechos(ids):
@@ -670,7 +673,7 @@ def compute_prensa(tema):
         chi_corpus = []
     _mar_samp = _samp(MARRUECOS_SRC)
     con.close()
-    return {"mar": _pick(MARRUECOS_SRC), "chi": _pick(CHINA_SRC),
+    return {"mar": _pick(MARRUECOS_SRC), "int": _pick(INT_SRC), "chi": _pick(CHINA_SRC),
             "mar_samp": _mar_samp, "chi_corpus": chi_corpus}
 
 
@@ -742,6 +745,8 @@ def build_html(manual_txt, d, hechos, prensa, indic, meta):
     _chi_rows = _src_rows(_pre.get("chi", []), "0 &mdash; ningún medio chino cubre el tema")
     _prows = ["<tr><td>Marruecos</td><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k))
               for s, k in (_pre.get("mar", []) or [])]
+    _prows += ["<tr><td>Internacional / EE.UU.</td><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k))
+               for s, k in (_pre.get("int", []) or [])]
     _prows.append("<tr><td>China (estatal)</td><td>CGTN / Global Times</td><td class='num'>0</td></tr>")
     _prensa_rows = "".join(_prows)
 
@@ -988,6 +993,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
 <table><thead><tr><th>Esfera</th><th>Medio</th><th class="num">Eventos</th></tr></thead><tbody>{_prensa_rows}</tbody></table>
 <p class="sub">{_chi_note}</p>
+<p class="sub"><b>Hueco EE.UU.:</b> el radar no captura diarios estadounidenses (The New York Times, The Washington Post, WSJ, NPR) en este tema; lo que llega de EE.UU. va agregado dentro de Google News. Se dice, no se inventa.</p>
 
 <h2>Radar B · Conversación <span class="sub">(núcleo)</span></h2>
 <div class="kpis">
