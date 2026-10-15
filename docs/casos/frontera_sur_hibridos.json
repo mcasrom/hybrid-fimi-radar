@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 07:40 UTC",
+    "generado_utc": "2026-10-15 07:43 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -75,6 +75,21 @@
     "sem_actual_nucleo": 88,
     "media8_nucleo": 21.2,
     "delta_pct": 314.1,
+    "hitos": [
+      [
+        1785794470,
+        "valla"
+      ],
+      [
+        1788975203,
+        "maniobras"
+      ],
+      [
+        1789559949,
+        "Navantia"
+      ]
+    ],
+    "now_ts": 1792045801,
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"

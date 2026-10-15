@@ -162,6 +162,17 @@ def compute():
     media8 = (sum(base8) / len(base8)) if base8 else 0
     delta = ((sem_actual - media8) / media8 * 100) if media8 else None
 
+    # hitos exogenos (fecha de primera aparicion de cada narrativa, DERIVADA)
+    hitos = []
+    for term, lbl in (("valla", "valla"), ("maniobras militares", "maniobras"),
+                      ("navantia", "Navantia")):
+        r = con.execute(
+            "SELECT MIN(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id "
+            "WHERE et.tema_id=? AND (LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?)",
+            (TEMA, f"%{term}%", f"%{term}%")).fetchone()
+        if r and r[0]:
+            hitos.append([int(r[0]), lbl])
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -174,6 +185,8 @@ def compute():
         "sem_actual_nucleo": sem_actual,
         "media8_nucleo": round(media8, 1),
         "delta_pct": round(delta, 1) if delta is not None else None,
+        "hitos": hitos,
+        "now_ts": int(now_ts),
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -197,6 +210,39 @@ def _sparkline(serie):
             f'role="img" aria-label="Serie semanal de eventos nucleo">'
             f'<line x1="{pad}" y1="{H-pad}" x2="{W-pad}" y2="{H-pad}" stroke="#cbd5e1"/>'
             + "".join(bars) + '</svg>')
+
+
+def _timeline(serie, now_ts, hitos):
+    """Cronografia: barras = eventos de nucleo por semana; lineas = hitos exogenos."""
+    if not serie or max(serie) == 0 or not now_ts:
+        return ""
+    W, H, pad, base = 820, 180, 12, 150
+    n = len(serie)
+    span = n * SEM
+    x0 = now_ts - span
+    bw = (W - 2 * pad) / n
+    mx = max(serie) or 1
+    parts = [f'<line x1="{pad}" y1="{base}" x2="{W - pad}" y2="{base}" stroke="#cbd5e1"/>']
+    for i, v in enumerate(serie):
+        h = (base - pad) * v / mx
+        x = pad + i * bw
+        y = base - h
+        col = "#c1440e" if v == mx else "#e8a07a"
+        parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw * 0.68:.1f}" height="{h:.1f}" fill="{col}"/>')
+        parts.append(f'<text x="{x + bw * 0.34:.1f}" y="{base + 11}" font-size="8" fill="#5c6b7a" text-anchor="middle">{v}</text>')
+    for ts, lbl in hitos:
+        if ts < x0 or ts > now_ts:
+            continue
+        x = pad + (ts - x0) / span * (W - 2 * pad)
+        parts.append(f'<line x1="{x:.1f}" y1="{pad + 2}" x2="{x:.1f}" y2="{base}" stroke="#0d1b2a" stroke-dasharray="3 3" opacity="0.75"/>')
+        parts.append(f'<text x="{x:.1f}" y="{pad}" font-size="9" fill="#0d1b2a" text-anchor="middle">{lbl}</text>')
+    f0 = datetime.fromtimestamp(x0, tz=timezone.utc).strftime("%d-%m")
+    f1 = datetime.fromtimestamp(now_ts, tz=timezone.utc).strftime("%d-%m")
+    parts.append(f'<text x="{pad}" y="{base + 22}" font-size="9" fill="#5c6b7a">{f0}</text>')
+    parts.append(f'<text x="{W - pad}" y="{base + 22}" font-size="9" fill="#5c6b7a" text-anchor="end">{f1}</text>')
+    return (f'<svg viewBox="0 0 {W} {H}" width="100%" style="max-width:820px;height:auto" '
+            f'role="img" aria-label="Cronografia semanal del nucleo con hitos exogenos">'
+            + "".join(parts) + '</svg>')
 
 
 def build_html(manual_txt, d, meta):
@@ -263,8 +309,8 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <div class="kpi"><b>{_n(d['nucleo']['autores'])}</b><span>autores nucleo</span></div>
 <div class="kpi">{delta_html}</div>
 </div>
-<p class="sub">Serie semanal (eventos de nucleo; ult. semana {_n(d['sem_actual_nucleo'])} · media 8 sem {_n(d['media8_nucleo'])}):</p>
-{_sparkline(d['serie_semanal_nucleo'])}
+<p class="sub">Cronografía: eventos de <b>núcleo</b> por semana (últ. semana {_n(d['sem_actual_nucleo'])} · media 8 sem {_n(d['media8_nucleo'])}); líneas = hitos exógenos:</p>
+{_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
 <table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
 
