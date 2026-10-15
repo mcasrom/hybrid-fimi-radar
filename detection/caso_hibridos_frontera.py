@@ -690,15 +690,17 @@ def build_html(manual_txt, d, meta):
             f"<td>{e['title']}</td><td>{src}</td></tr>")
     evid_html = "".join(evid_rows)
     cuentas_txt = " · ".join(f"{_acct(c['author'])} ({c['n']})" for c in d.get("cuentas", [])[:8])
-    _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
+    _lectura = (f"<b>{_n(d['nucleo']['eventos'])}</b> eventos de núcleo en el <b>periodo completo</b> "
+                f"({(d.get('periodo') or dict()).get('desde','')} → {(d.get('periodo') or dict()).get('hasta','')}); "
+                f"la <b>última semana</b> ({_n(d['sem_actual_nucleo'])}) es solo una parte de ese total. "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
-                f"Top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; top-3 de la última semana = "
-                f"<b>{_pt3_txt}</b>; solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas. "
+                f"Top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; solo "
+                f"<b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas de {_n(amp.get('urls_distintas', 0))}. "
                 f"<b>Polaridad</b> (heurística): <b>{_hostil_pct}%</b> hostil · {_coop_pct}% cooperación · "
                 f"{_neutro_pct}% neutro. "
-                f"<b>Lectura:</b> pico de conversación con corroboración limitada y sin evidencia "
-                f"de coordinación por URLs.")
+                f"<b>Lectura:</b> conversación amplia sobre un episodio reciente (fragata en Ceuta) con "
+                f"<b>amplificación coordinada NO medida</b> — señal a vigilar, no conclusión.")
     if delta is None:
         delta_html = "<b>—</b><span>vs media 8 sem (núcleo)</span>"
     else:
@@ -716,12 +718,12 @@ def build_html(manual_txt, d, meta):
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Presión híbrida en Frontera Sur (Marruecos) — Observatorio de amplificación</title>
-<meta name="description" content="Subcaso: núcleo híbrido (drones, buques, ejercicios militares, hostigamiento, bloqueo) vs contexto, con línea base, amplificación, polaridad y contraste de hipótesis. Señal, no atribución.">
+<title>Frontera Sur (Marruecos): observación de señales — Observatorio de amplificación</title>
+<meta name="description" content="Frontera Sur (Marruecos): observación de señales de presión híbrida (drones, buques, hostigamiento, bloqueo) frente a contexto migratorio/diplomático, con amplificación, polaridad y contraste de hipótesis. Señal, no atribución; no confirma una operación híbrida.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Indicadores de presión híbrida en Frontera Sur (Marruecos)">
-<meta property="og:description" content="Núcleo híbrido vs contexto: clusters, z-score, amplificación, polaridad y contraste H1-H4. Señal, no atribución.">
+<meta property="og:title" content="Frontera Sur (Marruecos): observación de señales de presión híbrida">
+<meta property="og:description" content="Señales híbridas frente a contexto: clusters, amplificación, polaridad y contraste H1-H4. Señal, no atribución; no confirma una operación híbrida.">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
 <meta property="og:image:width" content="1200">
@@ -775,11 +777,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div></details>
 </div></nav>
 <header><div class="wrap">
-<h1>Presión híbrida en Frontera Sur (Marruecos)</h1>
+<h1>Frontera Sur (Marruecos): observación de señales</h1>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
-<div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada.</div>
+<div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad (15-oct-2026):</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
 <div class="marco">
 <p><b>Marco de referencia (OTAN).</b> <em>&ldquo;Hybrid threats combine military and non-military as well as covert and overt means, including disinformation, cyber attacks, economic pressure, deployment of irregular armed groups and use of regular forces.&rdquo;</em> &mdash; OTAN, <a href="https://www.nato.int/cps/en/natohq/topics_156338.htm">&laquo;What are the hybrid threats NATO faces?&raquo;</a> (actualizado 29-ene-2026).</p>
@@ -796,13 +798,12 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Nucleo hibrido</h2>
 <div class="kpis">
+<div class="kpi"><b>{_n(d['nucleo']['eventos'])}</b><span>eventos nucleo (periodo)</span></div>
 <div class="kpi"><b>{_n(d['clusters_nucleo'])}</b><span>clusters nucleo</span></div>
-<div class="kpi"><b>{_n(d['nucleo']['eventos'])}</b><span>eventos nucleo</span></div>
 <div class="kpi"><b>{_n(d['nucleo']['autores'])}</b><span>autores nucleo</span></div>
-<div class="kpi">{delta_html}</div>
-<div class="kpi"><b>{z_txt}</b><span>z-score (pico vs 8 sem)</span></div>
+<div class="kpi"><b>{_n(amp.get('urls_compartidas', 0))}</b><span>URLs compartidas (&ge;2 autores)</span></div>
 </div>
-<p class="sub">Cronografía: eventos de <b>núcleo</b> por semana (últ. semana {_n(d['sem_actual_nucleo'])} · media 8 sem {_n(d['media8_nucleo'])}); líneas = hitos exógenos:</p>
+<p class="sub">Cronografía: eventos de <b>núcleo</b> por semana (últ. semana {_n(d['sem_actual_nucleo'])}); líneas = <b>hitos derivados del propio corpus</b> (primera aparición del término; <b>no</b> son externos):</p>
 {_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
 <table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
@@ -820,14 +821,14 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <h2>Polaridad del núcleo (heurística)</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
-<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Heurística validada a mano: 158/165 = 96 %.</b> Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
+<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación manual: 158/165 = 96 %</b> sobre una muestra de 165 eventos (14-oct-2026); esta tabla clasifica <b>{_pol_tot}</b> eventos (el denominador no coincide porque cambia la ventana). Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 
 <h2>Contraste de hipótesis (H1–H4)</h2>
 <table>
 <tbody>
 <tr><td><b>H1</b> · la actividad de drones sube tras eventos migratorios (retardo ≤7 d)</td><td>{_h1_txt}</td></tr>
-<tr><td><b>H2</b> · los picos coinciden con hitos exógenos (placebo)</td><td>{_plc_txt}</td></tr>
-<tr><td><b>H3</b> · amplificación coordinada por URLs</td><td><b>Refutada</b> en esta ventana: solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))}).</td></tr>
+<tr><td><b>H2</b> · los picos coinciden con hitos (placebo; hitos <b>derivados</b>, ojo: no exógenos)</td><td>{_plc_txt}</td></tr>
+<tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b> (no toda coordinación)</td><td><b>Sin evidencia</b> en esta ventana: solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))}).</td></tr>
 <tr><td><b>H4</b> · el incremento responde a cambios de cobertura (control)</td><td>{_h4_txt} <b>Lectura:</b> muchas URLs/fuentes → actividad; pocas URLs con muchas repeticiones → eco de una noticia.</td></tr>
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>

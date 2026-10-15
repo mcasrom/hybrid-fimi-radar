@@ -9,11 +9,11 @@
 
 **Hipótesis falsables** (se formula qué las refuta; NO se atribuye intención)
 - **H1 (dinámica).** La actividad de drones sube tras eventos migratorios. **Se refuta** si la correlación con retardo ≤7 d **no supera** la de una serie aleatoria.
-- **H2 (coincidencia con hitos).** Los picos del núcleo coinciden con hitos exógenos (entrega de Navantia, crisis de julio, maniobras con la Sexta Flota). **Se refuta** si los picos **no superan** la variación normal (z<2 sobre la mediana móvil de 28 d).
+- **H2 (coincidencia con hitos).** Los picos del núcleo coinciden con hitos (derivados del corpus: entrega de Navantia, crisis de julio, maniobras con la Sexta Flota). **Se contrasta con un placebo**: los «hitos» se derivan del propio corpus, así que la prueba es limitada; en la ventana analizada no hay una asociación clara.
 - **H3 (amplificación coordinada).** Hay amplificación medida por **URLs compartidas** entre cuentas. **Se refuta hoy**: el núcleo tiene muchos autores pero **solo 2 URLs** compartidas por ≥2 autores → **no se sostiene** coordinación por URLs.
 
 **Embudo de lectura (como dato, no como pregunta)**
-- Primera señal del núcleo, nº de ventanas semanales con reincidencia y desfase frente a los hitos exógenos (ver «Serie semanal» y «Amplificación» arriba).
+- Primera señal del núcleo, nº de ventanas semanales con reincidencia y desfase frente a los hitos (derivados) (ver «Serie semanal» y «Amplificación» arriba).
 
 **Cómo leer esta página**
 - La ventana **viva** se recalcula cada ciclo (eventos, clusters, delta, amplificación).
