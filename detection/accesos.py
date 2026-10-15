@@ -474,6 +474,7 @@ def _migrar(con):
     for tabla, col, decl in (("cursor_log", "leidas", "INTEGER DEFAULT 0"),
                              ("cursor_log", "ok", "INTEGER DEFAULT 0"),
                              ("cursor_log", "bytes", "INTEGER DEFAULT 0"),
+                             ("cursor_log", "content_mtime", "INTEGER DEFAULT 0"),
                              ("accesos", "referer", "TEXT"),
                              ("accesos", "request_uri", "TEXT"),
                              ("accesos", "utm_source", "TEXT"),
@@ -532,8 +533,8 @@ def conectar(path=DB_PATH):
 # backfill devolvía 0 sobre 9.004 líneas reales. El `+` tolera 1 o 2 comillas.
 LINE_RE = re.compile(
     r"^(?P<ip>\S+) - - \[(?P<ts>[^\]]+)\] \"(?P<request>[^\"]*)\" "
-    r"(?P<status>\d+) \S+ \"(?P<referer>[^\"]*)\" \"(?P<ua>[^\"]*)\" "
-    r"\"(?P<request_uri>[^\"]*)\" "
+    r"(?P<status>\d+) \S+ \"(?P<referer>[^\"]*)\" \"(?P<ua>[^\"]*)\"\"?\s+"
+    r"(?:\"(?P<request_uri>[^\"]*)\"\s+)?"
     r"(?:\s*host=(?P<host>\S+))?\s*$"
 )
 
@@ -614,6 +615,22 @@ def _abrir(f):
     return open(f, "r", errors="replace")
 
 
+def _content_mtime(f, st):
+    """mtime del CONTENIDO. gzip CAMBIA el inodo al comprimir, pero preserva el
+    mtime del fichero original en su header (bytes 4..8, uint32 LE). Lo usamos
+    para reconocer un .gz cuyo contenido ya se leyo en claro (anti doble conteo)."""
+    if f.endswith(".gz"):
+        try:
+            with open(f, "rb") as fh:
+                head = fh.read(8)
+            if len(head) >= 8 and head[:2] == b"\x1f\x8b":
+                import struct
+                return struct.unpack("<I", head[4:8])[0] or int(st.st_mtime)
+        except OSError:
+            pass
+    return int(st.st_mtime)
+
+
 def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False):
     """Lee solo lo nuevo de cada fichero.
 
@@ -639,13 +656,14 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
         # El cursor se busca por INODO: al rotar, nginx renombra el fichero y el
         # mismo inodo aparece con otro nombre. Buscar por ruta lleva a releer el
         # día entero (bug del doble conteo, 2-oct).
+        gz = f.endswith(".gz")
+        cm = _content_mtime(f, st)  # mtime del contenido (anti doble conteo)
         fila = con.execute(
-            "SELECT fichero, ino, offset, completo, leidas, ok, bytes"
+            "SELECT fichero, ino, offset, completo, leidas, ok, bytes, content_mtime"
             " FROM cursor_log WHERE ino=? ORDER BY leido_ts DESC LIMIT 1",
             (st.st_ino,)
         ).fetchone()
         previo_offset = 0
-        gz = f.endswith(".gz")
         if fila:
             if gz:
                 # Ya consumimos este inodo cuando estaba en claro (o ya lo
@@ -657,6 +675,33 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
                 previo_offset = 0
             else:
                 previo_offset = min(fila["offset"], st.st_size)
+            if not gz and previo_offset >= st.st_size and st.st_size > 0:
+                # Fichero rotado ya consumido: guardar su mtime FINAL del
+                # contenido para reconocer despues su .gz (mismo mtime) y no
+                # releerlo (gzip cambia el inodo -> el cursor por inodo falla).
+                if cm:
+                    con.execute("UPDATE cursor_log SET content_mtime=? WHERE ino=?",
+                                (cm, st.st_ino))
+                    con.commit()
+                continue
+        elif gz:
+            # .gz con inodo NUEVO (gzip cambio el inodo). Si su contenido ya se
+            # consumio (mismo content_mtime en el cursor), saltar -> sin 2x.
+            ya = con.execute(
+                "SELECT 1 FROM cursor_log WHERE content_mtime=? AND content_mtime>0"
+                " AND leidas>0 LIMIT 1", (cm,)).fetchone()
+            if ya:
+                con.execute(
+                    "INSERT INTO cursor_log (ino, fichero, offset, completo,"
+                    " leido_ts, leidas, ok, bytes, content_mtime)"
+                    " VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(ino) DO NOTHING",
+                    (st.st_ino, f, 0, 1,
+                     time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                     0, 0, st.st_size, cm))
+                con.commit()
+                print(f"[accesos] {f}: contenido ya consumido (mtime {cm}); se salta",
+                      flush=True)
+                continue
         if not gz and previo_offset >= st.st_size and st.st_size > 0:
             continue
 
@@ -727,14 +772,14 @@ def ingestar(con, log_dir=LOG_DIR, host=SITIO, guardar_raw=False, verbose=False)
         # y el rotado volvería a leerse entero (el bug que esto arregla).
         con.execute(
             "INSERT INTO cursor_log (ino, fichero, offset, completo, leido_ts,"
-            " leidas, ok, bytes) VALUES (?,?,?,?,?,?,?,?)"
+            " leidas, ok, bytes, content_mtime) VALUES (?,?,?,?,?,?,?,?,?)"
             " ON CONFLICT(ino) DO UPDATE SET fichero=excluded.fichero,"
             " offset=excluded.offset, completo=excluded.completo,"
             " leido_ts=excluded.leido_ts, leidas=excluded.leidas, ok=excluded.ok,"
-            " bytes=excluded.bytes",
+            " bytes=excluded.bytes, content_mtime=excluded.content_mtime",
             (st.st_ino, f, offset, 1 if gz else 0,
              time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-             len(lineas), len(lote), st.st_size),
+             len(lineas), len(lote), st.st_size, cm),
         )
         con.commit()
         # Poda: un inodo por fichero y quedan pocos, pero sin poda crecería sin
