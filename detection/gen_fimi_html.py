@@ -5372,7 +5372,7 @@ a{{color:#c2410c}}
     <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
     <div class="navmenu-panel">
       <a href="/casos/ceuta/">Ceuta / Frontera Sur</a>
-      <a href="/casos/frontera_sur_hibridos/">Marruecos · guerra híbrida (Frontera Sur)</a>
+      <a href="/casos/frontera_sur_hibridos/">Marruecos · presión híbrida (Frontera Sur)</a>
       <a href="/casos/electoral/">Electoral 2026 (panorama)</a>
     </div>
   </details>

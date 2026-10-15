@@ -621,7 +621,7 @@ def build_html(manual_txt, d, meta):
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Indicadores de presión híbrida en Frontera Sur (Marruecos) — Observatorio de amplificacion</title>
+<title>Presión híbrida en Frontera Sur (Marruecos) — Observatorio de amplificación</title>
 <meta name="description" content="Subcaso: núcleo híbrido (drones, buques, ejercicios militares, hostigamiento, bloqueo) vs contexto, con línea base, amplificación, polaridad y contraste de hipótesis. Señal, no atribución.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
@@ -679,7 +679,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div></details>
 </div></nav>
 <header><div class="wrap">
-<h1>Indicadores de presión híbrida en Frontera Sur (Marruecos)</h1>
+<h1>Presión híbrida en Frontera Sur (Marruecos)</h1>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
