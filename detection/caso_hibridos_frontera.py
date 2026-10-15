@@ -676,7 +676,70 @@ def compute_hechos(ids):
                           "pubs": [{"source": x[1], "url": x[3], "ts": x[0]} for x in v]})
     historias.sort(key=lambda h: -h["fecha"])
     medios = sorted({h["medio"] for h in historias if h["medio"]})
-    return {"n": len(historias), "historias": historias, "publicaciones": pubs, "medios": medios}
+    return {"n": len(historias), "historias": historias, "publicaciones": pubs, "medios": medios,
+            "eventos": _fusionar_episodios(historias)}
+
+
+
+_STOP = set(("de la el los las un una unos unas y o en a al del por para con sin sobre entre que se su sus "
+             "lo le les es son ser esta este estas estos esa ese esas esos como mas más ya tras segun según "
+             "ni muy dos tres sus ante bajo cabe contra desde hasta hacia hasta donde cuando quien cuales "
+             "sera será fue han ha hay solo sólo tan todo toda todos todas otro otra otros otras mismo misma "
+             "asi así ahora hoy ayer durante puede pueden tras sobre nuevo nueva tras gran grandes primer "
+             "primera ultimo última vez caso parte dice dijo sobre este esa esto eso mas").split())
+
+
+def _fusionar_episodios(historias):
+    """Agrupa historias del MISMO acontecimiento (greedy, acotado, sin encadenar).
+
+    Une un titular a un evento si comparte >=2 tokens poco frecuentes con su
+    representante, o Jaccard >= 0.34. Evita el sobre-agrupado transitivo.
+    """
+    if not historias:
+        return []
+    import unicodedata as _ud
+
+    def _toks(s):
+        s = _ud.normalize("NFKD", (s or "").lower())
+        s = "".join(c for c in s if not _ud.combining(c))
+        s = "".join(c if c.isalnum() or c == " " else " " for c in s)
+        return {w for w in s.split() if len(w) >= 4 and w not in _STOP and not w.isdigit()}
+
+    sets = [_toks(h.get("titulo", "")) for h in historias]
+    N = len(historias)
+    df = {}
+    for s in sets:
+        for w in s:
+            df[w] = df.get(w, 0) + 1
+    umbral = max(4, int(0.45 * N))
+    eventos = []
+    for i in range(N):
+        best, best_sc = None, 0.0
+        for k, ev in enumerate(eventos):
+            inter = sets[i] & ev["rep"]
+            raros = sum(1 for w in inter if df.get(w, 0) <= umbral)
+            jac = len(inter) / max(1, len(sets[i] | ev["rep"]))
+            sc = raros + jac
+            if (raros >= 2 or jac >= 0.34) and sc > best_sc:
+                best, best_sc = k, sc
+        if best is None:
+            eventos.append({"rep": set(sets[i]), "idxs": [i]})
+        else:
+            eventos[best]["idxs"].append(i)
+            eventos[best]["rep"] |= sets[i]
+    out = []
+    for ev in eventos:
+        idxs = ev["idxs"]
+        pubs = []
+        for i in idxs:
+            pubs.extend(historias[i].get("pubs") or [])
+        tit = min((historias[i].get("titulo", "") for i in idxs), key=lambda x: len(x or ""))
+        fechas = [historias[i]["fecha"] for i in idxs if historias[i].get("fecha")]
+        out.append({"titulo": tit, "n_pubs": len(pubs), "n_h": len(idxs),
+                    "desde": min(fechas) if fechas else 0, "hasta": max(fechas) if fechas else 0,
+                    "pubs": pubs})
+    out.sort(key=lambda e: -e["hasta"])
+    return out
 
 
 def compute_prensa(tema):
@@ -796,6 +859,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     _hechos_n = _n((hechos or {}).get("n", len(_hh)))
     _hechos_pub = _n((hechos or {}).get("publicaciones", 0))
     _hechos_med = _n(len((hechos or {}).get("medios", [])))
+    _n_eventos = _n(len((hechos or {}).get("eventos", []) or []))
     _hrows = []
     for _h in _hh[:40]:
         _u = _h.get("url") or ""
@@ -829,27 +893,30 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
         return "".join(out)
 
     _mar_samp_rows = _samp_rows(_pre.get("mar_samp", []))
+    _evs = (hechos or {}).get("eventos", []) or []
     _epi_rows = []
-    for _i, _h in enumerate(_hh[:20], 1):
-        _pubs = _h.get("pubs") or []
+    for _i, _ev in enumerate(_evs[:25], 1):
+        _pubs = _ev.get("pubs") or []
         _links = []
-        for _p in _pubs[:12]:
+        for _p in _pubs[:16]:
             _pu = _p.get("url") or ""
             _ln = ('<a href="%s" target="_blank" rel="noopener">%s</a>' % (_pu, (_p.get("source") or "enlace")[:44])) if _pu else ((_p.get("source") or "")[:44])
             _links.append("<li>%s</li>" % _ln)
         _eid = "CEU-2026-%03d" % _i
+        _rango = _fecha(_ev["desde"]) if _ev.get("desde") == _ev.get("hasta") else (_fecha(_ev["desde"]) + " &rarr; " + _fecha(_ev["hasta"]))
+        _pub_txt = ("%d publicaciones · %d titulares" % (_ev.get("n_pubs", 0), _ev.get("n_h", 0))) if _ev.get("n_h", 1) > 1 else "1 publicación"
         _epi_rows.append(
-            '<details class="seccion"><summary>%s · %s · <b>%s</b> publicaciones</summary>'
-            '<p><b>Fecha(s) de publicación:</b> %s.</p>'
+            '<details class="seccion"><summary>%s · %s</summary>'
+            '<p><b>Periodo de publicación:</b> %s · <b>%s</b>.</p>'
             '<p><b>Afirmación principal:</b> %s</p>'
-            '<p><b>Publicaciones (%s):</b></p><ul>%s</ul>'
+            '<p><b>Publicaciones:</b></p><ul>%s</ul>'
             '<p><b>Estado de verificación:</b> <b>no verificado</b> por el observatorio &mdash; '
             'agrupa publicaciones; no confirma el hecho.</p>'
             '<p><b>Explicación alternativa:</b> no evaluada (pendiente de contraste con fuentes primarias).</p>'
             '<p><b>Límites:</b> el número de publicaciones <b>no</b> es el número de hechos.</p>'
             '</details>'
-            % (_eid, (_h.get("titulo") or "")[:90], _h.get("n", 0), _fecha(_h["fecha"]),
-               (_h.get("titulo") or "")[:220], _h.get("n", 0), "".join(_links)))
+            % (_eid, (_ev.get("titulo") or "")[:90], _rango, _pub_txt,
+               (_ev.get("titulo") or "")[:220], "".join(_links)))
     _epi_fichas = "".join(_epi_rows) or '<p class="sub">sin episodios</p>' 
     _hist = list(hist or [])
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
@@ -1118,7 +1185,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </details>
 
 <h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
-<p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un episodio agrupa varias publicaciones del <b>mismo titular</b>: <b>{_hechos_pub} publicaciones ≠ {_hechos_n} hechos</b>. Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
+<p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un <b>evento</b> agrupa titulares del <b>mismo acontecimiento</b> (entidades compartidas): <b>{_hechos_pub} publicaciones ≠ {_hechos_n} historias ≠ {_n_eventos} eventos</b>. <b>La agrupación es automática y aproximada</b> (heurística de texto): puede unir titulares de un mismo tema o no unir variantes; es <b>revisable</b> y no altera los recuentos de origen (en el CSV). Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
 {_epi_fichas}
 
 <h2>Prensa marroquí y extranjera (L3)</h2>
