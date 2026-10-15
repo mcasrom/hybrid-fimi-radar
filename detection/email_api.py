@@ -27,6 +27,7 @@ Endpoints:
   GET  /api/v1/temas          -> resumen por tema (n_clusters, n_alerta, top)
   GET  /api/v1/tema/<slug>    -> clusters del tema (componentes, confianza, atribución)
   GET  /api/v1/cluster/<label>-> cluster completo + evidencia (eventos)
+  GET  /api/v1/caso/<slug>    -> caso/subcaso completo (JSON) + CSV en /api/v1/caso/<slug>/datos.csv
   GET  /api/v1/openapi.json   -> especificación OpenAPI 3.0
   GET  /api/v1/health         -> estado del servicio
 
@@ -946,6 +947,8 @@ def _openapi_spec():
                 "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {
                     "type": "object", "properties": {"meta": meta, "clusters": {"type": "array", "items": cluster}}}}}},
                     "404": {"description": "Tema no monitorizado"}}}},
+            "/api/v1/caso/{slug}": {"get": {"summary": "Caso/subcaso (JSON) y CSV de eventos",
+                "parameters": [{"name": "slug", "in": "path", "required": True, "schema": {"type": "string"}}]}},
             "/api/v1/cluster/{label}": {"get": {"summary": "Cluster completo con evidencia (eventos)",
                 "parameters": [{"name": "label", "in": "path", "required": True, "schema": {"type": "string"},
                                 "example": "frontera_sur_cluster_000"}],
@@ -1220,6 +1223,7 @@ class H(BaseHTTPRequestHandler):
                     {"path": "/api/v1/tema/<slug>", "desc": "Clusters de un tema con componentes, confianza y atribución"},
                     {"path": "/api/v1/tema/<slug>/serie?dias=30", "desc": "Serie diaria del tema (eventos/autores/fuentes por día)"},
                     {"path": "/api/v1/buscar?q=<texto>[&tema=<slug>][&limite=10]", "desc": "Busca clusters por texto (fragmentos redactados)"},
+                    {"path": "/api/v1/caso/<slug>", "desc": "Caso/subcaso (JSON); CSV en /api/v1/caso/<slug>/datos.csv"},
                     {"path": "/api/v1/cluster/<label>", "desc": "Cluster completo + evidencia (eventos)"},
                     {"path": "/api/v1/openapi.json", "desc": "Especificación OpenAPI 3.0"},
                     {"path": "/api/v1/health", "desc": "Estado del servicio"},
@@ -1270,6 +1274,28 @@ class H(BaseHTTPRequestHandler):
                 return self._send(500, {"error": "consulta no disponible"})
             d["meta"] = _api_meta()
             return self._send(200, d)
+        if path.startswith("/api/v1/caso/"):
+            # Descarga de un caso/subcaso: JSON + CSV de eventos.
+            rest = path[len("/api/v1/caso/"):].strip("/")
+            parts = rest.split("/")
+            slug = parts[0]
+            if not re.match(r"^[a-z0-9_]+$", slug):
+                return self._send(400, {"error": "caso invalido"})
+            if len(parts) == 2 and parts[1] in ("datos.csv", "csv", "eventos.csv"):
+                csvp = Path("/var/www/fimi/casos") / slug / "datos.csv"
+                if csvp.exists():
+                    return self._send_download(200, csvp.read_bytes(), "text/csv", slug + ".csv")
+                return self._send(404, {"error": "sin CSV para " + slug})
+            for jp in (Path("/var/www/fimi/datos/casos") / (slug + ".json"),
+                       ROOT / "docs" / "casos" / (slug + ".json")):
+                if jp.exists():
+                    d = json.loads(jp.read_text(encoding="utf-8"))
+                    m = dict(d.get("meta") or {})
+                    m["endpoint"] = "/api/v1/caso/" + slug
+                    m["descarga_csv"] = "/api/v1/caso/" + slug + "/datos.csv"
+                    d["meta"] = m
+                    return self._send(200, d)
+            return self._send(404, {"error": "caso no encontrado: " + slug})
         if path.startswith("/api/v1/cluster/"):
             cid = path[len("/api/v1/cluster/"):].strip("/")
             if not re.match(r"^[a-z0-9_]+(_cluster_[0-9]{3})?$", cid):

@@ -167,6 +167,41 @@ def _polaridad(text, title):
     return "neutro"
 
 
+
+HIST = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos", "historial.jsonl")
+
+
+def _hist_leer():
+    if not os.path.exists(HIST):
+        return []
+    try:
+        return [json.loads(l) for l in open(HIST, encoding="utf-8") if l.strip()]
+    except Exception as e:  # noqa: BLE001
+        print("[caso-hibridos] historial ilegible:", e, file=sys.stderr)
+        return []
+
+
+def snapshot(d, indic):
+    """Un registro por día (dedup). Se conserva todo: serie de revisión del caso."""
+    from datetime import datetime as _dt, timezone as _tz
+    hoy = _dt.now(_tz.utc).strftime("%Y-%m-%d")
+    rec = {"fecha": hoy, "nucleo": d["nucleo"]["eventos"], "autores": d["nucleo"]["autores"],
+           "clusters": d["clusters_nucleo"],
+           "urls_compartidas": (d.get("amplificacion") or {}).get("urls_compartidas", 0),
+           "indic": {it["lbl"]: it["n"] for it in (indic or [])}}
+    rows = [r for r in _hist_leer() if r.get("fecha") != hoy]
+    rows.append(rec)
+    rows.sort(key=lambda r: r.get("fecha", ""))
+    os.makedirs(os.path.dirname(HIST), exist_ok=True)
+    try:
+        with open(HIST, "w", encoding="utf-8") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+    except OSError as e:
+        print("[caso-hibridos] no pude escribir historial:", e, file=sys.stderr)
+    return rows
+
+
 def compute():
     con = sqlite3.connect(DB)
     per_cat, grups = {}, {}
@@ -708,7 +743,7 @@ def compute_indicadores(tema):
     return out
 
 
-def build_html(manual_txt, d, hechos, prensa, indic, meta):
+def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     def tbl(grupo):
         rows = []
         for k, lbl, _w, _e, g in CATS:
@@ -762,6 +797,16 @@ def build_html(manual_txt, d, hechos, prensa, indic, meta):
         return "".join(out)
 
     _mar_samp_rows = _samp_rows(_pre.get("mar_samp", []))
+    _hist = list(hist or [])
+    _hist_rows = ""
+    for _r in _hist[-30:][::-1]:
+        _ind = "; ".join("%s: %s" % (k, v) for k, v in (_r.get("indic") or {}).items() if v)
+        _hist_rows += ("<tr><td>%s</td><td class='num'>%s</td><td class='num'>%s</td>"
+                       "<td class='num'>%s</td><td class='num'>%s</td><td>%s</td></tr>"
+                       % (_r.get("fecha", ""), _n(_r.get("nucleo", 0)), _n(_r.get("autores", 0)),
+                          _n(_r.get("clusters", 0)), _n(_r.get("urls_compartidas", 0)), _ind))
+    if not _hist_rows:
+        _hist_rows = "<tr><td colspan=6>sin histórico todavía (empieza hoy)</td></tr>"
     _chi_corpus = ", ".join("%s: %s" % (s, _n(k)) for s, k in (_pre.get("chi_corpus") or []))
     if _chi_corpus:
         _chi_note = ("<b>Hueco declarado:</b> medios chinos estatales presentes en el corpus (%s) pero "
@@ -860,7 +905,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, meta):
     evid_html = "".join(evid_rows)
     cuentas_txt = " · ".join(f"{_acct(c['author'])} ({c['n']})" for c in d.get("cuentas", [])[:8])
     _lectura = (f"<b>{_n(d['nucleo']['eventos'])}</b> eventos de núcleo en el <b>periodo completo</b> "
-                f"({(d.get('periodo') or dict()).get('desde','')} → {(d.get('periodo') or dict()).get('hasta','')}); "
+                "(el periodo indicado arriba); "
                 f"la <b>última semana</b> ({_n(d['sem_actual_nucleo'])}) es solo una parte de ese total. "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -961,11 +1006,20 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td>Coordinación informativa</td><td><b>No observada</b> ({_n(amp.get("urls_compartidas", 0))} URLs compartidas entre autores)</td></tr>
 <tr><td>Hipótesis de plan híbrido</td><td><b>En evaluación</b> (evidencia a favor y en contra)</td></tr>
 </tbody></table>
-<p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b> <b>L1</b> coerción militar (buques, drones, <b>bloqueo naval/aéreo</b>) · <b>L2</b> presión energética · <b>L3</b> guerra informativa/desinformación · <b>L4</b> presión diplomática/jurídica (soberanía, no reconocer cadáveres) · <b>L5</b> migración como arma · <b>L6</b> alineamientos exteriores y tecnología · <b>L7</b> societal/demográfico (asentamiento, empadronamiento, nacionalidad, natalidad, matrimonios) y ambigüedad.</p>
+<p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b></p>
+<ul class="sub" style="margin:6px 0 0 0;padding-left:20px">
+<li><b>L1</b> coerción militar (buques, drones, bloqueo naval/aéreo)</li>
+<li><b>L2</b> presión energética</li>
+<li><b>L3</b> guerra informativa / desinformación</li>
+<li><b>L4</b> presión diplomática / jurídica (soberanía, no reconocer cadáveres)</li>
+<li><b>L5</b> migración como arma</li>
+<li><b>L6</b> alineamientos exteriores y tecnología</li>
+<li><b>L7</b> societal / demográfico (asentamiento, empadronamiento, nacionalidad, natalidad, matrimonios) + ambigüedad</li>
+</ul>
 <p class="sub"><b>Nota de encuadre (L7):</b> las dimensiones <b>demográfico-societales</b> se muestran como <b>narrativa observada</b> (lo que circula, con su volumen y fuentes) y como <b>hipótesis a evaluar</b>; <b>no</b> se afirman como táctica verificada por este observatorio.</p>
 <p class="sub"><b>Espectro híbrido &harr; cinético.</b> La presión híbrida va de lo <b>no cinético</b> (desinformación, presión económica, demografía) a lo <b>cinético</b> (bloqueo naval, incursión de buques, uso de la fuerza). <b>Ejemplos de referencia:</b> el <b>cerco/bloqueo que China ensaya sobre Taiwán</b> y el <b>bloqueo de EE.UU. a Cuba</b> (desde 1962) &mdash; coerción sostenida que es <b>a la vez económica, híbrida y cinética</b>. Aquí el catálogo se ordena en ese espectro.</p>
 </div>
-<div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad (15-oct-2026):</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
+<div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad:</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
 <div class="marco">
 <p><b>Marco de referencia (OTAN).</b> <em>&ldquo;Hybrid threats combine military and non-military as well as covert and overt means, including disinformation, cyber attacks, economic pressure, deployment of irregular armed groups and use of regular forces.&rdquo;</em> &mdash; OTAN, <a href="https://www.nato.int/cps/en/natohq/topics_156338.htm">&laquo;What are the hybrid threats NATO faces?&raquo;</a> (actualizado 29-ene-2026).</p>
@@ -1076,6 +1130,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Núcleo = indicadores híbridos (exige <b>ancla geográfica</b>: {' · '.join(ANCLAS[:10])}…); contexto = trasfondo migratorio/diplomático. Fuentes: prensa ES/MA/AR/FR, agencias, Bluesky, Google News. <a href="datos.csv" download>Descargar CSV ↩</a></p>
 </details>
 
+<h2>Evolución (histórico diario)</h2>
+<p class="sub">Un registro por día (se conserva todo). Sirve para revisar si el foco sube, baja o cambia de mezcla. Serie completa: <a href="/api/v1/caso/frontera_sur_hibridos/historial">API</a>.</p>
+<table><thead><tr><th>Fecha</th><th class="num">Núcleo</th><th class="num">Autores</th><th class="num">Clústeres</th><th class="num">URLs comp.</th><th>Indicadores (n)</th></tr></thead><tbody>{_hist_rows}</tbody></table>
+
 <h2>Como leerlo</h2>
 <ul>
 <li>El <b>nucleo</b> son los indicadores hibridos; el <b>contexto</b> (valla, postura, critica, soberania) es trasfondo y va aparte.</li>
@@ -1129,6 +1187,7 @@ def main():
     hechos = compute_hechos(_ids0)
     prensa = compute_prensa(TEMA)
     indic = compute_indicadores(TEMA)
+    hist = snapshot(d, indic)
     ids = d.pop("_ids", {})
     manual_txt = open(MANUAL, encoding="utf-8").read() if os.path.exists(MANUAL) else ""
     import hashlib
@@ -1178,7 +1237,7 @@ def main():
 
     os.makedirs(HTML_DIR, exist_ok=True)
     open(HTML_OUT, "w", encoding="utf-8").write(
-        build_html(manual_txt, d, hechos, prensa, indic, {"generado_utc": now, "hash_manual": hash_manual}))
+        build_html(manual_txt, d, hechos, prensa, indic, hist, {"generado_utc": now, "hash_manual": hash_manual}))
     print("[caso-hibridos] HTML ->", HTML_OUT)
     _c = sqlite3.connect(DB)
     _write_csv(_c, ids, os.path.join(HTML_DIR, "datos.csv"))
