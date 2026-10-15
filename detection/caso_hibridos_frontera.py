@@ -19,10 +19,13 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import time
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 DB = os.path.join(ROOT, "data", "radar.db")
 MANUAL = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos",
                       "caso_frontera_sur_hibridos_manual.md")
@@ -626,8 +629,9 @@ def build_html(manual_txt, d, meta):
     try:
         from detection.captacion import captacion_block
         capt = captacion_block(["frontera_sur"])
-    except Exception:
+    except Exception as _e:
         capt = ""
+        print("[caso-hibridos] captacion no disponible:", repr(_e))
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
