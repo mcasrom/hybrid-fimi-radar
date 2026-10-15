@@ -672,7 +672,8 @@ def compute_hechos(ids):
                 break
         u = next((x[3] for x in v if (x[3] or "").startswith("http")), "")
         historias.append({"fecha": min(x[0] for x in v), "medio": med,
-                          "titulo": t0, "url": u, "n": len(v)})
+                          "titulo": t0, "url": u, "n": len(v),
+                          "pubs": [{"source": x[1], "url": x[3], "ts": x[0]} for x in v]})
     historias.sort(key=lambda h: -h["fecha"])
     medios = sorted({h["medio"] for h in historias if h["medio"]})
     return {"n": len(historias), "historias": historias, "publicaciones": pubs, "medios": medios}
@@ -828,6 +829,28 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
         return "".join(out)
 
     _mar_samp_rows = _samp_rows(_pre.get("mar_samp", []))
+    _epi_rows = []
+    for _i, _h in enumerate(_hh[:20], 1):
+        _pubs = _h.get("pubs") or []
+        _links = []
+        for _p in _pubs[:12]:
+            _pu = _p.get("url") or ""
+            _ln = ('<a href="%s" target="_blank" rel="noopener">%s</a>' % (_pu, (_p.get("source") or "enlace")[:44])) if _pu else ((_p.get("source") or "")[:44])
+            _links.append("<li>%s</li>" % _ln)
+        _eid = "CEU-2026-%03d" % _i
+        _epi_rows.append(
+            '<details class="seccion"><summary>%s · %s · <b>%s</b> publicaciones</summary>'
+            '<p><b>Fecha(s) de publicación:</b> %s.</p>'
+            '<p><b>Afirmación principal:</b> %s</p>'
+            '<p><b>Publicaciones (%s):</b></p><ul>%s</ul>'
+            '<p><b>Estado de verificación:</b> <b>no verificado</b> por el observatorio &mdash; '
+            'agrupa publicaciones; no confirma el hecho.</p>'
+            '<p><b>Explicación alternativa:</b> no evaluada (pendiente de contraste con fuentes primarias).</p>'
+            '<p><b>Límites:</b> el número de publicaciones <b>no</b> es el número de hechos.</p>'
+            '</details>'
+            % (_eid, (_h.get("titulo") or "")[:90], _h.get("n", 0), _fecha(_h["fecha"]),
+               (_h.get("titulo") or "")[:220], _h.get("n", 0), "".join(_links)))
+    _epi_fichas = "".join(_epi_rows) or '<p class="sub">sin episodios</p>' 
     _hist = list(hist or [])
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
                             rowh=18, color="#c1440e")
@@ -1094,10 +1117,9 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
-<details class="seccion"><summary>Radar A · Hechos publicados &mdash; <b>{_hechos_n}</b> historias de <b>{_hechos_med}</b> medios (con fuente, no verificados) &middot; <b>clic para abrir</b></summary>
-<p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones. Cada fila enlaza a la noticia original (lista completa en el CSV).</p>
-<table><thead><tr><th>Fecha de publicación</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
-</details>
+<h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
+<p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un episodio agrupa varias publicaciones del <b>mismo titular</b>: <b>{_hechos_pub} publicaciones ≠ {_hechos_n} hechos</b>. Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
+{_epi_fichas}
 
 <h2>Prensa marroquí y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
