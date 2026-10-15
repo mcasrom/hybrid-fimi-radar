@@ -27,6 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 DB = os.path.join(ROOT, "data", "radar.db")
+CURADOS = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos", "episodios_curados.json")
 MANUAL = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos",
                       "caso_frontera_sur_hibridos_manual.md")
 JSON_OUT = os.path.join(ROOT, "docs", "casos", "frontera_sur_hibridos.json")
@@ -922,7 +923,30 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
             '</details>'
             % (_eid, (_ev.get("titulo") or "")[:90], _rango, _pub_txt,
                (_ev.get("titulo") or "")[:220], "".join(_links)))
-    _epi_fichas = "".join(_epi_rows) or '<p class="sub">sin episodios</p>' 
+    _epi_fichas = "".join(_epi_rows) or '<p class="sub">sin episodios</p>'
+    try:
+        _cur = json.load(open(CURADOS, encoding="utf-8")).get("episodios", [])
+    except Exception as _ec:
+        print("[caso-hibridos] curados ilegible:", _ec, file=sys.stderr)
+        _cur = []
+    _cura_rows = []
+    for _c in _cur:
+        _ff = "".join("<li>%s</li>" % x for x in (_c.get("fuente") or []))
+        _cura_rows.append(
+            '<details class="seccion"><summary>%s &middot; %s</summary>'
+            '<p><b>Periodo:</b> %s &middot; <b>Tipo:</b> %s</p>'
+            '<p><b>Qué se afirma:</b> %s</p>'
+            '<p><b>Actores:</b> %s</p>'
+            '<p><b>Fuentes (enlaces del corpus):</b></p><ul>%s</ul>'
+            '<p><b>Fuente primaria:</b> %s</p>'
+            '<p><b>Estado de verificación:</b> %s</p>'
+            '<p><b>Explicación alternativa:</b> %s</p>'
+            '<p><b>Límites:</b> %s</p>'
+            '</details>'
+            % (_c.get("id"), (_c.get("titulo") or "")[:90], _c.get("periodo"), _c.get("tipo"),
+               _c.get("afirmacion"), _c.get("actores"), _ff, _c.get("fuente_primaria"),
+               _c.get("estado_verificacion"), _c.get("explicacion_alternativa"), _c.get("limites")))
+    _cura_html = "".join(_cura_rows) or '<p class="sub">sin episodios curados</p>' 
     _hist = list(hist or [])
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
                             rowh=18, color="#c1440e")
@@ -1192,6 +1216,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
 <p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un <b>evento</b> agrupa titulares del <b>mismo acontecimiento</b> (entidades compartidas): <b>{_hechos_pub} publicaciones ≠ {_hechos_n} historias ≠ {_n_eventos} eventos</b>. <b>La agrupación es automática y aproximada</b> (heurística de texto): puede unir titulares de un mismo tema o no unir variantes; es <b>revisable</b> y no altera los recuentos de origen (en el CSV). Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
 {_epi_fichas}
+
+<h2>Episodios clave <span class="sub">(curados a mano)</span></h2>
+<p class="sub">5 episodios revisados a mano: <b>qué se afirma, con qué fuente, estado de verificación, explicación alternativa y límites</b>. Cuando la <b>fuente primaria</b> (comunicado oficial) no está localizada, se dice.</p>
+{_cura_html}
 
 <h2>Prensa marroquí y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
