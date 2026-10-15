@@ -944,6 +944,14 @@ def main():
     os.makedirs(os.path.dirname(JSON_OUT), exist_ok=True)
     json.dump(doc, open(JSON_OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print("[caso-hibridos] JSON ->", JSON_OUT)
+    # JSON publico (citable / API / periodistas): /datos/casos/frontera_sur_hibridos.json
+    pub = "/var/www/fimi/datos/casos/frontera_sur_hibridos.json"
+    try:
+        os.makedirs(os.path.dirname(pub), exist_ok=True)
+        json.dump(doc, open(pub, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        print("[caso-hibridos] JSON publico ->", pub)
+    except OSError as _e:
+        print("[caso-hibridos] no pude escribir el JSON publico:", _e)
 
     os.makedirs(HTML_DIR, exist_ok=True)
     open(HTML_OUT, "w", encoding="utf-8").write(
