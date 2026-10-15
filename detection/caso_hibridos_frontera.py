@@ -591,7 +591,118 @@ def _md(text):
     return "".join(out)
 
 
-def build_html(manual_txt, d, meta):
+
+MARRUECOS_SRC = ("yabiladi", "hespress", "le360", "le 360", "medias24", "telquel",
+                 "nouvelle tribune", "akhbar", "assabah", "2m", "map ", "maroc")
+CHINA_SRC = ("cgtn", "global times", "xinhua", "people's daily", "china daily", "cri ", "cctv")
+
+
+def compute_hechos(ids):
+    """Radar A: hechos PUBLICADOS (no verificados) deduplicados por titular (fuentes no sociales)."""
+    import re as _re
+    import unicodedata as _ud
+    from collections import defaultdict
+
+    def _norm(s):
+        s = _ud.normalize("NFKD", (s or "").lower())
+        s = "".join(ch for ch in s if not _ud.combining(ch))
+        s = _re.sub("[^a-z0-9 ]+", " ", s)
+        return " ".join(s.split())
+
+    if not ids:
+        return {"n": 0, "historias": [], "publicaciones": 0, "medios": []}
+    con = sqlite3.connect(DB)
+    chq = ",".join("?" * len(ids))
+    rows = con.execute(
+        "SELECT timestamp, source, title, url FROM events WHERE id IN (" + chq + ")", list(ids)).fetchall()
+    con.close()
+    gr = defaultdict(list)
+    pubs = 0
+    for ts, src, tit, url in rows:
+        if (src or "").lower().startswith("bluesky"):
+            continue
+        pubs += 1
+        gr[_norm(tit)].append((int(ts or 0), src or "", tit or "", url or ""))
+    historias = []
+    for v in gr.values():
+        v.sort()
+        t0 = v[0][2]
+        med = ""
+        for sep in (" - ", " | "):
+            if sep in t0:
+                med = t0.rsplit(sep, 1)[-1].strip()[:40]
+                break
+        u = next((x[3] for x in v if (x[3] or "").startswith("http")), "")
+        historias.append({"fecha": min(x[0] for x in v), "medio": med,
+                          "titulo": t0, "url": u, "n": len(v)})
+    historias.sort(key=lambda h: -h["fecha"])
+    medios = sorted({h["medio"] for h in historias if h["medio"]})
+    return {"n": len(historias), "historias": historias, "publicaciones": pubs, "medios": medios}
+
+
+def compute_prensa(tema):
+    """Volumen + titulares de la esfera marroqui y china en el tema (y su hueco)."""
+    con = sqlite3.connect(DB)
+    rows = con.execute(
+        "SELECT e.source, COUNT(DISTINCT e.id) FROM events e JOIN event_temas et "
+        "ON et.event_id=e.id WHERE et.tema_id=? GROUP BY e.source", (tema,)).fetchall()
+
+    def _pick(keys):
+        return sorted([(s, n) for s, n in rows if any(k in (s or "").lower() for k in keys)],
+                      key=lambda x: -x[1])
+
+    def _samp(keys, k=6):
+        out = []
+        for s, _n2 in _pick(keys)[:4]:
+            for tit, u, ts in con.execute(
+                    "SELECT e.title, e.url, e.timestamp FROM events e JOIN event_temas et "
+                    "ON et.event_id=e.id WHERE et.tema_id=? AND e.source=? "
+                    "ORDER BY e.timestamp DESC LIMIT 2", (tema, s)).fetchall():
+                out.append({"fuente": s, "titulo": (tit or "")[:150], "url": u or "", "ts": int(ts or 0)})
+        return out[:k]
+
+    try:
+        chi_corpus = con.execute(
+            "SELECT source, COUNT(*) FROM events WHERE " +
+            " OR ".join(["LOWER(source) LIKE ?"] * len(CHINA_SRC)),
+            ["%" + c + "%" for c in CHINA_SRC]).fetchall()
+    except sqlite3.Error:
+        chi_corpus = []
+    _mar_samp = _samp(MARRUECOS_SRC)
+    con.close()
+    return {"mar": _pick(MARRUECOS_SRC), "chi": _pick(CHINA_SRC),
+            "mar_samp": _mar_samp, "chi_corpus": chi_corpus}
+
+
+INDIC = [
+    ("Buques de guerra / aguas españolas", ["fragata", "buque de guerra", "aguas espa", "aguas territoriales"], "L1"),
+    ("Drones", ["dron"], "L1"),
+    ("Ejercicios militares con terceros", ["ejercicio conjunto", "maniobras conjuntas", "african lion", "flintlock"], "L1"),
+    ("Presión energética", ["gasoducto", "suministro eléctrico", "suministro electrico", "apagón"], "L2"),
+    ("Bulos / desinformación", ["bulo", "desinformaci", "manipulaci"], "L3"),
+    ("Discurso oficial / rey", ["gobierno marroqu", "mohamed vi", "rey de marruecos"], "L4"),
+    ("Soberanía / reivindicación Ceuta-Melilla", ["soberan", "anexi", "irredentis", "españolidad"], "L4"),
+    ("Cadáveres / repatriación", ["cadáver", "cadaver", "repatriac"], "L4"),
+    ("Presión migratoria (Ceuta/Melilla/Canarias)", ["presión migratoria", "presion migratoria", "asalto", "valla"], "L5"),
+    ("Acuerdos tecnología/armas (China/EEUU/Israel/Emiratos)", ["armamento", "navantia", "material militar", "f-35"], "L6"),
+]
+
+
+def compute_indicadores(tema):
+    con = sqlite3.connect(DB)
+    out = []
+    for lbl, words, lin in INDIC:
+        like = " OR ".join(["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in words])
+        p = [tema] + [f"%{w}%" for w in words for _ in ("a", "b")]
+        cnt = con.execute(
+            "SELECT COUNT(DISTINCT e.id) FROM events e JOIN event_temas et ON et.event_id=e.id "
+            "WHERE et.tema_id=? AND (" + like + ")", p).fetchone()[0]
+        out.append({"lbl": lbl, "n": cnt, "linea": lin})
+    con.close()
+    return out
+
+
+def build_html(manual_txt, d, hechos, prensa, indic, meta):
     def tbl(grupo):
         rows = []
         for k, lbl, _w, _e, g in CATS:
@@ -601,6 +712,52 @@ def build_html(manual_txt, d, meta):
         return "".join(rows)
 
     amp = d.get("amplificacion", {})
+
+    # --- piezas del caso (catálogo + Radar A + prensa) ---
+    _indic_rows = "".join(
+        "<tr><td>%s</td><td>%s</td><td class='num'>%s</td></tr>" % (it["lbl"], it["linea"], _n(it["n"]))
+        for it in (indic or [])) or "<tr><td colspan=3>sin datos</td></tr>"
+    _hh = (hechos or {}).get("historias", [])
+    _hechos_n = _n((hechos or {}).get("n", len(_hh)))
+    _hechos_pub = _n((hechos or {}).get("publicaciones", 0))
+    _hechos_med = _n(len((hechos or {}).get("medios", [])))
+    _hrows = []
+    for _h in _hh[:40]:
+        _u = _h.get("url") or ""
+        _lk = ('<a href="%s" target="_blank" rel="noopener">fuente</a>' % _u) if _u else "&mdash;"
+        _hrows.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+            _fecha(_h["fecha"]), _h.get("medio") or "&mdash;", (_h.get("titulo") or "")[:160], _lk))
+    _hechos_rows = "".join(_hrows) or "<tr><td colspan=4>sin noticias</td></tr>"
+    _pre = prensa or {}
+
+    def _src_rows(lst, empty):
+        if not lst:
+            return "<tr><td colspan=2>%s</td></tr>" % empty
+        return "".join("<tr><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k)) for s, k in lst)
+
+    _mar_rows = _src_rows(_pre.get("mar", []), "sin medios marroquíes en el tema")
+    _chi_rows = _src_rows(_pre.get("chi", []), "0 &mdash; ningún medio chino cubre el tema")
+
+    def _samp_rows(lst):
+        if not lst:
+            return "<tr><td colspan=4>&mdash;</td></tr>"
+        out = []
+        for _h in lst:
+            _u = _h.get("url") or ""
+            _lk = ('<a href="%s" target="_blank" rel="noopener">fuente</a>' % _u) if _u else "&mdash;"
+            out.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+                _fecha(_h["ts"]), _h.get("fuente") or "", (_h.get("titulo") or "")[:160], _lk))
+        return "".join(out)
+
+    _mar_samp_rows = _samp_rows(_pre.get("mar_samp", []))
+    _chi_corpus = ", ".join("%s: %s" % (s, _n(k)) for s, k in (_pre.get("chi_corpus") or []))
+    if _chi_corpus:
+        _chi_note = ("<b>Hueco declarado:</b> medios chinos estatales presentes en el corpus (%s) pero "
+                     "<b>0 eventos del tema</b>: no publican sobre Ceuta/Marruecos. La esfera china se muestra "
+                     "como <b>ausencia real</b>, no como narrativa.") % _chi_corpus
+    else:
+        _chi_note = "<b>Hueco declarado:</b> sin medios chinos en el corpus para este foco."
+
     delta = d["delta_pct"]
     _z = d.get("z_score")
     z_txt = ("+%s" % _z) if (_z is not None and _z >= 0) else ("%s" % _z if _z is not None else "—")
@@ -718,11 +875,11 @@ def build_html(manual_txt, d, meta):
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Frontera Sur (Marruecos): observación de señales — Observatorio de amplificación</title>
+<title>Presión híbrida de Marruecos · Frontera Sur (Ceuta, Melilla, Canarias) — Observatorio de amplificación</title>
 <meta name="description" content="Frontera Sur (Marruecos): observación de señales de presión híbrida (drones, buques, hostigamiento, bloqueo) frente a contexto migratorio/diplomático, con amplificación, polaridad y contraste de hipótesis. Señal, no atribución; no confirma una operación híbrida.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Frontera Sur (Marruecos): observación de señales de presión híbrida">
+<meta property="og:title" content="Presión híbrida de Marruecos · Frontera Sur (Ceuta, Melilla, Canarias)">
 <meta property="og:description" content="Señales híbridas frente a contexto: clusters, amplificación, polaridad y contraste H1-H4. Señal, no atribución; no confirma una operación híbrida.">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
@@ -777,10 +934,22 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div></details>
 </div></nav>
 <header><div class="wrap">
-<h1>Frontera Sur (Marruecos): observación de señales</h1>
+<h1>Presión híbrida de Marruecos · Frontera Sur (Ceuta · Melilla · Canarias)</h1>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
+<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0">
+<h2 style="margin-top:0">Resumen ejecutivo</h2>
+<p><b>Qué es.</b> Observación de <b>acciones de presión híbrida</b> atribuidas a Marruecos en el entorno de Ceuta, Melilla y Canarias, y de <b>cómo se comunican</b>. Marco: <b>guerra/conflicto híbrido</b> (OTAN). <b>Periodo:</b> {(d.get("periodo") or dict()).get("desde","")} &rarr; {(d.get("periodo") or dict()).get("hasta","")}.</p>
+<p><b>Qué NO dice.</b> No confirma un plan, ni autoría, ni intención. Los hechos del catálogo están <b>publicados</b>, no verificados por este observatorio.</p>
+<table><thead><tr><th>Dimensión</th><th>Estado</th></tr></thead><tbody>
+<tr><td>Actividad informativa</td><td>Elevada &mdash; <b>línea base no comparable</b> (la captura creció ~100&times;)</td></tr>
+<tr><td>Calidad de la evidencia</td><td><b>Parcial</b>: muchas noticias con fuente, sin verificación propia</td></tr>
+<tr><td>Coordinación informativa</td><td><b>No observada</b> ({_n(amp.get("urls_compartidas", 0))} URLs compartidas entre autores)</td></tr>
+<tr><td>Hipótesis de plan híbrido</td><td><b>En evaluación</b> (evidencia a favor y en contra)</td></tr>
+</tbody></table>
+<p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b> <b>L1</b> coerción militar · <b>L2</b> presión energética · <b>L3</b> guerra informativa/desinformación · <b>L4</b> presión diplomática/jurídica · <b>L5</b> migración como arma · <b>L6</b> alineamientos exteriores y tecnología · <b>L7</b> ambigüedad/negación plausible.</p>
+</div>
 <div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad (15-oct-2026):</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
 <div class="marco">
@@ -796,7 +965,23 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Cuota núcleo/(núcleo+contexto): <b>{d.get('cuota_pct', 0)}%</b> · Dependencia del pico (top-3 autores de la última semana): <b>{_pt3_txt}</b> · Medios distintos en el núcleo (google-news resuelto al medio): <b>{d.get('medios_indep', 0)}</b>.</p>
 </div>
 
-<h2>Nucleo hibrido</h2>
+<h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
+<p class="sub">Eventos del tema por indicador (pueden solaparse). <b>Cada cifra con su soporte real</b>; lo que no se captura se dice.</p>
+<table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Eventos</th></tr></thead><tbody>{_indic_rows}</tbody></table>
+
+<h2>Radar A · Hechos publicados <span class="sub">(con fuente, no verificados)</span></h2>
+<p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones de medios, de <b>{_hechos_med}</b> medios. Cada fila enlaza a la noticia original.</p>
+<table><thead><tr><th>Fecha</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
+
+<h2>Prensa marroquí, china y extranjera (L3)</h2>
+<p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
+<table><thead><tr><th>Medios marroquíes / afines</th><th class="num">Eventos</th></tr></thead><tbody>{_mar_rows}</tbody></table>
+<p class="sub">Titulares marroquíes (muestra):</p>
+<table><thead><tr><th>Fecha</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_mar_samp_rows}</tbody></table>
+<table><thead><tr><th>Medios chinos (estatales)</th><th class="num">Eventos</th></tr></thead><tbody>{_chi_rows}</tbody></table>
+<p class="sub">{_chi_note}</p>
+
+<h2>Radar B · Conversación <span class="sub">(núcleo)</span></h2>
 <div class="kpis">
 <div class="kpi"><b>{_n(d['nucleo']['eventos'])}</b><span>eventos nucleo (periodo)</span></div>
 <div class="kpi"><b>{_n(d['clusters_nucleo'])}</b><span>clusters nucleo</span></div>
@@ -825,11 +1010,13 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Contraste de hipótesis (H1–H4)</h2>
 <table>
+<thead><tr><th>Hipótesis</th><th>Evidencia a favor</th><th>Evidencia en contra</th><th>Estado</th></tr></thead>
 <tbody>
-<tr><td><b>H1</b> · la actividad de drones sube tras eventos migratorios (retardo ≤7 d)</td><td>{_h1_txt}</td></tr>
-<tr><td><b>H2</b> · los picos coinciden con hitos (placebo; hitos <b>derivados</b>, ojo: no exógenos)</td><td>{_plc_txt}</td></tr>
-<tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b> (no toda coordinación)</td><td><b>Sin evidencia</b> en esta ventana: solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))}).</td></tr>
-<tr><td><b>H4</b> · el incremento responde a cambios de cobertura (control)</td><td>{_h4_txt} <b>Lectura:</b> muchas URLs/fuentes → actividad; pocas URLs con muchas repeticiones → eco de una noticia.</td></tr>
+<tr><td><b>HC</b> · las acciones responden a un <b>plan de presión híbrida</b> sobre Ceuta/Melilla/Canarias (¿anexión?, inferencia)</td><td>Coincidencia temporal (buques + drones + cobertura); <b>Navantia entrega una patrullera "sin pompa" en plena crisis</b>; F-35/EE.UU., Israel (24 % del armamento), EDGE/Emiratos en el periodo</td><td><b>Sin coordinación medida</b> por URLs; deltas contaminados por la captura; existe <b>cooperación</b> real (ejercicios, comercio); «anexión» no es texto literal (27)</td><td><b>En evaluación</b></td></tr>
+<tr><td><b>H1</b> · drones suben tras eventos migratorios</td><td>{_h1_txt}</td><td>Permutación simple → p optimista (autocorrelación)</td><td><b>En evaluación</b></td></tr>
+<tr><td><b>H2</b> · los picos coinciden con hitos</td><td>{_plc_txt}</td><td>«Hitos» <b>derivados</b> del corpus → circular</td><td><b>Inconclusa</b></td></tr>
+<tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b></td><td>&mdash;</td><td>{amp.get('urls_compartidas', 0)} URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))})</td><td><b>Sin evidencia</b></td></tr>
+<tr><td><b>H4</b> · el incremento responde a cambios de cobertura</td><td>{_h4_txt}</td><td>Captura global creció mucho en el periodo</td><td><b>Sesgo probable</b></td></tr>
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 
@@ -924,6 +1111,10 @@ def main():
         print("[caso-hibridos] BD no encontrada:", DB)
         return 1
     d = compute()
+    _ids0 = d.get("_ids", {}).get("nucleo", [])
+    hechos = compute_hechos(_ids0)
+    prensa = compute_prensa(TEMA)
+    indic = compute_indicadores(TEMA)
     ids = d.pop("_ids", {})
     manual_txt = open(MANUAL, encoding="utf-8").read() if os.path.exists(MANUAL) else ""
     import hashlib
@@ -973,7 +1164,7 @@ def main():
 
     os.makedirs(HTML_DIR, exist_ok=True)
     open(HTML_OUT, "w", encoding="utf-8").write(
-        build_html(manual_txt, d, {"generado_utc": now, "hash_manual": hash_manual}))
+        build_html(manual_txt, d, hechos, prensa, indic, {"generado_utc": now, "hash_manual": hash_manual}))
     print("[caso-hibridos] HTML ->", HTML_OUT)
     _c = sqlite3.connect(DB)
     _write_csv(_c, ids, os.path.join(HTML_DIR, "datos.csv"))
