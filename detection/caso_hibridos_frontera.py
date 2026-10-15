@@ -715,8 +715,11 @@ def compute_prensa(tema):
     except sqlite3.Error:
         chi_corpus = []
     _mar_samp = _samp(MARRUECOS_SRC)
+    _mar = _pick(MARRUECOS_SRC)
+    _int = _pick(INT_SRC)
+    _chi = _pick(CHINA_SRC)
     con.close()
-    return {"mar": _pick(MARRUECOS_SRC), "int": _pick(INT_SRC), "chi": _pick(CHINA_SRC),
+    return {"mar": _mar, "int": _int, "chi": _chi,
             "mar_samp": _mar_samp, "chi_corpus": chi_corpus}
 
 
@@ -955,7 +958,7 @@ header{{background:var(--navy);color:#fff;padding:28px 20px}}
 .wrap{{max-width:900px;margin:0 auto;padding:0 20px}}
 h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;border-left:4px solid var(--acc);padding-left:10px}}
 .sub{{color:#c9d6e2;font-size:.95rem}}
-p.sub,span.sub,h3.sub,h4.sub{{color:#475569}}
+p.sub,span.sub,h3.sub,h4.sub,ul.sub,ul.sub li{{color:#475569}}
 .aviso{{background:#fff3cd;border:1px solid #ffe08a;border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.94rem}}
 .marco{{background:#eef4fb;border-left:4px solid var(--navy);border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.93rem}}
 .lectura{{background:#0d1b2a;color:#fff;border-radius:8px;padding:14px 16px;margin:16px 0}}
