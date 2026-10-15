@@ -109,6 +109,28 @@ def _medio_titulo(title):
     return ""
 
 
+# Polaridad: coop > hostil > neutro (coop es más específico; se comprueba primero).
+POL_COOP = ["ejercicio conjunto", "maniobras conjuntas", "cooperaci", "navantia",
+            "african lion", "entrega de", "entrega a", "venta de", "venta a",
+            "normalidad", "reabre", "colaboraci", "acuerdo bilateral", "comercio bilateral",
+            "visita oficial", "cumbre bilateral", "patrullera", "astillero"]
+POL_HOST = ["violaci", "incursi", "amenaz", "hostigamiento", "hostilid", "agresi",
+            "asedi", "bloqueo", "ciberataque", "injerencia", "espionaje", "sabotaje",
+            "chantaje", "derribo", "ataque", "disparo", "enfrentamiento", "provocaci",
+            "invas", "ocupaci", "reivindica", "coerci", "coacci", "intimidaci",
+            "desestabiliz", "asfixi", "presi\u00f3n migratoria", "asalto", "irredentismo",
+            "misil", "militarizaci", "incursi\u00f3n a\u00e9rea", "derribo"]
+
+
+def _polaridad(text, title):
+    t = ((text or "") + " " + (title or "")).lower()
+    if any(k in t for k in POL_COOP):
+        return "cooperación"
+    if any(k in t for k in POL_HOST):
+        return "hostil"
+    return "neutro"
+
+
 def compute():
     con = sqlite3.connect(DB)
     per_cat, grups = {}, {}
@@ -250,6 +272,14 @@ def compute():
                     medios[mm] = medios.get(mm, 0) + cnt
     top_medios = sorted(medios.items(), key=lambda kv: -kv[1])[:5]
 
+    # polaridad (heuristica) del nucleo
+    pol = {"hostil": 0, "cooperación": 0, "neutro": 0}
+    if ids_n:
+        _chpol = ",".join("?" * len(ids_n))
+        for t2, tit2 in con.execute(
+                f"SELECT text, title FROM events WHERE id IN ({_chpol})", ids_n).fetchall():
+            pol[_polaridad(t2, tit2)] += 1
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -272,6 +302,7 @@ def compute():
         "pico_top3_pct": pico_top3,
         "medios_indep": len(medios),
         "top_medios": top_medios,
+        "polaridad": pol,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -358,11 +389,21 @@ def build_html(manual_txt, d, meta):
                    for k in ("valla_incidente", "postura_oficial", "critica_a_marruecos", "soberania"))
     _pt3 = d.get("pico_top3_pct")
     _pt3_txt = ("%s%%" % _pt3) if _pt3 is not None else "n/d"
+    pol = d.get("polaridad", {})
+    _pol_tot = sum(pol.values()) or 1
+    _hostil_pct = round(100 * pol.get("hostil", 0) / _pol_tot)
+    _coop_pct = round(100 * pol.get("cooperación", 0) / _pol_tot)
+    _neutro_pct = round(100 * pol.get("neutro", 0) / _pol_tot)
+    pol_html = "".join(
+        f"<tr><td>{k}</td><td class='num'>{_n(v)}</td><td class='num'>{round(100 * v / _pol_tot)}%</td></tr>"
+        for k, v in sorted(pol.items(), key=lambda kv: -kv[1]))
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
                 f"Top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; top-3 de la última semana = "
                 f"<b>{_pt3_txt}</b>; solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas. "
+                f"<b>Polaridad</b> (heurística): <b>{_hostil_pct}%</b> hostil · {_coop_pct}% cooperación · "
+                f"{_neutro_pct}% neutro. "
                 f"<b>Lectura:</b> pico de conversación con corroboración limitada y sin evidencia "
                 f"de coordinación por URLs.")
     if delta is None:
@@ -443,6 +484,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <div class="kpi"><b>{_n(amp.get('urls_compartidas', 0))}</b><span>URLs compartidas (≥2 autores)</span></div>
 </div>
 <p class="sub">{_n(amp.get('autores_distintos', 0))} autores distintos · {_n(amp.get('urls_distintas', 0))} URLs distintas. Lectura: <b>top-5 alto / Gini alto</b> o <b>many URLs compartidas</b> → amplificación concentrada; valores bajos → discusión repartida (sin amplificación). Medido en el núcleo, no en el contexto.</p>
+
+<h2>Polaridad del núcleo (heurística)</h2>
+<table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
+<tbody>{pol_html}</tbody></table>
+<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / amenaza / hostigamiento / bloqueo…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo / visita…; resto = <b>neutro</b>. <b>Heurística, pendiente de validación manual.</b> Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 
 <h2>Por qué estas categorías son el núcleo</h2>
 <p>Mapeo de cada categoría de <b>núcleo</b> a un <b>medio</b> de la definición de la OTAN (arriba):</p>
