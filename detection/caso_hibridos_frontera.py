@@ -626,6 +626,9 @@ h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;bo
 .marco{{background:#eef4fb;border-left:4px solid var(--navy);border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.93rem}}
 .lectura{{background:#0d1b2a;color:#fff;border-radius:8px;padding:14px 16px;margin:16px 0}}
 .lectura .sub{{color:#c1cfe0;font-size:.85rem}}
+.topnav{{background:#08111c;font-size:.9rem}}
+.topnav .wrap{{display:flex;flex-wrap:wrap;gap:14px;padding:8px 20px}}
+.topnav a{{color:#c1cfe0;text-decoration:none}}.topnav a:hover{{color:#fff}}
 .kpis{{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}}
 .kpi{{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:130px}}
 .kpi b{{display:block;font-size:1.5rem;color:var(--navy)}}
@@ -637,6 +640,14 @@ th{{background:#eef2f7}}td.num,th.num{{text-align:right;font-variant-numeric:tab
 footer{{color:var(--mut);font-size:.85rem;padding:24px 0;border-top:1px solid var(--line);margin-top:28px}}
 code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </style></head><body>
+<nav class="topnav"><div class="wrap">
+<a href="/">&larr; Radar</a>
+<a href="/casos/ceuta/">Ceuta</a>
+<a href="/casos/electoral/">Electoral 2026</a>
+<a href="/consulta.html">Consulta</a>
+<a href="/api.html">API</a>
+<a href="/metodo.html">Método</a>
+</div></nav>
 <header><div class="wrap">
 <h1>Indicadores de presión híbrida en Frontera Sur (Marruecos)</h1>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
@@ -736,6 +747,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </ul>
 </main>
 <footer><div class="wrap">
+<p><a href="/">&larr; Volver al radar</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/consulta.html">Consulta</a></p>
 Generado automaticamente por <code>detection/caso_hibridos_frontera.py</code> ·
 manual hash <code>{meta['hash_manual'][:16]}</code> ·
 Fuente: <code>event_temas</code> + <code>cluster_events</code> (tema frontera_sur) · no toca scoring.
