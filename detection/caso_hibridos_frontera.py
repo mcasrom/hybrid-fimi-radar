@@ -188,7 +188,7 @@ def build_html(manual_txt, d, meta):
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Marruecos · actividad militar y de zona gris en Frontera Sur — Observatorio de amplificacion</title>
+<title>Indicadores de presión híbrida en Frontera Sur (Marruecos) — Observatorio de amplificacion</title>
 <meta name="description" content="Subcaso: nucleo hibrido (drones, buques, maniobras, hostigamiento, bloqueo) vs contexto, con linea base. Senal, no atribucion.">
 <meta name="robots" content="index,follow">
 <style>
@@ -199,6 +199,7 @@ header{{background:var(--navy);color:#fff;padding:28px 20px}}
 h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;border-left:4px solid var(--acc);padding-left:10px}}
 .sub{{color:#c9d6e2;font-size:.95rem}}
 .aviso{{background:#fff3cd;border:1px solid #ffe08a;border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.94rem}}
+.marco{{background:#eef4fb;border-left:4px solid var(--navy);border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.93rem}}
 .kpis{{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}}
 .kpi{{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:130px}}
 .kpi b{{display:block;font-size:1.5rem;color:var(--navy)}}
@@ -211,11 +212,16 @@ footer{{color:var(--mut);font-size:.85rem;padding:24px 0;border-top:1px solid va
 code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </style></head><body>
 <header><div class="wrap">
-<h1>Marruecos · actividad militar y de zona gris en Frontera Sur</h1>
+<h1>Indicadores de presión híbrida en Frontera Sur (Marruecos)</h1>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
 <div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada.</div>
+
+<div class="marco">
+<p><b>Marco de referencia (OTAN).</b> <em>&ldquo;Hybrid threats combine military and non-military as well as covert and overt means, including disinformation, cyber attacks, economic pressure, deployment of irregular armed groups and use of regular forces.&rdquo;</em> &mdash; OTAN, <a href="https://www.nato.int/cps/en/natohq/topics_156338.htm">&laquo;What are the hybrid threats NATO faces?&raquo;</a> (actualizado 29-ene-2026).</p>
+<p><em>Traducci&oacute;n libre:</em> &laquo;Las amenazas h&iacute;bridas combinan medios militares y no militares, as&iacute; como encubiertos y abiertos, incluidos la desinformaci&oacute;n, los ciberataques, la presi&oacute;n econ&oacute;mica, el despliegue de grupos armados irregulares y el uso de fuerzas regulares.&raquo;</p>
+</div>
 
 <h2>Nucleo hibrido</h2>
 <div class="kpis">
@@ -228,6 +234,18 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 {_sparkline(d['serie_semanal_nucleo'])}
 <table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
+
+<h2>Por qué estas categorías son el núcleo</h2>
+<p>Mapeo de cada categoría de <b>núcleo</b> a un <b>medio</b> de la definición de la OTAN (arriba):</p>
+<table><thead><tr><th>Categoría (núcleo)</th><th>Medio (definición OTAN)</th></tr></thead>
+<tbody>
+<tr><td>Buques de guerra</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
+<tr><td>Maniobras militares</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
+<tr><td>Drones</td><td>medio militar / tecnológico</td></tr>
+<tr><td>Bloqueo aéreo / marítimo</td><td>coerción &mdash; &laquo;economic pressure&raquo; / presión no militar</td></tr>
+<tr><td>Hostigamiento</td><td>presión sobre la población &mdash; &laquo;sow doubt&raquo; / presión</td></tr>
+</tbody></table>
+<p class="sub">Las categorías de <b>contexto</b> (salto a la valla, postura oficial, crítica internacional, soberanía) son <b>trasfondo migratorio/diplomático</b>: no corresponden a un «medio» de la definición, por eso van aparte y no cuentan como señal de presión híbrida.</p>
 
 <h2>Contexto (no hibrido)</h2>
 <p class="sub">Se muestra aparte para no inflar el nucleo: {_n(d['contexto']['eventos'])} eventos de contexto no se cuentan como senal hibrida.</p>
