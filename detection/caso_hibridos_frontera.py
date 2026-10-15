@@ -71,6 +71,17 @@ def _fecha(ts):
     return f"{d.day}-{MES[d.month]}-{d.year}"
 
 
+def _gini(xs):
+    """Coeficiente de Gini (0 = reparto perfecto, 1 = concentrado)."""
+    xs = sorted(int(x) for x in xs)
+    n = len(xs)
+    s = sum(xs)
+    if n == 0 or s == 0:
+        return 0.0
+    acc = sum(x * (2 * i - n - 1) for i, x in enumerate(xs, 1))
+    return acc / (n * s)
+
+
 def compute():
     con = sqlite3.connect(DB)
     per_cat, grups = {}, {}
@@ -110,6 +121,26 @@ def compute():
         [TEMA] + wp).fetchone()[0]
     clusters_tema = con.execute("SELECT COUNT(*) FROM clusters WHERE tema_id=?", (TEMA,)).fetchone()[0]
 
+    # amplificacion (nucleo): concentracion de autores + URLs compartidas
+    ids_n = list(nucleo)
+    amp = {}
+    if ids_n:
+        ch = ",".join("?" * len(ids_n))
+        por_autor = [r[0] for r in con.execute(
+            f"SELECT COUNT(*) FROM events WHERE id IN ({ch}) GROUP BY author ORDER BY 1 DESC",
+            ids_n).fetchall()]
+        total_a = sum(por_autor)
+        amp["autores_distintos"] = len(por_autor)
+        amp["top5_pct"] = round(100.0 * sum(por_autor[:5]) / total_a, 1) if total_a else 0
+        amp["top10_pct"] = round(100.0 * sum(por_autor[:10]) / total_a, 1) if total_a else 0
+        amp["gini"] = round(_gini(por_autor), 2)
+        u = con.execute(
+            f"SELECT COUNT(*) n, SUM(CASE WHEN na>=2 THEN 1 ELSE 0 END) comp FROM ("
+            f" SELECT url, COUNT(DISTINCT author) na FROM events WHERE id IN ({ch})"
+            f" AND COALESCE(url,'')<>'' AND url<>'-' GROUP BY url)", ids_n).fetchone()
+        amp["urls_distintas"] = u[0] or 0
+        amp["urls_compartidas"] = u[1] or 0
+
     # serie semanal de eventos de NUCLEO (buckets de 7 d hacia atras desde ahora)
     now_ts = con.execute(
         "SELECT MAX(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id "
@@ -136,6 +167,7 @@ def compute():
         "contexto": agg(contexto),
         "clusters_nucleo": clusters_nucleo,
         "clusters_tema": clusters_tema,
+        "amplificacion": amp,
         "por_categoria": {k: len(v) for k, v in per_cat.items()},
         "grupo": grups,
         "serie_semanal_nucleo": serie,
@@ -176,6 +208,7 @@ def build_html(manual_txt, d, meta):
             rows.append(f"<tr><td>{lbl}</td><td class='num'>{_n(d['por_categoria'].get(k, 0))}</td></tr>")
         return "".join(rows)
 
+    amp = d.get("amplificacion", {})
     delta = d["delta_pct"]
     if delta is None:
         delta_html = "<b>—</b><span>vs media 8 sem (núcleo)</span>"
@@ -234,6 +267,15 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 {_sparkline(d['serie_semanal_nucleo'])}
 <table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
+
+<h2>Amplificación (núcleo)</h2>
+<div class="kpis">
+<div class="kpi"><b>{amp.get('top10_pct', 0)}%</b><span>top-10 autores</span></div>
+<div class="kpi"><b>{amp.get('top5_pct', 0)}%</b><span>top-5 autores</span></div>
+<div class="kpi"><b>{amp.get('gini', 0)}</b><span>Gini autores</span></div>
+<div class="kpi"><b>{_n(amp.get('urls_compartidas', 0))}</b><span>URLs compartidas (≥2 autores)</span></div>
+</div>
+<p class="sub">{_n(amp.get('autores_distintos', 0))} autores distintos · {_n(amp.get('urls_distintas', 0))} URLs distintas. Lectura: <b>top-5 alto / Gini alto</b> o <b>many URLs compartidas</b> → amplificación concentrada; valores bajos → discusión repartida (sin amplificación). Medido en el núcleo, no en el contexto.</p>
 
 <h2>Por qué estas categorías son el núcleo</h2>
 <p>Mapeo de cada categoría de <b>núcleo</b> a un <b>medio</b> de la definición de la OTAN (arriba):</p>

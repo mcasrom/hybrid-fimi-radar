@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 07:34 UTC",
+    "generado_utc": "2026-10-15 07:37 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -28,6 +28,14 @@
     },
     "clusters_nucleo": 8,
     "clusters_tema": 127,
+    "amplificacion": {
+      "autores_distintos": 112,
+      "top5_pct": 46.2,
+      "top10_pct": 53.4,
+      "gini": 0.54,
+      "urls_distintas": 146,
+      "urls_compartidas": 2
+    },
     "por_categoria": {
       "drones": 113,
       "buques_guerra": 80,
