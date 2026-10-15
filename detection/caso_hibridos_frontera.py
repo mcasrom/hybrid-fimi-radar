@@ -1051,7 +1051,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         _pp = _ph = 0; _pd = "-"
     _respuesta = ("<b>Respuesta (calculada este ciclo):</b> los picos los <b>abren hechos nuevos</b> que luego <b>se reproducen</b>. "
                   "Día punta <b>%s</b>: <b>%d publicaciones</b> de <b>%d historias nuevas</b> (%.1f por historia). "
-                  "En total: %d publicaciones de %d historias (%.1f por historia). "
+                  "En la <b>serie de 30 d</b>: %d publicaciones de %d historias (%.1f por historia). "
                   "→ <b>hechos nuevos + difusión</b>, no solo difusión de lo ya conocido.") % (
                   _pd, _pp, _ph, (_pp / _ph if _ph else 0), _tp, _th, _ratio)
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
