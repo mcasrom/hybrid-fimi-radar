@@ -3,7 +3,7 @@
 **Señales híbridas observadas**
 - Drones sobre Ceuta/Melilla: >100 eventos en 90 d (Bluesky/Google News).
 - Bloqueo de espacio aéreo y marítimo: inteligencia marroquí prepara restricciones.
-- Maniobras militares conjunto España‑Marruecos‑EEUU (La Razón, Bluesky).
+- Ejercicios militares conjuntos España‑Marruecos‑EEUU (La Razón, Bluesky).
 - Entrega de buques de guerra Navantia a Marruecos durante la crisis de Ceuta (El Economista, The Objective).
 - Acusaciones de hostigamiento migratorio tras la crisis de julio (TN8, Bluesky).
 

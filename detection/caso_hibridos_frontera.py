@@ -39,7 +39,7 @@ CATS = [
     ("drones", "Drones", ["drone", "dron"], [], "nucleo"),
     ("buques_guerra", "Buques de guerra",
      ["buque de guerra", "barco de guerra", "navio de guerra", "buque militar", "fragata", "patrullera"], [], "nucleo"),
-    ("maniobras", "Maniobras militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "nucleo"),
+    ("maniobras", "Ejercicios militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "nucleo"),
     ("hostigamiento", "Hostigamiento", ["hostigamiento", "presion migratoria", "desestabiliz", "asedio"], [], "nucleo"),
     ("bloqueo", "Bloqueo aereo / maritimo",
      ["bloqueo aereo", "bloqueo maritimo", "bloqueo del espacio aereo", "cierre del espacio aereo",
@@ -225,7 +225,7 @@ def compute():
 
     # hitos exogenos (fecha de primera aparicion de cada narrativa, DERIVADA)
     hitos = []
-    for term, lbl in (("valla", "valla"), ("maniobras militares", "maniobras"),
+    for term, lbl in (("valla", "valla"), ("maniobras militares", "ejercicios"),
                       ("navantia", "Navantia")):
         r = con.execute(
             "SELECT MIN(e.timestamp) FROM events e JOIN event_temas et ON et.event_id=e.id "
@@ -292,6 +292,67 @@ def compute():
                 f"SELECT text, title FROM events WHERE id IN ({_chpol})", ids_n).fetchall():
             pol[_polaridad(t2, tit2)] += 1
 
+    # --- fase 3: H1 (correlacion con retardo + permutacion) ---
+    import random as _rnd
+    nd = int((now_ts - TS_CASE) // 86400) + 1
+
+    def _daily(idset):
+        arr = [0] * nd
+        if idset:
+            _ch = ",".join("?" * len(idset))
+            for (t,) in con.execute(f"SELECT timestamp FROM events WHERE id IN ({_ch})",
+                                    list(idset)).fetchall():
+                k = int((t - TS_CASE) // 86400)
+                if 0 <= k < nd:
+                    arr[k] += 1
+        return arr
+
+    dr = _daily(set(per_cat.get("drones", [])))
+    mg = _daily(contexto)
+
+    def _corr(a, b, lag):
+        if lag >= 0:
+            x = a[lag:]; y = b[:len(b) - lag] if lag else b
+        else:
+            x = a[:len(a) + lag]; y = b[-lag:]
+        n = min(len(x), len(y)); x = x[:n]; y = y[:n]
+        if n < 5:
+            return 0.0
+        mx = sum(x) / n; my = sum(y) / n
+        num = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
+        dx = sum((xi - mx) ** 2 for xi in x) ** 0.5
+        dy = sum((yi - my) ** 2 for yi in y) ** 0.5
+        return num / (dx * dy) if dx and dy else 0.0
+
+    lags = list(range(0, 15))
+    obs = [_corr(dr, mg, l) for l in lags]
+    r_max = round(max(obs), 2) if obs else 0
+    lag_max = lags[obs.index(max(obs))] if obs else 0
+    _rnd.seed(1)
+    null = []
+    for _ in range(500):
+        mg2 = mg[:]; _rnd.shuffle(mg2)
+        null.append(max(_corr(dr, mg2, l) for l in lags))
+    p_h1 = round(sum(1 for v in null if v >= max(obs)) / len(null), 3) if null else 1.0
+    h1 = {"r_max": r_max, "lag": lag_max, "p": p_h1, "n_dias": nd}
+
+    # placebo de hitos: ¿los picos caen cerca de hitos más que por azar?
+    placebo = None
+    if serie and hitos:
+        base_ts = now_ts - len(serie) * SEM
+
+        def _wk(ts):
+            return int((ts - base_ts) // SEM)
+
+        hw = set()
+        for ts, _l in hitos:
+            w = _wk(ts)
+            hw.update((w - 1, w, w + 1))
+        picos = sorted(range(len(serie)), key=lambda i: -serie[i])[:3]
+        cerca = sum(1 for i in picos if i in hw)
+        esperado = round(len(hw) / len(serie) * len(picos), 1)
+        placebo = {"picos_cerca": cerca, "de": len(picos), "esperado_azar": esperado}
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -315,6 +376,8 @@ def compute():
         "medios_indep": len(medios),
         "top_medios": top_medios,
         "polaridad": pol,
+        "h1": h1,
+        "placebo": placebo,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -409,6 +472,16 @@ def build_html(manual_txt, d, meta):
     pol_html = "".join(
         f"<tr><td>{k}</td><td class='num'>{_n(v)}</td><td class='num'>{round(100 * v / _pol_tot)}%</td></tr>"
         for k, v in sorted(pol.items(), key=lambda kv: -kv[1]))
+    _h1 = d.get("h1", {})
+    _plc = d.get("placebo") or {}
+    _h1_txt = ("sin datos." if not _h1 else
+               f"r<sub>máx</sub> = {_h1.get('r_max')} (retardo {_h1.get('lag')} d) · "
+               f"<b>p = {_h1.get('p')}</b> (permutación, {_h1.get('n_dias')} días) → "
+               + ("<b>se sostiene</b> (p&lt;0,05)." if (_h1.get('p') is not None and _h1.get('p') < 0.05)
+                  else "<b>NO se sostiene</b> (p≥0,05 en esta ventana)."))
+    _plc_txt = ("n/d." if not _plc else
+                f"{_plc.get('picos_cerca')}/{_plc.get('de')} picos dentro de ±1 semana de un hito "
+                f"(esperado por azar {_plc.get('esperado_azar')}).")
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -502,12 +575,22 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tbody>{pol_html}</tbody></table>
 <p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / amenaza / hostigamiento / bloqueo…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo / visita…; resto = <b>neutro</b>. <b>Heurística, pendiente de validación manual.</b> Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 
+<h2>Contraste de hipótesis (H1–H4)</h2>
+<table>
+<tbody>
+<tr><td><b>H1</b> · la actividad de drones sube tras eventos migratorios (retardo ≤7 d)</td><td>{_h1_txt}</td></tr>
+<tr><td><b>H2</b> · los picos coinciden con hitos exógenos (placebo)</td><td>{_plc_txt}</td></tr>
+<tr><td><b>H3</b> · amplificación coordinada por URLs</td><td><b>Refutada</b> en esta ventana: solo <b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))}).</td></tr>
+<tr><td><b>H4</b> · el incremento responde a cambios de cobertura (control)</td><td>No evaluada aquí; ver «Lectura» (redes/agregador) y la cuota normalizada.</td></tr>
+</tbody></table>
+<p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
+
 <h2>Por qué estas categorías son el núcleo</h2>
 <p>Mapeo de cada categoría de <b>núcleo</b> a un <b>medio</b> de la definición de la OTAN (arriba):</p>
 <table><thead><tr><th>Categoría (núcleo)</th><th>Medio (definición OTAN)</th></tr></thead>
 <tbody>
 <tr><td>Buques de guerra</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
-<tr><td>Maniobras militares</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
+<tr><td>Ejercicios militares</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
 <tr><td>Drones</td><td>medio militar / tecnológico</td></tr>
 <tr><td>Bloqueo aéreo / marítimo</td><td>coerción &mdash; &laquo;economic pressure&raquo; / presión no militar</td></tr>
 <tr><td>Hostigamiento</td><td>presión sobre la población &mdash; &laquo;sow doubt&raquo; / presión</td></tr>
