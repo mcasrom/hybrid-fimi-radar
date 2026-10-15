@@ -706,6 +706,8 @@ def _fusionar_episodios(historias):
         return {w for w in s.split() if len(w) >= 4 and w not in _STOP and not w.isdigit()}
 
     sets = [_toks(h.get("titulo", "")) for h in historias]
+    fechas = [h.get("fecha", 0) for h in historias]
+    WIN = 7 * 86400  # no unir titulares a mas de 7 dias del evento
     N = len(historias)
     df = {}
     for s in sets:
@@ -716,6 +718,8 @@ def _fusionar_episodios(historias):
     for i in range(N):
         best, best_sc = None, 0.0
         for k, ev in enumerate(eventos):
+            if abs(fechas[i] - ev.get("last", 0)) > WIN:
+                continue
             inter = sets[i] & ev["rep"]
             raros = sum(1 for w in inter if df.get(w, 0) <= umbral)
             jac = len(inter) / max(1, len(sets[i] | ev["rep"]))
@@ -723,10 +727,11 @@ def _fusionar_episodios(historias):
             if (raros >= 2 or jac >= 0.34) and sc > best_sc:
                 best, best_sc = k, sc
         if best is None:
-            eventos.append({"rep": set(sets[i]), "idxs": [i]})
+            eventos.append({"rep": set(sets[i]), "idxs": [i], "last": fechas[i]})
         else:
             eventos[best]["idxs"].append(i)
             eventos[best]["rep"] |= sets[i]
+            eventos[best]["last"] = min(eventos[best].get("last", fechas[i]), fechas[i])
     out = []
     for ev in eventos:
         idxs = ev["idxs"]
