@@ -120,6 +120,24 @@ def _medio_titulo(title):
     return ""
 
 
+_MEDIOS_DOM = {
+    "the objective": "theobjective.com", "abc": "abc.es", "okdiario": "okdiario.com",
+    "servimedia": "servimedia.es", "canarias en pleno": "canariasenpleno.com",
+    "el nacional": "elnacional.cat", "el economista": "eleconomista.es",
+    "la razón": "larazon.es", "el confidencial": "elconfidencial.com",
+    "el país": "elpais.com", "el mundo": "elmundo.es", "eldiario": "eldiario.es",
+    "europa press": "europapress.es", "infobae": "infobae.com", "tn8": "tn8.tv",
+    "el faro de ceuta": "elfarodeceuta.es", "ceuta tv": "ceutatv.com",
+    "melilla hoy": "melillahoy.es", "publico": "publico.es", "efe": "efe.com",
+}
+
+
+def _medio_link(name):
+    import urllib.parse as _up
+    d = _MEDIOS_DOM.get((name or "").lower().strip())
+    return f"https://{d}" if d else "https://www.google.com/search?q=" + _up.quote(name or "")
+
+
 # Polaridad: coop > hostil > neutro (coop es más específico; se comprueba primero).
 POL_COOP = ["ejercicio conjunto", "maniobras conjuntas", "cooperaci", "navantia",
             "african lion", "entrega de", "entrega a", "venta de", "venta a",
@@ -572,7 +590,9 @@ def build_html(manual_txt, d, meta):
     fo_html = "".join(
         f"<tr><td>{k}</td><td class='num'>{_n(v)}</td></tr>"
         for k, v in sorted(fo.items(), key=lambda kv: -kv[1]))
-    _medios_txt = ", ".join(f"{m} ({c})" for m, c in d.get("top_medios", [])) or "—"
+    _medios_txt = ", ".join(
+        f'<a href="{_medio_link(m)}" target="_blank" rel="noopener">{m}</a> ({c})'
+        for m, c in d.get("top_medios", [])) or "—"
     import urllib.parse as _up
     _page = "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
     _stxt = (f"Indicadores de presión híbrida en Frontera Sur (Marruecos): "
