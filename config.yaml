@@ -993,6 +993,46 @@ feeds:
   transparency: medium
   note: 'Agregador espanol con voto (meneos), karma y comentarios por historia. Titulares editorializados por usuarios; 22 % match electoral medido 7-oct-2026. Sin tema: decide el gate por contenido.'
   analytical_relevance: alta
+- nombre: BOE (sumario diario)
+  url: https://www.boe.es/rss/boe.php
+  tipo: official
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: high
+  transparency: high
+  note: 'Fuente PRIMARIA (Estado). Sumario diario del BOE; filtrar por seccion y keywords del tema. Medido 15-oct: 8 coincidencias/ciclo con el foco Marruecos.'
+  analytical_relevance: alta
+- nombre: La Moncloa (notas de prensa)
+  url: https://www.lamoncloa.gob.es/Paginas/rss.aspx
+  tipo: official
+  idioma: es
+  pais: ES
+  bias: center
+  reliability: high
+  transparency: high
+  note: 'Fuente PRIMARIA (Gobierno). Bajo volumen; util para trazar comunicados oficiales. Medido 15-oct: 1 coincidencia/ciclo.'
+  analytical_relevance: alta
+- nombre: El Debate (Espana)
+  url: https://www.eldebate.com/rss/espana.xml
+  tipo: rss
+  idioma: es
+  pais: ES
+  bias: right
+  reliability: mixed
+  transparency: medium
+  note: 'Medio espanol. Medido 15-oct: 14 coincidencias/ciclo con el foco Marruecos. Sin tema: decide el gate.'
+  analytical_relevance: media
+- nombre: NYT World
+  url: https://rss.nytimes.com/services/xml/rss/nyt/World.xml
+  tipo: rss
+  idioma: en
+  pais: US
+  bias: center-left
+  reliability: high
+  transparency: high
+  note: 'Diario de EE.UU. (hueco actual en el foco). Medido 15-oct: 3 coincidencias/ciclo.'
+  analytical_relevance: media
 temas:
   frontera_sur:
     estado: produccion
