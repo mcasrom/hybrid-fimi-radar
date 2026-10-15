@@ -55,8 +55,15 @@ CATS = [
     ("critica_a_marruecos", "Critica internacional a Marruecos",
      ["acusa a marruecos", "acusa a rabat", "responsabiliza a marruecos", "marruecos viola",
       "marruecos amenaza", "irredentismo", "ofensiva marroquí", "ataque marroquí", "presión marroquí"], [], "contexto"),
-    ("soberania", "Soberania / aguas", ["soberan", "aguas territoriales", "aguas internacionales", "tratado de ceuta"], [], "contexto"),
+    ("soberania", "Soberania / aguas",
+     ["soberan", "aguas territoriales", "aguas internacionales", "tratado de ceuta"], [], "contexto"),
 ]
+
+# Ancla geografica: el NUCLEO exige contexto Ceuta/Melilla/Marruecos/Estrecho.
+# Evita ruido tipo "dron" en Mexico/Polonia o "antidrones" migratorio.
+ANCLAS = ["ceuta", "melilla", "marruecos", "marroqu", "estrecho", "espa\u00f1a", "espa\u00f1ol",
+          "rabat", "gibraltar", "albor", "frontera", "valla", "canarias", "magreb", "sahara",
+          "melill", "penon", "pe\u00f1on"]
 
 MES = {1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
        7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic"}
@@ -142,9 +149,14 @@ def compute():
             excl_sql = " AND NOT (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in excl]) + ")"
             p += [f"%{w}%" for w in excl for _ in ("a", "b")]
+        ancla_sql = ""
+        if grupo == "nucleo":
+            ancla_sql = " AND (" + " OR ".join(
+                ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in ANCLAS]) + ")"
+            p += [f"%{a}%" for a in ANCLAS for _ in ("a", "b")]
         ids = [r[0] for r in con.execute(
             "SELECT e.id FROM events e JOIN event_temas et ON et.event_id=e.id "
-            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}", p).fetchall()]
+            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}{ancla_sql}", p).fetchall()]
         per_cat[key] = ids
         grups[key] = grupo
 
