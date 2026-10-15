@@ -1,0 +1,75 @@
+{
+  "caso": "frontera_sur_hibridos",
+  "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+  "meta": {
+    "generado_utc": "2026-10-15 06:38 UTC",
+    "frozen_version": "V1",
+    "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
+  },
+  "frozen": {
+    "tipo": "subcaso_tematico",
+    "version": "V1",
+    "congelado_utc": "2026-10-14",
+    "nota": "Subcaso tematico (no congelado tipo Ceuta). Bloque 'live' se recalcula cada ciclo.",
+    "manual_sha256": "70b055aa0f13b92067b633ee531133de5bece7729ac42556b576d446d6ab11fc"
+  },
+  "live": {
+    "nucleo": {
+      "eventos": 262,
+      "autores": 112,
+      "fuentes": 9,
+      "urls": 147
+    },
+    "contexto": {
+      "eventos": 1032,
+      "autores": 260,
+      "fuentes": 13,
+      "urls": 634
+    },
+    "clusters_nucleo": 8,
+    "clusters_tema": 127,
+    "por_categoria": {
+      "drones": 113,
+      "buques_guerra": 80,
+      "maniobras": 35,
+      "hostigamiento": 34,
+      "bloqueo": 1,
+      "valla_incidente": 397,
+      "postura_oficial": 285,
+      "critica_a_marruecos": 77,
+      "soberania": 305
+    },
+    "grupo": {
+      "drones": "nucleo",
+      "buques_guerra": "nucleo",
+      "maniobras": "nucleo",
+      "hostigamiento": "nucleo",
+      "bloqueo": "nucleo",
+      "valla_incidente": "contexto",
+      "postura_oficial": "contexto",
+      "critica_a_marruecos": "contexto",
+      "soberania": "contexto"
+    },
+    "serie_semanal_nucleo": [
+      0,
+      3,
+      1,
+      0,
+      0,
+      14,
+      27,
+      22,
+      47,
+      46,
+      14,
+      88
+    ],
+    "sem_actual_nucleo": 88,
+    "media8_nucleo": 21.2,
+    "delta_pct": 314.1,
+    "periodo": {
+      "desde": "30-jul-2026",
+      "hasta": "15-oct-2026"
+    }
+  }
+}
