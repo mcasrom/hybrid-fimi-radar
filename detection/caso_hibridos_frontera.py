@@ -428,6 +428,7 @@ def compute():
         "placebo": placebo,
         "fichas": fichas,
         "h4": h4,
+        "_ids": {"nucleo": sorted(nucleo), "contexto": sorted(contexto)},
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -594,13 +595,17 @@ def build_html(manual_txt, d, meta):
     fichas_html = "".join(
         f"<tr><td>{f.get('label')}</td><td>{f.get('desde')} → {f.get('hasta')}</td>"
         f"<td class='num'>{_n(f.get('eventos'))}</td><td class='num'>{_n(f.get('autores'))}</td>"
-        f"<td>{f.get('fuente')}</td><td>{f.get('polaridad')}</td></tr>"
+        f"<td>{f.get('fuente')}</td><td>{f.get('polaridad')}</td>"
+        f"<td><a href=\"/api/export?cluster={f.get('label')}&amp;fmt=csv\">datos</a></td></tr>"
         for f in fichas[:12])
     _h4 = d.get("h4", {})
     _h4_txt = ("sin datos." if not _h4 else
                f"Última semana: {_n(_h4.get('eventos'))} eventos · <b>{_n(_h4.get('urls'))}</b> URLs · "
                f"{_n(_h4.get('fuentes'))} fuentes · {_n(_h4.get('autores'))} autores · "
                f"ratio ev/URL = <b>{_h4.get('ev_por_url')}</b> · URL top = {_h4.get('top_url_pct')}%.")
+    kw_html = "".join(
+        f"<tr><td>{lbl}</td><td style='font-size:.82rem'>{' · '.join(w)}</td><td>{g}</td></tr>"
+        for k, lbl, w, e, g in CATS)
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -618,6 +623,11 @@ def build_html(manual_txt, d, meta):
         delta_html = f"<b style='color:{col}'>{sign}{delta:.0f}%</b><span>vs media 8 sem (núcleo)</span>"
 
     manual_html = _md(manual_txt)
+    try:
+        from detection.captacion import captacion_block
+        capt = captacion_block(["frontera_sur"])
+    except Exception:
+        capt = ""
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -670,6 +680,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <a href="/consulta.html">Consulta</a>
 <a href="/api.html">API</a>
 <a href="/metodo.html">Método</a>
+<a href="datos.csv" download>&#11015; CSV</a>
 <details class="share"><summary>Compartir ▾</summary><div class="shpanel">
 <a href="{_sx}" target="_blank" rel="noopener">X</a>
 <a href="{_sm}" target="_blank" rel="noopener">Mastodon</a>
@@ -737,7 +748,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 
 <h2>Fichas de clúster (núcleo)</h2>
-<table><thead><tr><th>Clúster</th><th>Ventana</th><th class="num">Eventos</th><th class="num">Autores</th><th>Origen dominante</th><th>Polaridad</th></tr></thead>
+<table><thead><tr><th>Clúster</th><th>Ventana</th><th class="num">Eventos</th><th class="num">Autores</th><th>Origen dominante</th><th>Polaridad</th><th>Datos</th></tr></thead>
 <tbody>{fichas_html or '<tr><td colspan=6>sin clusters</td></tr>'}</tbody></table>
 <p class="sub">Cada clúster con su ventana, tamaño, autores, origen y polaridad <b>dominantes</b> (heurística). Convierte el número en narrativa.</p>
 
@@ -769,6 +780,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 {manual_html}
 </details>
 
+<details class="seccion"><summary>Metodología · categorías y keywords</summary>
+<table><thead><tr><th>Categoría</th><th>Keywords</th><th>Grupo</th></tr></thead><tbody>{kw_html}</tbody></table>
+<p class="sub">Núcleo = indicadores híbridos (exige <b>ancla geográfica</b>: {' · '.join(ANCLAS[:10])}…); contexto = trasfondo migratorio/diplomático. Fuentes: prensa ES/MA/AR/FR, agencias, Bluesky, Google News. <a href="datos.csv" download>Descargar CSV ↩</a></p>
+</details>
+
 <h2>Como leerlo</h2>
 <ul>
 <li>El <b>nucleo</b> son los indicadores hibridos; el <b>contexto</b> (valla, postura, critica, soberania) es trasfondo y va aparte.</li>
@@ -776,6 +792,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <li>Las categorias se solapan dentro de cada grupo; el conteo de cada una es independiente.</li>
 <li>Fuentes: prensa espanola/marroqui/argelina, agencias internacionales y Bluesky.</li>
 </ul>
+{capt}
 </main>
 <footer><div class="wrap">
 <p><a href="/">&larr; Volver al radar</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/consulta.html">Consulta</a></p>
@@ -787,11 +804,37 @@ Fuente: <code>event_temas</code> + <code>cluster_events</code> (tema frontera_su
 """
 
 
+def _write_csv(con, ids, path):
+    import csv
+    nuc = set(ids.get("nucleo", []))
+    allids = sorted(nuc | set(ids.get("contexto", [])))
+    if not allids:
+        return
+    ch = ",".join("?" * len(allids))
+    data = {r[0]: r for r in con.execute(
+        f"SELECT id, timestamp, source, title, text, url, author FROM events WHERE id IN ({ch})", allids)}
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["id", "grupo", "origen", "polaridad", "fecha", "fuente", "autor",
+                    "url", "titular"])
+        for eid in allids:
+            r = data.get(eid)
+            if not r:
+                continue
+            _i, ts, src, tit, txt, url, aut = r
+            fecha = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d") if ts else ""
+            w.writerow([eid, "nucleo" if eid in nuc else "contexto", _origen(src),
+                        _polaridad(txt, tit), fecha, src or "", (aut or "")[:60],
+                        url or "", (tit or "").replace("\n", " ")[:160]])
+    print("[caso-hibridos] CSV ->", path)
+
+
 def main():
     if not os.path.exists(DB):
         print("[caso-hibridos] BD no encontrada:", DB)
         return 1
     d = compute()
+    ids = d.pop("_ids", {})
     manual_txt = open(MANUAL, encoding="utf-8").read() if os.path.exists(MANUAL) else ""
     import hashlib
     hash_manual = hashlib.sha256(manual_txt.encode()).hexdigest()
@@ -834,6 +877,9 @@ def main():
     open(HTML_OUT, "w", encoding="utf-8").write(
         build_html(manual_txt, d, {"generado_utc": now, "hash_manual": hash_manual}))
     print("[caso-hibridos] HTML ->", HTML_OUT)
+    _c = sqlite3.connect(DB)
+    _write_csv(_c, ids, os.path.join(HTML_DIR, "datos.csv"))
+    _c.close()
     print(f"[caso-hibridos] nucleo: {d['nucleo']['eventos']} ev · {d['clusters_nucleo']} clusters · "
           f"delta {d['delta_pct']}% · contexto {d['contexto']['eventos']} ev")
     return 0
