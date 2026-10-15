@@ -1179,6 +1179,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td>Coordinación informativa</td><td><b>No observada</b> ({_n(amp.get("urls_compartidas", 0))} URLs compartidas entre autores)</td></tr>
 <tr><td>Hipótesis de plan híbrido</td><td><b>En evaluación</b> (evidencia a favor y en contra)</td></tr>
 </tbody></table>
+<div style="background:#0d1b2a;color:#fff;border-radius:8px;padding:10px 14px;margin:12px 0;font-weight:700;letter-spacing:.2px">Señal detectada &middot; Coordinación <u>no demostrada</u> &middot; Atribución <u>no confirmada</u></div>
 <p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b></p>
 <ul class="sub" style="margin:6px 0 0 0;padding-left:20px">
 <li><b>L1</b> coerción militar (buques, drones, bloqueo naval/aéreo)</li>
