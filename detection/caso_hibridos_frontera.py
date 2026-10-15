@@ -686,12 +686,20 @@ def compute_prensa(tema):
         "ON et.event_id=e.id WHERE et.tema_id=? GROUP BY e.source", (tema,)).fetchall()
 
     def _pick(keys):
-        return sorted([(s, n) for s, n in rows if any(k in (s or "").lower() for k in keys)],
-                      key=lambda x: -x[1])
+        out = []
+        for s, k in rows:
+            if any(key in (s or "").lower() for key in keys):
+                ur = con.execute(
+                    "SELECT e.url FROM events e JOIN event_temas et ON et.event_id=e.id "
+                    "WHERE et.tema_id=? AND e.source=? AND e.url LIKE 'http%' "
+                    "ORDER BY e.timestamp DESC LIMIT 1", (tema, s)).fetchone()
+                out.append((s, k, (ur[0] if ur else "")))
+        out.sort(key=lambda x: -x[1])
+        return out
 
     def _samp(keys, k=6):
         out = []
-        for s, _n2 in _pick(keys)[:4]:
+        for s, _k2, _u2 in _pick(keys)[:4]:
             for tit, u, ts in con.execute(
                     "SELECT e.title, e.url, e.timestamp FROM events e JOIN event_temas et "
                     "ON et.event_id=e.id WHERE et.tema_id=? AND e.source=? "
@@ -771,17 +779,13 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     _hechos_rows = "".join(_hrows) or "<tr><td colspan=4>sin noticias</td></tr>"
     _pre = prensa or {}
 
-    def _src_rows(lst, empty):
-        if not lst:
-            return "<tr><td colspan=2>%s</td></tr>" % empty
-        return "".join("<tr><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k)) for s, k in lst)
+    def _prow(esfera, it):
+        s, k, u = (list(it) + ["", 0, ""])[:3]
+        cell = ('<a href="%s" target="_blank" rel="noopener" title="ver una pieza de esta fuente">%s</a>' % (u, s)) if u else ("%s" % s)
+        return "<tr><td>%s</td><td>%s</td><td class='num'>%s</td></tr>" % (esfera, cell, _n(k))
 
-    _mar_rows = _src_rows(_pre.get("mar", []), "sin medios marroquíes en el tema")
-    _chi_rows = _src_rows(_pre.get("chi", []), "0 &mdash; ningún medio chino cubre el tema")
-    _prows = ["<tr><td>Marruecos</td><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k))
-              for s, k in (_pre.get("mar", []) or [])]
-    _prows += ["<tr><td>Internacional / EE.UU.</td><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k))
-               for s, k in (_pre.get("int", []) or [])]
+    _prows = [_prow("Marruecos", it) for it in (_pre.get("mar", []) or [])]
+    _prows += [_prow("Internacional / EE.UU.", it) for it in (_pre.get("int", []) or [])]
     _prows.append("<tr><td>China (estatal)</td><td>CGTN / Global Times</td><td class='num'>0</td></tr>")
     _prensa_rows = "".join(_prows)
 
@@ -904,17 +908,17 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
             f"<td>{e['title']}</td><td>{src}</td></tr>")
     evid_html = "".join(evid_rows)
     cuentas_txt = " · ".join(f"{_acct(c['author'])} ({c['n']})" for c in d.get("cuentas", [])[:8])
-    _lectura = (f"<b>{_n(d['nucleo']['eventos'])}</b> eventos de núcleo en el <b>periodo completo</b> "
-                "(el periodo indicado arriba); "
-                f"la <b>última semana</b> ({_n(d['sem_actual_nucleo'])}) es solo una parte de ese total. "
-                f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
-                f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
-                f"Top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; solo "
-                f"<b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas de {_n(amp.get('urls_distintas', 0))}. "
-                f"<b>Polaridad</b> (heurística): <b>{_hostil_pct}%</b> hostil · {_coop_pct}% cooperación · "
-                f"{_neutro_pct}% neutro. "
-                f"<b>Lectura:</b> conversación amplia sobre un episodio reciente (fragata en Ceuta) con "
-                f"<b>amplificación coordinada NO medida</b> — señal a vigilar, no conclusión.")
+    _lectura = (f"<ul style='margin:6px 0 0 0;padding-left:20px'>"
+                f"<li><b>Volumen:</b> {_n(d['nucleo']['eventos'])} eventos de núcleo en el periodo (arriba); "
+                f"la <b>última semana</b> ({_n(d['sem_actual_nucleo'])}) es parte de ese total.</li>"
+                f"<li><b>Fuentes:</b> <b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
+                f"(≈{d.get('medios_indep', 0)} medios) · <b>{_prensa_pct}%</b> prensa directa.</li>"
+                f"<li><b>Concentración:</b> top-5 cuentas = <b>{amp.get('top5_pct', 0)}%</b>; solo "
+                f"<b>{amp.get('urls_compartidas', 0)}</b> URLs compartidas de {_n(amp.get('urls_distintas', 0))}.</li>"
+                f"<li><b>Polaridad</b> (heurística): <b>{_hostil_pct}%</b> hostil · {_coop_pct}% cooperación · "
+                f"{_neutro_pct}% neutro.</li>"
+                f"<li><b>Lectura:</b> conversación amplia sobre un episodio reciente (fragata en Ceuta) con "
+                f"<b>amplificación coordinada NO medida</b> — señal a vigilar, no conclusión.</li></ul>")
     if delta is None:
         delta_html = "<b>—</b><span>vs media 8 sem (núcleo)</span>"
     else:
@@ -1043,7 +1047,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Fecha de publicación</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
 </details>
 
-<h2>Prensa marroquí, china y extranjera (L3)</h2>
+<h2>Prensa marroquí y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
 <table><thead><tr><th>Esfera</th><th>Medio</th><th class="num">Eventos</th></tr></thead><tbody>{_prensa_rows}</tbody></table>
 <p class="sub">{_chi_note}</p>
