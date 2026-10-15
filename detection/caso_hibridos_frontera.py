@@ -737,6 +737,10 @@ def build_html(manual_txt, d, hechos, prensa, indic, meta):
 
     _mar_rows = _src_rows(_pre.get("mar", []), "sin medios marroquíes en el tema")
     _chi_rows = _src_rows(_pre.get("chi", []), "0 &mdash; ningún medio chino cubre el tema")
+    _prows = ["<tr><td>Marruecos</td><td>%s</td><td class='num'>%s</td></tr>" % (s, _n(k))
+              for s, k in (_pre.get("mar", []) or [])]
+    _prows.append("<tr><td>China (estatal)</td><td>CGTN / Global Times</td><td class='num'>0</td></tr>")
+    _prensa_rows = "".join(_prows)
 
     def _samp_rows(lst):
         if not lst:
@@ -971,14 +975,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Radar A · Hechos publicados <span class="sub">(con fuente, no verificados)</span></h2>
 <p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones de medios, de <b>{_hechos_med}</b> medios. Cada fila enlaza a la noticia original.</p>
-<table><thead><tr><th>Fecha</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
+<table><thead><tr><th>Fecha de publicación</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
 
 <h2>Prensa marroquí, china y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
-<table><thead><tr><th>Medios marroquíes / afines</th><th class="num">Eventos</th></tr></thead><tbody>{_mar_rows}</tbody></table>
-<p class="sub">Titulares marroquíes (muestra):</p>
-<table><thead><tr><th>Fecha</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_mar_samp_rows}</tbody></table>
-<table><thead><tr><th>Medios chinos (estatales)</th><th class="num">Eventos</th></tr></thead><tbody>{_chi_rows}</tbody></table>
+<table><thead><tr><th>Esfera</th><th>Medio</th><th class="num">Eventos</th></tr></thead><tbody>{_prensa_rows}</tbody></table>
 <p class="sub">{_chi_note}</p>
 
 <h2>Radar B · Conversación <span class="sub">(núcleo)</span></h2>
