@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 09:56 UTC",
+    "generado_utc": "2026-10-15 10:00 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -153,6 +153,80 @@
       "de": 3,
       "esperado_azar": 1.8
     },
+    "fichas": [
+      {
+        "label": "frontera_sur_cluster_015",
+        "desde": "1-sep-2026",
+        "hasta": "14-oct-2026",
+        "eventos": 20,
+        "autores": 5,
+        "fuente": "social",
+        "polaridad": "neutro"
+      },
+      {
+        "label": "frontera_sur_cluster_026",
+        "desde": "6-sep-2026",
+        "hasta": "27-sep-2026",
+        "eventos": 7,
+        "autores": 2,
+        "fuente": "social",
+        "polaridad": "neutro"
+      },
+      {
+        "label": "frontera_sur_cluster_115",
+        "desde": "17-sep-2026",
+        "hasta": "10-oct-2026",
+        "eventos": 6,
+        "autores": 2,
+        "fuente": "social",
+        "polaridad": "neutro"
+      },
+      {
+        "label": "frontera_sur_cluster_106",
+        "desde": "24-sep-2026",
+        "hasta": "27-sep-2026",
+        "eventos": 3,
+        "autores": 2,
+        "fuente": "social",
+        "polaridad": "neutro"
+      },
+      {
+        "label": "frontera_sur_cluster_000",
+        "desde": "13-sep-2026",
+        "hasta": "24-sep-2026",
+        "eventos": 2,
+        "autores": 2,
+        "fuente": "social",
+        "polaridad": "hostil"
+      },
+      {
+        "label": "frontera_sur_cluster_001",
+        "desde": "22-sep-2026",
+        "hasta": "22-sep-2026",
+        "eventos": 1,
+        "autores": 1,
+        "fuente": "social",
+        "polaridad": "hostil"
+      },
+      {
+        "label": "frontera_sur_cluster_055",
+        "desde": "14-sep-2026",
+        "hasta": "14-sep-2026",
+        "eventos": 1,
+        "autores": 1,
+        "fuente": "social",
+        "polaridad": "neutro"
+      },
+      {
+        "label": "frontera_sur_cluster_074",
+        "desde": "2-oct-2026",
+        "hasta": "2-oct-2026",
+        "eventos": 1,
+        "autores": 1,
+        "fuente": "social",
+        "polaridad": "neutro"
+      }
+    ],
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"

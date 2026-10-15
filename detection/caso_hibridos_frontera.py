@@ -353,6 +353,36 @@ def compute():
         esperado = round(len(hw) / len(serie) * len(picos), 1)
         placebo = {"picos_cerca": cerca, "de": len(picos), "esperado_azar": esperado}
 
+    # --- fase 4: fichas de los clusters del nucleo (solo eventos de nucleo) ---
+    fichas = []
+    if ids_n:
+        _nkw = [w.lower() for _k, _l, w, _e, g in CATS if g == "nucleo" for w in w]
+        wa = " OR ".join(["LOWER(ce.text) LIKE ? OR LOWER(ce.title) LIKE ?"
+                          for _k, _l, w, _e, g in CATS if g == "nucleo" for _ in w])
+        wp = [f"%{w}%" for _k, _l, w, _e, g in CATS if g == "nucleo" for w in w for _ in ("a", "b")]
+        cl = con.execute(
+            "SELECT DISTINCT c.id, c.cluster_label FROM cluster_events ce "
+            "JOIN clusters c ON c.id=ce.cluster_id WHERE c.tema_id=? AND (" + wa + ")",
+            [TEMA] + wp).fetchall()
+        for cid, lab in cl:
+            fu = con.execute("SELECT source, title, text, ts, author FROM cluster_events WHERE cluster_id=?",
+                             (cid,)).fetchall()
+            ev = [f2 for f2 in fu
+                  if any(kw in ((f2[2] or "") + " " + (f2[1] or "")).lower() for kw in _nkw)]
+            if not ev:
+                continue
+            ts = [f2[3] for f2 in ev if f2[3]]
+            sc, pcs = {}, {}
+            for f2 in ev:
+                k = _origen(f2[0]); sc[k] = sc.get(k, 0) + 1
+                pp = _polaridad(f2[2], f2[1]); pcs[pp] = pcs.get(pp, 0) + 1
+            fichas.append({"label": lab, "desde": _fecha(min(ts)) if ts else "—",
+                           "hasta": _fecha(max(ts)) if ts else "—",
+                           "eventos": len(ev), "autores": len(set(f2[4] for f2 in ev)),
+                           "fuente": max(sc, key=sc.get) if sc else "—",
+                           "polaridad": max(pcs, key=pcs.get) if pcs else "—"})
+        fichas.sort(key=lambda x: -x["eventos"])
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -378,6 +408,7 @@ def compute():
         "polaridad": pol,
         "h1": h1,
         "placebo": placebo,
+        "fichas": fichas,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -453,6 +484,7 @@ def build_html(manual_txt, d, meta):
     fo_html = "".join(
         f"<tr><td>{k}</td><td class='num'>{_n(v)}</td></tr>"
         for k, v in sorted(fo.items(), key=lambda kv: -kv[1]))
+    _medios_txt = ", ".join(f"{m} ({c})" for m, c in d.get("top_medios", [])) or "—"
     _tot_fo = sum(fo.values()) or 1
     _social_pct = round(100 * fo.get("social", 0) / _tot_fo)
     _agg_pct = round(100 * fo.get("agregador (google-news)", 0) / _tot_fo)
@@ -482,6 +514,12 @@ def build_html(manual_txt, d, meta):
     _plc_txt = ("n/d." if not _plc else
                 f"{_plc.get('picos_cerca')}/{_plc.get('de')} picos dentro de ±1 semana de un hito "
                 f"(esperado por azar {_plc.get('esperado_azar')}).")
+    fichas = d.get("fichas", [])
+    fichas_html = "".join(
+        f"<tr><td>{f.get('label')}</td><td>{f.get('desde')} → {f.get('hasta')}</td>"
+        f"<td class='num'>{_n(f.get('eventos'))}</td><td class='num'>{_n(f.get('autores'))}</td>"
+        f"<td>{f.get('fuente')}</td><td>{f.get('polaridad')}</td></tr>"
+        for f in fichas[:12])
     _lectura = (f"{_n(d['nucleo']['eventos'])} eventos de núcleo ({_ratio} la media). "
                 f"<b>{_social_pct}%</b> redes · <b>{_agg_pct}%</b> agregador "
                 f"(≈{d.get('medios_indep', 0)} medios distintos) · <b>{_prensa_pct}%</b> prensa directa. "
@@ -585,6 +623,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 
+<h2>Fichas de clúster (núcleo)</h2>
+<table><thead><tr><th>Clúster</th><th>Ventana</th><th class="num">Eventos</th><th class="num">Autores</th><th>Origen dominante</th><th>Polaridad</th></tr></thead>
+<tbody>{fichas_html or '<tr><td colspan=6>sin clusters</td></tr>'}</tbody></table>
+<p class="sub">Cada clúster con su ventana, tamaño, autores, origen y polaridad <b>dominantes</b> (heurística). Convierte el número en narrativa.</p>
+
 <h2>Por qué estas categorías son el núcleo</h2>
 <p>Mapeo de cada categoría de <b>núcleo</b> a un <b>medio</b> de la definición de la OTAN (arriba):</p>
 <table><thead><tr><th>Categoría (núcleo)</th><th>Medio (definición OTAN)</th></tr></thead>
@@ -601,6 +644,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Origen</th><th class="num">Eventos</th></tr></thead>
 <tbody>{fo_html}</tbody></table>
 <p class="sub">Separadas por origen para no mezclar sesgos opuestos (prensa española vs marroquí vs argelina, agencias, red social).</p>
+<p class="sub">Medios concretos del núcleo (google-news resuelto al medio original): {_medios_txt}.</p>
 
 <h2>Contexto (no hibrido)</h2>
 <p class="sub">Se muestra aparte para no inflar el nucleo: {_n(d['contexto']['eventos'])} eventos de contexto no se cuentan como senal hibrida.</p>
