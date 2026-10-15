@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -485,6 +486,54 @@ def _timeline(serie, now_ts, hitos):
             + "".join(parts) + '</svg>')
 
 
+def _md_inline(s):
+    s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+    s = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", s)
+    return s
+
+
+def _md(text):
+    """Markdown mínimo -> HTML (headings, listas, negrita, cursiva)."""
+    out, ul, ol = [], False, False
+
+    def _close():
+        nonlocal ul, ol
+        if ul:
+            out.append("</ul>"); ul = False
+        if ol:
+            out.append("</ol>"); ol = False
+
+    for raw in (text or "").splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            _close(); continue
+        m = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if m:
+            _close()
+            out.append(f"<h{min(len(m.group(1)) + 1, 4)}>{_md_inline(m.group(2))}</h{min(len(m.group(1)) + 1, 4)}>")
+            continue
+        m = re.match(r"^[-*]\s+(.*)$", line)
+        if m:
+            if ol:
+                out.append("</ol>"); ol = False
+            if not ul:
+                out.append("<ul>"); ul = True
+            out.append(f"<li>{_md_inline(m.group(1))}</li>")
+            continue
+        m = re.match(r"^\d+\.\s+(.*)$", line)
+        if m:
+            if ul:
+                out.append("</ul>"); ul = False
+            if not ol:
+                out.append("<ol>"); ol = True
+            out.append(f"<li>{_md_inline(m.group(1))}</li>")
+            continue
+        _close()
+        out.append(f"<p>{_md_inline(line)}</p>")
+    _close()
+    return "".join(out)
+
+
 def build_html(manual_txt, d, meta):
     def tbl(grupo):
         rows = []
@@ -559,7 +608,7 @@ def build_html(manual_txt, d, meta):
         col = "#b91c1c" if delta >= 0 else "#166534"
         delta_html = f"<b style='color:{col}'>{sign}{delta:.0f}%</b><span>vs media 8 sem (núcleo)</span>"
 
-    manual_html = "".join(f"<p>{line}</p>" if line.strip() else "" for line in manual_txt.splitlines())
+    manual_html = _md(manual_txt)
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
