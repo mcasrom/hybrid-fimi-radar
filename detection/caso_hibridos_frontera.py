@@ -677,6 +677,7 @@ def compute_prensa(tema):
 INDIC = [
     ("Buques de guerra / aguas españolas", ["fragata", "buque de guerra", "aguas espa", "aguas territoriales"], "L1"),
     ("Drones", ["dron"], "L1"),
+    ("Bloqueo naval / aéreo", ["bloqueo naval", "bloqueo mar", "bloqueo aer", "cierre del espacio aereo"], "L1"),
     ("Ejercicios militares con terceros", ["ejercicio conjunto", "maniobras conjuntas", "african lion", "flintlock"], "L1"),
     ("Presión energética", ["gasoducto", "suministro eléctrico", "suministro electrico", "apagón"], "L2"),
     ("Bulos / desinformación", ["bulo", "desinformaci", "manipulaci"], "L3"),
@@ -685,6 +686,8 @@ INDIC = [
     ("Cadáveres / repatriación", ["cadáver", "cadaver", "repatriac"], "L4"),
     ("Presión migratoria (Ceuta/Melilla/Canarias)", ["presión migratoria", "presion migratoria", "asalto", "valla"], "L5"),
     ("Acuerdos tecnología/armas (China/EEUU/Israel/Emiratos)", ["armamento", "navantia", "material militar", "f-35"], "L6"),
+    ("Colonización / asentamiento territorial", ["coloniz", "colono", "asentamiento", "empadron"], "L7"),
+    ("Narrativa demográfica (reemplazo/natalidad/matrimonios)", ["reemplaz", "sustituc", "natalid", "matrimoni", "nacionalid"], "L7"),
 ]
 
 
@@ -952,7 +955,9 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td>Coordinación informativa</td><td><b>No observada</b> ({_n(amp.get("urls_compartidas", 0))} URLs compartidas entre autores)</td></tr>
 <tr><td>Hipótesis de plan híbrido</td><td><b>En evaluación</b> (evidencia a favor y en contra)</td></tr>
 </tbody></table>
-<p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b> <b>L1</b> coerción militar · <b>L2</b> presión energética · <b>L3</b> guerra informativa/desinformación · <b>L4</b> presión diplomática/jurídica · <b>L5</b> migración como arma · <b>L6</b> alineamientos exteriores y tecnología · <b>L7</b> ambigüedad/negación plausible.</p>
+<p class="sub"><b>Líneas de esfuerzo (doctrina híbrida):</b> <b>L1</b> coerción militar (buques, drones, <b>bloqueo naval/aéreo</b>) · <b>L2</b> presión energética · <b>L3</b> guerra informativa/desinformación · <b>L4</b> presión diplomática/jurídica (soberanía, no reconocer cadáveres) · <b>L5</b> migración como arma · <b>L6</b> alineamientos exteriores y tecnología · <b>L7</b> societal/demográfico (asentamiento, empadronamiento, nacionalidad, natalidad, matrimonios) y ambigüedad.</p>
+<p class="sub"><b>Nota de encuadre (L7):</b> las dimensiones <b>demográfico-societales</b> se muestran como <b>narrativa observada</b> (lo que circula, con su volumen y fuentes) y como <b>hipótesis a evaluar</b>; <b>no</b> se afirman como táctica verificada por este observatorio.</p>
+<p class="sub"><b>Espectro híbrido &harr; cinético.</b> La presión híbrida va de lo <b>no cinético</b> (desinformación, presión económica, demografía) a lo <b>cinético</b> (bloqueo naval, incursión de buques, uso de la fuerza). Ejemplo doctrinal: un <b>bloqueo naval</b> &mdash;como el cerco que China ensaya sobre Taiwán&mdash; es <b>a la vez presión híbrida y acción cinética</b> de coerción; aquí el catálogo se ordena en ese espectro.</p>
 </div>
 <div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad (15-oct-2026):</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
