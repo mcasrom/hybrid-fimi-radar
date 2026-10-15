@@ -1039,6 +1039,21 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
                _c.get("estado_verificacion"), _c.get("explicacion_alternativa"), _c.get("limites")))
     _cura_html = "".join(_cura_rows) or '<p class="sub">sin episodios curados</p>' 
     _hist = list(hist or [])
+    _sp = (series or {}).get("pub") or []
+    _sh = (series or {}).get("his") or []
+    _sdias = (series or {}).get("dias") or []
+    _tp, _th = sum(_sp), sum(_sh)
+    _ratio = (_tp / _th) if _th else 0
+    if _sp:
+        _pi = _sp.index(max(_sp))
+        _pp = _sp[_pi]; _ph = _sh[_pi] if _pi < len(_sh) else 0; _pd = _sdias[_pi] if _pi < len(_sdias) else "-"
+    else:
+        _pp = _ph = 0; _pd = "-"
+    _respuesta = ("<b>Respuesta (calculada este ciclo):</b> los picos los <b>abren hechos nuevos</b> que luego <b>se reproducen</b>. "
+                  "Día punta <b>%s</b>: <b>%d publicaciones</b> de <b>%d historias nuevas</b> (%.1f por historia). "
+                  "En total: %d publicaciones de %d historias (%.1f por historia). "
+                  "→ <b>hechos nuevos + difusión</b>, no solo difusión de lo ya conocido.") % (
+                  _pd, _pp, _ph, (_pp / _ph if _ph else 0), _tp, _th, _ratio)
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
                             rowh=18, color="#c1440e")
     _hist_rows = ""
@@ -1426,7 +1441,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Evolución · diario / semanal / histórico</h2>
 <p class="sub">Se guarda <b>un registro por día</b> (se conserva todo). <b>Diario</b> = cada jornada; <b>semanal</b> = agregado por semana ISO; <b>histórico</b> = la serie completa; <b>revisión</b> = Δ frente al día anterior. Comparación entre fechas, en la tabla. Serie descargable: <a href="/api/v1/caso/frontera_sur_hibridos/historial">JSON</a> · <a href="/api/v1/caso/frontera_sur_hibridos/historial.csv">CSV</a>.</p>
-<p style="background:#eef4fb;border-left:4px solid #0d1b2a;border-radius:8px;padding:10px 14px;margin:10px 0"><b>Pregunta guía:</b> ¿los picos reflejan <b>acontecimientos nuevos</b> o, sobre todo, <b>mayor difusión de lo ya conocido</b>?</p>
+<p style="background:#eef4fb;border-left:4px solid #0d1b2a;border-radius:8px;padding:10px 14px;margin:10px 0"><b>Pregunta guía:</b> ¿los picos reflejan <b>acontecimientos nuevos</b> o, sobre todo, <b>mayor difusión de lo ya conocido</b>?<br>{_respuesta}</p>
 {_hist_chart}
 <details class="seccion" open><summary>Diario (revisión: Δ vs día anterior)</summary>
 <table><thead><tr><th>Fecha</th><th class="num">Núcleo</th><th class="num">Δ</th><th class="num">Autores</th><th class="num">Clústeres</th><th class="num">URLs comp.</th><th>Indicadores (n)</th></tr></thead><tbody>{_hist_rows}</tbody></table>
