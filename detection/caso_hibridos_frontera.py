@@ -901,6 +901,7 @@ header{{background:var(--navy);color:#fff;padding:28px 20px}}
 .wrap{{max-width:900px;margin:0 auto;padding:0 20px}}
 h1{{font-size:1.5rem;margin:0 0 6px}}h2{{font-size:1.15rem;margin:28px 0 10px;border-left:4px solid var(--acc);padding-left:10px}}
 .sub{{color:#c9d6e2;font-size:.95rem}}
+p.sub,span.sub,h3.sub,h4.sub{{color:#475569}}
 .aviso{{background:#fff3cd;border:1px solid #ffe08a;border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.94rem}}
 .marco{{background:#eef4fb;border-left:4px solid var(--navy);border-radius:8px;padding:12px 14px;margin:16px 0;font-size:.93rem}}
 .lectura{{background:#0d1b2a;color:#fff;border-radius:8px;padding:14px 16px;margin:16px 0}}
@@ -978,9 +979,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Eventos del tema por indicador (pueden solaparse). <b>Cada cifra con su soporte real</b>; lo que no se captura se dice.</p>
 <table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Eventos</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 
-<h2>Radar A · Hechos publicados <span class="sub">(con fuente, no verificados)</span></h2>
-<p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones de medios, de <b>{_hechos_med}</b> medios. Cada fila enlaza a la noticia original.</p>
+<details class="seccion"><summary>Radar A · Hechos publicados &mdash; <b>{_hechos_n}</b> historias de <b>{_hechos_med}</b> medios (con fuente, no verificados) &middot; <b>clic para abrir</b></summary>
+<p class="sub"><b>{_hechos_n}</b> historias distintas en <b>{_hechos_pub}</b> publicaciones. Cada fila enlaza a la noticia original (lista completa en el CSV).</p>
 <table><thead><tr><th>Fecha de publicación</th><th>Medio</th><th>Titular</th><th>Fuente</th></tr></thead><tbody>{_hechos_rows}</tbody></table>
+</details>
 
 <h2>Prensa marroquí, china y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>
