@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 12:11 UTC",
+    "generado_utc": "2026-10-15 12:16 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -15,10 +15,10 @@
   },
   "live": {
     "nucleo": {
-      "eventos": 165,
+      "eventos": 164,
       "autores": 73,
       "fuentes": 8,
-      "urls": 95
+      "urls": 94
     },
     "contexto": {
       "eventos": 1063,
@@ -30,14 +30,14 @@
     "clusters_tema": 127,
     "amplificacion": {
       "autores_distintos": 73,
-      "top5_pct": 44.8,
-      "top10_pct": 55.2,
+      "top5_pct": 44.5,
+      "top10_pct": 54.9,
       "gini": 0.5,
-      "urls_distintas": 94,
+      "urls_distintas": 93,
       "urls_compartidas": 2
     },
     "por_categoria": {
-      "drones": 71,
+      "drones": 70,
       "buques_guerra": 60,
       "maniobras": 35,
       "hostigamiento": 33,
@@ -67,14 +67,14 @@
       14,
       11,
       13,
-      17,
+      16,
       35,
       8,
       64
     ],
     "sem_actual_nucleo": 64,
-    "media8_nucleo": 12.2,
-    "delta_pct": 422.4,
+    "media8_nucleo": 12.1,
+    "delta_pct": 427.8,
     "hitos": [
       [
         1785794470,
@@ -90,11 +90,11 @@
       ]
     ],
     "now_ts": 1792045801,
-    "z_score": 4.98,
+    "z_score": 5.02,
     "mediana28": 35,
     "fuentes_origen": {
       "social": 102,
-      "agregador (google-news)": 56,
+      "agregador (google-news)": 55,
       "española": 4,
       "marroquí": 3
     },
@@ -114,7 +114,7 @@
     ],
     "cuota_pct": 13.4,
     "pico_top3_pct": 53.1,
-    "medios_indep": 28,
+    "medios_indep": 27,
     "top_medios": [
       [
         "Canarias en Pleno",
@@ -140,10 +140,10 @@
     "polaridad": {
       "hostil": 89,
       "cooperación": 0,
-      "neutro": 76
+      "neutro": 75
     },
     "h1": {
-      "r_max": 0.48,
+      "r_max": 0.49,
       "lag": 2,
       "p": 0.01,
       "n_dias": 78
@@ -872,7 +872,7 @@
     "cuentas": [
       {
         "author": "news:google",
-        "n": 56
+        "n": 55
       },
       {
         "author": "bsky:rifenio.bsky.social",
@@ -926,8 +926,8 @@
   },
   "social": {
     "titulo": "Indicadores de presión híbrida · Frontera Sur (Marruecos)",
-    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 165 eventos · +422% vs media 8 sem (top-5 44.8% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 165 eventos · +422% vs media 8 sem (top-5 44.8% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "x": "Presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo, 165 eventos, +422% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
+    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 164 eventos · +428% vs media 8 sem (top-5 44.5% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 164 eventos · +428% vs media 8 sem (top-5 44.5% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "x": "Presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo, 164 eventos, +428% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
   }
 }

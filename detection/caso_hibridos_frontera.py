@@ -65,7 +65,7 @@ CATS = [
 
 # Ancla geografica: el NUCLEO exige contexto Ceuta/Melilla/Marruecos/Estrecho.
 # Evita ruido tipo "dron" en Mexico/Polonia o "antidrones" migratorio.
-ANCLAS = ["ceuta", "melilla", "marruecos", "marroqu", "estrecho", "espa\u00f1a", "espa\u00f1ol",
+ANCLAS = ["ceuta", "melilla", "marruecos", "marroqu", "estrecho",
           "rabat", "gibraltar", "albor", "frontera", "valla", "canarias", "magreb", "sahara",
           "melill", "penon", "pe\u00f1on"]
 
@@ -138,6 +138,11 @@ def _medio_link(name):
     return f"https://{d}" if d else "https://www.google.com/search?q=" + _up.quote(name or "")
 
 
+# Geografía AJENA: se excluye del núcleo si menciona otro conflicto y NO la frontera sur.
+AJENO = ["méxico", "mexico", "ucrania", "rusia", "estados unidos", "ee.uu", "leipzig",
+         "polonia", "finlandia", "bielorrusia"]
+CORE = ["ceuta", "melilla", "marruecos", "marroqu", "estrecho", "tarajal", "rabat", "gibraltar", "albor"]
+
 # Polaridad: coop > hostil > neutro (coop es más específico; se comprueba primero).
 POL_COOP = ["ejercicio conjunto", "maniobras conjuntas", "cooperaci", "navantia",
             "african lion", "entrega de", "entrega a", "venta de", "venta a",
@@ -173,7 +178,7 @@ def compute():
             excl_sql = " AND NOT (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in excl]) + ")"
             p += [f"%{w}%" for w in excl for _ in ("a", "b")]
-        ancla_sql = coop_sql = ""
+        ancla_sql = coop_sql = ajeno_sql = ""
         if grupo == "nucleo":
             ancla_sql = " AND (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in ANCLAS]) + ")"
@@ -183,9 +188,15 @@ def compute():
             coop_sql = " AND NOT (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in POL_COOP]) + ")"
             p += [f"%{w}%" for w in POL_COOP for _ in ("a", "b")]
+            # geografía ajena (México/Rusia…) sin núcleo de frontera sur -> fuera
+            ajeno_sql = (" AND NOT ( (" + " OR ".join(
+                ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in AJENO])
+                + ") AND NOT (" + " OR ".join(
+                    ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in CORE]) + ") )")
+            p += [f"%{x}%" for x in AJENO for _ in ("a", "b")] + [f"%{x}%" for x in CORE for _ in ("a", "b")]
         ids = [r[0] for r in con.execute(
             "SELECT e.id FROM events e JOIN event_temas et ON et.event_id=e.id "
-            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}{ancla_sql}{coop_sql}", p).fetchall()]
+            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}{ancla_sql}{coop_sql}{ajeno_sql}", p).fetchall()]
         per_cat[key] = ids
         grups[key] = grupo
 
