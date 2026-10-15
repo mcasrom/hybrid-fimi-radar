@@ -748,6 +748,63 @@ def _fusionar_episodios(historias):
     return out
 
 
+
+def compute_series(ids, hechos, dias=30):
+    """Serie diaria: publicaciones (nucleo) vs historias NUEVAS (primera publicacion)."""
+    import datetime as _dt
+    con = sqlite3.connect(DB)
+    pub = {}
+    if ids:
+        chq = ",".join("?" * len(ids))
+        for (ts,) in con.execute("SELECT timestamp FROM events WHERE id IN (" + chq + ")", list(ids)):
+            k = _dt.datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+            pub[k] = pub.get(k, 0) + 1
+    con.close()
+    his = {}
+    for x in (hechos or {}).get("historias", []):
+        k = _dt.datetime.utcfromtimestamp(x["fecha"]).strftime("%Y-%m-%d")
+        his[k] = his.get(k, 0) + 1
+    dz = sorted(set(pub) | set(his))[-dias:]
+    return {"dias": dz, "pub": [pub.get(k, 0) for k in dz], "his": [his.get(k, 0) for k in dz]}
+
+
+def _svg_doble(serie):
+    """Grafico de doble serie: barras=publicaciones/dia, linea+dots=historias nuevas/dia."""
+    dias = (serie or {}).get("dias") or []
+    pub = (serie or {}).get("pub") or []
+    his = (serie or {}).get("his") or []
+    if not dias:
+        return ""
+    W, H, pad = 700, 210, 34
+    base = H - pad
+    n = len(dias)
+    bw = (W - 2 * pad) / n
+    mp = max(pub) or 1
+    mh = max(his) or 1
+    p = ['<svg viewBox="0 0 %d %d" width="100%%" style="max-width:700px;height:auto" '
+         'role="img" aria-label="Publicaciones y acontecimientos nuevos por dia">' % (W, H)]
+    p.append('<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#cbd5e1"/>' % (pad, base, W - pad, base))
+    for i, v in enumerate(pub):
+        h = (base - pad) * v / mp
+        x = pad + i * bw
+        p.append('<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="#9db4c8"/>' % (x + bw * 0.15, base - h, bw * 0.7, h))
+    pts = []
+    for i, v in enumerate(his):
+        x = pad + i * bw + bw / 2
+        y = base - (base - pad) * v / mh
+        pts.append("%.1f,%.1f" % (x, y))
+    p.append('<polyline points="%s" fill="none" stroke="#c1440e" stroke-width="2"/>' % " ".join(pts))
+    for pt in pts:
+        cx, cy = pt.split(",")
+        p.append('<circle cx="%s" cy="%s" r="3" fill="#c1440e"/>' % (cx, cy))
+    p.append('<text x="%d" y="%d" font-size="10" fill="#5c6b7a">%s</text>' % (pad, base + 14, dias[0]))
+    p.append('<text x="%d" y="%d" font-size="10" fill="#5c6b7a" text-anchor="end">%s</text>' % (W - pad, base + 14, dias[-1]))
+    p.append('<text x="%d" y="%d" font-size="11" fill="#334155">&#9632; publicaciones/dia (max %d) '
+             '&#8212; &#9679; historias nuevas/dia (max %d)</text>' % (pad, 16, mp, mh))
+    p.append('</svg>')
+    return "".join(p)
+
+
 def compute_prensa(tema):
     """Volumen + titulares de la esfera marroqui y china en el tema (y su hueco)."""
     con = sqlite3.connect(DB)
@@ -846,7 +903,7 @@ def _barchart(items, w=640, rowh=22, color="#0d1b2a"):
     return "".join(p)
 
 
-def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
+def build_html(manual_txt, d, hechos, prensa, indic, hist, series, meta):
     def tbl(grupo):
         rows = []
         for k, lbl, _w, _e, g in CATS:
@@ -1215,6 +1272,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Indicador</th><th>Línea</th><th>Nivel</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
+<h2>Evolución diaria · publicaciones vs acontecimientos nuevos</h2>
+<p class="sub">Barras = <b>publicaciones/día</b> del núcleo; línea = <b>historias NUEVAS/día</b> (primera vez que aparece un titular). Sirve para ver si un pico son <b>hechos nuevos</b> o <b>difusión de lo ya conocido</b>.</p>
+{_svg_doble(series)}
+
 <h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
 <p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un <b>evento</b> agrupa titulares del <b>mismo acontecimiento</b> (entidades compartidas): <b>{_hechos_pub} publicaciones ≠ {_hechos_n} historias ≠ {_n_eventos} eventos</b>. <b>La agrupación es automática y aproximada</b> (heurística de texto): puede unir titulares de un mismo tema o no unir variantes; es <b>revisable</b> y no altera los recuentos de origen (en el CSV). Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
 {_epi_fichas}
@@ -1388,6 +1449,7 @@ def main():
     d = compute()
     _ids0 = d.get("_ids", {}).get("nucleo", [])
     hechos = compute_hechos(_ids0)
+    series = compute_series(_ids0, hechos)
     prensa = compute_prensa(TEMA)
     indic = compute_indicadores(TEMA)
     hist = snapshot(d, indic)
@@ -1442,7 +1504,7 @@ def main():
 
     os.makedirs(HTML_DIR, exist_ok=True)
     open(HTML_OUT, "w", encoding="utf-8").write(
-        build_html(manual_txt, d, hechos, prensa, indic, hist, {"generado_utc": now, "hash_manual": hash_manual}))
+        build_html(manual_txt, d, hechos, prensa, indic, hist, series, {"generado_utc": now, "hash_manual": hash_manual}))
     print("[caso-hibridos] HTML ->", HTML_OUT)
     _c = sqlite3.connect(DB)
     _write_csv(_c, ids, os.path.join(HTML_DIR, "datos.csv"))
