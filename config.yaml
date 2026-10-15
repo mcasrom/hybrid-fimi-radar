@@ -1059,6 +1059,7 @@ temas:
   oriente_medio:
     estado: produccion
     nombre: Oriente Medio (Israel-Irán-Gaza)
+    ventana_dias: 30   # 15-oct: 45->30 d (recorta ~450 MB de pico, ver demo/crecimiento_corpus...)
     # Tuning por tema (piloto): el ruido editorial/activista sobre el conflicto
     # tiene sync+contenido altos con anomalía baja; subir la anomalía evita
     # marcar coordinación legítima de difusión como campaña inorgánica.
