@@ -1506,9 +1506,6 @@ keywords:
   - bluesky
   - google-news
   tema: oriente_medio
-- palabra: Gaza Israel
-  plataformas: *id002
-  tema: oriente_medio
 - palabra: Iran
   plataformas: *id002
   tema: oriente_medio
@@ -1527,9 +1524,6 @@ keywords:
 - palabra: Hezbolá
   plataformas: *id002
   tema: oriente_medio
-- palabra: Hamas
-  plataformas: *id002
-  tema: oriente_medio
 - palabra: Hamás
   plataformas: *id002
   tema: oriente_medio
@@ -1537,9 +1531,6 @@ keywords:
   plataformas: *id002
   tema: oriente_medio
 - palabra: West Bank
-  plataformas: *id002
-  tema: oriente_medio
-- palabra: Líbano Israel
   plataformas: *id002
   tema: oriente_medio
 - palabra: Lebanon Israel
@@ -1631,9 +1622,6 @@ keywords:
   - google-news
   tema: elecciones
 - palabra: electoral
-  plataformas: *id004
-  tema: elecciones
-- palabra: campaña electoral
   plataformas: *id004
   tema: elecciones
 - palabra: urnas
