@@ -1250,6 +1250,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </ul>
 <p class="sub"><b>Nota de encuadre (L7):</b> las dimensiones <b>demográfico-societales</b> se muestran como <b>narrativa observada</b> (lo que circula, con su volumen y fuentes) y como <b>hipótesis a evaluar</b>; <b>no</b> se afirman como táctica verificada por este observatorio.</p>
 </div>
+<div class="marco" style="background:#eef4fb"><p><b>Cómo se actualiza esta página.</b> Se <b>recalcula cada 6 h</b> (ciclo del radar `30 */6`): el paso 3g relee la BD (<code>event_temas</code> del tema <b>frontera_sur</b>) y recomputa todo. Los datos que la captura ingiere <b>a diario</b> se <b>suman</b> al periodo del caso (30-jul-2026 → hoy): por eso el <b>núcleo, el catálogo y los episodios crecen</b> con las publicaciones nuevas. Además, se guarda <b>un registro diario</b> (histórico) → la sección «Evolución» gana una fila/día. No hay edición manual: lo que ves es el último ciclo.</p></div>
 <div class="aviso"><b>Senal, no atribucion.</b> Mide <b>actividad observada</b> (volumen, fuentes, dinamica) en fuentes abiertas. NO atribuye autoria, intencion ni confirma campana. Un volumen alto no equivale a coordinacion confirmada. <br><b>Nota de comparabilidad:</b> el volumen de captura del radar ha crecido mucho durante el periodo, asi que la linea base semanal no es comparable &mdash; por eso esta pagina <b>no publica un % de subida semanal</b>.</div>
 
 <div class="marco">
