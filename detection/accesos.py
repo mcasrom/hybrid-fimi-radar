@@ -626,8 +626,9 @@ def _content_mtime(f, st):
             if len(head) >= 8 and head[:2] == b"\x1f\x8b":
                 import struct
                 return struct.unpack("<I", head[4:8])[0] or int(st.st_mtime)
-        except OSError:
-            pass
+        except OSError as _e:
+            print(f"[accesos] no puedo leer header gzip de {f}: {_e}",
+                  file=sys.stderr, flush=True)
     return int(st.st_mtime)
 
 
