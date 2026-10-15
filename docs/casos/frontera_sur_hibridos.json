@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 11:52 UTC",
+    "generado_utc": "2026-10-15 11:55 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -11,7 +11,7 @@
     "version": "V1",
     "congelado_utc": "2026-10-14",
     "nota": "Subcaso tematico (no congelado tipo Ceuta). Bloque 'live' se recalcula cada ciclo.",
-    "manual_sha256": "93770a4d116d6854995152dd72f0f064e51f1f1b50bfb299d5f37d07bbc3338c"
+    "manual_sha256": "17bf2a787f86cfd729997458cd3ce95de9a0f5a55977eb34240badca431f560c"
   },
   "live": {
     "nucleo": {
