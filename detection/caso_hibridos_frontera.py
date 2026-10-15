@@ -82,6 +82,24 @@ def _gini(xs):
     return acc / (n * s)
 
 
+def _origen(source):
+    """Clasifica la fuente por origen (para no mezclar sesgos opuestos)."""
+    s = (source or "").lower()
+    if s.startswith(("bluesky", "telegram", "reddit", "mastodon", "twitter", "x:")):
+        return "social"
+    if "google-news" in s:
+        return "agregador (google-news)"
+    if any(k in s for k in ("yabiladi", "hespress", "le360", "maroc", "map ")):
+        return "marroquí"
+    if "tsa" in s or "algerie" in s or "algérie" in s:
+        return "argelina"
+    if any(k in s for k in ("al jazeera", "bbc", "france 24", "rfi", "deutsche welle",
+                            "reuters", "afp", "middle east", "politico", "euobserver",
+                            "tagesschau", "sputnik", "tass", "rt ", "dw ")):
+        return "internacional"
+    return "española"
+
+
 def compute():
     con = sqlite3.connect(DB)
     per_cat, grups = {}, {}
@@ -173,6 +191,25 @@ def compute():
         if r and r[0]:
             hitos.append([int(r[0]), lbl])
 
+    # z-score del pico (vs base 8 sem) + mediana movil 28 d
+    if len(base8) >= 2:
+        _m = sum(base8) / len(base8)
+        _sd = (sum((x - _m) ** 2 for x in base8) / len(base8)) ** 0.5
+        z = round((sem_actual - _m) / _sd, 2) if _sd else None
+    else:
+        z = None
+    _u4 = sorted(serie[-4:]) if len(serie) >= 4 else []
+    mm28 = _u4[len(_u4) // 2] if _u4 else None
+
+    # fuentes por origen (nucleo)
+    fo = {}
+    if ids_n:
+        _ch2 = ",".join("?" * len(ids_n))
+        for src, cnt in con.execute(
+                f"SELECT source, COUNT(*) FROM events WHERE id IN ({_ch2}) GROUP BY source", ids_n):
+            k = _origen(src)
+            fo[k] = fo.get(k, 0) + cnt
+
     out = {
         "nucleo": agg(nucleo),
         "contexto": agg(contexto),
@@ -187,6 +224,9 @@ def compute():
         "delta_pct": round(delta, 1) if delta is not None else None,
         "hitos": hitos,
         "now_ts": int(now_ts),
+        "z_score": z,
+        "mediana28": mm28,
+        "fuentes_origen": fo,
         "periodo": {"desde": _fecha(TS_CASE), "hasta": _fecha(now_ts)},
     }
     con.close()
@@ -256,6 +296,12 @@ def build_html(manual_txt, d, meta):
 
     amp = d.get("amplificacion", {})
     delta = d["delta_pct"]
+    _z = d.get("z_score")
+    z_txt = ("+%s" % _z) if (_z is not None and _z >= 0) else ("%s" % _z if _z is not None else "—")
+    fo = d.get("fuentes_origen", {})
+    fo_html = "".join(
+        f"<tr><td>{k}</td><td class='num'>{_n(v)}</td></tr>"
+        for k, v in sorted(fo.items(), key=lambda kv: -kv[1]))
     if delta is None:
         delta_html = "<b>—</b><span>vs media 8 sem (núcleo)</span>"
     else:
@@ -308,6 +354,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <div class="kpi"><b>{_n(d['nucleo']['eventos'])}</b><span>eventos nucleo</span></div>
 <div class="kpi"><b>{_n(d['nucleo']['autores'])}</b><span>autores nucleo</span></div>
 <div class="kpi">{delta_html}</div>
+<div class="kpi"><b>{z_txt}</b><span>z-score (pico vs 8 sem)</span></div>
 </div>
 <p class="sub">Cronografía: eventos de <b>núcleo</b> por semana (últ. semana {_n(d['sem_actual_nucleo'])} · media 8 sem {_n(d['media8_nucleo'])}); líneas = hitos exógenos:</p>
 {_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
@@ -334,6 +381,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td>Hostigamiento</td><td>presión sobre la población &mdash; &laquo;sow doubt&raquo; / presión</td></tr>
 </tbody></table>
 <p class="sub">Las categorías de <b>contexto</b> (salto a la valla, postura oficial, crítica internacional, soberanía) son <b>trasfondo migratorio/diplomático</b>: no corresponden a un «medio» de la definición, por eso van aparte y no cuentan como señal de presión híbrida.</p>
+
+<h2>Fuentes (núcleo) por origen</h2>
+<table><thead><tr><th>Origen</th><th class="num">Eventos</th></tr></thead>
+<tbody>{fo_html}</tbody></table>
+<p class="sub">Separadas por origen para no mezclar sesgos opuestos (prensa española vs marroquí vs argelina, agencias, red social).</p>
 
 <h2>Contexto (no hibrido)</h2>
 <p class="sub">Se muestra aparte para no inflar el nucleo: {_n(d['contexto']['eventos'])} eventos de contexto no se cuentan como senal hibrida.</p>
@@ -386,6 +438,19 @@ def main():
            "meta": {"generado_utc": now, "frozen_version": frozen.get("version", "V1"),
                     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."},
            "frozen": frozen, "live": d}
+    _dlt = ("+%.0f%%" % d["delta_pct"]) if d.get("delta_pct") is not None else "—"
+    _txt = (f"Indicadores de presión híbrida en Frontera Sur (Marruecos): "
+            f"{d['clusters_nucleo']} clusters núcleo · {d['nucleo']['eventos']} eventos · "
+            f"{_dlt} vs media 8 sem (top-5 {d['amplificacion'].get('top5_pct', 0)}% autores). "
+            f"Señal, no atribución.")
+    _url = doc["url"]
+    doc["social"] = {
+        "titulo": "Indicadores de presión híbrida · Frontera Sur (Marruecos)",
+        "mastodon": _txt + " " + _url,
+        "bluesky": _txt + " " + _url,
+        "x": (f"Presión híbrida en Frontera Sur (Marruecos): {d['clusters_nucleo']} clusters "
+              f"núcleo, {d['nucleo']['eventos']} eventos, {_dlt} vs 8 sem. Señal, no atribución. {_url}"),
+    }
     os.makedirs(os.path.dirname(JSON_OUT), exist_ok=True)
     json.dump(doc, open(JSON_OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print("[caso-hibridos] JSON ->", JSON_OUT)

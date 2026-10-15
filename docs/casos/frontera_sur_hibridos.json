@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 07:43 UTC",
+    "generado_utc": "2026-10-15 07:47 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -90,9 +90,23 @@
       ]
     ],
     "now_ts": 1792045801,
+    "z_score": 3.92,
+    "mediana28": 47,
+    "fuentes_origen": {
+      "social": 160,
+      "agregador (google-news)": 94,
+      "española": 5,
+      "marroquí": 3
+    },
     "periodo": {
       "desde": "30-jul-2026",
       "hasta": "15-oct-2026"
     }
+  },
+  "social": {
+    "titulo": "Indicadores de presión híbrida · Frontera Sur (Marruecos)",
+    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 8 clusters núcleo · 262 eventos · +314% vs media 8 sem (top-5 46.2% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 8 clusters núcleo · 262 eventos · +314% vs media 8 sem (top-5 46.2% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "x": "Presión híbrida en Frontera Sur (Marruecos): 8 clusters núcleo, 262 eventos, +314% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
   }
 }
