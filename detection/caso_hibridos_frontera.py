@@ -43,7 +43,7 @@ CATS = [
     ("drones", "Drones", ["drone", "dron"], [], "nucleo"),
     ("buques_guerra", "Buques de guerra",
      ["buque de guerra", "barco de guerra", "navio de guerra", "buque militar", "fragata", "patrullera"], [], "nucleo"),
-    ("maniobras", "Ejercicios militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "nucleo"),
+    ("maniobras", "Ejercicios militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "contexto"),
     ("hostigamiento", "Hostigamiento", ["hostigamiento", "presion migratoria", "desestabiliz", "asedio"], [], "nucleo"),
     ("bloqueo", "Bloqueo aereo / maritimo",
      ["bloqueo aereo", "bloqueo maritimo", "bloqueo del espacio aereo", "cierre del espacio aereo",
@@ -171,14 +171,19 @@ def compute():
             excl_sql = " AND NOT (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in excl]) + ")"
             p += [f"%{w}%" for w in excl for _ in ("a", "b")]
-        ancla_sql = ""
+        ancla_sql = coop_sql = ""
         if grupo == "nucleo":
             ancla_sql = " AND (" + " OR ".join(
                 ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in ANCLAS]) + ")"
             p += [f"%{a}%" for a in ANCLAS for _ in ("a", "b")]
+            # 15-oct: la COOPERACION (ejercicios conjuntos, entrega Navantia…) NO es
+            # presión -> se excluye del núcleo (va a contexto).
+            coop_sql = " AND NOT (" + " OR ".join(
+                ["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in POL_COOP]) + ")"
+            p += [f"%{w}%" for w in POL_COOP for _ in ("a", "b")]
         ids = [r[0] for r in con.execute(
             "SELECT e.id FROM events e JOIN event_temas et ON et.event_id=e.id "
-            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}{ancla_sql}", p).fetchall()]
+            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({like}){excl_sql}{ancla_sql}{coop_sql}", p).fetchall()]
         per_cat[key] = ids
         grups[key] = grupo
 
@@ -608,9 +613,9 @@ def build_html(manual_txt, d, meta):
     _prensa_pct = round(100 * (fo.get("española", 0) + fo.get("marroquí", 0)) / _tot_fo)
     _ratio = ("%.1f×" % (d["sem_actual_nucleo"] / d["media8_nucleo"])) if d.get("media8_nucleo") else "—"
     _sum_nuc = sum(d["por_categoria"].get(k, 0)
-                   for k in ("drones", "buques_guerra", "maniobras", "hostigamiento", "bloqueo"))
+                   for k in ("drones", "buques_guerra", "hostigamiento", "bloqueo"))
     _sum_ctx = sum(d["por_categoria"].get(k, 0)
-                   for k in ("valla_incidente", "postura_oficial", "critica_a_marruecos", "soberania"))
+                   for k in ("valla_incidente", "postura_oficial", "critica_a_marruecos", "soberania", "maniobras"))
     _pt3 = d.get("pico_top3_pct")
     _pt3_txt = ("%s%%" % _pt3) if _pt3 is not None else "n/d"
     pol = d.get("polaridad", {})
@@ -824,7 +829,6 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Categoría (núcleo)</th><th>Medio (definición OTAN)</th></tr></thead>
 <tbody>
 <tr><td>Buques de guerra</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
-<tr><td>Ejercicios militares</td><td>medio militar &mdash; &laquo;use of regular forces&raquo;</td></tr>
 <tr><td>Drones</td><td>medio militar / tecnológico</td></tr>
 <tr><td>Bloqueo aéreo / marítimo</td><td>coerción &mdash; &laquo;economic pressure&raquo; / presión no militar</td></tr>
 <tr><td>Hostigamiento</td><td>presión sobre la población &mdash; &laquo;sow doubt&raquo; / presión</td></tr>
