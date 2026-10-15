@@ -1088,10 +1088,10 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div>
 
 <h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
-<p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.</p>
+<p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.<br><b>Ámbito:</b> cifras del <b>tema (90 d)</b>. El bloque «<b>Radar B</b>» cuenta el <b>núcleo</b> (subconjunto estricto con ancla geográfica): por eso algunas cifras difieren (p. ej. <i>drones</i>). Cada tabla declara su ámbito.</p>
 {_indic_chart}
 <details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
-<table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Eventos</th></tr></thead><tbody>{_indic_rows}</tbody></table>
+<table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Publicaciones (tema)</th></tr></thead><tbody>{_indic_rows}</tbody></table>
 </details>
 
 <details class="seccion"><summary>Radar A · Hechos publicados &mdash; <b>{_hechos_n}</b> historias de <b>{_hechos_med}</b> medios (con fuente, no verificados) &middot; <b>clic para abrir</b></summary>
@@ -1117,7 +1117,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div>
 <p class="sub">Cronografía: eventos de <b>núcleo</b> por semana (últ. semana {_n(d['sem_actual_nucleo'])}); líneas = <b>hitos derivados del propio corpus</b> (primera aparición del término; <b>no</b> son externos):</p>
 {_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
-<table><thead><tr><th>Categoria (nucleo)</th><th class="num">Eventos</th></tr></thead>
+<table><thead><tr><th>Categoría (núcleo, con ancla geográfica)</th><th class="num">Publicaciones (núcleo)</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
 <p class="sub">Suma de categorías {_n(_sum_nuc)} (con solapes; un evento puede caer en dos) → <b>unión {_n(d['nucleo']['eventos'])}</b>.</p>
 
@@ -1130,10 +1130,17 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div>
 <p class="sub">{_n(amp.get('autores_distintos', 0))} autores distintos · {_n(amp.get('urls_distintas', 0))} URLs distintas. Lectura: <b>top-5 alto / Gini alto</b> o <b>many URLs compartidas</b> → amplificación concentrada; valores bajos → discusión repartida (sin amplificación). Medido en el núcleo, no en el contexto.</p>
 
-<h2>Polaridad del núcleo (heurística)</h2>
+<h2>Tono del mensaje (heurística) — no mide hostilidad del hecho</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
 <p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación manual: 158/165 = 96 %</b> sobre una muestra de 165 eventos (14-oct-2026); esta tabla clasifica <b>{_pol_tot}</b> eventos (el denominador no coincide porque cambia la ventana). Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
+<details class="seccion"><summary>Ficha de validación del clasificador de tono</summary>
+<ul><li><b>Qué se validó:</b> la etiqueta de <b>tono</b> (hostil/neutro/cooperación), no la relevancia temática ni la veracidad.</li>
+<li><b>Muestra:</b> 165 eventos; <b>fecha:</b> 14-oct-2026. Selección: núcleo de entonces (cambia con la ventana → el denominador de la tabla difiere).</li>
+<li><b>Criterio:</b> concordancia entre la etiqueta automática (palabras clave) y el juicio del revisor.</li>
+<li><b>Concordancia:</b> 158/165 = 96 %. <b>Errores típicos:</b> titulares que citan la acusación de otro (no la sostienen) y negaciones.</li>
+<li><b>Límite:</b> es <b>precisión de clasificación de texto</b>, no una medida de amenaza. Requiere validación periódica y por categoría.</li></ul>
+</details>
 
 <h2>Contraste de hipótesis (H1–H4)</h2>
 <table>
@@ -1146,6 +1153,12 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tr><td><b>H4</b> · el incremento responde a cambios de cobertura</td><td>{_h4_txt}</td><td>Captura global creció mucho en el periodo</td><td><b>Sesgo probable</b></td></tr>
 </tbody></table>
 <p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
+<details class="seccion"><summary>Método de H1 y H2 (auditable)</summary>
+<ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias</b>. Se prueban retardos 0–14 d y se informa el máximo; el nulo (500 permutaciones) <b>también</b> maximiza sobre retardos.</li>
+<li><b>H1 · límites:</b> la permutación simple <b>no corrige la autocorrelación</b> → p optimista; correlación ≠ causalidad (puede haber causa común o eco mediático).</li>
+<li><b>H2 · método:</b> «hitos» = <b>primera aparición</b> del término en el corpus (valla, ejercicios, Navantia). <b>No son externos</b> → prueba <b>circular</b>; debe repetirse con hitos fechados por fuente externa.</li>
+<li><b>Estado:</b> H1 <b>en evaluación</b>; H2 <b>inconclusa</b>; H3a <b>sin evidencia</b> (URLs idénticas); H4 <b>sesgo probable</b> (captura).</li></ul>
+</details>
 
 <h2>Fichas de clúster (núcleo)</h2>
 <table><thead><tr><th>Clúster</th><th>Ventana</th><th class="num">Eventos</th><th class="num">Autores</th><th>Origen dominante</th><th>Polaridad</th><th>Datos</th></tr></thead>
