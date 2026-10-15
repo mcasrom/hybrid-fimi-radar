@@ -730,7 +730,7 @@ INDIC = [
     ("Bloqueo naval / aéreo", ["bloqueo naval", "bloqueo mar", "bloqueo aer", "cierre del espacio aereo"], "L1"),
     ("Ejercicios militares con terceros", ["ejercicio conjunto", "maniobras conjuntas", "african lion", "flintlock"], "L1"),
     ("Presión energética", ["gasoducto", "suministro eléctrico", "suministro electrico", "apagón"], "L2"),
-    ("Bulos / desinformación", ["bulo", "desinformaci", "manipulaci"], "L3"),
+    ("Candidatos a verificación (desinformación NO confirmada)", ["bulo", "desinformaci", "manipulaci"], "L3"),
     ("Discurso oficial / rey", ["gobierno marroqu", "mohamed vi", "rey de marruecos"], "L4"),
     ("Soberanía / reivindicación Ceuta-Melilla", ["soberan", "anexi", "irredentis", "españolidad"], "L4"),
     ("Cadáveres / repatriación", ["cadáver", "cadaver", "repatriac"], "L4"),
@@ -985,11 +985,11 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, meta):
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Presión híbrida de Marruecos · Frontera Sur (Ceuta, Melilla, Canarias) — Observatorio de amplificación</title>
-<meta name="description" content="Frontera Sur (Marruecos): observación de señales de presión híbrida (drones, buques, hostigamiento, bloqueo) frente a contexto migratorio/diplomático, con amplificación, polaridad y contraste de hipótesis. Señal, no atribución; no confirma una operación híbrida.">
+<title>Frontera Sur: actividad militar, presión fronteriza y amplificación informativa — Observatorio de amplificación</title>
+<meta name="description" content="Observación de publicaciones sobre un núcleo de indicadores (buques, drones, bloqueo, hostigamiento, migración, soberanía) en el entorno de Ceuta, Melilla y Canarias, y su amplificación. Evalúa hipótesis de presión híbrida; no confirma autoría, intención ni operación.">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Presión híbrida de Marruecos · Frontera Sur (Ceuta, Melilla, Canarias)">
+<meta property="og:title" content="Frontera Sur: actividad militar, presión fronteriza y amplificación informativa">
 <meta property="og:description" content="Señales híbridas frente a contexto: clusters, amplificación, polaridad y contraste H1-H4. Señal, no atribución; no confirma una operación híbrida.">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
@@ -1045,13 +1045,14 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div></details>
 </div></nav>
 <header><div class="wrap">
-<h1>Presión híbrida de Marruecos · Frontera Sur (Ceuta · Melilla · Canarias)</h1>
+<h1>Frontera Sur: actividad militar, presión fronteriza y amplificación informativa</h1>
+<div class="sub">Evaluación de <b>hipótesis</b> de presión híbrida (entorno España–Marruecos). <b>Sin atribución confirmada.</b></div>
 <div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
 <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0">
 <h2 style="margin-top:0">Resumen ejecutivo</h2>
-<p><b>Qué es.</b> Observación de <b>acciones de presión híbrida</b> atribuidas a Marruecos en el entorno de Ceuta, Melilla y Canarias, y de <b>cómo se comunican</b>. Marco: <b>guerra/conflicto híbrido</b> (OTAN). <b>Periodo:</b> {(d.get("periodo") or dict()).get("desde","")} &rarr; {(d.get("periodo") or dict()).get("hasta","")}.</p>
+<p><b>Qué es.</b> Observación de <b>publicaciones</b> sobre un núcleo de indicadores (buques, drones, bloqueo, hostigamiento, migración, soberanía…) en el entorno de <b>Ceuta, Melilla y Canarias</b>, y de su <b>amplificación</b>. Marco: <b>guerra/conflicto híbrido</b> (OTAN). <b>Periodo:</b> {(d.get("periodo") or dict()).get("desde","")} &rarr; {(d.get("periodo") or dict()).get("hasta","")}.</p><p><b>Qué mide cada cifra.</b> Todo el catálogo son <b>publicaciones que mencionan</b> un término (<b>no</b> acciones verificadas): una mención de «fragata» no es una incursión; una mención de «bulo» no es un bulo confirmado. La verificación de los hechos <b>no</b> la hace este observatorio.</p>
 <p><b>Qué NO dice.</b> No confirma un plan, ni autoría, ni intención. Los hechos del catálogo están <b>publicados</b>, no verificados por este observatorio.</p>
 <table><thead><tr><th>Dimensión</th><th>Estado</th></tr></thead><tbody>
 <tr><td>Actividad informativa</td><td>Elevada &mdash; <b>línea base no comparable</b> (la captura creció ~100&times;)</td></tr>
@@ -1087,7 +1088,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </div>
 
 <h2>Catálogo de acciones observadas (L1&ndash;L7)</h2>
-<p class="sub">Eventos del tema por indicador (pueden solaparse). <b>Cada cifra con su soporte real</b>; lo que no se captura se dice.</p>
+<p class="sub">Todas las cifras son <b>publicaciones del tema que mencionan</b> el término (pueden solaparse). <b>No</b> son acciones verificadas: son <b>menciones</b>. Niveles: <b>mención</b> (esta tabla) → <b>afirmación publicada</b> (una fuente lo sostiene) → <b>hecho corroborado</b> (varias fuentes independientes) → <b>interpretación</b> (hipótesis). Esta tabla solo muestra el primero.</p>
 {_indic_chart}
 <details class="seccion"><summary>Ver tabla completa &middot; clic para abrir</summary>
 <table><thead><tr><th>Indicador</th><th>Línea</th><th class="num">Eventos</th></tr></thead><tbody>{_indic_rows}</tbody></table>
@@ -1132,7 +1133,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <h2>Polaridad del núcleo (heurística)</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
-<p class="sub">Patrones de texto: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación manual: 158/165 = 96 %</b> sobre una muestra de 165 eventos (14-oct-2026); esta tabla clasifica <b>{_pol_tot}</b> eventos (el denominador no coincide porque cambia la ventana). Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
+<p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación manual: 158/165 = 96 %</b> sobre una muestra de 165 eventos (14-oct-2026); esta tabla clasifica <b>{_pol_tot}</b> eventos (el denominador no coincide porque cambia la ventana). Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 
 <h2>Contraste de hipótesis (H1–H4)</h2>
 <table>
