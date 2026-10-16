@@ -473,10 +473,14 @@ def compute():
         return num / (dx * dy) if dx and dy else 0.0
 
     lags = list(range(0, 15))
+    lags_pre = list(range(0, 8))  # ventana preinscrita (<=7 d)
     obs = [_corr(dr, mg, l) for l in lags]
+    obs_pre = [_corr(dr, mg, l) for l in lags_pre]
     r_raw = round(max(_corr(dr_raw, mg_raw, l) for l in lags), 2)
-    r_max = round(max(obs), 2) if obs else 0
-    lag_max = lags[obs.index(max(obs))] if obs else 0
+    r_max = round(max(obs_pre), 2) if obs_pre else 0
+    lag_max = lags_pre[obs_pre.index(max(obs_pre))] if obs_pre else 0
+    r_max_full = round(max(obs), 2) if obs else 0
+    lag_full = lags[obs.index(max(obs))] if obs else 0
     # Bootstrap por bloques moviles (7 d): preserva la autocorrelacion de la serie;
     # la permutacion simple la rompe y produce un p optimista (falso positivo).
     _rnd.seed(1)
@@ -489,11 +493,11 @@ def compute():
             s0 = _rnd.randint(0, max(0, _n - _L))
             idx.extend(range(s0, min(s0 + _L, _n)))
         mg2 = [mg[i] for i in idx[:_n]]
-        null.append(max(_corr(dr, mg2, l) for l in lags))
-    p_h1 = round(sum(1 for v in null if v >= max(obs)) / len(null), 3) if null else 1.0
+        null.append(max(_corr(dr, mg2, l) for l in lags_pre))
+    p_h1 = round(sum(1 for v in null if v >= max(obs_pre)) / len(null), 3) if null else 1.0
     h1 = {"r_max": r_max, "lag": lag_max, "p": p_h1, "n_dias": nd,
-          "r_max_bruto": r_raw,
-          "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d)"}
+          "r_max_bruto": r_raw, "r_max_full": r_max_full, "lag_full": lag_full,
+          "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d); ventana preinscrita <=7 d"}
 
     # placebo de hitos: ¿los picos caen cerca de hitos más que por azar?
     placebo = None
@@ -899,7 +903,7 @@ _LINEAS = {
     "L2": "Presión energética",
     "L3": "Guerra informativa / desinformación",
     "L4": "Presión diplomática / jurídica",
-    "L5": "Migración como arma",
+    "L5": "Instrumentalización migratoria",
     "L6": "Alineamientos exteriores y tecnología",
     "L7": "Societal / demográfico",
 }
@@ -1252,18 +1256,21 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
     _hist_chart = _barchart([(r.get("fecha", ""), r.get("nucleo", 0)) for r in _hist[-30:]],
                             rowh=18, color="#c1440e")
     _hist_rows = ""
-    _prev = None
-    for _r in _hist[-30:][::-1]:
-        _dd = ""
-        if _prev is not None:
-            _dif = _r.get("nucleo", 0) - _prev
-            _dd = ("%+d" % _dif) if _dif else "="
+    _rows_chrono = _hist[-30:]
+    _deltas = {}
+    _pp = None
+    for _r in _rows_chrono:
+        _ncur = _r.get("nucleo", 0)
+        _deltas[_r.get("fecha", "")] = (_ncur - _pp) if _pp is not None else None
+        _pp = _ncur
+    for _r in reversed(_rows_chrono):
+        _d = _deltas.get(_r.get("fecha", ""))
+        _dd = ("%+d" % _d) if (_d is not None and _d != 0) else ("=" if _d == 0 else "")
         _ind = "; ".join("%s: %s" % (k, v) for k, v in (_r.get("indic") or {}).items() if v)
         _hist_rows += ("<tr><td>%s</td><td class='num'>%s</td><td class='num'>%s</td><td class='num'>%s</td>"
                        "<td class='num'>%s</td><td class='num'>%s</td><td>%s</td></tr>"
                        % (_r.get("fecha", ""), _n(_r.get("nucleo", 0)), _dd, _n(_r.get("autores", 0)),
                           _n(_r.get("clusters", 0)), _n(_r.get("urls_compartidas", 0)), _ind))
-        _prev = _r.get("nucleo", 0)
     if not _hist_rows:
         _hist_rows = "<tr><td colspan=7>sin histórico todavía (empieza hoy)</td></tr>"
     from collections import defaultdict as _ddict
@@ -1300,7 +1307,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         for m, c in d.get("top_medios", [])) or "—"
     import urllib.parse as _up
     _page = "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
-    _stxt = (f"Indicadores de presión híbrida en Frontera Sur (Marruecos): "
+    _stxt = (f"Indicadores de actividad en Frontera Sur: "
              f"{d.get('clusters_nucleo', 0)} clusters núcleo · señal, no atribución.")
     _sq = _up.quote
     _sx = f"https://twitter.com/intent/tweet?text={_sq(_stxt)}&url={_sq(_page)}"
@@ -1328,11 +1335,16 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         for k, v in sorted(pol.items(), key=lambda kv: -kv[1]))
     _h1 = d.get("h1", {})
     _plc = d.get("placebo") or {}
+    _h1_exp = ""
+    if _h1 and _h1.get("lag_full") is not None and _h1.get("lag_full") != _h1.get("lag"):
+        _h1_exp = (f" <span class='sub'>En la ventana ampliada (0–14 d) el máximo cae en "
+                   f"{_h1.get('lag_full')} d (r={_h1.get('r_max_full')}); el criterio preinscrito es ≤7 d.</span>")
     _h1_txt = ("sin datos." if not _h1 else
                f"r<sub>máx</sub> = {_h1.get('r_max')} (retardo {_h1.get('lag')} d) · "
                f"<b>p = {_h1.get('p')}</b> (bootstrap por bloques, {_h1.get('n_dias')} días; serie normalizada) → "
                + ("<b>se sostiene</b> (p&lt;0,05)." if (_h1.get('p') is not None and _h1.get('p') < 0.05)
-                  else "<b>NO se sostiene</b> (p≥0,05 en esta ventana)."))
+                  else "<b>NO se sostiene</b> (p≥0,05 en esta ventana).")
+               + _h1_exp)
     _plc_txt = ("n/d." if not _plc else
                 f"{_plc.get('picos_cerca')}/{_plc.get('de')} picos dentro de ±1 semana de un hito "
                 f"(esperado por azar {_plc.get('esperado_azar')}).")
@@ -1424,13 +1436,12 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
     _bento = "".join([
         "<div class='bento'>",
         "<div class='bento-h'><b>Lectura de la semana \u00b7 s\u00edntesis a golpe de vista</b>",
-        f"<span class='bento-meta'>ciclo {_cyc} UTC \u00b7 \u00e1mbito: n\u00facleo</span></div>",
+        f"<span class='bento-meta'>dato {_cyc} UTC \u00b7 \u00e1mbito: n\u00facleo</span></div>",
         "<div class='bento-g'>",
         "<div class='bcell'><h4>Volumen y actividad</h4>",
         f"<div class='brow'><span class='blab'>Eventos n\u00facleo</span><span class='bval'>{_n(d['nucleo']['eventos'])}</span></div>",
         f"<div class='brow'><span class='blab'>\u00daltima semana</span><span class='bval'>{_n(d['sem_actual_nucleo'])}</span></div>",
-        f"<div class='brow'><span class='blab'>vs media 8 sem ({_n(_media8)})</span><span class='bval'>{_ratio_txt}</span></div>",
-        f"<div class='brow'><span class='blab'>z-score (28 d)</span><span class='bval'>{_z_txt}</span></div>",
+        "<p class='bnote'>La l\u00ednea base semanal <b>no es comparable</b> (la captura de referencia creci\u00f3 con el periodo): no se publica % de subida ni z-score.</p>",
         "</div>",
         "<div class='bcell'><h4>Origen de las fuentes (n\u00facleo)</h4>",
         _bar(_social_pct, "Redes"),
@@ -1453,7 +1464,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         "(fragata en Ceuta) con <b>amplificaci\u00f3n coordinada NO medida</b> \u2192 "
         "<b>se\u00f1al a vigilar, no conclusi\u00f3n</b>. "
         f"<span class='bnote2'>Cuota n\u00facleo/(n\u00facleo+contexto): {d.get('cuota_pct', 0)} % \u00b7 "
-        f"{_n(amp.get('autores_distintos', 0))} autores distintos \u00b7 {_n(d.get('clusters_nucleo', 0))} cl\u00fasteres de n\u00facleo.</span></div>",
+        f"{_n(amp.get('autores_distintos', 0))} autores distintos (periodo) \u00b7 {_n(d.get('clusters_nucleo', 0))} cl\u00fasteres de n\u00facleo.</span></div>",
         "</div>",
     ])
     _bento_css = "".join([
@@ -1539,7 +1550,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <header><div class="wrap">
 <h1>Frontera Sur: actividad militar, presión fronteriza y amplificación informativa</h1>
 <div class="sub">Evaluación de <b>hipótesis</b> de presión híbrida (entorno España–Marruecos). <b>Sin atribución confirmada.</b></div>
-<div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · dato {meta['generado_utc']}</div>
+<div class="sub">Subcaso del tema <b>Frontera Sur</b> — Observatorio de amplificacion · generado {meta['generado_utc']}</div>
 </div></header>
 <main class="wrap">
 <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0">
@@ -1560,7 +1571,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <li><b>L2</b> presión energética</li>
 <li><b>L3</b> guerra informativa / desinformación</li>
 <li><b>L4</b> presión diplomática / jurídica (soberanía, no reconocer cadáveres)</li>
-<li><b>L5</b> migración como arma</li>
+<li><b>L5</b> instrumentalización migratoria</li>
 <li><b>L6</b> alineamientos exteriores y tecnología</li>
 <li><b>L7</b> societal / demográfico (asentamiento, empadronamiento, nacionalidad, natalidad, matrimonios) + ambigüedad</li>
 </ul>
@@ -1628,7 +1639,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 {_timeline(d['serie_semanal_nucleo'], d.get('now_ts', 0), d.get('hitos', []))}
 <table><thead><tr><th>Categoría (núcleo, con ancla geográfica)</th><th class="num">Publicaciones (núcleo)</th></tr></thead>
 <tbody>{tbl('nucleo')}</tbody></table>
-<p class="sub">Suma de categorías {_n(_sum_nuc)} (con solapes; un evento puede caer en dos) → <b>unión {_n(d['nucleo']['eventos'])}</b>.</p>
+<p class="sub">Suma de etiquetas por categoría {_n(_sum_nuc)} (un evento puede llevar varias; si hay solapes, la suma supera la unión) → <b>unión {_n(d['nucleo']['eventos'])}</b>.</p>
 
 <h2>Contexto civil <span class="sub">(crisis política / migratoria / social — escala, NO señal)</span></h2>
 {_civ_html}
@@ -1639,12 +1650,12 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <div class="kpi"><b>{amp.get('gini', 0)}</b><span>Gini autores</span></div>
 <div class="kpi"><b>{_n(amp.get('urls_compartidas', 0))}</b><span>URLs compartidas (≥2 autores)</span></div>
 </div>
-<p class="sub">{_n(amp.get('autores_distintos', 0))} autores distintos · {_n(amp.get('urls_distintas', 0))} URLs distintas. Lectura: <b>top-5 alto / Gini alto</b> o <b>many URLs compartidas</b> → amplificación concentrada; valores bajos → discusión repartida (sin amplificación). Medido en el núcleo, no en el contexto.</p>
+<p class="sub">{_n(amp.get('autores_distintos', 0))} autores distintos (periodo) · {_n(amp.get('urls_distintas', 0))} URLs distintas. Lectura: <b>top-5 alto / Gini alto</b> o <b>many URLs compartidas</b> → amplificación concentrada; valores bajos → discusión repartida (sin amplificación). Medido en el núcleo, no en el contexto.</p>
 
 <h2>Tono del mensaje (heurística) — no mide hostilidad del hecho</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
-<p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación por gold set (16-oct-2026): accuracy 0,80 · κ 0,31</b> sobre 160 eventos anotados a mano (muestra reproducible; herramienta <code>caso_goldset.py</code>); esta tabla clasifica <b>{_pol_tot}</b> eventos. <b>La cooperación aparece en 0 % porque el núcleo la EXCLUYE por diseño</b> (ejercicios conjuntos, entregas, Navantia y patrulleras van al contexto, no a la señal): <b>no es un hallazgo, es la frontera del núcleo</b>. Esta tabla separa la presión hostil del comercio de defensa a propósito.</p>
+<p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación por gold set (16-oct-2026): accuracy 0,80 · κ 0,31; clase «hostil» precisión 0,39 / recall 0,55 (solo filas del núcleo: 0,57)</b> sobre 160 eventos <b>anotados por un modelo, pendiente de revisión humana</b> (muestra reproducible; herramienta <code>caso_goldset.py</code>); esta tabla clasifica <b>{_pol_tot}</b> eventos. <b>La cooperación aparece en 0 % porque el núcleo la EXCLUYE por diseño</b> (ejercicios conjuntos, entregas, Navantia y patrulleras van al contexto, no a la señal): <b>no es un hallazgo, es la frontera del núcleo</b>. Esta tabla separa la presión hostil del comercio de defensa a propósito.</p>
 <details class="seccion"><summary>Ficha de validación del clasificador de tono</summary>
 <ul><li><b>Qué se validó:</b> la etiqueta de <b>tono</b> (hostil/neutro/cooperación), no la relevancia temática ni la veracidad.</li>
 <li><b>Muestra:</b> 165 eventos; <b>fecha:</b> 14-oct-2026. Selección: núcleo de entonces (cambia con la ventana → el denominador de la tabla difiere).</li>
@@ -1657,7 +1668,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table>
 <thead><tr><th>Hipótesis</th><th>Evidencia a favor</th><th>Evidencia en contra</th><th>Estado</th></tr></thead>
 <tbody>
-<tr><td><b>HC</b> · las acciones responden a un <b>plan de presión híbrida</b> sobre Ceuta/Melilla/Canarias (¿anexión?, inferencia)</td><td>Coincidencia temporal (buques + drones + cobertura); <b>Navantia entrega una patrullera "sin pompa" en plena crisis</b>; F-35/EE.UU., Israel (24 % del armamento), EDGE/Emiratos en el periodo</td><td><b>Sin coordinación medida</b> por URLs; deltas contaminados por la captura; existe <b>cooperación</b> real (ejercicios, comercio); «anexión» no es texto literal (27)</td><td><b>En evaluación</b></td></tr>
+<tr><td><b>HC</b> · las acciones serían compatibles con un <b>plan de presión híbrida</b> sobre Ceuta/Melilla/Canarias (hipótesis, no hecho)</td><td>Coincidencia temporal (buques + drones + cobertura); <b>Navantia entrega una patrullera "sin pompa" en plena crisis</b>; F-35/EE.UU., Israel (24 % del armamento), EDGE/Emiratos en el periodo</td><td><b>Sin coordinación medida</b> por URLs; deltas contaminados por la captura; existe <b>cooperación</b> real (ejercicios, comercio)</td><td><b>En evaluación</b></td></tr>
 <tr><td><b>H1</b> · drones suben tras eventos migratorios <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_h1_txt}</td><td>Serie normalizada por volumen + bootstrap por bloques (7 d)</td><td><b>En evaluación</b></td></tr>
 <tr><td><b>H2</b> · los picos coinciden con hitos <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_plc_txt}</td><td>«Hitos» <b>derivados</b> del corpus → circular</td><td><b>Inconclusa</b></td></tr>
 <tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b></td><td>&mdash;</td><td>{amp.get('urls_compartidas', 0)} URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))})</td><td><b>Sin evidencia</b></td></tr>
@@ -1665,7 +1676,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </tbody></table>
 <p class="sub">H1 con <b>bootstrap por bloques</b> (7 d, 500 réplicas) sobre la <b>serie normalizada por volumen diario</b>; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 <details class="seccion" id="metodo-h"><summary>Método de H1 y H2 (auditable)</summary>
-<ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias, normalizadas por el volumen diario del tema</b> (evita la correlación espuria por crecimiento de la captura; se informa también el r bruto). Se prueban retardos 0–14 d y se informa el máximo; el nulo (<b>bootstrap por bloques móviles de 7 d</b>, 500 réplicas) <b>preserva la autocorrelación</b> y <b>también</b> maximiza sobre retardos.</li>
+<ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias, normalizadas por el volumen diario del tema</b> (evita la correlación espuria por crecimiento de la captura; se informa también el r bruto). Se prueban retardos 0–14 d; el resultado que se informa como criterio es el de la ventana <b>preinscrita (≤7 d)</b> y se anota aparte el máximo de la ventana ampliada (0–14 d) como exploratorio; el nulo (<b>bootstrap por bloques móviles de 7 d</b>, 500 réplicas) <b>preserva la autocorrelación</b> y <b>también</b> maximiza sobre retardos.</li>
 <li><b>H1 · límites:</b> correlación ≠ causalidad (puede haber causa común o eco mediático); el bootstrap por bloques mitiga la autocorrelación pero no la elimina; 79 días es una serie corta.</li>
 <li><b>H2 · método:</b> «hitos» = <b>primera aparición</b> del término en el corpus (valla, ejercicios, Navantia). <b>No son externos</b> → prueba <b>circular</b>; debe repetirse con hitos fechados por fuente externa.</li>
 <li><b>Estado:</b> H1 <b>en evaluación</b>; H2 <b>inconclusa</b>; H3a <b>sin evidencia</b> (URLs idénticas); H4 <b>sesgo probable</b> (captura).</li></ul>
@@ -1693,11 +1704,11 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Separadas por origen para no mezclar sesgos opuestos (prensa española vs marroquí vs argelina, agencias, red social).</p>
 <p class="sub">Medios concretos del núcleo (google-news resuelto al medio original): {_medios_txt}.</p>
 
-<h2>Contexto (no hibrido)</h2>
+<h2>Contexto militar <span class="sub">(acciones fuera del núcleo; no cuenta como señal)</span></h2>
 <p class="sub">Se muestra aparte para no inflar el nucleo: {_n(d['contexto']['eventos'])} eventos de contexto no se cuentan como senal hibrida.</p>
 <table class="contexto"><thead><tr><th>Categoria (contexto)</th><th class="num">Eventos</th></tr></thead>
 <tbody>{tbl('contexto')}</tbody></table>
-<p class="sub">Suma de categorías {_n(_sum_ctx)} (con solapes) → <b>unión {_n(d['contexto']['eventos'])}</b>.</p>
+<p class="sub">Suma de etiquetas por categoría {_n(_sum_ctx)} (solapables) → <b>unión {_n(d['contexto']['eventos'])}</b>.</p>
 
 <details class="seccion" open><summary>Qué se observa (análisis V1)</summary>
 {manual_html}

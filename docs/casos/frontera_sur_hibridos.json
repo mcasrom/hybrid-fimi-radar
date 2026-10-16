@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-16 20:59 UTC",
+    "generado_utc": "2026-10-16 21:21 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -143,12 +143,14 @@
       "neutro": 108
     },
     "h1": {
-      "r_max": 0.3,
-      "lag": 8,
-      "p": 0.006,
+      "r_max": 0.24,
+      "lag": 5,
+      "p": 0.074,
       "n_dias": 79,
       "r_max_bruto": 0.5,
-      "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d)"
+      "r_max_full": 0.3,
+      "lag_full": 8,
+      "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d); ventana preinscrita <=7 d"
     },
     "placebo": {
       "picos_cerca": 2,

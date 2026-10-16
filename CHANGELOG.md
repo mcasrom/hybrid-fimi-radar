@@ -46,6 +46,19 @@ del dashboard, que crecen cada ciclo. Fechas en UTC.
 - IDs de episodios duplicados → prefijos **`AUTO-` / `CUR-`**; **fecha futura** corregida en un episodio curado.
 - «Coordinación: no observada» → **«no medida / no concluyente»**; nota de que «cooperación 0 %» es
   **por diseño del núcleo**, no un hallazgo.
+- **Caso «Frontera Sur» — revisión externa (16-oct)**:
+  - **Δ de la tabla diaria**: el signo estaba invertido (`−113` donde era `+113`); ahora se calcula por fecha.
+  - **Comparabilidad**: se retira del «bento» el `3,7×` y el `z-score`, que contradecían la propia nota
+    («no se publica % de subida semanal»); se deja el aviso.
+  - **Gold set del tono**: de «anotados a mano» a **«anotados por un modelo, pendiente de revisión humana»**;
+    se publican **precisión/recall de la clase «hostil» (0,39 / 0,55)** y la accuracy **solo en filas del
+    núcleo (0,57)**, no el 0,80 global (que la muestra no-núcleo inflaba).
+  - **H1**: se informa el máximo de la **ventana preinscrita (≤7 d)** —donde **no se sostiene** (p≈0,07)— y el
+    máximo a 8 d pasa a **nota exploratoria** (antes se publicaba como «se sostiene»).
+  - **Lenguaje**: L5 «Migración como arma» → **«Instrumentalización migratoria»**; hipótesis HC sin «¿anexión?»;
+    texto de compartir sin «presión híbrida (Marruecos)» → «Indicadores de actividad».
+  - **Coherencia**: autores etiquetados «(periodo)» frente al dato diario; «Contexto militar (fuera del núcleo)»;
+    sello «dato» (ciclo) vs «generado»; nota de solapes reescrita.
 
 ## [v0.2.1] — 2026-10-10
 - **Dataset citable con DOI** (Zenodo) y `CITATION.cff`; export **GEXF/GraphML** por clúster.
