@@ -118,12 +118,13 @@ _SALT_FILE = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos", ".pseudo_s
 
 def _pseudo_salt():
     """Salt local (no en el repo) para la pseudonimizacion de cuentas personales."""
-    try:
-        s = open(_SALT_FILE, encoding="utf-8").read().strip()
-        if s:
-            return s
-    except OSError:
-        pass
+    if os.path.exists(_SALT_FILE):
+        try:
+            s = open(_SALT_FILE, encoding="utf-8").read().strip()
+            if s:
+                return s
+        except OSError as e:  # noqa: BLE001
+            print("[caso-hibridos] salt ilegible:", e, file=sys.stderr)
     import secrets as _sec
     s = _sec.token_hex(16)
     try:
