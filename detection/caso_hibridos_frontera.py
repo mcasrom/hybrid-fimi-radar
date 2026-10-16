@@ -140,6 +140,24 @@ def _pseudo_salt():
     return s
 
 
+def _git_ver():
+    """Version desplegada (git describe) + fecha del ultimo commit, para el pie."""
+    import subprocess as _sp
+    try:
+        v = _sp.check_output(["git", "describe", "--tags", "--always"], cwd=ROOT,
+                             stderr=_sp.DEVNULL).decode().strip()
+    except Exception as e:  # noqa: BLE001
+        print("[caso-hibridos] git describe:", e, file=sys.stderr)
+        v = "desarrollo"
+    try:
+        f = _sp.check_output(["git", "log", "-1", "--format=%ci"], cwd=ROOT,
+                             stderr=_sp.DEVNULL).decode().strip()[:16]
+    except Exception as e:  # noqa: BLE001
+        print("[caso-hibridos] git log:", e, file=sys.stderr)
+        f = "—"
+    return v, f
+
+
 def _pseudo(author):
     """Pseudonimo estable (RGPD) para cuentas personales de redes sociales.
     Los medios/feeds (rss:/tg:/news:) se mantienen: son fuentes, no personas."""
@@ -1048,6 +1066,9 @@ _SELPER_HTML = """<style>.spb{border:1px solid #cbd5e1;background:#fff;border-ra
 
 
 def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, meta):
+    _ver, _fecha = _git_ver()
+    _gen = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
     def tbl(grupo):
         rows = []
         for k, lbl, _w, _e, g in CATS:
@@ -1580,6 +1601,8 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p style="margin-top:10px"><b>Licencia:</b> <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · <b>Autoría:</b> Miguel Castillo · <b>Contacto:</b> <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a></p>
 <p><b>Cómo citar:</b> Castillo, M. (2026). «Frontera Sur: actividad militar, presión fronteriza y amplificación informativa». Observatorio de amplificación. {_page} (consultado el DD-MM-AAAA).</p>
 <p class="sub">Generado automáticamente por <code>detection/caso_hibridos_frontera.py</code> · manual hash <code>{meta['hash_manual'][:16]}</code> · Fuente: <code>event_temas</code> + <code>cluster_events</code> (tema frontera_sur) · no toca scoring.</p>
+<p><a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer">github.com/mcasrom/hybrid-fimi-radar</a> · <span title="versión desplegada">{_ver}</span> · {_fecha} · generado {_gen}</p>
+<p style="font-size:.78rem">Proyecto personal, sin rastreo. Los servidores los paga su autor; el newsletter solo usa tu email para el envío y nada más. Contacto: <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a></p>
 </div></footer>
 </body></html>
 """
