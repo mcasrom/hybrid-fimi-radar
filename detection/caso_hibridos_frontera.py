@@ -42,14 +42,19 @@ SEM = 7 * 86400
 # (clave, etiqueta, incluir, excluir, grupo)  — grupo: "nucleo" | "contexto"
 CATS = [
     # ---- NUCLEO (indicadores hibridos) ----
-    ("drones", "Drones", ["drone", "dron"], [], "nucleo"),
+    # 16-oct: keywords afiladas tras el gold set (nucleo recall 0,78 -> 1,00 sin
+    # perder precision). Se usan STEMS (hostig, patrull, intimidac) porque el texto
+    # real trae "hostigo/hostigó", "patrulla", "intimida".
+    ("drones", "Drones", ["dron"], [], "nucleo"),
     ("buques_guerra", "Buques de guerra",
-     ["buque de guerra", "barco de guerra", "navio de guerra", "buque militar", "fragata", "patrullera"], [], "nucleo"),
+     ["fragata", "buque", "barco de guerra", "navio", "navío", "patrullera", "patrulla",
+      "armada", "buque militar", "marina real"], [], "nucleo"),
     ("maniobras", "Ejercicios militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "contexto"),
-    ("hostigamiento", "Hostigamiento", ["hostigamiento", "presion migratoria", "desestabiliz", "asedio"], [], "nucleo"),
+    ("hostigamiento", "Hostigamiento",
+     ["hostig", "presion migratoria", "presión migratoria", "desestabiliz", "asedio",
+      "intimidac", "acoso"], [], "nucleo"),
     ("bloqueo", "Bloqueo aereo / maritimo",
-     ["bloqueo aereo", "bloqueo maritimo", "bloqueo del espacio aereo", "cierre del espacio aereo",
-      "bloqueo naval", "bloqueo de ceuta"], [], "nucleo"),
+     ["bloqueo", "cierre del espacio aereo", "cierre del espacio aéreo"], [], "nucleo"),
     # ---- CONTEXTO (no hibrido) ----
     ("valla_incidente", "Salto a la valla / incidente", ["valla", "salto a la valla", "incursion", "asalto"], [], "contexto"),
     ("postura_oficial", "Postura oficial de Marruecos",
