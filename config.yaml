@@ -276,16 +276,17 @@ feeds:
   note: Independiente argelino. Línea opositora.
   idioma: fr
   analytical_relevance: media
-- nombre: AMI Mauritanie (FR)
-  url: https://fr.ami.mr/feed
-  tipo: oficial
-  pais: MR
-  bias: state
-  reliability: mostly-factual
-  transparency: medium
-  note: Agencia oficial Mauritania.
-# === Fuentes añadidas 2026-09-02: análisis + francofonía + OSINT ===
-  idioma: fr
+# APARCADA 16-oct: feed FR muerto (fr.ami.mr/feed -> 000; solo vive la AR https://www.ami.mr/feed)
+# - nombre: AMI Mauritanie (FR)
+#   url: https://fr.ami.mr/feed
+#   tipo: oficial
+#   pais: MR
+#   bias: state
+#   reliability: mostly-factual
+#   transparency: medium
+#   note: Agencia oficial Mauritania.
+# === Fuentes añadidas 2026-09-02 ===
+#   idioma: fr   (pertenecia a AMI, aparcada)
   analytical_relevance: baja
 - nombre: Le Monde Diplomatique
   url: https://www.monde-diplomatique.fr/rss
