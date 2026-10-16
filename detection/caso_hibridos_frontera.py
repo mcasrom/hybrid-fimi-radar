@@ -47,8 +47,7 @@ CATS = [
     # real trae "hostigo/hostigó", "patrulla", "intimida".
     ("drones", "Drones", ["dron"], [], "nucleo"),
     ("buques_guerra", "Buques de guerra",
-     ["fragata", "buque", "barco de guerra", "navio", "navío", "patrullera", "patrulla",
-      "armada", "buque militar", "marina real"], [], "nucleo"),
+     ["fragata", "buque de guerra", "buque militar", "barco de guerra", "patrullera", "navio de guerra"], [], "nucleo"),
     ("maniobras", "Ejercicios militares", ["maniobra", "ejercicio militar", "ejercicios militares"], [], "contexto"),
     ("hostigamiento", "Hostigamiento",
      ["hostig", "presion migratoria", "presión migratoria", "desestabiliz", "asedio",
