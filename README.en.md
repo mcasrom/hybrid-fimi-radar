@@ -165,7 +165,9 @@ the live value):
   The page also opens with a **visual synthesis ("bento")** of the weekly reading —volume and activity,
   source origin, concentration and polarity, with the **cycle timestamp** and an explicit **scope (nucleus
   only)**— built from the **same data** as the rest of the page (no hardcoded figures), in **pure CSS,
-  no JavaScript**, and responsive.
+  no JavaScript**, and responsive. The two **episode** lists (25 automatic + 5 hand-curated) are now
+  **collapsed** behind a single «Ver los N episodios · clic para abrir» line: the same information
+  **on demand**, less density, nothing removed (the content stays in the DOM, indexable).
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.

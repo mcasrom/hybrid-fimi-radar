@@ -1208,6 +1208,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
             % (_eid, (_ev.get("titulo") or "")[:90], _rango, _pub_txt,
                (_ev.get("titulo") or "")[:220], "".join(_links)))
     _epi_fichas = "".join(_epi_rows) or '<p class="sub">sin episodios</p>'
+    _epi_n = len(_epi_rows)
     try:
         _cur = json.load(open(CURADOS, encoding="utf-8")).get("episodios", [])
     except Exception as _ec:
@@ -1230,7 +1231,8 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
             % (_c.get("id"), (_c.get("titulo") or "")[:90], _c.get("periodo"), _c.get("tipo"),
                _c.get("afirmacion"), _c.get("actores"), _ff, _c.get("fuente_primaria"),
                _c.get("estado_verificacion"), _c.get("explicacion_alternativa"), _c.get("limites")))
-    _cura_html = "".join(_cura_rows) or '<p class="sub">sin episodios curados</p>' 
+    _cura_html = "".join(_cura_rows) or '<p class="sub">sin episodios curados</p>'
+    _cura_n = len(_cura_rows)
     _hist = list(hist or [])
     _sp = (series or {}).get("pub") or []
     _sh = (series or {}).get("his") or []
@@ -1596,11 +1598,15 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 
 <h2>Radar A · Episodios informativos <span class="sub">(publicaciones agrupadas; no verificadas)</span></h2>
 <p class="sub"><b>{_hechos_n}</b> episodios en <b>{_hechos_pub}</b> publicaciones de <b>{_hechos_med}</b> medios. Un <b>evento</b> agrupa titulares del <b>mismo acontecimiento</b> (entidades compartidas): <b>{_hechos_pub} publicaciones ≠ {_hechos_n} historias ≠ {_n_eventos} eventos</b>. <b>La agrupación es automática y aproximada</b> (heurística de texto): puede unir titulares de un mismo tema o no unir variantes; es <b>revisable</b> y no altera los recuentos de origen (en el CSV). Clic en cada ficha para ver <b>fuentes, estado de verificación, explicación alternativa y límites</b>. (Tabla completa en el CSV.)</p>
+<details class="seccion"><summary>Ver los {_epi_n} episodios informativos &middot; clic para abrir</summary>
 {_epi_fichas}
+</details>
 
 <h2>Episodios clave <span class="sub">(curados a mano)</span></h2>
 <p class="sub">5 episodios revisados a mano: <b>qué se afirma, con qué fuente, estado de verificación, explicación alternativa y límites</b>. Cuando la <b>fuente primaria</b> (comunicado oficial) no está localizada, se dice.</p>
+<details class="seccion"><summary>Ver los {_cura_n} episodios clave curados &middot; clic para abrir</summary>
 {_cura_html}
+</details>
 
 <h2>Prensa marroquí y extranjera (L3)</h2>
 <p class="sub">Qué publica cada esfera. En un régimen donde el rey concentra el poder, los medios marroquíes estatales o afines son parte del aparato informativo. Se muestran con su <b>volumen real</b>; donde no hay datos, se dice.</p>

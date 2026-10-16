@@ -177,7 +177,9 @@ muestra el valor vivo):
   La página abre además con una **síntesis visual («bento»)** de la lectura semanal —volumen y actividad,
   origen de las fuentes, concentración y polaridad, con la **fecha del ciclo** y el **alcance explícito
   (solo el núcleo)**— generada desde los **mismos datos** que el resto de la página (sin cifras incrustadas),
-  en **CSS puro, sin JavaScript** y responsive.
+  en **CSS puro, sin JavaScript** y responsive. Los dos listados de **episodios** (25 automáticos + 5
+  curados a mano) van **plegados** bajo «Ver los N episodios · clic para abrir»: la misma información
+  **bajo demanda**, menos densidad y nada eliminado (el contenido sigue en el DOM, indexable).
 - **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
   (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
   **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →

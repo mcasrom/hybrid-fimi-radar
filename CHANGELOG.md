@@ -38,6 +38,9 @@ del dashboard, que crecen cada ciclo. Fechas en UTC.
 - **H1** del caso recalculado sobre **serie normalizada por volumen diario + bootstrap por bloques**
   (r 0,50 → 0,33).
 - **Cifra de tono** del caso: de «96 %» (muestra no reproducible) a **gold set accuracy 0,80 · κ 0,31**.
+- **Página del caso «Frontera Sur» (densidad)**: los dos listados de **episodios** (25 informativos + 5
+  curados) pasan a **desplegables** bajo una sola línea («Ver los N episodios · clic para abrir»),
+  manteniendo la información **bajo demanda** y en el DOM (indexable). Solo presentación; no toca datos.
 
 ### Corregido
 - IDs de episodios duplicados → prefijos **`AUTO-` / `CUR-`**; **fecha futura** corregida en un episodio curado.
