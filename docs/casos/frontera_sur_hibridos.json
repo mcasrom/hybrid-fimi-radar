@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-15 18:54 UTC",
+    "generado_utc": "2026-10-16 08:14 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -15,37 +15,37 @@
   },
   "live": {
     "nucleo": {
-      "eventos": 173,
+      "eventos": 177,
       "autores": 73,
       "fuentes": 8,
-      "urls": 98
+      "urls": 102
     },
     "contexto": {
-      "eventos": 1078,
+      "eventos": 1089,
       "autores": 269,
       "fuentes": 13,
-      "urls": 663
+      "urls": 672
     },
     "clusters_nucleo": 7,
     "clusters_tema": 125,
     "amplificacion": {
-      "autores_distintos": 73,
-      "top5_pct": 46.8,
-      "top10_pct": 56.6,
-      "gini": 0.52,
-      "urls_distintas": 97,
+      "autores_distintos": 72,
+      "top5_pct": 22.6,
+      "top10_pct": 36.5,
+      "gini": 0.3,
+      "urls_distintas": 101,
       "urls_compartidas": 2
     },
     "por_categoria": {
-      "drones": 71,
-      "buques_guerra": 67,
+      "drones": 72,
+      "buques_guerra": 70,
       "maniobras": 36,
       "hostigamiento": 34,
       "bloqueo": 1,
-      "valla_incidente": 402,
+      "valla_incidente": 410,
       "postura_oficial": 287,
-      "critica_a_marruecos": 77,
-      "soberania": 312
+      "critica_a_marruecos": 78,
+      "soberania": 314
     },
     "grupo": {
       "drones": "nucleo",
@@ -66,15 +66,15 @@
       1,
       14,
       11,
-      13,
-      19,
-      33,
-      6,
-      73
+      15,
+      24,
+      28,
+      4,
+      77
     ],
-    "sem_actual_nucleo": 73,
+    "sem_actual_nucleo": 77,
     "media8_nucleo": 12.1,
-    "delta_pct": 502.1,
+    "delta_pct": 535.1,
     "hitos": [
       [
         1785794470,
@@ -89,12 +89,12 @@
         "Navantia"
       ]
     ],
-    "now_ts": 1792089038,
-    "z_score": 6.1,
-    "mediana28": 33,
+    "now_ts": 1792132275,
+    "z_score": 6.73,
+    "mediana28": 28,
     "fuentes_origen": {
-      "social": 107,
-      "agregador (google-news)": 59,
+      "social": 108,
+      "agregador (google-news)": 62,
       "española": 4,
       "marroquí": 3
     },
@@ -104,17 +104,17 @@
       5,
       1,
       6,
-      108,
-      210,
-      116,
-      227,
-      87,
-      61,
-      254
+      118,
+      211,
+      114,
+      226,
+      90,
+      50,
+      265
     ],
-    "cuota_pct": 13.8,
-    "pico_top3_pct": 54.8,
-    "medios_indep": 28,
+    "cuota_pct": 14.0,
+    "pico_top3_pct": 20.0,
+    "medios_indep": 29,
     "top_medios": [
       [
         "Canarias en Pleno",
@@ -122,7 +122,7 @@
       ],
       [
         "The Objective",
-        3
+        4
       ],
       [
         "Atl",
@@ -138,15 +138,17 @@
       ]
     ],
     "polaridad": {
-      "hostil": 95,
+      "hostil": 99,
       "cooperación": 0,
       "neutro": 78
     },
     "h1": {
-      "r_max": 0.5,
-      "lag": 2,
-      "p": 0.01,
-      "n_dias": 78
+      "r_max": 0.33,
+      "lag": 8,
+      "p": 0.004,
+      "n_dias": 79,
+      "r_max_bruto": 0.5,
+      "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d)"
     },
     "placebo": {
       "picos_cerca": 1,
@@ -157,14 +159,14 @@
       {
         "label": "frontera_sur_cluster_016",
         "desde": "1-sep-2026",
-        "hasta": "14-oct-2026",
-        "eventos": 14,
-        "autores": 5,
+        "hasta": "16-oct-2026",
+        "eventos": 17,
+        "autores": 6,
         "fuente": "social",
         "polaridad": "hostil"
       },
       {
-        "label": "frontera_sur_cluster_025",
+        "label": "frontera_sur_cluster_026",
         "desde": "6-sep-2026",
         "hasta": "27-sep-2026",
         "eventos": 6,
@@ -209,7 +211,7 @@
         "polaridad": "hostil"
       },
       {
-        "label": "frontera_sur_cluster_073",
+        "label": "frontera_sur_cluster_074",
         "desde": "2-oct-2026",
         "hasta": "2-oct-2026",
         "eventos": 1,
@@ -219,22 +221,54 @@
       }
     ],
     "h4": {
-      "eventos": 73,
-      "urls": 44,
+      "eventos": 77,
+      "urls": 48,
       "fuentes": 5,
       "autores": 31,
       "top_url": 6,
       "top_url_pct": 8,
-      "ev_por_url": 1.66
+      "ev_por_url": 1.6
     },
     "evidencia": [
       {
+        "ts": 1792132219,
+        "author": "cuenta-0e6589",
+        "source": "bluesky",
+        "title": "Las fragatas marroquíes apagaron su geolocalización durante el asalto a Ceuta.  ✍️ Lo cuentan Antonio Rodríguez y Pelayo",
+        "url": "https://theobjective.com/espana/politica/2026-10-16/fragatas-marroquies-geolocalizacion-ceuta/",
+        "bsky": ""
+      },
+      {
+        "ts": 1792121400,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Marruecos amenaza el equilibrio militar con misiles LORA y drones suicidas cerca de España - MONCLOA.COM",
+        "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5TWXh6MW4xX3pwSW1pVlZoTVJxN2FOU181ZkdpcGhhbjdGZld4VWdYYUJFQXhFcWp5TlkyenFSemRuRV80eHpoZE8tU3Boem1aNU14WHZmYVJaVU0wLXk1Ymg1VzIzNXZ5bzdXbFhZRWpKWTVQNVl1aDZyOHB6dw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792121100,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Las fragatas marroquíes apagaron sus sistemas de geolocalización en los días del asalto a Ceuta - The Objective",
+        "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQYjFZZTQwWUtYd1pBYW0wSWViNTNzSi1WdGhKVWg3dkFzanBISnNmLTd3MVluS1dYWFZ1WU9lNUxPYTNfUDVFRlVLY01LaVBWWVZlcWtyVFBtWjJkODBWYVNvMG1vbDZYV2VQQU5pUGpmVHRrVEtDZTJxTnB1RXJubHJzSTc0dGxvVW9jUGtrMnhuQUN6UUlKcVBR0gGfAUFVX3lxTE1NRmh2QjRJTUpUNG96Z0l5UlJ0XzJkdzl4d2E5cHhyRFUxOWI2aTI1Zjh3akc4U0U5a0trU1Q3eERNQVRyZmdqYTJOdGJDaEdZWkFGV29rTW9YempzM0RPLUpPVUNlTS1IamQ1cWNWcDNVdTlMSXZ3U1U2cTk0RWZrUDBtU1hCRHRFQ2YteVI2OV9qblpTZ1l2a0Q4ck5vdw?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792098815,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Vicente Vallés sobre las fragatas marroquíes en aguas de Ceuta: \"Los españoles teníamos derecho a saberlo y Pedro Sánche",
+        "url": "https://news.google.com/rss/articles/CBMingJBVV95cUxNVURZWDk2cFd5M25ob1B0X2xQX2xHZnRpYW1aakJDODRkbVNzRUxpa3BGbkdSMXBNLXE2MGVudGQxZFJBQU9FbDd0c2NDSHd3d21RbVNtay01eWpRS0JsR1IxZkhKSnlMY3pkcnZZR0xDNy1HaTNYMDZCOXdDQ2o1U2l0WDJhcnZsbnVGQ3pldThZSUxPelVhSWhKem5ZUVZoemhvY0RwYTQwRG9pUEphOFljXzZtRW5YXzFyOVJXeGk3YTQyc3hWU2xxVzVuNllUZlpiU3RUZ2xjVndTdkljUVlENl9QRWh5cUtsMlRuV1Z5V25DVHZ5UXhnSjVMbGUzWnJQdWlyX1U0elBzVmdXdXppNjJkUVNva3NYaEN30gGeAkFVX3lxTE1naExpT2tiSzVWZW8wYmUwWmpjWGlNVXdCdGhua2RlM3l6SDdKZEsxUGRNQlBMOE1PcHVqaEplSTVOYmFIUmtuTTZYZUtiR2paaFdXSjJRRTM0VkVCdm56WTE2eFFZMEc5MU5fOXltUFMxa25tTmVJNFlwbUlEWU9WcGhwYnhwdFlZQjRiMzg4aF9DVXNUVXJKdWlMT3pRY25ub1NkRjlzZTRmQUlmZXc5MFZVOWM4Y0FNQTBrd2VEN3Q5VUFzVnFnS1BkNnhWa3ppMUtNYmlqbFhYRGk1QmJXM2hLMmNqbEhrd1lDSmwzVWRCUWtsNDdPTDZVOGNRdEFjWkEtdW9VN0dpSHpBc0hBS2V5WFBhWTZXcTgyeFE?oc=5",
+        "bsky": ""
+      },
+      {
         "ts": 1792066890,
-        "author": "bsky:abc.es",
+        "author": "cuenta-37327e",
         "source": "bluesky",
         "title": "El Gobierno se enreda en un cruce de versiones sobre la fragata marroquí en Ceuta: del «patrullaje de rutina» a la segur",
         "url": "https://www.abc.es/espana/gobierno-enreda-cruce-versiones-sobre-fragata-marroqui-20261015133753-nt.html?utm_campaign=mrf-bluesky-abc.es&utm_source=bluesky&utm_medium=social&mrfcid=202610156acd74808bfa9f311c828b2e",
-        "bsky": "at://did:plc:j22lmfbgns43aqcy5rzhavx3/app.bsky.feed.post/3mxw2fbkz722y"
+        "bsky": ""
       },
       {
         "ts": 1792066210,
@@ -254,11 +288,11 @@
       },
       {
         "ts": 1792065040,
-        "author": "bsky:alertaroja24h.bsky.social",
+        "author": "cuenta-36954d",
         "source": "bluesky",
         "title": "Tras la Cumbre del Partido Popular Europeo en Bruselas, el líder del Partido Popular, Alberto Núñez Feijóo, anunció que ",
         "url": "",
-        "bsky": "at://did:plc:wyx7tkgieobapwoxgcfpe2xp/app.bsky.feed.post/3mxvyo45ker2m"
+        "bsky": ""
       },
       {
         "ts": 1792064274,
@@ -318,19 +352,19 @@
       },
       {
         "ts": 1792023723,
-        "author": "bsky:neighinghorse.bsky.social",
+        "author": "cuenta-d20ae7",
         "source": "bluesky",
         "title": "El delegado de la Encina ha explicado que la incursión de la fragata marroquí fue un \"patrullaje ordinario\". El delegado",
         "url": "",
-        "bsky": "at://did:plc:7kdox6yu327vutzjnhdq4akj/app.bsky.feed.post/3mxus6rwnld2l"
+        "bsky": ""
       },
       {
         "ts": 1792008117,
-        "author": "bsky:andrebutter.eurosky.social",
+        "author": "cuenta-536f9f",
         "source": "bluesky",
         "title": "Marokkaanse oorlogsschepen drongen Spanje binnen tijdens massale migratiestroom Ceuta nieuwrechts.nl/113654-marok...",
         "url": "https://nieuwrechts.nl/113654-marokkaanse-oorlogsschepen-drongen-spanje-binnen-tijdens-massale-migratiestroom-ceuta",
-        "bsky": "at://did:plc:j2kupjndvdzorocfp4ydulmx/app.bsky.feed.post/3mxudno6vik2z"
+        "bsky": ""
       },
       {
         "ts": 1792007693,
@@ -342,19 +376,19 @@
       },
       {
         "ts": 1792004489,
-        "author": "bsky:rifenio.bsky.social",
+        "author": "cuenta-9358f8",
         "source": "bluesky",
         "title": "«¡Basta ya!»: así fue la llamada de la Armada tras la intrusión de fragatas marroquíes en Ceuta. Pues ¡menos mal que fue",
         "url": "",
-        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxuabkm7fx22"
+        "bsky": ""
       },
       {
         "ts": 1792002700,
-        "author": "bsky:mascarpone79.bsky.social",
+        "author": "cuenta-780dd1",
         "source": "bluesky",
         "title": "entre los inmigrantes en Ceuta y pronosticó que podrían aparecer más datos sobre la entrada de drones y la permanencia d",
         "url": "",
-        "bsky": "at://did:plc:cfc625lht3caomta2vf5pvx7/app.bsky.feed.post/3mxu6malq5p2c"
+        "bsky": ""
       },
       {
         "ts": 1791975537,
@@ -382,11 +416,11 @@
       },
       {
         "ts": 1791961301,
-        "author": "bsky:demetrioymedio.bsky.social",
+        "author": "cuenta-8f75ed",
         "source": "bluesky",
         "title": "#vox #lanoche24h #codigo10 #horizonte #partidopopular #mafiapp #abascal #Fascismo #voxesmierda #ultraderecha #ultimahora",
         "url": "",
-        "bsky": "at://did:plc:d5mitcvf6g7ghwd6iauem45c/app.bsky.feed.post/3mxsy2gt5722y"
+        "bsky": ""
       },
       {
         "ts": 1791960259,
@@ -398,19 +432,19 @@
       },
       {
         "ts": 1791958735,
-        "author": "bsky:ensonhbr.bsky.social",
+        "author": "cuenta-693cfe",
         "source": "bluesky",
         "title": "Europe Today: Spanish FM on Euronews, Black Sea drone attacks, EU-China reset Spain is under pressure on multiple fronts",
         "url": "",
-        "bsky": "at://did:plc:sxqxtfaf3abb2b4e76q3erha/app.bsky.feed.post/3mxsvnyl4de25"
+        "bsky": ""
       },
       {
         "ts": 1791955203,
-        "author": "bsky:theobjective-es.bsky.social",
+        "author": "cuenta-0e6589",
         "source": "bluesky",
         "title": "«¡Basta ya!»: así fue la llamada de la Armada tras la intrusión de fragatas marroquíes en Ceuta.  Una noticia de Antonio",
         "url": "https://theobjective.com/espana/politica/2026-10-14/armada-fragatas-marroquies-ceuta/",
-        "bsky": "at://did:plc:kcq2mii7wmovfev3iqnf7nib/app.bsky.feed.post/3mxsseqhot522"
+        "bsky": ""
       },
       {
         "ts": 1791954064,
@@ -446,43 +480,43 @@
       },
       {
         "ts": 1791934166,
-        "author": "bsky:mascarpone79.bsky.social",
+        "author": "cuenta-780dd1",
         "source": "bluesky",
         "title": "Infodefensa ha fotografiado la salida de la fragata Hassan II desde Ksar Sghir el mismo día que la Marina marroquí entró",
         "url": "",
-        "bsky": "at://did:plc:cfc625lht3caomta2vf5pvx7/app.bsky.feed.post/3mxs6rrubwh2c"
+        "bsky": ""
       },
       {
         "ts": 1791934135,
-        "author": "bsky:rifenio.bsky.social",
+        "author": "cuenta-9358f8",
         "source": "bluesky",
         "title": "julio.  Se están analizando los movimientos navales registrados durante la crisis, la posible presencia de una fragata m",
         "url": "",
-        "bsky": "at://did:plc:xc7vuhladpgusnnebw4fol6l/app.bsky.feed.post/3mxs6qtkiyh2k"
+        "bsky": ""
       },
       {
         "ts": 1791924010,
-        "author": "bsky:alertaroja24h.bsky.social",
+        "author": "cuenta-36954d",
         "source": "bluesky",
         "title": "La fragata Mohamed VI de Marruecos se ha convertido en el mayor barco de guerra de África en adentrarse en las aguas de ",
         "url": "",
-        "bsky": "at://did:plc:wyx7tkgieobapwoxgcfpe2xp/app.bsky.feed.post/3mxrvd3t2kk26"
+        "bsky": ""
       },
       {
         "ts": 1791902946,
-        "author": "bsky:noticiesaldia.bsky.social",
+        "author": "cuenta-54a198",
         "source": "bluesky",
         "title": "Així és la Fragata Mohamed VI del Marroc, el major vaixell de guerra d'Àfrica que es va endinsar en les aigües de Ceuta",
         "url": "https://grower.cat/noticia/c58e57fe01f3.html",
-        "bsky": "at://did:plc:xps3a3y2wavbn4ago4c56zbt/app.bsky.feed.post/3mxrbpdttrl2w"
+        "bsky": ""
       },
       {
         "ts": 1791902041,
-        "author": "bsky:jmdaweb.comunidad.nvda.es.ap.brid.gy",
+        "author": "cuenta-6a9fb0",
         "source": "bluesky",
         "title": "Hay que aceptarlo: incluso si el buque de guerra marroquí hubiera tenido un cartel con el texto \"os vamos a invadir espa",
         "url": "https://comunidad.nvda.es/@jmdaweb/117434092219788698",
-        "bsky": "at://did:plc:f4qdlqalrgsylpsd3inkkylx/app.bsky.feed.post/3mxraugvpww32"
+        "bsky": ""
       },
       {
         "ts": 1791898236,
@@ -534,35 +568,35 @@
       },
       {
         "ts": 1791876894,
-        "author": "bsky:yayuchu.bsky.social",
+        "author": "cuenta-167a47",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:6iqaula7lnzrxoqgsyutgapu/app.bsky.feed.post/3mxqjgw6qkk2y"
+        "bsky": ""
       },
       {
         "ts": 1791861606,
-        "author": "bsky:neighinghorse.bsky.social",
+        "author": "cuenta-d20ae7",
         "source": "bluesky",
         "title": "La Defensa desplegó un buque y una fragata para responder a la entrada de buques de guerra marroquíes en las aguas de Ce",
         "url": "",
-        "bsky": "at://did:plc:7kdox6yu327vutzjnhdq4akj/app.bsky.feed.post/3mxq37cg3h727"
+        "bsky": ""
       },
       {
         "ts": 1791861051,
-        "author": "bsky:alertaroja24h.bsky.social",
+        "author": "cuenta-36954d",
         "source": "bluesky",
         "title": "La Armada respondió con fragatas a la presencia de buques de Marruecos en aguas de Ceuta, un operativo que el presidente",
         "url": "",
-        "bsky": "at://did:plc:wyx7tkgieobapwoxgcfpe2xp/app.bsky.feed.post/3mxq2orxjcu2r"
+        "bsky": ""
       },
       {
         "ts": 1791836092,
-        "author": "bsky:324cat.eurosky.social",
+        "author": "cuenta-7203b4",
         "source": "bluesky",
         "title": "Vaixells de guerra marroquin El govern espanyol confirma que va enviar una fragata per frenar les incursions de la Marin",
         "url": "https://www.3cat.cat/3catinfo/vaixells-de-guerra-marroquins-van-entrar-a-ceuta-coincidint-amb-larribada-massiva-de-migrants/noticia/3433682/",
-        "bsky": "at://did:plc:gkh6hm3lbzvjbmpqoejcxywr/app.bsky.feed.post/3mxpdgwjllc2g"
+        "bsky": ""
       },
       {
         "ts": 1791821340,
@@ -590,35 +624,35 @@
       },
       {
         "ts": 1791819602,
-        "author": "bsky:telecinco-es.bsky.social",
+        "author": "cuenta-8e7c48",
         "source": "bluesky",
         "title": "Defensa respondió con un buque y una fragata ante la entrada de buques de guerra marroquíes en Ceuta a finales de julio ",
         "url": "https://ver.tw/2vjlf3",
-        "bsky": "at://did:plc:pcag5hwt5swuugls5rhtaln3/app.bsky.feed.post/3mxou3iidam2z"
+        "bsky": ""
       },
       {
         "ts": 1791816226,
-        "author": "bsky:calata68.bsky.social",
+        "author": "cuenta-04310c",
         "source": "bluesky",
         "title": "Poquito a poco. ¿Era o no un intento de invasión? Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo co",
         "url": "https://elpais.com/espana/2026-10-12/buques-de-guerra-marroquies-invadieron-aguas-de-ceuta-coincidiendo-con-la-entrada-masiva-de-inmigrantes.html",
-        "bsky": "at://did:plc:tdbifjaaksapr5lvylsrwhs2/app.bsky.feed.post/3mxoqwv33yc2g"
+        "bsky": ""
       },
       {
         "ts": 1791816145,
-        "author": "bsky:noticies.apuntmedia.es",
+        "author": "cuenta-191127",
         "source": "bluesky",
         "title": "La Marina de guerra marroquina va entrar en aigües de Ceuta el dia de l'entrada massiva.  El president Sánchez admet la ",
         "url": "https://www.apuntmedia.es/1_1d0295",
-        "bsky": "at://did:plc:iho2utcnulwv32huepi2ydw7/app.bsky.feed.post/3mxoquiao6p2z"
+        "bsky": ""
       },
       {
         "ts": 1791814027,
-        "author": "bsky:aidoo-noticias.bsky.social",
+        "author": "cuenta-dacff4",
         "source": "bluesky",
         "title": "Buques marroquíes navegaron en aguas de Ceuta en plena llegada masiva de migrantes. España desplegó un BAM y fragatas; S",
         "url": "https://aidoo.news/noticia/Wd0MlZ",
-        "bsky": "at://did:plc:ly2qmr6h65qfwervjkr6on4s/app.bsky.feed.post/3mxoove77e224"
+        "bsky": ""
       },
       {
         "ts": 1791813607,
@@ -630,11 +664,11 @@
       },
       {
         "ts": 1791812016,
-        "author": "bsky:diariodenavarra.bsky.social",
+        "author": "cuenta-4cc496",
         "source": "bluesky",
         "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de migrantes: la Armada envió ",
         "url": "https://www.diariodenavarra.es/noticias/actualidad/nacional/2026/10/12/buques-guerra-marroquies-entraron-aguas-ceuta-coincidiendo-llegada-masiva-migrantes-armada-envio-fragata-navarra-frenar-incursion-838495-28.html?utm_campaign=mrf-bluesky-diariodenavarra.bsky.social&utm_source=bluesky&utm_medium=social&mrfcid=202610126ac9f0808bfa9f311c7427f3",
-        "bsky": "at://did:plc:44qw3kabkua4w2o3nkcj33vw/app.bsky.feed.post/3mxomzgtnb62c"
+        "bsky": ""
       },
       {
         "ts": 1791811690,
@@ -646,51 +680,51 @@
       },
       {
         "ts": 1791807306,
-        "author": "bsky:ferna1diez.bsky.social",
+        "author": "cuenta-021592",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:dx5je5myk3uavb23e56nivhy/app.bsky.feed.post/3mxoimzpwls2u"
+        "bsky": ""
       },
       {
         "ts": 1791806968,
-        "author": "bsky:mmadrigal.bsky.social",
+        "author": "cuenta-59dec0",
         "source": "bluesky",
         "title": "Me hicieron saber que no enviara informes sobre Ceuta ,  pero aún así hay 4 mensajes, con credibilidad BAJA y anónimos, ",
         "url": "",
-        "bsky": "at://did:plc:vp2o3prnqcez3eqje4etsxcw/app.bsky.feed.post/3mxoicy2f222r"
+        "bsky": ""
       },
       {
         "ts": 1791806116,
-        "author": "bsky:mmadrigal.bsky.social",
+        "author": "cuenta-59dec0",
         "source": "bluesky",
         "title": "Me hicieron saber que no enviara informes sobre Ceuta ,  pero aún así hay 4 mensajes, con credibilidad BAJA y anónimos, ",
         "url": "",
-        "bsky": "at://did:plc:vp2o3prnqcez3eqje4etsxcw/app.bsky.feed.post/3mxohjl4hq22r"
+        "bsky": ""
       },
       {
         "ts": 1791801679,
-        "author": "bsky:ecac1944.bsky.social",
+        "author": "cuenta-786b22",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:jkuosh7qijhpskhonr5fvphi/app.bsky.feed.post/3mxodfdomgc2e"
+        "bsky": ""
       },
       {
         "ts": 1791801652,
-        "author": "bsky:malasombra999.bsky.social",
+        "author": "cuenta-afc684",
         "source": "bluesky",
         "title": "Que bonito nos lo está poniendo Trump.  La Armada española desplegó fragatas en julio y agosto por la entrada de buques ",
         "url": "https://www.eldiario.es/1_cf33ea",
-        "bsky": "at://did:plc:svrt6depkf5brqcxe5zbrd5v/app.bsky.feed.post/3mxodejteqk2g"
+        "bsky": ""
       },
       {
         "ts": 1791801004,
-        "author": "bsky:civitanodelamondo.bsky.social",
+        "author": "cuenta-49a564",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:ptd7felyg66rdbrqmvek2zui/app.bsky.feed.post/3mxocr7xbpk2x"
+        "bsky": ""
       },
       {
         "ts": 1791795979,
@@ -710,35 +744,35 @@
       },
       {
         "ts": 1791793629,
-        "author": "bsky:agustin70.bsky.social",
+        "author": "cuenta-e06ea1",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:6234qbqvppugc2zwaxwzahsl/app.bsky.feed.post/3mxo3vh3cms2x"
+        "bsky": ""
       },
       {
         "ts": 1791793330,
-        "author": "bsky:eldiario.es",
+        "author": "cuenta-1a4cdc",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/politica/armada-espanola-desplego-fragatas-julio-agosto-despues-buques-guerra-marruecos-entraran-aguas-ceuta-autorizacion_1_13579242.html",
-        "bsky": "at://did:plc:sv2ivxvf7fxchmo2xamo3wwx/app.bsky.feed.post/3mxo3mjfcok2e"
+        "bsky": ""
       },
       {
         "ts": 1791792753,
-        "author": "bsky:calata68.bsky.social",
+        "author": "cuenta-04310c",
         "source": "bluesky",
         "title": "Buques de guerra marroquíes entraron en aguas de Ceuta coincidiendo con la llegada masiva de inmigrantes La Armada españ",
         "url": "https://elpais.com/espana/2026-10-12/buques-de-guerra-marroquies-invadieron-aguas-de-ceuta-coincidiendo-con-la-entrada-masiva-de-inmigrantes.html",
-        "bsky": "at://did:plc:tdbifjaaksapr5lvylsrwhs2/app.bsky.feed.post/3mxo33ddmrk2l"
+        "bsky": ""
       },
       {
         "ts": 1791792361,
-        "author": "bsky:jedirepublicano.bsky.social",
+        "author": "cuenta-e38fe4",
         "source": "bluesky",
         "title": "La Armada española desplegó fragatas en julio y agosto por la entrada de buques de guerra de Marruecos en aguas de Ceuta",
         "url": "https://www.eldiario.es/1_cf33ea?utm_campaign=botonera-share&utm_medium=social&utm_source=bluesky",
-        "bsky": "at://did:plc:d4tmpguepxqqwb5vquq53qro/app.bsky.feed.post/3mxo2pnkhws2d"
+        "bsky": ""
       },
       {
         "ts": 1791791774,
@@ -798,11 +832,11 @@
       },
       {
         "ts": 1791696471,
-        "author": "bsky:oscarsumano.bsky.social",
+        "author": "cuenta-4dfa0b",
         "source": "bluesky",
         "title": "Amig@s, buenos días... Efemérides 10/10/2026: Feijóo... sacrificaros vasallos. Trump... realiza limpieza anal a Putín. A",
         "url": "",
-        "bsky": "at://did:plc:5kazmqfmib63mqsqqg77prtb/app.bsky.feed.post/3mxlbfvxsqk2p"
+        "bsky": ""
       },
       {
         "ts": 1791642718,
@@ -822,80 +856,44 @@
       },
       {
         "ts": 1791115364,
-        "author": "bsky:arainfo.bsky.social",
+        "author": "cuenta-4aa789",
         "source": "bluesky",
         "title": "“Tenemos órdenes para que no se sientan cómodos”. La frase de un militar resume lo que Amnistía documenta en Ceuta: viol",
         "url": "https://arainfo.org/?p=336700",
-        "bsky": "at://did:plc:rgq7dll7vaw33gdn67gafacq/app.bsky.feed.post/3mx2e7kthcw2q"
+        "bsky": ""
       },
       {
         "ts": 1790934231,
-        "author": "bsky:joseprzz.bsky.social",
+        "author": "cuenta-83a715",
         "source": "bluesky",
         "title": "para poder siguiendo estafando saqueando el dinero público del estado y vendiendo por ejemplo ceuta y melilla a marrueco",
         "url": "",
-        "bsky": "at://did:plc:p52oewksaxewnjl4le7wzfwy/app.bsky.feed.post/3mwv3jergqk2l"
-      },
-      {
-        "ts": 1790928373,
-        "author": "bsky:neojose.bsky.social",
-        "source": "bluesky",
-        "title": "Qué casualidad tan poco casual: justo después del 12 de octubre, foto de los #borbonesLadrones en Ceuta y Melilla. Cuand",
-        "url": "",
-        "bsky": "at://did:plc:6fbv4ghs6kxz37gh2pbvvuzb/app.bsky.feed.post/3mwuw2smk2226"
-      },
-      {
-        "ts": 1790916946,
-        "author": "bsky:afrikcom.bsky.social",
-        "source": "bluesky",
-        "title": "Le roi Felipe VI et la reine Letizia se rendront, le 13 octobre à Ceuta, deux mois et demi après la crise migratoire sur",
-        "url": "https://www.afrik.com/le-roi-d-espagne-a-ceuta-une-visite-sous-tension-diplomatique",
-        "bsky": "at://did:plc:fujbzj2acbb6wqluwfxlstri/app.bsky.feed.post/3mwulgafhps2n"
-      },
-      {
-        "ts": 1790881502,
-        "author": "bsky:boesinpaja.bsky.social",
-        "source": "bluesky",
-        "title": "⚡ EN 1 MINUTO  Lo que pasó: 🚨 Melilla requiere subsanar documentación a los solicitantes de ayudas para el carné B.  A q",
-        "url": "",
-        "bsky": "at://did:plc:nbs7eonk4cpnplqze4yqa76y/app.bsky.feed.post/3mwtkfwe2ae2n"
-      },
-      {
-        "ts": 1790850660,
-        "author": "rss:Yabiladi Maroc (FR)",
-        "source": "rss:Yabiladi Maroc (FR)",
-        "title": "Le roi et la reine d’Espagne se rendront à Ceuta et Melilla le 13 octobre",
-        "url": "https://www.yabiladi.com/articles/details/204024/reine-d-espagne-rendront-ceuta-melilla.html",
         "bsky": ""
       }
     ],
     "cuentas": [
       {
-        "author": "news:google",
-        "n": 59
-      },
-      {
         "author": "tg:elfarodeceuta",
         "n": 7
       },
       {
-        "author": "bsky:rifenio.bsky.social",
+        "author": "cuenta-9358f8",
         "n": 6
       },
       {
-        "author": "bsky:alertaroja24h.bsky.social",
+        "author": "cuenta-36954d",
         "n": 5
       },
       {
-        "author": "bsky:mascarpone79.bsky.social",
+        "author": "cuenta-780dd1",
         "n": 4
       },
       {
-        "author": "bsky:jauquim.bsky.social",
+        "author": "cuenta-89f09a",
         "n": 4
       },
       {
-        "author": "bsky:bochecas.bsky.social",
+        "author": "cuenta-8887ad",
         "n": 4
       },
       {
@@ -903,35 +901,39 @@
         "n": 3
       },
       {
-        "author": "bsky:demetrioymedio.bsky.social",
+        "author": "cuenta-0e6589",
         "n": 3
       },
       {
-        "author": "bsky:autodefensas.bsky.social",
+        "author": "cuenta-8f75ed",
         "n": 3
       },
       {
-        "author": "bsky:abc.es",
+        "author": "cuenta-8ade6f",
         "n": 3
       },
       {
-        "author": "bsky:theobjective-es.bsky.social",
+        "author": "cuenta-37327e",
+        "n": 3
+      },
+      {
+        "author": "cuenta-bf9316",
         "n": 2
       }
     ],
     "periodo": {
       "desde": "30-jul-2026",
-      "hasta": "15-oct-2026"
+      "hasta": "16-oct-2026"
     },
     "catalogo": [
       {
         "lbl": "Buques de guerra / aguas españolas",
-        "n": 121,
+        "n": 131,
         "linea": "L1"
       },
       {
         "lbl": "Drones",
-        "n": 117,
+        "n": 120,
         "linea": "L1"
       },
       {
@@ -961,7 +963,7 @@
       },
       {
         "lbl": "Soberanía / reivindicación Ceuta-Melilla",
-        "n": 431,
+        "n": 433,
         "linea": "L4"
       },
       {
@@ -971,7 +973,7 @@
       },
       {
         "lbl": "Presión migratoria (Ceuta/Melilla/Canarias)",
-        "n": 424,
+        "n": 431,
         "linea": "L5"
       },
       {
@@ -986,7 +988,7 @@
       },
       {
         "lbl": "Narrativa demográfica (reemplazo/natalidad/matrimonios)",
-        "n": 59,
+        "n": 60,
         "linea": "L7"
       }
     ],
@@ -999,8 +1001,8 @@
         ],
         [
           "rss:Hespress (AR)",
-          20,
-          "https://www.hespress.com/%d9%85%d9%87%d9%86%d9%8a%d9%88%d9%86-%d8%a5%d8%b3%d8%a8%d8%a7%d9%86-%d9%8a%d9%86%d9%81%d9%88%d9%86-%d8%a5%d9%84%d8%ba%d8%a7%d8%a1-%d8%ad%d8%ac%d9%88%d8%b2%d8%a7%d8%aa-%d8%b3%d9%8a%d8%a7%d8%ad%d9%8a-1809342.html"
+          21,
+          "https://www.hespress.com/%d9%86%d9%82%d8%a7%d8%a8%d8%a9-%d8%aa%d8%b7%d8%a7%d9%84%d8%a8-%d8%a8%d8%a7%d8%b3%d8%aa%d8%b1%d8%ac%d8%a7%d8%b9-%d8%b3%d8%a8%d8%aa%d8%a9-%d9%88%d9%85%d9%84%d9%8a%d9%84%d9%8a%d8%a9-1823286.html"
         ],
         [
           "rss:Hespress Maroc (FR)",
@@ -1119,15 +1121,15 @@
       "chi_corpus": [
         [
           "rss:CGTN (EN)",
-          292
+          294
         ]
       ]
     }
   },
   "social": {
     "titulo": "Indicadores de presión híbrida · Frontera Sur (Marruecos)",
-    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 173 eventos · +502% vs media 8 sem (top-5 46.8% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 173 eventos · +502% vs media 8 sem (top-5 46.8% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "x": "Presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo, 173 eventos, +502% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
+    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 177 eventos · +535% vs media 8 sem (top-5 22.6% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo · 177 eventos · +535% vs media 8 sem (top-5 22.6% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "x": "Presión híbrida en Frontera Sur (Marruecos): 7 clusters núcleo, 177 eventos, +535% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
   }
 }

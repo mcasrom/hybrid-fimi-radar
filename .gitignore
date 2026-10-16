@@ -68,3 +68,10 @@ data/informes/
 data/snapshots/
 data/temas_clusters.json
 docs/casos/ceuta.json
+
+# credenciales/estado en runtime (nunca a git)
+data/mastodon_token.txt
+data/caso_frontera_sur_hibridos/.pseudo_salt
+data/caso_frontera_sur_hibridos/.parte_estado.json
+data/.oom_rss_estado.json
+data/alertas_estado.json

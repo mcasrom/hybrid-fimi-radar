@@ -153,6 +153,15 @@ the live value):
   (SHA-256 hash) in `docs/casos/ceuta-v1.json`; the **data keeps arriving** (live layer, every 6 h from
   `event_temas`). Both are published at **`/datos/casos/ceuta.json`** (+ CSV) and linked from the case page.
   Full flow: `docs/CASO-CEUTA-CONGELADO.md`.
+- **Frontera Sur subcase (Morocco) + open method (16-Oct):** `casos/frontera_sur_hibridos/` — an
+  epistemic ladder (mention → published claim → corroborated fact → interpretation) with episodes
+  (automatic + 5 hand-curated, each with primary source / status / alternative explanation / limits),
+  daily history and API. Phase 1 (after validating an external review against the code and the DB):
+  concentration **excludes the Google News aggregator** (top-5 47.5%→**22.6%**; Gini 0.53→**0.30**),
+  **CC BY 4.0 + authorship + "how to cite"**, unique IDs. Phase 2: **GDPR pseudonymisation** of personal
+  accounts and **H1** recomputed on a **volume-normalised series + block bootstrap**. **Gold set**
+  (`detection/caso_goldset.py`): **κ category 0.37 · tone accuracy 0.80** · relevance precision 0.94 /
+  **recall 0.57** — the real limit is **coverage**, not noise.
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.

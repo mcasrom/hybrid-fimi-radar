@@ -162,6 +162,18 @@ muestra el valor vivo):
   `event_temas` y el clúster sostenido del caso) se **auto-inyectan cada 6 h** desde la BD
   (`detection/update_caso_ceuta_live.py`, en el cron de 6 h). Análisis **V1** 30-jul→21-sep
   (snapshot 1-oct): 13.442 eventos · 150 URLs compartidas, dominado por eco de prensa.
+- **Subcaso Frontera Sur (Marruecos) + método abierto (16-oct):** `casos/frontera_sur_hibridos/`
+  (generador `detection/caso_hibridos_frontera.py`) — expediente de **actividad militar y presión
+  fronteriza** con **escalera epistémica** (mención → afirmación publicada → hecho corroborado →
+  interpretación), **episodios** (automáticos + 5 curados a mano con fuente primaria/estado/explicación
+  alternativa/límites), **histórico diario** y **API** (`/api/v1/caso/<slug>` + `datos.csv`/`historial`).
+  **Fase 1** (tras validar un análisis externo contra el código y la BD): la concentración **excluye el
+  agregador de Google News** (top-5 47,5 %→**22,6 %**; Gini 0,53→**0,30**), **licencia CC BY 4.0 + autoría
+  + «cómo citar»**, IDs `AUTO-`/`CUR-` (sin colisión) y «coordinación: **no medida**». **Fase 2**:
+  **pseudonimización RGPD** de cuentas personales (`cuenta-<hash>`, sin enlace al perfil) y **H1**
+  recalculado sobre **serie normalizada por volumen + bootstrap por bloques** (r 0,50→0,33). **Gold set**
+  (`detection/caso_goldset.py`): **κ categoría 0,37 · tono accuracy 0,80** · relevancia precision 0,94 /
+  **recall 0,57** → el límite real es la **cobertura**, no el ruido.
 - **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
   (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
   **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →

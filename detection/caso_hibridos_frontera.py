@@ -15,6 +15,7 @@ Los eventos se cuentan por event_temas (regla 7).
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -110,6 +111,39 @@ def _origen(source):
                             "tagesschau", "sputnik", "tass", "rt ", "dw ")):
         return "internacional"
     return "española"
+
+
+_SALT_FILE = os.path.join(ROOT, "data", "caso_frontera_sur_hibridos", ".pseudo_salt")
+
+
+def _pseudo_salt():
+    """Salt local (no en el repo) para la pseudonimizacion de cuentas personales."""
+    try:
+        s = open(_SALT_FILE, encoding="utf-8").read().strip()
+        if s:
+            return s
+    except OSError:
+        pass
+    import secrets as _sec
+    s = _sec.token_hex(16)
+    try:
+        os.makedirs(os.path.dirname(_SALT_FILE), exist_ok=True)
+        with open(_SALT_FILE, "w", encoding="utf-8") as f:
+            f.write(s)
+    except OSError as e:  # noqa: BLE001
+        print("[caso-hibridos] no pude escribir el salt:", e, file=sys.stderr)
+    return s
+
+
+def _pseudo(author):
+    """Pseudonimo estable (RGPD) para cuentas personales de redes sociales.
+    Los medios/feeds (rss:/tg:/news:) se mantienen: son fuentes, no personas."""
+    a = author or ""
+    low = a.strip().lower()
+    if low.startswith(("bsky:", "masto:", "reddit:", "twitter:", "x:")):
+        h = hashlib.sha1((_pseudo_salt() + "|" + low).encode("utf-8")).hexdigest()[:6]
+        return f"cuenta-{h}"
+    return a
 
 
 def _medio_titulo(title):
@@ -263,8 +297,13 @@ def compute():
     amp = {}
     if ids_n:
         ch = ",".join("?" * len(ids_n))
+        # El agregador (google-news) es un CANAL, no una cuenta: se excluye de la
+        # concentracion por autor (antes "news:google" contaba como 1 pseudo-autor
+        # con decenas de eventos -> inflaba top-5/Gini de amplificacion).
         por_autor = [r[0] for r in con.execute(
-            f"SELECT COUNT(*) FROM events WHERE id IN ({ch}) GROUP BY author ORDER BY 1 DESC",
+            f"SELECT COUNT(*) FROM events WHERE id IN ({ch})"
+            " AND COALESCE(source,'') NOT LIKE '%google-news%'"
+            " GROUP BY author ORDER BY 1 DESC",
             ids_n).fetchall()]
         total_a = sum(por_autor)
         amp["autores_distintos"] = len(por_autor)
@@ -347,6 +386,7 @@ def compute():
         _chp = ",".join("?" * len(ids_n))
         rows_p = con.execute(
             f"SELECT author, COUNT(*) FROM events WHERE id IN ({_chp}) AND timestamp>=?"
+            " AND COALESCE(source,'') NOT LIKE '%google-news%'"
             " GROUP BY author ORDER BY 2 DESC", ids_n + [now_ts - SEM]).fetchall()
         tot_p = sum(r[1] for r in rows_p)
         if tot_p:
@@ -368,7 +408,7 @@ def compute():
                 f"SELECT text, title FROM events WHERE id IN ({_chpol})", ids_n).fetchall():
             pol[_polaridad(t2, tit2)] += 1
 
-    # --- fase 3: H1 (correlacion con retardo + permutacion) ---
+    # --- fase 3: H1 (coincidencia temporal; serie NORMALIZADA + bootstrap por bloques) ---
     import random as _rnd
     nd = int((now_ts - TS_CASE) // 86400) + 1
 
@@ -383,8 +423,17 @@ def compute():
                     arr[k] += 1
         return arr
 
-    dr = _daily(set(per_cat.get("drones", [])))
-    mg = _daily(contexto)
+    dr_raw = _daily(set(per_cat.get("drones", [])))
+    mg_raw = _daily(contexto)
+    # Denominador diario del tema: la correlacion en bruto de dos series que crecen
+    # juntas con la captura NO implica causalidad -> se normaliza por volumen diario.
+    tot_raw = _daily(nucleo | contexto)
+
+    def _share(s, t):
+        return [(s[i] / t[i]) if t[i] else 0.0 for i in range(len(s))]
+
+    dr = _share(dr_raw, tot_raw)
+    mg = _share(mg_raw, tot_raw)
 
     def _corr(a, b, lag):
         if lag >= 0:
@@ -402,15 +451,26 @@ def compute():
 
     lags = list(range(0, 15))
     obs = [_corr(dr, mg, l) for l in lags]
+    r_raw = round(max(_corr(dr_raw, mg_raw, l) for l in lags), 2)
     r_max = round(max(obs), 2) if obs else 0
     lag_max = lags[obs.index(max(obs))] if obs else 0
+    # Bootstrap por bloques moviles (7 d): preserva la autocorrelacion de la serie;
+    # la permutacion simple la rompe y produce un p optimista (falso positivo).
     _rnd.seed(1)
+    _L = 7
+    _n = len(mg)
     null = []
     for _ in range(500):
-        mg2 = mg[:]; _rnd.shuffle(mg2)
+        idx = []
+        while len(idx) < _n:
+            s0 = _rnd.randint(0, max(0, _n - _L))
+            idx.extend(range(s0, min(s0 + _L, _n)))
+        mg2 = [mg[i] for i in idx[:_n]]
         null.append(max(_corr(dr, mg2, l) for l in lags))
     p_h1 = round(sum(1 for v in null if v >= max(obs)) / len(null), 3) if null else 1.0
-    h1 = {"r_max": r_max, "lag": lag_max, "p": p_h1, "n_dias": nd}
+    h1 = {"r_max": r_max, "lag": lag_max, "p": p_h1, "n_dias": nd,
+          "r_max_bruto": r_raw,
+          "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d)"}
 
     # placebo de hitos: ¿los picos caen cerca de hitos más que por azar?
     placebo = None
@@ -483,13 +543,18 @@ def compute():
         for r in con.execute(
                 f"SELECT timestamp, author, source, title, url, bsky_uri FROM events"
                 f" WHERE id IN ({_che}) ORDER BY timestamp DESC LIMIT 80", ids_n).fetchall():
-            evid.append({"ts": int(r[0] or 0), "author": r[1] or "", "source": r[2] or "",
+            _ps = _pseudo(r[1])
+            evid.append({"ts": int(r[0] or 0), "author": _ps, "source": r[2] or "",
                          "title": (r[3] or "").replace("\n", " ")[:130],
-                         "url": r[4] or "", "bsky": r[5] or ""})
+                         "url": r[4] or "",
+                         # RGPD: la URI de Bluesky revela el handle -> se omite si la
+                         # cuenta es personal (pseudonimizada).
+                         "bsky": "" if _ps.startswith("cuenta-") else (r[5] or "")})
         for r in con.execute(
                 f"SELECT author, COUNT(*) FROM events WHERE id IN ({_che})"
+                " AND COALESCE(source,'') NOT LIKE '%google-news%'"
                 " GROUP BY author ORDER BY 2 DESC LIMIT 12", ids_n).fetchall():
-            cuentas.append({"author": r[0] or "", "n": r[1]})
+            cuentas.append({"author": _pseudo(r[0]), "n": r[1]})
 
     out = {
         "nucleo": agg(nucleo),
@@ -1046,7 +1111,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
             _pu = _p.get("url") or ""
             _ln = ('<a href="%s" target="_blank" rel="noopener">%s</a>' % (_pu, (_p.get("source") or "enlace")[:44])) if _pu else ((_p.get("source") or "")[:44])
             _links.append("<li>%s</li>" % _ln)
-        _eid = "CEU-2026-%03d" % _i
+        _eid = "AUTO-2026-%03d" % _i
         _rango = _fecha(_ev["desde"]) if _ev.get("desde") == _ev.get("hasta") else (_fecha(_ev["desde"]) + " &rarr; " + _fecha(_ev["hasta"]))
         _pub_txt = ("%d publicaciones · %d titulares" % (_ev.get("n_pubs", 0), _ev.get("n_h", 0))) if _ev.get("n_h", 1) > 1 else "1 publicación"
         _epi_rows.append(
@@ -1182,7 +1247,7 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
     _plc = d.get("placebo") or {}
     _h1_txt = ("sin datos." if not _h1 else
                f"r<sub>máx</sub> = {_h1.get('r_max')} (retardo {_h1.get('lag')} d) · "
-               f"<b>p = {_h1.get('p')}</b> (permutación, {_h1.get('n_dias')} días) → "
+               f"<b>p = {_h1.get('p')}</b> (bootstrap por bloques, {_h1.get('n_dias')} días; serie normalizada) → "
                + ("<b>se sostiene</b> (p&lt;0,05)." if (_h1.get('p') is not None and _h1.get('p') < 0.05)
                   else "<b>NO se sostiene</b> (p≥0,05 en esta ventana)."))
     _plc_txt = ("n/d." if not _plc else
@@ -1205,11 +1270,9 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         for k, lbl, w, e, g in CATS)
 
     def _acct(a):
-        a = a or ""
-        if a.startswith("bsky:"):
-            h = a[5:]
-            return f'<a href="https://bsky.app/profile/{h}" target="_blank" rel="noopener">{h}</a>'
-        return a
+        # RGPD: las cuentas personales de redes se muestran pseudonimizadas (ver
+        # _pseudo) y NO se enlazan a su perfil (el enlace revelaria el handle).
+        return a or ""
 
     def _lnk(e):
         u = e.get("url") or ""
@@ -1331,7 +1394,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <table><thead><tr><th>Dimensión</th><th>Estado</th></tr></thead><tbody>
 <tr><td>Actividad informativa</td><td>Elevada &mdash; <b>línea base no comparable</b> (la captura creció ~100&times;)</td></tr>
 <tr><td>Calidad de la evidencia</td><td><b>Parcial</b>: muchas noticias con fuente, sin verificación propia</td></tr>
-<tr><td>Coordinación informativa</td><td><b>No observada</b> ({_n(amp.get("urls_compartidas", 0))} URLs compartidas entre autores)</td></tr>
+<tr><td>Coordinación informativa</td><td><b>No medida / no concluyente</b> (el test solo compara <b>URLs idénticas</b>: {_n(amp.get("urls_compartidas", 0))} compartidas de {_n(amp.get("urls_distintas", 0))}; no mide co-publicación temporal, texto casi-idéntico ni hashtags)</td></tr>
 <tr><td>Hipótesis de plan híbrido</td><td><b>En evaluación</b> (evidencia a favor y en contra)</td></tr>
 </tbody></table>
 <div style="background:#0d1b2a;color:#fff;border-radius:8px;padding:10px 14px;margin:12px 0;font-weight:700;letter-spacing:.2px">Señal detectada &middot; Coordinación <u>no demostrada</u> &middot; Atribución <u>no confirmada</u></div>
@@ -1418,7 +1481,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <h2>Tono del mensaje (heurística) — no mide hostilidad del hecho</h2>
 <table><thead><tr><th>Polaridad</th><th class="num">Eventos</th><th class="num">%</th></tr></thead>
 <tbody>{pol_html}</tbody></table>
-<p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación manual: 158/165 = 96 %</b> sobre una muestra de 165 eventos (14-oct-2026); esta tabla clasifica <b>{_pol_tot}</b> eventos (el denominador no coincide porque cambia la ventana). Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
+<p class="sub"><b>Aviso:</b> mide <b>vocabulario del texto</b>, no hostilidad del hecho: un titular que dice «incursión» y otro que dice «patrullaje ordinario» pueden describir el mismo episodio. Patrones: <b>hostil</b> = violación / incursión / intrusión / amenaza / hostigamiento / bloqueo / dron-fragata-buque marroquí…; <b>cooperación</b> = conjuntas / entrega / Navantia / acuerdo…; resto = <b>neutro</b>. <b>Validación por gold set (16-oct-2026): accuracy 0,80 · κ 0,31</b> sobre 160 eventos anotados a mano (muestra reproducible; herramienta <code>caso_goldset.py</code>); esta tabla clasifica <b>{_pol_tot}</b> eventos. Separa la cooperación militar y el comercio de defensa de la presión hostil.</p>
 <details class="seccion"><summary>Ficha de validación del clasificador de tono</summary>
 <ul><li><b>Qué se validó:</b> la etiqueta de <b>tono</b> (hostil/neutro/cooperación), no la relevancia temática ni la veracidad.</li>
 <li><b>Muestra:</b> 165 eventos; <b>fecha:</b> 14-oct-2026. Selección: núcleo de entonces (cambia con la ventana → el denominador de la tabla difiere).</li>
@@ -1432,15 +1495,15 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <thead><tr><th>Hipótesis</th><th>Evidencia a favor</th><th>Evidencia en contra</th><th>Estado</th></tr></thead>
 <tbody>
 <tr><td><b>HC</b> · las acciones responden a un <b>plan de presión híbrida</b> sobre Ceuta/Melilla/Canarias (¿anexión?, inferencia)</td><td>Coincidencia temporal (buques + drones + cobertura); <b>Navantia entrega una patrullera "sin pompa" en plena crisis</b>; F-35/EE.UU., Israel (24 % del armamento), EDGE/Emiratos en el periodo</td><td><b>Sin coordinación medida</b> por URLs; deltas contaminados por la captura; existe <b>cooperación</b> real (ejercicios, comercio); «anexión» no es texto literal (27)</td><td><b>En evaluación</b></td></tr>
-<tr><td><b>H1</b> · drones suben tras eventos migratorios <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_h1_txt}</td><td>Permutación simple → p optimista (autocorrelación)</td><td><b>En evaluación</b></td></tr>
+<tr><td><b>H1</b> · drones suben tras eventos migratorios <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_h1_txt}</td><td>Serie normalizada por volumen + bootstrap por bloques (7 d)</td><td><b>En evaluación</b></td></tr>
 <tr><td><b>H2</b> · los picos coinciden con hitos <a href="#metodo-h" class="sub">(cómo se calcula ↓)</a></td><td>{_plc_txt}</td><td>«Hitos» <b>derivados</b> del corpus → circular</td><td><b>Inconclusa</b></td></tr>
 <tr><td><b>H3a</b> · amplificación coordinada por <b>URLs idénticas</b></td><td>&mdash;</td><td>{amp.get('urls_compartidas', 0)} URLs compartidas por ≥2 autores (de {_n(amp.get('urls_distintas', 0))})</td><td><b>Sin evidencia</b></td></tr>
 <tr><td><b>H4</b> · el incremento responde a cambios de cobertura</td><td>{_h4_txt}</td><td>Captura global creció mucho en el periodo</td><td><b>Sesgo probable</b></td></tr>
 </tbody></table>
-<p class="sub">H1 con <b>permutación</b> (500 barajados) para no fingir precisión con pocos datos; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
+<p class="sub">H1 con <b>bootstrap por bloques</b> (7 d, 500 réplicas) sobre la <b>serie normalizada por volumen diario</b>; H2 con <b>placebo</b> (¿los picos caen cerca de hitos más que por azar?). Resultado <b>no resuelto ≠ descartado</b>.</p>
 <details class="seccion" id="metodo-h"><summary>Método de H1 y H2 (auditable)</summary>
-<ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias</b>. Se prueban retardos 0–14 d y se informa el máximo; el nulo (500 permutaciones) <b>también</b> maximiza sobre retardos.</li>
-<li><b>H1 · límites:</b> la permutación simple <b>no corrige la autocorrelación</b> → p optimista; correlación ≠ causalidad (puede haber causa común o eco mediático).</li>
+<ul><li><b>H1 · variables:</b> <i>drones</i> = publicaciones del núcleo que mencionan «dron»; <i>migratorio</i> = eventos de contexto (valla/incidentes). Ambas series <b>diarias, normalizadas por el volumen diario del tema</b> (evita la correlación espuria por crecimiento de la captura; se informa también el r bruto). Se prueban retardos 0–14 d y se informa el máximo; el nulo (<b>bootstrap por bloques móviles de 7 d</b>, 500 réplicas) <b>preserva la autocorrelación</b> y <b>también</b> maximiza sobre retardos.</li>
+<li><b>H1 · límites:</b> correlación ≠ causalidad (puede haber causa común o eco mediático); el bootstrap por bloques mitiga la autocorrelación pero no la elimina; 79 días es una serie corta.</li>
 <li><b>H2 · método:</b> «hitos» = <b>primera aparición</b> del término en el corpus (valla, ejercicios, Navantia). <b>No son externos</b> → prueba <b>circular</b>; debe repetirse con hitos fechados por fuente externa.</li>
 <li><b>Estado:</b> H1 <b>en evaluación</b>; H2 <b>inconclusa</b>; H3a <b>sin evidencia</b> (URLs idénticas); H4 <b>sesgo probable</b> (captura).</li></ul>
 </details>
@@ -1509,9 +1572,9 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 </main>
 <footer><div class="wrap">
 <p><a href="/">&larr; Volver al radar</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/consulta.html">Consulta</a></p>
-Generado automaticamente por <code>detection/caso_hibridos_frontera.py</code> ·
-manual hash <code>{meta['hash_manual'][:16]}</code> ·
-Fuente: <code>event_temas</code> + <code>cluster_events</code> (tema frontera_sur) · no toca scoring.
+<p style="margin-top:10px"><b>Licencia:</b> <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · <b>Autoría:</b> Miguel Castillo · <b>Contacto:</b> <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a></p>
+<p><b>Cómo citar:</b> Castillo, M. (2026). «Frontera Sur: actividad militar, presión fronteriza y amplificación informativa». Observatorio de amplificación. {_page} (consultado el DD-MM-AAAA).</p>
+<p class="sub">Generado automáticamente por <code>detection/caso_hibridos_frontera.py</code> · manual hash <code>{meta['hash_manual'][:16]}</code> · Fuente: <code>event_temas</code> + <code>cluster_events</code> (tema frontera_sur) · no toca scoring.</p>
 </div></footer>
 </body></html>
 """
@@ -1537,7 +1600,7 @@ def _write_csv(con, ids, path):
             _i, ts, src, tit, txt, url, aut = r
             fecha = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d") if ts else ""
             w.writerow([eid, "nucleo" if eid in nuc else "contexto", _origen(src),
-                        _polaridad(txt, tit), fecha, src or "", (aut or "")[:60],
+                        _polaridad(txt, tit), fecha, src or "", _pseudo(aut)[:60],
                         url or "", (tit or "").replace("\n", " ")[:160]])
     print("[caso-hibridos] CSV ->", path)
 

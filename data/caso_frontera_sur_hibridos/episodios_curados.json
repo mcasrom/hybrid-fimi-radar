@@ -1,9 +1,9 @@
 {
-  "_nota": "Episodios curados A MANO. La columna 'fuente' son los enlaces disponibles en el corpus (muchos de Google News, agregador). 'fuente_primaria' indica el actor/oficio que sostiene el hecho y su estado de localización. NO se inventan URLs.",
+  "_nota": "Episodios curados A MANO (prefijo CUR-; los automaticos usan AUTO-). La columna 'fuente' son los enlaces disponibles en el corpus (muchos de Google News, agregador; varios son dominio raiz, no URL de articulo). 'fuente_primaria' indica el actor/oficio que sostiene el hecho y su estado de localizacion. NO se inventan URLs.",
   "_actualizado": "2026-10-15",
   "episodios": [
     {
-      "id": "CEU-2026-001",
+      "id": "CUR-2026-001",
       "titulo": "Fragata marroquí (Mohamed VI) en aguas próximas a Ceuta y despliegue de la Armada",
       "periodo": "12-15 oct 2026",
       "tipo": "Militar / marítimo",
@@ -20,7 +20,7 @@
       "limites": "El número de titulares NO es el número de incursiones. No hay confirmación oficial independiente de una «incursión»."
     },
     {
-      "id": "CEU-2026-002",
+      "id": "CUR-2026-002",
       "titulo": "Desarrollo de un dron «kamikaze» marroquí de largo alcance",
       "periodo": "24-29 sep 2026",
       "tipo": "Militar / tecnológico",
@@ -36,9 +36,9 @@
       "limites": "«Capaz de atacar cualquier punto de España» es una afirmación de alcance técnico, no un hecho de agresión."
     },
     {
-      "id": "CEU-2026-003",
+      "id": "CUR-2026-003",
       "titulo": "Drones marroquíes: interferencia y vigilancia",
-      "periodo": "24 sep – 20 oct 2026",
+      "periodo": "24 sep–oct 2026",
       "tipo": "Militar / vigilancia",
       "afirmacion": "Se publica que España pidió a Marruecos ajustar la altura de sus drones tras interferir uno en un aterrizaje, y que un dron marroquí sobrevoló/vigiló una manifestación en la frontera de El Tarajal.",
       "actores": "España (aviación civil/AENA implícito) · Marruecos (FAR)",
@@ -52,7 +52,7 @@
       "limites": "No verifica el vuelo concreto descrito en cada publicación."
     },
     {
-      "id": "CEU-2026-004",
+      "id": "CUR-2026-004",
       "titulo": "Presión migratoria y empadronamientos en la frontera",
       "periodo": "jul – oct 2026",
       "tipo": "Fronterizo / migratorio",
@@ -69,7 +69,7 @@
       "limites": "La coincidencia temporal migración↔movimiento naval no prueba uso deliberado."
     },
     {
-      "id": "CEU-2026-005",
+      "id": "CUR-2026-005",
       "titulo": "Discurso político: acusaciones de «hostigamiento» a Marruecos",
       "periodo": "29-30 sep 2026",
       "tipo": "Político / discursivo",
