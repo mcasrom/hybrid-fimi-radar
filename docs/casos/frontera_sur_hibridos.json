@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-16 08:51 UTC",
+    "generado_utc": "2026-10-16 13:49 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -15,37 +15,37 @@
   },
   "live": {
     "nucleo": {
-      "eventos": 281,
-      "autores": 119,
+      "eventos": 285,
+      "autores": 120,
       "fuentes": 11,
-      "urls": 159
+      "urls": 161
     },
     "contexto": {
-      "eventos": 1089,
-      "autores": 269,
+      "eventos": 1104,
+      "autores": 270,
       "fuentes": 13,
-      "urls": 672
+      "urls": 683
     },
     "clusters_nucleo": 16,
-    "clusters_tema": 125,
+    "clusters_tema": 127,
     "amplificacion": {
-      "autores_distintos": 118,
-      "top5_pct": 22.5,
+      "autores_distintos": 119,
+      "top5_pct": 22.7,
       "top10_pct": 32.5,
       "gini": 0.35,
-      "urls_distintas": 158,
+      "urls_distintas": 160,
       "urls_compartidas": 6
     },
     "por_categoria": {
       "drones": 72,
-      "buques_guerra": 70,
-      "maniobras": 36,
-      "hostigamiento": 124,
+      "buques_guerra": 73,
+      "maniobras": 37,
+      "hostigamiento": 125,
       "bloqueo": 15,
-      "valla_incidente": 410,
-      "postura_oficial": 287,
+      "valla_incidente": 420,
+      "postura_oficial": 289,
       "critica_a_marruecos": 78,
-      "soberania": 314
+      "soberania": 316
     },
     "grupo": {
       "drones": "nucleo",
@@ -64,17 +64,17 @@
       1,
       0,
       1,
-      17,
-      43,
+      18,
+      45,
       40,
-      37,
-      44,
-      11,
-      84
+      41,
+      39,
+      9,
+      88
     ],
-    "sem_actual_nucleo": 84,
+    "sem_actual_nucleo": 88,
     "media8_nucleo": 24.1,
-    "delta_pct": 248.2,
+    "delta_pct": 264.8,
     "hitos": [
       [
         1785794470,
@@ -89,12 +89,12 @@
         "Navantia"
       ]
     ],
-    "now_ts": 1792132275,
-    "z_score": 3.38,
-    "mediana28": 44,
+    "now_ts": 1792153866,
+    "z_score": 3.56,
+    "mediana28": 41,
     "fuentes_origen": {
-      "social": 186,
-      "agregador (google-news)": 81,
+      "social": 189,
+      "agregador (google-news)": 82,
       "española": 11,
       "marroquí": 3
     },
@@ -102,19 +102,19 @@
       0,
       3,
       5,
-      1,
-      6,
-      118,
-      211,
-      114,
+      2,
+      7,
+      128,
+      209,
+      111,
       226,
-      90,
-      50,
-      265
+      86,
+      49,
+      278
     ],
     "cuota_pct": 20.5,
-    "pico_top3_pct": 19.0,
-    "medios_indep": 40,
+    "pico_top3_pct": 20.0,
+    "medios_indep": 41,
     "top_medios": [
       [
         "Canarias en Pleno",
@@ -138,20 +138,20 @@
       ]
     ],
     "polaridad": {
-      "hostil": 174,
+      "hostil": 177,
       "cooperación": 0,
-      "neutro": 107
+      "neutro": 108
     },
     "h1": {
-      "r_max": 0.31,
+      "r_max": 0.3,
       "lag": 8,
-      "p": 0.008,
+      "p": 0.006,
       "n_dias": 79,
       "r_max_bruto": 0.5,
       "metodo": "serie normalizada por volumen diario + bootstrap por bloques (7 d)"
     },
     "placebo": {
-      "picos_cerca": 1,
+      "picos_cerca": 2,
       "de": 3,
       "esperado_azar": 1.8
     },
@@ -160,7 +160,7 @@
         "label": "frontera_sur_cluster_016",
         "desde": "1-sep-2026",
         "hasta": "16-oct-2026",
-        "eventos": 37,
+        "eventos": 38,
         "autores": 6,
         "fuente": "social",
         "polaridad": "hostil"
@@ -184,7 +184,7 @@
         "polaridad": "neutro"
       },
       {
-        "label": "frontera_sur_cluster_113",
+        "label": "frontera_sur_cluster_115",
         "desde": "17-sep-2026",
         "hasta": "10-oct-2026",
         "eventos": 6,
@@ -193,7 +193,7 @@
         "polaridad": "neutro"
       },
       {
-        "label": "frontera_sur_cluster_104",
+        "label": "frontera_sur_cluster_106",
         "desde": "24-sep-2026",
         "hasta": "29-sep-2026",
         "eventos": 4,
@@ -211,7 +211,7 @@
         "polaridad": "neutro"
       },
       {
-        "label": "frontera_sur_cluster_003",
+        "label": "frontera_sur_cluster_002",
         "desde": "8-sep-2026",
         "hasta": "24-sep-2026",
         "eventos": 3,
@@ -274,7 +274,7 @@
         "polaridad": "hostil"
       },
       {
-        "label": "frontera_sur_cluster_036",
+        "label": "frontera_sur_cluster_034",
         "desde": "13-sep-2026",
         "hasta": "13-sep-2026",
         "eventos": 1,
@@ -302,30 +302,30 @@
       }
     ],
     "h4": {
-      "eventos": 84,
-      "urls": 54,
+      "eventos": 88,
+      "urls": 56,
       "fuentes": 5,
-      "autores": 33,
+      "autores": 35,
       "top_url": 6,
       "top_url_pct": 7,
-      "ev_por_url": 1.56
+      "ev_por_url": 1.57
     },
     "civil": {
-      "eventos": 4791,
-      "fuentes": 19,
-      "autores": 760,
+      "eventos": 4816,
+      "fuentes": 20,
+      "autores": 762,
       "top_fuentes": [
         [
           "bluesky",
-          2599
+          2610
         ],
         [
           "google-news",
-          1551
+          1558
         ],
         [
           "telegram:elfarodeceuta",
-          275
+          279
         ],
         [
           "rss:El Pais Espana",
@@ -337,22 +337,54 @@
         ]
       ],
       "serie": [
-        7,
-        38,
+        16,
+        34,
         21,
-        27,
+        29,
         35,
-        522,
-        835,
-        935,
-        741,
-        697,
+        557,
+        856,
+        924,
+        739,
+        664,
         442,
-        491
+        499
       ],
-      "ratio_vs_nucleo": 17.0
+      "ratio_vs_nucleo": 16.9
     },
     "evidencia": [
+      {
+        "ts": 1792152353,
+        "author": "cuenta-06dcbe",
+        "source": "bluesky",
+        "title": "La Armada de España desplegó dos fragatas desde Rota para frenar la incursión de buques marroquíes en las aguas de Ceuta",
+        "url": "",
+        "bsky": ""
+      },
+      {
+        "ts": 1792147201,
+        "author": "news:google",
+        "source": "google-news",
+        "title": "Las fragatas marroquíes apagaron sus sistemas de geolocalización durante la invasión de Ceuta - La Gaceta de la Iberosfe",
+        "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPTUxsb2VzMS1vY184REJYRzcwZUphZDBMYnlnd3J5V1FZMlYtY3M4YXdPUzNmVzF5aDhwTEpGR0gyMlFsSlBYUjRfVGNrbnBuVEhycmoyX0VDWTA0UFBvbTFDUEo4OFhJMmdLTU05di1adV9FRmRnbHEyNlJEbDlSZ1lwT0xSRG5ldTRHc3lVR19hUHVaVlJhbG5QdHpJYjBVRThGbjNVRk1YOEpDbE5XcG5mZERyRTk4OFplT0JLWmJUa3FUWmFmYmpNR0RXQdIB0wFBVV95cUxOdzJUVWtoTTFhY2RNdnkxSUFMMEdDZ3hKeE1Zb1JzSjlfS0t4SXJLenY0dDJGMFF3c1U3a0RPRWF6WndCZERtWnZFR3R1ODA0ZUwzX2JQdUNpMEtKQ05XOVBaTmY2elp6dU8yNWhyYkxaTXRFTk5ZekJfVEZkMWpLUERGYkFPVDVkcER3NU1jMUs3c2J2WGtPTzdkVlRJQ0tNQndXWGJncjdpWEo5cE5VbFJPYkM5MnRRSnBiX2xsQUtpMDhCVjdnSmlBbEdNVjhROUtF?oc=5",
+        "bsky": ""
+      },
+      {
+        "ts": 1792137676,
+        "author": "cuenta-16d4a6",
+        "source": "bluesky",
+        "title": "El incidente se produce poco después del viaje de los Reyes de España a Ceuta y Melilla y tras el episodio de una fragat",
+        "url": "https://es.euronews.com/2026/10/16/una-nueva-incursion-de-marruecos-en-aguas-espanolas-contradice-el-discurso-de-hecho-puntua",
+        "bsky": ""
+      },
+      {
+        "ts": 1792136636,
+        "author": "tg:elfarodeceuta",
+        "source": "telegram:elfarodeceuta",
+        "title": "🚩   El CNI comunica a la jueza Tardón que avisó, también a Marruecos, de la invasión sobre Ceuta    ➡   Ha entregado ya ",
+        "url": "",
+        "bsky": ""
+      },
       {
         "ts": 1792132219,
         "author": "cuenta-0e6589",
@@ -960,48 +992,16 @@
         "title": "La Armada española desplegó fragatas en julio y agosto después de que buques de guerra de Marruecos entraran en aguas de",
         "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxQWHE5R0VMMkJTVlZma25SVW9yYVprQ0UyRnJzbENDY01idy05MWtlV2I3RWNMTzAtUGhnYmxnenZDdWtRQVQwYm40UzE5SVNVNFhSLXpCdXJsdjdMa05kVXFaVGpSVkZEaThvb1R2cnQtT1FNeUlIcjlJWEI2NDF1OTlfbmUtSDRSZGxUYlIxdkp6RlQ5blJIOExJRmdtcU56cEJIU08wSmloWTU0Zy03VFhaMktHbWkwbERUZzlDWmpVQ1ptMGlPNG94OUx5VUlYUFpkdXVyMlp1c3lIVUwwQ3E3NTMzRExYY25HdUt1bGtqdV9QQ2g0UtIB-AFBVV95cUxQWHE5R0VMMkJTVlZma25SVW9yYVprQ0UyRnJzbENDY01idy05MWtlV2I3RWNMTzAtUGhnYmxnenZDdWtRQVQwYm40UzE5SVNVNFhSLXpCdXJsdjdMa05kVXFaVGpSVkZEaThvb1R2cnQtT1FNeUlIcjlJWEI2NDF1OTlfbmUtSDRSZGxUYlIxdkp6RlQ5blJIOExJRmdtcU56cEJIU08wSmloWTU0Zy03VFhaMktHbWkwbERUZzlDWmpVQ1ptMGlPNG94OUx5VUlYUFpkdXVyMlp1c3lIVUwwQ3E3NTMzRExYY25HdUt1bGtqdV9QQ2g0Ug?oc=5",
         "bsky": ""
-      },
-      {
-        "ts": 1791783983,
-        "author": "news:google",
-        "source": "google-news",
-        "title": "España desplegó fragatas ante incursiones de buques marroquíes en Ceuta - Demócrata",
-        "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNNHhHZHR0RmpmMk9aemdhSUxVaG9JdUlvVmtub2lRcFJrZUFDRVFNckpTTFRrTXAyeFhPdFVQUDhzWXdDUGMzTnZqRGlQNUUyVDdDNzdKbmdzcTBubER4eGdZM2JNb2JFa1ZQeGxEM2lyVDdrUHNQZWU1YmdQV1RfZVlqLXBJUWFMb2JLNFBZMVNlb0ZEM0NsUmREWnBYUdIBowFBVV95cUxPNWt0ek43dWpUR29DeGh1QnQ1S1I4X1l6dS1TREFqam9nWE83YnFhRVZleXdZemJNajM0R19qOFJoVnZFTTY1RWxZamt5NEVkV1ZEMWtjZmhBckpiLUFZN2J1WFkxQnU3bnc3LTNYRjhkSFVlV3J0R29GQWNmMEhuQXEwWHlBdDRqM0dMVDQzVHFzSDhHXzNzS2VLQ2FJeGdHcG84?oc=5",
-        "bsky": ""
-      },
-      {
-        "ts": 1791754938,
-        "author": "news:google",
-        "source": "google-news",
-        "title": "Tres mujeres denuncian insultos e intimidaciones durante el mitin de Pedro Sánchez en Ponferrada por defender que «Ceuta",
-        "url": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxPa2hXNHY1ZmRJWmRuUmhKYVh4Mk5ld1JRTjBpRmhNNGtLdllyNEpsVzBrX2xMcjF5RnpwLU1JUWhVTmlIUmp0SHlIZHFQQjRSWWcwanJuaGI1RkpoVnZlMHZ0QUhiVlFFbWI3bmRaQmdBOEdnSWdPQ1RFT3NGVnBXZjN3aExWdmtKaUFUTHZva0c0djdvaldNbTVLMWQzMkVlU0ZvaGtHWHNQU09ETWJ3RDE2YVpYT2NYeHY4cTladHZBLVZuN2kxekxOeDExUGNyWDNzcXNJTDBaU1dxXzBxQ2xrb0FqNTlPQTJfTHZkNDhvVUE1?oc=5",
-        "bsky": ""
-      },
-      {
-        "ts": 1791749566,
-        "author": "news:google",
-        "source": "google-news",
-        "title": "El Gobierno no controla los empadronamientos fraudulentos mientras la UCRIF detiene a 2.291 personas - Canarias en Pleno",
-        "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE81T0RGa1VhZ1ZpSVZtdXVleTJOeGlMX2w2MG56T2lsdGpKTjA3STFIcmJLR0Z3bzNfNmpMSS04dS1vVE9KbjRwRHRDTkNhLTlGRjcxVkxobDNoVUQ0SnQ1UVJqbjY3WGo3dkxuMA?oc=5",
-        "bsky": ""
-      },
-      {
-        "ts": 1791748230,
-        "author": "news:google",
-        "source": "google-news",
-        "title": "Hasta 2.000 kilómetros de alcance sin GPS ni piloto: así son los drones Irifi de Marruecos que tienen a España en su rad",
-        "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxNekRuRENNbU9aLTRScFprUmE3eGlYQy0tRzVrMXVfNVVNMUd1RHNHT1BBUFJMVGkwZEs5cU5ZdzdUNVg5Z3U1c1paRnVGMVR0TGxWQ2pBcHFaUlkyUFFxekpFdVYzN3ViR0NaQms5S0pnR2tIVXdoV2pRakQ1WlFkeHFyM0N6VEhnc19kUmhKYk1TdGZyZXFOOS15LWFYR0FnT3BTSk5xcjJXMy1wem5UaTlWSW5Hdy15dnJZMW1xbDlndkhoeV9ydkZzSVJDY1JqVzMzSWNuUlJ0TUpkTjVsTGk0NmpsUUdvS3lBUkxCMDVYTllQX3ppUDlrQlMxUkgyVXNxaHJLdGRzeXk5WHfSAY4CQVVfeXFMUEF2ckpuS0R1bC13VTZVZGNkcEJKallZZWV6S0JuUGZTaTlGdV8yb01ROG4zODBjeUt5UmpzWmE0TEkzeElBd0N6d3BlMGlja2M5YTJiNS0yNVhjMjAwZW5seWh4Q0loWTlfa2p0bEJaUU5Qa21VY04wSmFVdjFKeW01Z2NsVDUtLWJQbHRfaXRPYjRJLUhFb1pFM0pOUTBkQUpId1J3QWV2ZTJycGtyV0o5LV9vOEw2RzI0T1V6bko3cUpkVkE2LTRaMGl2bzVZc1ZGSjNWUllBYTNVSUw2UzNWQVRIdGtwNjduUFp0YXRqcTJIT01rQXF2cVYxSk9UNkFnTHNQeEViVGVGRG1R?oc=5",
-        "bsky": ""
       }
     ],
     "cuentas": [
       {
-        "author": "cuenta-36954d",
+        "author": "tg:elfarodeceuta",
         "n": 12
       },
       {
-        "author": "tg:elfarodeceuta",
-        "n": 11
+        "author": "cuenta-36954d",
+        "n": 12
       },
       {
         "author": "cuenta-9358f8",
@@ -1051,12 +1051,12 @@
     "catalogo": [
       {
         "lbl": "Buques de guerra / aguas españolas",
-        "n": 131,
+        "n": 148,
         "linea": "L1"
       },
       {
         "lbl": "Drones",
-        "n": 120,
+        "n": 121,
         "linea": "L1"
       },
       {
@@ -1076,27 +1076,27 @@
       },
       {
         "lbl": "Candidatos a verificación (desinformación NO confirmada)",
-        "n": 298,
+        "n": 299,
         "linea": "L3"
       },
       {
         "lbl": "Discurso oficial / rey",
-        "n": 234,
+        "n": 236,
         "linea": "L4"
       },
       {
         "lbl": "Soberanía / reivindicación Ceuta-Melilla",
-        "n": 433,
+        "n": 434,
         "linea": "L4"
       },
       {
         "lbl": "Cadáveres / repatriación",
-        "n": 35,
+        "n": 36,
         "linea": "L4"
       },
       {
         "lbl": "Presión migratoria (Ceuta/Melilla/Canarias)",
-        "n": 431,
+        "n": 432,
         "linea": "L5"
       },
       {
@@ -1106,7 +1106,7 @@
       },
       {
         "lbl": "Colonización / asentamiento territorial",
-        "n": 214,
+        "n": 215,
         "linea": "L7"
       },
       {
@@ -1119,8 +1119,8 @@
       "mar": [
         [
           "rss:Yabiladi Maroc (FR)",
-          148,
-          "https://www.yabiladi.com/articles/details/205049/ceuta-enregistre-deux-diphterie-dont.html"
+          150,
+          "https://www.yabiladi.com/articles/details/205090/ceuta-audios-soldats-vantant-passages.html"
         ],
         [
           "rss:Hespress (AR)",
@@ -1160,14 +1160,14 @@
           "https://euobserver.com/242640/he-seemed-happy-families-still-waiting-for-news-of-vanished-ceuta-migrants-as-eu-leaders-discuss-stronger-borders/"
         ],
         [
+          "rss:FAZ (DE)",
+          8,
+          "https://www.faz.net/aktuell/politik/ausland/italien-und-spanien-wollen-grenzkontrollen-beenden-accg-201528033.html"
+        ],
+        [
           "rss:TSA Algerie (FR)",
           8,
           "https://www.tsa-algerie.com/a-ceuta-felipe-vi-hausse-le-ton-rabat-garde-le-silence/"
-        ],
-        [
-          "rss:FAZ (DE)",
-          7,
-          "https://www.faz.net/aktuell/politik/ausland/spaniens-koenig-felipe-sendet-in-ceuta-eine-deutliche-botschaft-an-marokko-201316783.html"
         ],
         [
           "rss:BBC Mundo",
@@ -1175,14 +1175,14 @@
           "https://www.bbc.com/mundo/articles/crgqdgxx177go?at_medium=RSS&at_campaign=rss"
         ],
         [
+          "rss:Politico EU",
+          5,
+          "https://www.politico.eu/article/spain-is-not-for-sale-feijoo-calls-for-navy-to-be-deployed-in-ceuta/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication"
+        ],
+        [
           "rss:RT en Español",
           5,
           "https://actualidad.rt.com/actualidad/628625-tension-ceuta-migrante-arroja-ladrillo?utm_source=rss&utm_medium=rss&utm_campaign=all"
-        ],
-        [
-          "rss:Politico EU",
-          4,
-          "https://www.politico.eu/podcast/brussels-playbook-podcast/the-ceuta-fears-shaping-spains-election/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication"
         ],
         [
           "rss:Tagesschau (DE)",
@@ -1251,8 +1251,8 @@
   },
   "social": {
     "titulo": "Indicadores de presión híbrida · Frontera Sur (Marruecos)",
-    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo · 281 eventos · +248% vs media 8 sem (top-5 22.5% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo · 281 eventos · +248% vs media 8 sem (top-5 22.5% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
-    "x": "Presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo, 281 eventos, +248% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
+    "mastodon": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo · 285 eventos · +265% vs media 8 sem (top-5 22.7% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "bluesky": "Indicadores de presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo · 285 eventos · +265% vs media 8 sem (top-5 22.7% autores). Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+    "x": "Presión híbrida en Frontera Sur (Marruecos): 16 clusters núcleo, 285 eventos, +265% vs 8 sem. Señal, no atribución. https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/"
   }
 }

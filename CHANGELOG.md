@@ -7,6 +7,14 @@ del dashboard, que crecen cada ciclo. Fechas en UTC.
 ## [Unreleased]
 
 ### Añadido
+- **Síntesis visual («bento») del subcaso «Frontera Sur»** (16-oct, `detection/caso_hibridos_frontera.py`):
+  mosaico a golpe de vista en la página del caso (encima de «Lectura de la semana») con **volumen y
+  actividad** (eventos núcleo, última semana, ×media 8 sem, z-score), **origen de las fuentes** (redes /
+  agregador / prensa directa, en barras), **concentración** (top-5 cuentas, top-3 autores, Gini, URLs
+  compartidas) y **polaridad** (heurística, con nota de que mide el vocabulario del texto). Muestra la
+  **fecha del ciclo** y el **alcance (solo el núcleo)**; se genera desde los **mismos datos** que el resto
+  de la página (sin cifras incrustadas), en **CSS puro, sin JavaScript** y responsive. No toca
+  scoring/bandas ni la BD.
 - **Subcaso «Frontera Sur»** (`casos/frontera_sur_hibridos/`, en el ciclo de 6 h): expediente de actividad
   militar y presión fronteriza con **escalera epistémica** (mención → afirmación publicada → hecho
   corroborado → interpretación), **episodios** (automáticos + 5 curados a mano con fuente primaria, estado

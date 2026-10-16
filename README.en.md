@@ -162,6 +162,10 @@ the live value):
   accounts and **H1** recomputed on a **volume-normalised series + block bootstrap**. **Gold set**
   (`detection/caso_goldset.py`): **κ category 0.37 · tone accuracy 0.80** · relevance precision 0.94 /
   **recall 0.57** — the real limit is **coverage**, not noise.
+  The page also opens with a **visual synthesis ("bento")** of the weekly reading —volume and activity,
+  source origin, concentration and polarity, with the **cycle timestamp** and an explicit **scope (nucleus
+  only)**— built from the **same data** as the rest of the page (no hardcoded figures), in **pure CSS,
+  no JavaScript**, and responsive.
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.

@@ -1398,6 +1398,78 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
     except Exception as _e:
         capt = ""
         print("[caso-hibridos] captacion no disponible:", repr(_e))
+
+    # --- Sintesis visual (bento): mosaico a golpe de vista, SOLO el nucleo.
+    # Todos los valores salen del mismo dict d/amp/pol (no se hardcodea nada);
+    # se recalcula en cada ciclo. Sin JS, CSS grid inline.
+    def _bar(pct, label):
+        p = max(0, min(100, int(round(pct or 0))))
+        return (
+            f"<div class='brow'><span class='blab'>{label}</span>"
+            f"<span class='btrack' role='img' aria-label='{label}: {p}%'>"
+            f"<span class='bfill' style='width:{p}%'></span></span>"
+            f"<span class='bval'>{p} %</span></div>")
+
+    _gini_v = amp.get("gini", 0)
+    _delta = d.get("delta_pct")
+    _ratio_txt = ("{:.1f}\u00d7".format(1 + _delta / 100)) if _delta is not None else "\u2014"
+    _media8 = d.get("media8_nucleo") or 0
+    _z = d.get("z_score")
+    _z_txt = (("+{}".format(_z)) if (_z is not None and _z >= 0)
+              else (str(_z) if _z is not None else "\u2014"))
+    _cyc = (datetime.fromtimestamp(int(d["now_ts"]), timezone.utc).strftime("%d-%m-%Y %H:%M")
+            if d.get("now_ts") else "")
+    _bento = "".join([
+        "<div class='bento'>",
+        "<div class='bento-h'><b>Lectura de la semana \u00b7 s\u00edntesis a golpe de vista</b>",
+        f"<span class='bento-meta'>ciclo {_cyc} UTC \u00b7 \u00e1mbito: n\u00facleo</span></div>",
+        "<div class='bento-g'>",
+        "<div class='bcell'><h4>Volumen y actividad</h4>",
+        f"<div class='brow'><span class='blab'>Eventos n\u00facleo</span><span class='bval'>{_n(d['nucleo']['eventos'])}</span></div>",
+        f"<div class='brow'><span class='blab'>\u00daltima semana</span><span class='bval'>{_n(d['sem_actual_nucleo'])}</span></div>",
+        f"<div class='brow'><span class='blab'>vs media 8 sem ({_n(_media8)})</span><span class='bval'>{_ratio_txt}</span></div>",
+        f"<div class='brow'><span class='blab'>z-score (28 d)</span><span class='bval'>{_z_txt}</span></div>",
+        "</div>",
+        "<div class='bcell'><h4>Origen de las fuentes (n\u00facleo)</h4>",
+        _bar(_social_pct, "Redes"),
+        _bar(_agg_pct, "Agregador"),
+        _bar(_prensa_pct, "Prensa directa"),
+        f"<p class='bnote'>\u2248{_n(d.get('medios_indep', 0))} medios distintos (google-news resuelto al medio).</p></div>",
+        "<div class='bcell'><h4>Concentraci\u00f3n</h4>",
+        f"<div class='brow'><span class='blab'>Top-5 cuentas</span><span class='bval'>{amp.get('top5_pct', 0)} %</span></div>",
+        f"<div class='brow'><span class='blab'>Top-3 autores (sem.)</span><span class='bval'>{_pt3_txt}</span></div>",
+        f"<div class='brow'><span class='blab'>Gini autores</span><span class='bval'>{_gini_v}</span></div>",
+        f"<div class='brow'><span class='blab'>URLs compartidas</span><span class='bval'>{_n(amp.get('urls_compartidas', 0))} / {_n(amp.get('urls_distintas', 0))}</span></div>",
+        "</div>",
+        "<div class='bcell'><h4>Polaridad (heur\u00edstica)</h4>",
+        _bar(_hostil_pct, "Hostil"),
+        _bar(_neutro_pct, "Neutro"),
+        _bar(_coop_pct, "Cooperaci\u00f3n"),
+        "<p class='bnote'>Mide el <b>vocabulario del texto</b>, no la hostilidad del hecho. La cooperaci\u00f3n (0 %) queda fuera del n\u00facleo por dise\u00f1o.</p></div>",
+        "</div>",
+        "<div class='blectura'><b>Lectura operativa.</b> Conversaci\u00f3n amplia sobre un episodio reciente "
+        "(fragata en Ceuta) con <b>amplificaci\u00f3n coordinada NO medida</b> \u2192 "
+        "<b>se\u00f1al a vigilar, no conclusi\u00f3n</b>. "
+        f"<span class='bnote2'>Cuota n\u00facleo/(n\u00facleo+contexto): {d.get('cuota_pct', 0)} % \u00b7 "
+        f"{_n(amp.get('autores_distintos', 0))} autores distintos \u00b7 {_n(d.get('clusters_nucleo', 0))} cl\u00fasteres de n\u00facleo.</span></div>",
+        "</div>",
+    ])
+    _bento_css = "".join([
+        ".bento{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px 16px;margin:16px 0}",
+        ".bento-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}",
+        ".bento-h b{color:var(--navy)}.bento-meta{font-size:.8rem;color:var(--mut)}",
+        ".bento-g{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}",
+        ".bcell h4{margin:0 0 8px;font-size:.92rem;color:var(--navy)}",
+        ".brow{display:flex;align-items:center;gap:8px;padding:2px 0;font-size:.86rem}",
+        ".blab{flex:1 1 auto;color:#33445b}",
+        ".bval{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}",
+        ".btrack{flex:0 0 40%;height:9px;background:#e7edf3;border-radius:6px;overflow:hidden}",
+        ".bfill{display:block;height:100%;background:#0f766e;border-radius:6px}",
+        ".bnote{margin:8px 0 0;font-size:.78rem;color:var(--mut);line-height:1.35}",
+        ".blectura{grid-column:1 / -1;background:#0d1b2a;color:#fff;border-radius:10px;padding:12px 14px;font-size:.9rem}",
+        ".bnote2{color:#c1cfe0;font-size:.82rem}",
+        "@media(max-width:640px){.bento-g{grid-template-columns:1fr}.btrack{flex-basis:38%}}",
+    ])
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1444,6 +1516,7 @@ th{{background:#eef2f7}}td.num,th.num{{text-align:right;font-variant-numeric:tab
 .contexto th{{background:#f1f5f9}}.contexto td{{color:#64748b}}
 footer{{color:var(--mut);font-size:.85rem;padding:24px 0;border-top:1px solid var(--line);margin-top:28px}}
 code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
+{_bento_css}
 </style></head><body>
 <nav class="topnav"><div class="wrap">
 <a href="/">&larr; Radar</a>
@@ -1502,6 +1575,7 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <p class="sub">Cita: OTAN (2018). <i>Brussels Summit Declaration</i>, PR/CP(2018)074, 11 de julio de 2018, p&aacute;rr. 21. <a href="https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2018/07/11/brussels-summit-declaration">nato.int (HTML)</a> (consultado el 15-oct-2026).</p>
 </div>
 
+{_bento}
 <div class="lectura">
 <p><b>Lectura de la semana.</b> {_lectura}</p>
 <p class="sub">Cuota núcleo/(núcleo+contexto): <b>{d.get('cuota_pct', 0)}%</b> · Dependencia del pico (top-3 autores de la última semana): <b>{_pt3_txt}</b> · Medios distintos en el núcleo (google-news resuelto al medio): <b>{d.get('medios_indep', 0)}</b>.</p>

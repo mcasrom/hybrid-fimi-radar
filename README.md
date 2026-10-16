@@ -174,6 +174,10 @@ muestra el valor vivo):
   recalculado sobre **serie normalizada por volumen + bootstrap por bloques** (r 0,50→0,33). **Gold set**
   (`detection/caso_goldset.py`): **κ categoría 0,37 · tono accuracy 0,80** · relevancia precision 0,94 /
   **recall 0,57** → el límite real es la **cobertura**, no el ruido.
+  La página abre además con una **síntesis visual («bento»)** de la lectura semanal —volumen y actividad,
+  origen de las fuentes, concentración y polaridad, con la **fecha del ciclo** y el **alcance explícito
+  (solo el núcleo)**— generada desde los **mismos datos** que el resto de la página (sin cifras incrustadas),
+  en **CSS puro, sin JavaScript** y responsive.
 - **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
   (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
   **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →
