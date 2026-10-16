@@ -2,7 +2,7 @@
   "caso": "frontera_sur_hibridos",
   "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
   "meta": {
-    "generado_utc": "2026-10-16 08:31 UTC",
+    "generado_utc": "2026-10-16 08:36 UTC",
     "frozen_version": "V1",
     "aviso": "Senal, no atribucion. 'live' se recalcula cada ciclo."
   },
@@ -309,6 +309,48 @@
       "top_url": 6,
       "top_url_pct": 7,
       "ev_por_url": 1.56
+    },
+    "civil": {
+      "eventos": 4791,
+      "fuentes": 19,
+      "autores": 760,
+      "top_fuentes": [
+        [
+          "bluesky",
+          2599
+        ],
+        [
+          "google-news",
+          1551
+        ],
+        [
+          "telegram:elfarodeceuta",
+          275
+        ],
+        [
+          "rss:El Pais Espana",
+          97
+        ],
+        [
+          "rss:El Faro de Ceuta",
+          82
+        ]
+      ],
+      "serie": [
+        7,
+        38,
+        21,
+        27,
+        35,
+        522,
+        835,
+        935,
+        741,
+        697,
+        442,
+        491
+      ],
+      "ratio_vs_nucleo": 17.0
     },
     "evidencia": [
       {

@@ -542,6 +542,42 @@ def compute():
                            "polaridad": max(pcs, key=pcs.get) if pcs else "—"})
         fichas.sort(key=lambda x: -x["eventos"])
 
+    # --- contexto civil (crisis politica/migratoria/social): escala, no senal ---
+    CIVIL = ["migrante", "menor", "embarcacion", "embarcación", "patera", "desembarco",
+             "crisis migratoria", "acogida", "empadronamiento", "crisis humanitaria",
+             "inmigra", "delegación del gobierno", "delegacion del gobierno", "juzgado",
+             "fiscalía", "fiscalia", "hospital", "emergencia social", "repatriac",
+             "policía nacional", "policia nacional", "cni", "amnistía", "amnistia"]
+    civil = {}
+    try:
+        _lc = " OR ".join(["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in CIVIL])
+        _ac = " AND (" + " OR ".join(["LOWER(e.text) LIKE ? OR LOWER(e.title) LIKE ?" for _ in ANCLAS]) + ")"
+        _pc = [TEMA, TS_CASE] + [f"%{w}%" for w in CIVIL for _ in ("a", "b")] + [f"%{a}%" for a in ANCLAS for _ in ("a", "b")]
+        _ids_civil = [r[0] for r in con.execute(
+            "SELECT DISTINCT e.id FROM events e JOIN event_temas et ON et.event_id=e.id "
+            f"WHERE et.tema_id=? AND e.timestamp>=? AND ({_lc}){_ac}", _pc).fetchall()]
+        civil["eventos"] = len(_ids_civil)
+        if _ids_civil:
+            _chc = ",".join("?" * len(_ids_civil))
+            r = con.execute(f"SELECT COUNT(DISTINCT source), COUNT(DISTINCT author) FROM events WHERE id IN ({_chc})",
+                            _ids_civil).fetchone()
+            civil["fuentes"], civil["autores"] = r[0], r[1]
+            civil["top_fuentes"] = [[s, n] for s, n in con.execute(
+                f"SELECT source, COUNT(*) FROM events WHERE id IN ({_chc}) GROUP BY source ORDER BY 2 DESC LIMIT 5",
+                _ids_civil).fetchall()]
+        # serie semanal del contexto civil (mismo bucketing que el nucleo)
+        if serie:
+            _sc = [0] * len(serie)
+            _chc = ",".join("?" * len(_ids_civil))
+            for (t,) in con.execute(f"SELECT timestamp FROM events WHERE id IN ({_chc})", _ids_civil).fetchall():
+                b = int((now_ts - t) // SEM)
+                if 0 <= b < len(_sc):
+                    _sc[len(_sc) - 1 - b] += 1
+            civil["serie"] = _sc
+        civil["ratio_vs_nucleo"] = round(len(_ids_civil) / len(nucleo), 1) if nucleo else None
+    except sqlite3.Error as _ece:
+        print("[caso-hibridos] contexto civil:", _ece, file=sys.stderr)
+
     # --- H4: control de cobertura (¿el pico es del fenómeno o de la observación?) ---
     h4 = {}
     if ids_n:
@@ -606,6 +642,7 @@ def compute():
         "placebo": placebo,
         "fichas": fichas,
         "h4": h4,
+        "civil": civil,
         "evidencia": evid,
         "cuentas": cuentas,
         "_ids": {"nucleo": sorted(nucleo), "contexto": sorted(contexto)},
@@ -1079,6 +1116,24 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
 
     amp = d.get("amplificacion", {})
 
+    # --- bloque de contexto civil (escala, separado del nucleo) ---
+    _civ = d.get("civil", {}) or {}
+    if _civ.get("eventos"):
+        _civ_html = (
+            "<div class='kpis'>"
+            f"<div class='kpi'><b>{_n(_civ.get('eventos', 0))}</b><span>publicaciones (crisis civil)</span></div>"
+            f"<div class='kpi'><b>×{_civ.get('ratio_vs_nucleo', '—')}</b><span>respecto al núcleo</span></div>"
+            f"<div class='kpi'><b>{_n(_civ.get('fuentes', 0))}</b><span>fuentes</span></div>"
+            "</div>"
+            f"<p class='sub'>El <b>núcleo militar</b> ({_n(d['nucleo']['eventos'])} publicaciones) es una "
+            "<b>fracción pequeña</b> de la conversación sobre la frontera: por cada publicación del núcleo hay "
+            f"~<b>{_civ.get('ratio_vs_nucleo', '—')}</b> de la crisis civil. Se cuentan <b>por separado</b> para no "
+            "confundir señal con contexto — <b>la amplitud no es la señal</b>.</p>"
+            + (_barchart([(s, n) for s, n in (_civ.get("top_fuentes") or [])]) if _civ.get("top_fuentes") else "")
+        )
+    else:
+        _civ_html = "<p class='sub'>sin datos de contexto civil.</p>"
+
     # --- piezas del caso (catálogo + Radar A + prensa) ---
     _per = periodos or {}
     def _per_val(i, etq, default):
@@ -1495,6 +1550,8 @@ code{{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:.85rem}}
 <tbody>{tbl('nucleo')}</tbody></table>
 <p class="sub">Suma de categorías {_n(_sum_nuc)} (con solapes; un evento puede caer en dos) → <b>unión {_n(d['nucleo']['eventos'])}</b>.</p>
 
+<h2>Contexto civil <span class="sub">(crisis política / migratoria / social — escala, NO señal)</span></h2>
+{_civ_html}
 <h2>Amplificación (núcleo)</h2>
 <div class="kpis">
 <div class="kpi"><b>{amp.get('top10_pct', 0)}%</b><span>top-10 autores</span></div>
