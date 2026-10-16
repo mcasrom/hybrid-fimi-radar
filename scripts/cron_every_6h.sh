@@ -41,6 +41,8 @@ done
 .venv/bin/python detection/gen_caso_electoral.py >> logs/fimi.log 2>&1
 # 3g) Subcaso hibrido Frontera Sur (Marruecos): JSON + pagina (solo lectura BD)
 .venv/bin/python detection/caso_hibridos_frontera.py >> logs/fimi.log 2>&1
+# 3h) Tarjeta OG del subcaso (grafico de la serie nucleo 12 sem; 1200x630)
+/usr/bin/python3 detection/gen_hibridos_og.py >> logs/fimi.log 2>&1
 # 3b) Datasets abiertos por tema (CSV+JSON por cluster + datapackage/status; solo lectura)
 .venv/bin/python detection/gen_datasets.py >> logs/fimi.log 2>&1
 # 3d) Informe visual de una pagina por tema (reutiliza datos; estatico)
