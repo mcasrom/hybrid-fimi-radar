@@ -5226,6 +5226,7 @@ window.fimiDrawerClose=function(){
 </script>
 """
 
+    _sin_tema, _cyc = 0, []
     try:
         _rc_v = sqlite3.connect(DB, timeout=30)
         try:
@@ -5235,6 +5236,13 @@ window.fimiDrawerClose=function(){
                 _snap = datetime.fromtimestamp(_snap_raw, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             else:
                 _snap = str(_snap_raw) if _snap_raw else "—"
+            _sin_tema = _rc_v.execute(
+                "SELECT COUNT(*) FROM events e WHERE NOT EXISTS "
+                "(SELECT 1 FROM event_temas et WHERE et.event_id=e.id)"
+            ).fetchone()[0]
+            _cyc = _rc_v.execute(
+                "SELECT tema_id, MAX(created_at) FROM clusters GROUP BY tema_id"
+            ).fetchall()
         finally:
             _rc_v.close()
         _gen = datetime.fromtimestamp(_ts_v, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if _ts_v else "—"
@@ -5247,6 +5255,28 @@ window.fimiDrawerClose=function(){
         ).strip()
     except Exception:
         _ver = "—"
+    _sr = {}
+    try:
+        _sr = _salud.get("resumen", {}) if isinstance(_salud, dict) else {}
+    except Exception:
+        _sr = {}
+    _temas_act = set(temas) if isinstance(temas, (list, tuple, set)) else set()
+    _now_h = time.time()
+    _fresh = sum(1 for t, ts in _cyc if t in _temas_act and ts and _now_h - ts <= 6 * 3600)
+    _age_max = max((_now_h - ts for t, ts in _cyc if t in _temas_act and ts), default=0) / 3600.0
+    _pct_sin = (100.0 * _sin_tema / n_events) if n_events else 0.0
+    salud_card = (
+        "<div class='card' id='salud-datos' style='margin:10px 0 4px;padding:11px 16px;"
+        "background:#f8fafc;border:1px solid #cbd5e1;border-left:5px solid #64748b;border-radius:10px;"
+        "font-size:.82rem;color:#334155;line-height:1.5'>"
+        f"<b>Salud del sistema.</b> {_sr.get('total', '—')} fuentes en el monitor · "
+        f"<b>{_sr.get('activas', '—')} activas</b> (7 d) · {_sr.get('bajas', '—')} bajas (7–30 d) · "
+        f"{_sr.get('inactivas', '—')} inactivas (&gt;30 d) · {n_sources} en la BD · "
+        f"{_mil(n_events)} eventos · {_mil(_sin_tema)} sin tema ({_pct_sin:.0f} %) · "
+        f"{_fresh}/{len(_temas_act)} temas con snapshot &lt;6 h · ciclo más antiguo {_age_max:.1f} h · "
+        "retraso de captura: n/d · duplicados: n/d · "
+        "<a href='/#sistema'>detalle</a></div>"
+    )
     version_box = (
         "<div class='card' id='dato-version' style='margin:10px 0 4px;padding:11px 16px;"
         "background:#fff;border:1px solid #e2e8f0;border-left:5px solid #c2410c;border-radius:10px;"
@@ -5481,6 +5511,7 @@ a{{color:#c2410c}}
   </div>
 </section>
   {version_box}
+  {salud_card}
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
     <a href="/fimi-wallchart-A4.png">ver a tamaño completo</a> · <a href="/demo.html">ver la demo de 69 s</a>.
