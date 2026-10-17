@@ -5231,15 +5231,15 @@ window.fimiDrawerClose=function(){
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Observatorio de amplificación · ámbito FIMI</title>
- <meta name="description" content="Observatorio OSINT agnóstico al actor: amplificación y anomalías (ámbito FIMI) en español. {_mil(n_clusters)} clusters con señal (+{_mil(n_par_global)} parejas) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
+<title>Observatorio de amplificación (FIMI): desinformación y redes</title>
+ <meta name="description" content="Observatorio OSINT de desinformación y amplificación (ámbito FIMI) en español. {_mil(n_clusters)} clusters con señal (+{_mil(n_par_global)} parejas) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  <link rel="alternate" type="application/rss+xml" title="Posibles bulos contrastados" href="/datos/bulos.xml">
  {_jsonld_html}
  <meta property="og:type" content="website">
- <meta property="og:title" content="Observatorio de amplificación · ámbito FIMI">
-<meta property="og:description" content="Observatorio OSINT agnóstico al actor en el catálogo de temas monitorizados ({tema_nombres_html}). Mide propagación; no confirma coordinación ni atribuye.">
+ <meta property="og:title" content="Observatorio de amplificación (FIMI): desinformación y redes">
+<meta property="og:description" content="Observatorio OSINT de desinformación y amplificación en {tema_nombres_html}. Mide propagación; no confirma coordinación ni atribuye.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
@@ -5247,8 +5247,8 @@ window.fimiDrawerClose=function(){
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Observatorio de amplificación">
-<meta name="twitter:description" content="{_mil(n_clusters)} clusters con señal, {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT agnóstico al actor en varios temas.">
+<meta name="twitter:title" content="Observatorio de amplificación (FIMI) — desinformación y redes">
+<meta name="twitter:description" content="{_mil(n_clusters)} clusters con señal, {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT de desinformación y amplificación, agnóstico al actor.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -5444,7 +5444,9 @@ a{{color:#c2410c}}
     <div class="step"><b><span class="ic">⚖️</span> CONTRASTAR</b><span>las hipótesis se contrastan contra la evidencia. Una señal no es una atribución.</span></div>
   </div>
   <div class="cta">
-    <a href="#estado" class="primary" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Ver estado por tema →</a>
+    <a href="/consulta.html" class="primary">🔎 Consulta de enlace — pega lo que viste</a>
+    <a href="/casos/frontera_sur_hibridos/" class="ghost">Ver caso Frontera Sur</a>
+    <a href="#estado" class="ghost" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Estado por tema →</a>
   </div>
 </section>
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">

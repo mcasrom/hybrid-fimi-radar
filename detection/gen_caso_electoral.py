@@ -242,8 +242,16 @@ def main():
 <meta property="og:title" content="Panorama electoral 2026 — amplificación medida">
 <meta property="og:description" content="Varios procesos electorales, una mirada de conjunto: amplificación medida; no coordinación confirmada.">
 <meta property="og:type" content="article">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/casos/electoral/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Observatorio de amplificación">
+<meta property="og:locale" content="es_ES">
 <meta name="robots" content="index, follow">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Panorama electoral 2026 — amplificación medida">
+<meta name="twitter:description" content="Varios procesos electorales, una mirada de conjunto: amplificación medida; no coordinación confirmada.">
+<meta name="twitter:image" content="https://fimi.viajeinteligencia.com/casos/electoral/og.png">
 <script type="application/ld+json">{_ld}</script>
 <link rel="stylesheet" href="/assets/leaflet/leaflet.css"/>
 <style>

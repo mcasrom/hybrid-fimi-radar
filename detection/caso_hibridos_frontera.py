@@ -1483,6 +1483,17 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
         ".bnote2{color:#c1cfe0;font-size:.82rem}",
         "@media(max-width:640px){.bento-g{grid-template-columns:1fr}.btrack{flex-basis:38%}}",
     ])
+    _ld = json.dumps({
+        "@context": "https://schema.org", "@type": "Report",
+        "name": "Frontera Sur: actividad militar, presión fronteriza y amplificación informativa",
+        "url": "https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/",
+        "description": "Observación de publicaciones sobre un núcleo de indicadores (buques, drones, bloqueo, hostigamiento, migración, soberanía) en el entorno de Ceuta, Melilla y Canarias, y su amplificación. Señal, no atribución.",
+        "dateModified": time.strftime("%Y-%m-%d"),
+        "author": {"@type": "Person", "name": "M. Castillo"},
+        "publisher": {"@type": "Organization", "name": "Observatorio de amplificación", "url": "https://fimi.viajeinteligencia.com/"},
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "isPartOf": {"@type": "WebSite", "name": "Observatorio de amplificación", "url": "https://fimi.viajeinteligencia.com/"},
+    }, ensure_ascii=False)
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1490,7 +1501,11 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
 {_SELPER_HTML}
 <meta name="description" content="Observación de publicaciones sobre un núcleo de indicadores (buques, drones, bloqueo, hostigamiento, migración, soberanía) en el entorno de Ceuta, Melilla y Canarias, y su amplificación. Evalúa hipótesis de presión híbrida; no confirma autoría, intención ni operación.">
 <meta name="robots" content="index,follow">
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
+<script type="application/ld+json">{_ld}</script>
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Observatorio de amplificación">
+<meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Frontera Sur: actividad militar, presión fronteriza y amplificación informativa">
 <meta property="og:description" content="Señales híbridas frente a contexto: clusters, amplificación, polaridad y contraste H1-H4. Señal, no atribución; no confirma una operación híbrida.">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/">
@@ -1498,6 +1513,8 @@ def build_html(manual_txt, d, hechos, prensa, indic, hist, series, periodos, met
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Frontera Sur: actividad militar, presión fronteriza y amplificación informativa">
+<meta name="twitter:description" content="Señales híbridas frente a contexto: clusters, amplificación, polaridad y contraste H1-H4. Señal, no atribución; no confirma una operación híbrida.">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/casos/frontera_sur_hibridos/og.png">
 <style>
 :root{{--navy:#0d1b2a;--ink:#1b263b;--mut:#5c6b7a;--line:#dbe2ea;--bg:#f7f9fc;--acc:#c1440e}}
