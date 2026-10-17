@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Método y validación — observatorio de amplificación</title>
+<meta name="description" content="Qué mide (y qué no) el observatorio, cómo funciona y con qué evidencia: validación sintética, curada, ciega, externa y control negativo. Con tasas de error y límites declarados.">
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/metodo.html">
+<link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/metodo.html">
+<link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/metodo.en.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Método y validación">
+<meta property="og:description" content="Mide amplificación, no atribución. Validación honesta: ARI 1.000, κ 0,30, control negativo 0 % de falsos positivos, límites declarados.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/metodo.html">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#c2410c">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","name":"Método y validación",
+"url":"https://fimi.viajeinteligencia.com/metodo.html",
+"description":"Método, validación y límites del observatorio de amplificación (ámbito FIMI).",
+"isPartOf":{"@type":"WebSite","name":"Observatorio","url":"https://fimi.viajeinteligencia.com/"}}
+</script>
+<style>
+  :root{--accent:#c2410c;--ink:#1e293b;--mut:#64748b;--bg:#fffaf5;--line:#fde68a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:linear-gradient(180deg,#fff,var(--bg));color:var(--ink);line-height:1.6}
+  .wrap{max-width:820px;margin:0 auto;padding:28px 20px 60px}
+  .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--mut);margin-bottom:26px}
+  .brand a{color:var(--accent);text-decoration:none;font-weight:600}
+  .brand .sep{color:#cbd5e1}
+  h1{font-size:1.65rem;margin:0 0 4px}
+  .tag{color:var(--accent);font-weight:700;margin:0 0 6px}
+  h2{font-size:1.1rem;margin:28px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--line)}
+  p,li{font-size:.94rem}
+  .lead{color:#334155}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;margin:10px 0}
+  th{text-align:left;padding:7px 10px;border-bottom:2px solid var(--accent);background:#f8fafc}
+  td{padding:7px 10px;border-bottom:1px solid #e2e8f0;vertical-align:top}
+  .box{margin:14px 0;padding:12px 16px;background:#fffbeb;border-left:4px solid #d97706;border-radius:6px;font-size:.88rem}
+  ul{padding-left:20px}
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:.8rem;color:var(--mut)}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <span>📡 <b>Observatorio</b></span><span class="sep">·</span>
+    <a href="/">Dashboard</a><span class="sep">·</span>
+    <a href="/suscribirse.html">Suscribirse</a><span class="sep">·</span>
+    <a href="/research.html">Research</a><span class="sep">·</span>
+    <a href="/api.html">API</a><span class="sep">·</span>
+    <a href="/glosario.html">Glosario</a><span class="sep">·</span>
+    <a href="/metodo.en.html">English</a><span class="sep">·</span>
+    <a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+
+  <p class="tag">Método y validación</p>
+  <h1>Qué mide este observatorio (y qué no)</h1>
+  <p class="lead">Instrumento OSINT, <b>abierto</b> (AGPL-3.0) y <b>autoalojado</b> que mide <b>amplificación</b>
+  de contenido público en redes y prensa. No detecta «campañas» ni atribuye actores. Aquí explico el método,
+  la evidencia de validación, las <b>tasas de error</b> y los <b>límites</b>.</p>
+
+  <div class="box"><b>Regla que no se cruza:</b> una banda alta es <b>amplificación medida</b>, nunca
+  «coordinación confirmada». «FIMI» es el <b>ámbito</b>, no la promesa.</div>
+
+  <h2>1. Qué mide y qué no</h2>
+  <ul>
+    <li><b>Mide:</b> forma observable — qué contenido repiten varias cuentas, cuándo, con qué solapamiento y
+      con qué estructura (dominios, cuentas, ventana temporal). Salida por <b>cluster</b>.</li>
+    <li><b>No mide:</b> intención, autoría, inautenticidad ni «dimensión extranjera». Eso exige evidencia
+      independiente y es <b>interpretación humana</b>. Tampoco perfila personas: analiza contenido público.</li>
+  </ul>
+
+  <h2>2. Cómo funciona</h2>
+  <p>Captura → normalización → características → <b>clusterizado</b> (similitud de contenido, URL y timing) →
+  <b>scoring</b> (sincronía, solapamiento, amplificación, infraestructura y anomalía) → clasificación por
+  <b>explicaciones alternativas</b> (feed de una fuente, sindicación, eco de prensa, sincronía entre cuentas,
+  amplificación sostenida, automatización no maliciosa, movilización legítima…).</p>
+  <p>Fuentes: <b>Bluesky, Telegram, Mastodon, Reddit y RSS/Google News</b>. <b>No</b> cubre X, TikTok,
+  Instagram, Facebook ni WhatsApp.</p>
+
+  <h2 id="validacion">3. Evidencia de validación — tabla única</h2>
+  <p class="lead" style="font-size:.85rem">Cada fila es un <b>experimento distinto</b> (muestra, criterio y fecha).
+  No se suman ni se comparan directamente. <b>Esta tabla es la referencia única</b>: si otra página cita una
+  cifra de validación, debe enlazar aquí.</p>
+  <div style="overflow-x:auto">
+  <table style="font-size:.8rem">
+    <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>n</th><th>Criterio</th><th>Resultado</th><th>Límite</th></tr></thead>
+    <tbody>
+      <tr><td><code>sintetica_2026</code></td><td>2026</td><td>Sintética</td><td>1.050</td><td>ARI / falsos positivos</td><td><b>ARI 1.000</b> · FP 2/1.050 (0,19 %)</td><td>Mecánica de clustering; no atribución.</td></tr>
+      <tr><td><code>curada_21sep</code></td><td>21-sep-2026</td><td>Curada (banda alta)</td><td>53 (36+2+15)</td><td>Precisión</td><td><b>94,7 %</b> (36/38, excl. dudosos) · <b>67,9 %</b> (36/53 conservadora)</td><td>Un revisor; sin recall; muestra pequeña.</td></tr>
+      <tr><td><code>ciega_29sep</code></td><td>29-sep-2026</td><td>Ciega (κ)</td><td>36 (0/40 FIMI)</td><td>Coordinación</td><td><b>3/36 = 8,3 %</b> (7,5 % si dudosos=no) · <b>κ 0,30</b></td><td>Muestra pequeña; sin atribución.</td></tr>
+      <tr><td><code>goldset_16oct</code></td><td>16-oct-2026</td><td>Gold set (Frontera Sur)</td><td>160</td><td>Relevancia / categoría / tono</td><td>prec 0,94 · recall 0,57 · κ cat 0,37 · κ tono 0,31 · tone acc 0,80</td><td>Un solo anotador; muestra estratificada.</td></tr>
+      <tr><td><code>externa_euvsdisinfo</code></td><td>2026</td><td>Externa (EUvsDisinfo)</td><td>18.249 global / 243 ES</td><td>Precisión / recall</td><td>prec 8,2 % · <b>recall 0 %</b></td><td>Histórico 2015-2023; no cubre temas activos; no comparable.</td></tr>
+      <tr><td><code>control_negativo</code></td><td>2026</td><td>Control negativo</td><td>19</td><td>FP sobre movilización legítima</td><td><b>0/19 = 0 %</b></td><td>No cubre ráfagas multi-dominio &lt;24 h.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="lead" style="font-size:.85rem">Lectura honesta: la validez <b>interna</b> es fuerte (sintética, curada);
+  la <b>externa</b> es <b>débil</b> (recall 0 % y κ bajo). Por eso presento esto como <b>observatorio de amplificación</b>
+  y no como detector de coordinación.</p>
+
+  <h2>3 bis. Gold set — validación por anotación humana (caso Frontera Sur, 16-oct-2026)</h2>
+  <p>Muestra <b>reproducible</b> de <b>160 eventos</b> (mitad auto-etiquetados por la heurística, mitad del resto,
+  para poder medir <b>falsos negativos</b>), anotada <b>a mano</b> por el autor. Herramienta de código abierto:
+  <code>detection/caso_goldset.py</code> (<code>--muestra</code> / <code>--evaluar</code>). <b>Un solo anotador</b>
+  → <b>no hay κ inter-anotador</b>; el κ mide el acuerdo frente a la heurística, no entre personas.</p>
+  <table>
+    <thead><tr><th>Categoría (núcleo)</th><th>n real</th><th>precisión</th><th>recall</th><th>F1</th></tr></thead>
+    <tbody>
+      <tr><td>Soberanía / aguas</td><td>19</td><td>0,80</td><td>0,84</td><td><b>0,82</b></td></tr>
+      <tr><td>Buques de guerra</td><td>16</td><td>0,92</td><td>0,69</td><td><b>0,79</b></td></tr>
+      <tr><td>Drones</td><td>5</td><td>0,56</td><td>1,00</td><td>0,71</td></tr>
+      <tr><td>Postura oficial de Marruecos</td><td>3</td><td>0,50</td><td>1,00</td><td>0,67</td></tr>
+      <tr><td>Hostigamiento</td><td>2</td><td>0,40</td><td>1,00</td><td>0,57</td></tr>
+      <tr><td>Salto a la valla / incidente</td><td>9</td><td>0,32</td><td>0,89</td><td>0,47</td></tr>
+      <tr><td>Crítica internacional</td><td>12</td><td>1,00</td><td>0,25</td><td>0,40</td></tr>
+      <tr><td>Contexto relevante (otra cosa)</td><td>66</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>No relevante al caso</td><td>28</td><td>0,29</td><td>0,82</td><td>0,43</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="font-size:.85rem">Resumen: <b>κ categoría 0,37</b> · <b>tono accuracy 0,80</b> (κ 0,31) ·
+  <b>relevancia precisión 0,94 / recall 0,57</b>. Lectura honesta: el límite real es la <b>cobertura</b>
+  (el sistema deja fuera eventos que un humano considera relevantes — sobre todo de <b>contexto civil</b>),
+  <b>no</b> los falsos positivos. Datos completos (evento a evento):
+  <a href="/datos/goldset-frontera-sur.csv">goldset-frontera-sur.csv</a>.</p>
+
+  <h2>4. Tasas de error</h2>
+  <ul>
+    <li><b>Falsos negativos:</b> no medibles — el corpus no contiene verdad de campo sobre campañas. <b>No se presume</b>.</li>
+    <li><b>Falsos positivos sobre movilización legítima:</b> <b>0 %</b> medido. Queda un punto ciego conocido:
+      una movilización que se distribuya entre <b>muchos dominios distintos en una ráfaga de &lt;24 h</b> podría
+      puntuar alto; el sistema lo describe, no lo niega.</li>
+  </ul>
+
+  <h2>5. Límites declarados</h2>
+  <ul>
+    <li><b>Ceguera de plataformas:</b> sin X / TikTok / Meta / WhatsApp.</li>
+    <li><b>Cobertura</b> dependiente de Bluesky y Google News en varios temas.</li>
+    <li><b>Sin atribución</b> de autoría, intención ni origen estatal.</li>
+    <li><b>Banda alta ≠ coordinación</b> (ver §3).</li>
+    <li><b>Ventana de observación: 45 días</b> (configurable <b>por tema</b>: 90 d en Frontera Sur, defensa España y elecciones España). El pipeline solo ve eventos de la ventana:
+    las señales viejas <b>caducan</b> y dejan de puntuar. El almacenamiento conserva 90 días.
+    <b>Motivo (medido 13-oct-2026):</b> el run más pesado (mayor ventana por tema, <code>oriente_medio</code>,
+    56,5 k eventos a 60 d) llegaba a <b>2,27 GB de pico de RAM</b> (~40 KB/evento) en un servidor de 3,8 GB,
+    con riesgo de OOM a ~85 k eventos/run; acortar a 45 d reduce el input sin perder señal relevante.</li>
+    <li><b>Antigüedad de la alerta</b> medida hacia delante; el «lead time» frente al mundo no es medible.</li>
+  </ul>
+
+  <h2>6. Trazabilidad y reproducibilidad</h2>
+  <ul>
+    <li>Código <b>abierto (AGPL-3.0)</b> + <b>API pública</b> (<a href="/api.html">/api/v1/</a>) + <b>export</b> CSV/JSON.</li>
+    <li><b>Permalink estable</b> por linaje (<code>/c/&lt;id&gt;</code>) y <b>registro auditable</b> por cluster en banda alta.</li>
+    <li>Sistema de <b>tests</b> y generación sintética como puerta de calidad.</li>
+    <li><b>Changelog</b> de método/producto/datos (qué cambió y cuándo):
+      <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/CHANGELOG.md">CHANGELOG.md</a>.</li>
+  </ul>
+
+  <h2>7. Gobernanza</h2>
+  <p>El sistema <b>no decide</b>: señala y avisa; la valoración es humana y siempre explícita. Proyecto
+  <b>independiente</b>, de una sola persona, sin rastreo ni cookies de terceros.</p>
+
+  <footer>
+    Observatorio · proyecto independiente, sin rastreo · datos solo de contenido <b>público</b> ·
+    <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a><br>
+    Método y cifras revisados el <b>6/oct/2026</b> · lo que no mide está en «Límites».
+  </footer>
+</div>
+</body>
+</html>
