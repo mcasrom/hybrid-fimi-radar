@@ -145,7 +145,7 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 Snapshot (10/Oct/2026, **v0.2.1**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
-- **8 temas activos** (6 en producción + 2 en piloto: `elecciones`, `defensa_espana`).
+- **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`); `espana_elecciones` (29-N) está en producción.
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
 - **~233.000 eventos** y **~1.600 clusters** (9 temas activos, a 10/Oct/2026): la API
   (`/api/v1/temas`) cuenta **99 en banda alta** (HIGH/CRITICAL, score ≥60) y **0 CRITICAL**.
@@ -153,6 +153,10 @@ muestra el valor vivo):
 - **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
 - **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 45 días** (`run_fimi --ventana-dias 45`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 45 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
 - Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
+- **Actualización 17-oct-2026:**
+  - **`/dominios.html`** — ranking de **dominios enlazados** por tema (agregadores como Google News/dlvr.it excluidos y contados aparte) + **línea base p25–p75** de eventos/día con estado pico/normal/bajo. Regenerado en el ciclo de 6 h (`detection/gen_dominios.py`), enlazado en **Documentos ▾**/pie y en el **sitemap** (38 URLs).
+  - **Dato, versión y salud** — la portada abre con una **tarjeta de salud** (fuentes activas/bajas/inactivas, % sin tema, snapshots <6 h) y una caja **«Dato y versión»** (corte, snapshot, ventana, eventos/fuentes/clusters y commit). Se generan del mismo ciclo que el dashboard.
+  - **Tabla única de validación** — `/metodo.html#validacion`: 6 experimentos con **ID, fecha, n, criterio, resultado y límite**; la cifra sintética de FP se corrigió a **2/1.050 (0,19 %)**. Fuente versionada: `docs/metodo.html` + `scripts/sync_metodo.sh`.
 - **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
 - **Caso Ceuta — congelado + live (13-oct):** el **análisis V1** (30-jul→21-sep) está **congelado** e inmutable
   (con hash SHA-256) en `docs/casos/ceuta-v1.json`; los **datos siguen llegando** (capa *live*, cada 6 h desde

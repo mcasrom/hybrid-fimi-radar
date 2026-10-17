@@ -5265,17 +5265,23 @@ window.fimiDrawerClose=function(){
     _fresh = sum(1 for t, ts in _cyc if t in _temas_act and ts and _now_h - ts <= 6 * 3600)
     _age_max = max((_now_h - ts for t, ts in _cyc if t in _temas_act and ts), default=0) / 3600.0
     _pct_sin = (100.0 * _sin_tema / n_events) if n_events else 0.0
+    _sin_act = int(_sr.get('bajas', 0) or 0) + int(_sr.get('inactivas', 0) or 0)
+    _sem_color = "#b45309" if _sin_act else "#166534"
+    _semaforo = (f"⚠️ {_sin_act} fuentes sin actividad reciente" if _sin_act else "✅ operativo")
     salud_card = (
-        "<div class='card' id='salud-datos' style='margin:10px 0 4px;padding:11px 16px;"
-        "background:#f8fafc;border:1px solid #cbd5e1;border-left:5px solid #64748b;border-radius:10px;"
-        "font-size:.82rem;color:#334155;line-height:1.5'>"
-        f"<b>Salud del sistema.</b> {_sr.get('total', '—')} fuentes en el monitor · "
-        f"<b>{_sr.get('activas', '—')} activas</b> (7 d) · {_sr.get('bajas', '—')} bajas (7–30 d) · "
-        f"{_sr.get('inactivas', '—')} inactivas (&gt;30 d) · {n_sources} en la BD · "
-        f"{_mil(n_events)} eventos · {_mil(_sin_tema)} sin tema ({_pct_sin:.0f} %) · "
-        f"{_fresh}/{len(_temas_act)} temas con snapshot &lt;6 h · ciclo más antiguo {_age_max:.1f} h · "
-        "retraso de captura: n/d · duplicados: n/d · "
-        "<a href='/#sistema'>detalle</a></div>"
+        f"<div class='card' id='salud-datos' style='margin:0 0 14px;padding:12px 16px;"
+        f"background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_sem_color};border-radius:12px'>"
+        "<div style='display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px'>"
+        "<b style='font-size:.95rem'>Salud del sistema</b>"
+        f"<span style='font-size:.76rem;color:{_sem_color};font-weight:700'>{_semaforo}</span>"
+        "</div>"
+        "<div style='display:flex;flex-wrap:wrap;gap:10px'>"
+        f"<div style='flex:1 1 120px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#16a34a'>{_sr.get('activas', '—')}</div><div style='font-size:.74rem;color:#166534'>activas (7 d)</div></div>"
+        f"<div style='flex:1 1 120px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#d97706'>{_sr.get('bajas', '—')}</div><div style='font-size:.74rem;color:#92400e'>bajas (7–30 d)</div></div>"
+        f"<div style='flex:1 1 120px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#dc2626'>{_sr.get('inactivas', '—')}</div><div style='font-size:.74rem;color:#991b1b'>inactivas (&gt;30 d)</div></div>"
+        f"<div style='flex:1 1 120px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#475569'>{_pct_sin:.0f} %</div><div style='font-size:.74rem;color:#334155'>sin tema</div></div>"
+        "</div>"
+        f"<div style='font-size:.74rem;color:#64748b;margin-top:7px;line-height:1.4'>{_sr.get('total', '—')} fuentes en el monitor · {n_sources} en la BD · {_mil(n_events)} eventos · {_fresh}/{len(_temas_act)} temas con snapshot &lt;6 h · ciclo más antiguo {_age_max:.1f} h · retraso de captura: n/d · duplicados: n/d · <a href='/#sistema'>detalle</a></div></div>"
     )
     version_box = (
         "<div class='card' id='dato-version' style='margin:10px 0 4px;padding:11px 16px;"
@@ -5483,6 +5489,7 @@ a{{color:#c2410c}}
 </header>
 <main>
 <div id="tabRadar" class="tab-panel active">
+  {salud_card}
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
     <span><span class="dot" style="background:#c2410c"></span>Observatorio · amplificación (ámbito FIMI)</span>
@@ -5511,7 +5518,6 @@ a{{color:#c2410c}}
   </div>
 </section>
   {version_box}
-  {salud_card}
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
     <a href="/fimi-wallchart-A4.png">ver a tamaño completo</a> · <a href="/demo.html">ver la demo de 69 s</a>.
