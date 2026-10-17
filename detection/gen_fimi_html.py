@@ -3104,23 +3104,20 @@ def main():
         _estado_cfg = _m.get("estado", "produccion")
         _tr = tendencias.get(_t, {"estado": "estable", "hoy": 0, "hace48": 0,
                                   "high_hoy": 0, "high_48": 0})
-        if _estado_cfg == "piloto":
-            _frase = "piloto en calibración — lectura con cautela"
-            _estado_dial = "recopilando"
-            _estilo = ESTADO_DIAL["recopilando"]
+        _estado_dial = _tr.get("estado", "estable")
+        _estilo = ESTADO_DIAL.get(_estado_dial, ESTADO_DIAL["estable"])
+        if _estado_dial == "recopilando":
+            _frase = "sin datos suficientes aún (se está acumulando histórico)"
+        elif _estado_dial == "subiendo":
+            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
+            if _tr["high_hoy"] > _tr["high_48"]:
+                _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
+        elif _estado_dial == "bajando":
+            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
         else:
-            _estado_dial = _tr.get("estado", "estable")
-            _estilo = ESTADO_DIAL.get(_estado_dial, ESTADO_DIAL["estable"])
-            if _estado_dial == "recopilando":
-                _frase = "sin datos suficientes aún (se está acumulando histórico)"
-            elif _estado_dial == "subiendo":
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
-                if _tr["high_hoy"] > _tr["high_48"]:
-                    _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
-            elif _estado_dial == "bajando":
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
-            else:
-                _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h, sin cambio frente a las 24 h anteriores"
+            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h, sin cambio frente a las 24 h anteriores"
+        if _estado_cfg == "piloto":
+            _frase = "piloto en calibración — lectura con cautela · " + _frase
         return _estado_dial, _estilo, _frase
 
     # ---- PESTAÑAS POR TEMA (vista activa multi-tema) ----
@@ -3756,7 +3753,7 @@ def main():
                           f'partidista legítima y la opinión editorial de cuentas activas se mezclan '
                           f'con señal de campaña. El sistema da mucho peso a la anomalía para no '
                           f'marcarlas como red inorgánica, pero sigue en calibración: interpreta '
-                          f'cualquier alerta como hipótesis, no como veredicto.</div>')
+                          f'cualquier alerta como hipótesis, no como veredicto. <b>Las bandas HIGH/CRITICAL son provisionales</b> mientras el tema siga en piloto.</div>')
         _informe_btn = (
             f"<div style='display:flex;justify-content:flex-end;margin:2px 0 8px'>"
             f"<a href='/informes/visual/{_t}.html' target='_blank' rel='noopener'"
@@ -5381,6 +5378,7 @@ a{{color:#c2410c}}
     <div class="navmenu-panel">
       <a href="/research.html" title="Investigación y validación del modelo">Research</a>
       <a href="/metodo.html" title="Método y validación (tasas de error y límites)">Método</a>
+      <a href="/dominios.html" title="Ranking de dominios y líneas base por tema">Dominios y líneas base</a>
       <a href="/metodo.en.html" title="Method and validation (English)">Método (EN)</a>
       <a href="/docs.html" title="Biblioteca de fuentes primarias (informes EEAS/ENISA)">Documentos (biblioteca)</a>
       <a href="/operativa.html" title="Manual de operación (uso y administración)">Operativa</a>
@@ -5773,7 +5771,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:center;text-align:left;font-size:.85rem;color:#666;line-height:2;max-width:920px;margin:0 auto">
     <div><b>Observatorio</b><br><a href="/research.html" style="color:#c2410c">Research</a><br><a href="/consulta.html" style="color:#c2410c">Consulta de enlace</a><br><a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a><br><a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a><br><a href="/casos/frontera_sur_hibridos/" style="color:#c2410c">Frontera Sur (híbrido)</a><br><a href="/api.html" style="color:#c2410c">API</a><br><a href="/demo.html" style="color:#c2410c">Demo (69 s)</a></div>
-    <div><b>Documentos</b><br><a href="/metodo.html" style="color:#c2410c">Método</a><br><a href="/glosario.html" style="color:#c2410c">Glosario</a><br><a href="/manual.pdf" style="color:#c2410c">Manual (PDF)</a><br><a href="/datos/bulos.xml" style="color:#c2410c">Feed de bulos (RSS)</a><br><a href="/operativa.html" style="color:#c2410c">Operativa</a><br><a href="/docs.html" style="color:#c2410c">Documentos</a><br><a href="/costes.html" style="color:#c2410c">Costes</a><br><a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a></div>
+    <div><b>Documentos</b><br><a href="/metodo.html" style="color:#c2410c">Método</a><br><a href="/dominios.html" style="color:#c2410c">Dominios y líneas base</a><br><a href="/glosario.html" style="color:#c2410c">Glosario</a><br><a href="/manual.pdf" style="color:#c2410c">Manual (PDF)</a><br><a href="/datos/bulos.xml" style="color:#c2410c">Feed de bulos (RSS)</a><br><a href="/operativa.html" style="color:#c2410c">Operativa</a><br><a href="/docs.html" style="color:#c2410c">Documentos</a><br><a href="/costes.html" style="color:#c2410c">Costes</a><br><a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a></div>
     <div><b>En esta página</b><br><a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a><br><a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a><br><a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a><br><a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a><br><a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#posibles-bulos" style="color:#c2410c">Posibles bulos</a><br><a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a><br><a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a><br><a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a></div>
     <div><b>Proyecto</b><br><a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a><br><a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a><br><a href="/privacidad.html" style="color:#c2410c">Privacidad</a><br><a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a><br><a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a></div>
     <div><b>Ecosistema</b><br><a href="https://municipal.viajeinteligencia.com/mapa-alquiler.html?utm_source=fimi&utm_medium=crosspromo" style="color:#c2410c">Alquiler por municipio</a><br><a href="https://nearme.viajeinteligencia.com/?utm_source=fimi&utm_medium=crosspromo" style="color:#c2410c">NearMe — datos ES</a><br><a href="https://vivienda.pruebapublica.com/?utm_source=fimi&utm_medium=crosspromo" style="color:#c2410c">Vivienda</a><br><a href="https://analisis.pruebapublica.com/?utm_source=fimi&utm_medium=crosspromo" style="color:#c2410c">Análisis (blog)</a></div>

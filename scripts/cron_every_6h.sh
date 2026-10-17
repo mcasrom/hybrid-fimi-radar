@@ -35,6 +35,7 @@ done
 .venv/bin/python detection/bitacora.py --seed >> logs/bitacora.log 2>&1
 # 3) Dashboard
 .venv/bin/python detection/gen_fimi_html.py >> logs/fimi.log 2>&1
+/usr/bin/python3 detection/gen_dominios.py >> logs/fimi.log 2>&1 || echo "[dominios] fallo rc=$?" >> logs/fimi.log
 .venv/bin/python detection/update_caso_ceuta_live.py >> logs/fimi.log 2>&1
 # 3f) Dataset publico del caso Ceuta (frozen V1 + live) -> JSON/CSV citables en /datos/casos/
 .venv/bin/python detection/export_caso_ceuta.py >> logs/fimi.log 2>&1
