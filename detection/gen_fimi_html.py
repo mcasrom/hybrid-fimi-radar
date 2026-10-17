@@ -8,6 +8,7 @@ Sin RAM extra en runtime: lo genera el cron.
 import json
 import re
 import sqlite3
+import subprocess
 import sys
 import time
 import pandas as pd
@@ -5225,6 +5226,38 @@ window.fimiDrawerClose=function(){
 </script>
 """
 
+    try:
+        _rc_v = sqlite3.connect(DB, timeout=30)
+        try:
+            _ts_v = _rc_v.execute("SELECT MAX(timestamp) FROM events").fetchone()[0]
+            _snap_raw = _rc_v.execute("SELECT MAX(created_at) FROM clusters").fetchone()[0]
+            if isinstance(_snap_raw, (int, float)):
+                _snap = datetime.fromtimestamp(_snap_raw, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            else:
+                _snap = str(_snap_raw) if _snap_raw else "—"
+        finally:
+            _rc_v.close()
+        _gen = datetime.fromtimestamp(_ts_v, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if _ts_v else "—"
+    except Exception:
+        _gen = "—"
+        _snap = "—"
+    try:
+        _ver = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"], text=True
+        ).strip()
+    except Exception:
+        _ver = "—"
+    version_box = (
+        "<div class='card' id='dato-version' style='margin:10px 0 4px;padding:11px 16px;"
+        "background:#fff;border:1px solid #e2e8f0;border-left:5px solid #c2410c;border-radius:10px;"
+        "font-size:.82rem;color:#334155;line-height:1.5'>"
+        f"<b>Dato y versión.</b> Corte {_gen} · snapshot {_snap} · ventana 45–90 d · "
+        f"{_mil(n_events)} eventos · {n_sources} fuentes · "
+        f"{_mil(n_clusters)} clusters ({_mil(_n_clusters)} con señal ≥3 cuentas + {_mil(_n_par_s1)} grupos pequeños) · "
+        f"versión <code>{_ver}</code> · "
+        "<a href='/metodo.html#validacion'>validación y denominadores</a> · "
+        "<a href='/dominios.html'>dominios y líneas base</a></div>"
+    )
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -5447,6 +5480,7 @@ a{{color:#c2410c}}
     <a href="#estado" class="ghost" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Estado por tema →</a>
   </div>
 </section>
+  {version_box}
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
     <a href="/fimi-wallchart-A4.png">ver a tamaño completo</a> · <a href="/demo.html">ver la demo de 69 s</a>.
