@@ -5232,7 +5232,7 @@ window.fimiDrawerClose=function(){
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Observatorio de amplificación (FIMI): desinformación y redes</title>
- <meta name="description" content="Observatorio OSINT de desinformación y amplificación (ámbito FIMI) en español. {_mil(n_clusters)} clusters con señal (+{_mil(n_par_global)} parejas) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
+ <meta name="description" content="Observatorio OSINT de desinformación y amplificación (ámbito FIMI) en español. {_mil(_n_clusters)} clusters con señal (de {_mil(n_clusters)} en total) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  <link rel="alternate" type="application/rss+xml" title="Posibles bulos contrastados" href="/datos/bulos.xml">
@@ -5248,7 +5248,7 @@ window.fimiDrawerClose=function(){
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Observatorio de amplificación (FIMI) — desinformación y redes">
-<meta name="twitter:description" content="{_mil(n_clusters)} clusters con señal, {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT de desinformación y amplificación, agnóstico al actor.">
+<meta name="twitter:description" content="{_mil(_n_clusters)} clusters con señal (de {_mil(n_clusters)} en total), {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT de desinformación y amplificación, agnóstico al actor.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -5439,7 +5439,7 @@ a{{color:#c2410c}}
   <div class="chain">
     <div class="step"><b><span class="ic">👁</span> OBSERVAR</b><span>captura de {n_sources} fuentes abiertas en {len(temas)} temas, sin prejuicio de actor.</span></div>
     <div class="arrow">→</div>
-    <div class="step"><b><span class="ic">📡</span> MEDIR</b><span>amplificación y anomalías sobre {n_clusters} clusters activos.</span></div>
+    <div class="step"><b><span class="ic">📡</span> MEDIR</b><span>amplificación y anomalías sobre {_n_clusters} clusters con señal (de {n_clusters} activos).</span></div>
     <div class="arrow">→</div>
     <div class="step"><b><span class="ic">⚖️</span> CONTRASTAR</b><span>las hipótesis se contrastan contra la evidencia. Una señal no es una atribución.</span></div>
   </div>
