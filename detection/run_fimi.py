@@ -470,6 +470,7 @@ def main():
 
     # Linaje: asignar lineage_id a los clusters de este ciclo (Jaccard de miembros
     # vs ciclo anterior). Da "sostenido desde <fecha> · N ciclos" en la UI.
+    _cycle_ts = int(time.time())
     try:
         new_members = {}
         if sub_clustered is not None and len(sub_clustered):
@@ -478,7 +479,6 @@ def main():
                 for _, _ev in _mem.iterrows():
                     _keys |= lineage.member_keys(_ev.get("author"), _ev.get("url"))
                 new_members[_lab] = _keys
-        _cycle_ts = int(time.time())
         # Labels en banda ANOMALOUS+ este ciclo: fija first_band_ts (antigüedad
         # de la alerta hacia delante) en el linaje.
         _alert_labels = {
@@ -495,6 +495,18 @@ def main():
 
     conn.commit()
     print(f"      persistencia SQLite · {time.time()-_ts:.1f}s")
+
+    # --- SNAPSHOT POR CICLO (serie temporal append-only) ---
+    # Registra el score/banda de cada cluster de ESTE ciclo (clave lineage_id) y
+    # el agregado por tema. No toca scoring/bandas/atribución: solo persiste lo
+    # ya calculado para poder ver la evolución (hoy `clusters` se reemplaza y
+    # `cluster_lineage` se actualiza in-place -> no había serie temporal).
+    try:
+        from detection import snapshots
+        _n_snap = snapshots.write(conn, tema, _cycle_ts)
+        print(f"      snapshots: {_n_snap} clusters del tema '{tema}' @ {_cycle_ts}")
+    except Exception as _s_e:
+        print(f"      snapshots error (no bloquea): {_s_e}", file=sys.stderr)
 
     # --- REPORT ---
     _ts = time.time()

@@ -622,6 +622,110 @@ def _lineage_lookup(lineage_id: str):
         conn.close()
 
 
+# --- El rastro (seguimiento de una narrativa por su lineage_id) -------------
+_BAND_CODE = {0: "NORMAL", 1: "WATCH", 2: "ANOMALOUS", 3: "HIGH", 4: "CRITICAL"}
+
+
+def _cons_mod():
+    """detection/consulta.py (lecturas en llano + explicación principal)."""
+    try:
+        from detection import consulta as _c
+    except Exception:
+        import consulta as _c
+    return _c
+
+
+def _lineage_serie(conn, lineage_id):
+    """Serie por ciclo del linaje desde cluster_snapshots (append-only)."""
+    return [dict(r) for r in conn.execute(
+        "SELECT cycle_ts, band, overall_score, n_events, n_accounts, n_sources"
+        " FROM cluster_snapshots WHERE lineage_id=? ORDER BY cycle_ts", (lineage_id,))]
+
+
+def _tendencia(serie, dias=7):
+    """Compara el último punto con el más cercano a `dias` atrás (o el primero)."""
+    if len(serie) < 2:
+        return None
+    last = serie[-1]
+    objetivo = last["cycle_ts"] - dias * 86400
+    base = min(serie[:-1], key=lambda r: abs(r["cycle_ts"] - objetivo))
+    bb = _BAND_CODE.get(base["band"], "NORMAL")
+    ba = _BAND_CODE.get(last["band"], "NORMAL")
+    return {"base_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(base["cycle_ts"])),
+            "dias_base": round((last["cycle_ts"] - base["cycle_ts"]) / 86400, 1),
+            "banda_base": bb, "banda_actual": ba,
+            "delta_score": round(float(last["overall_score"] or 0) - float(base["overall_score"] or 0), 1)}
+
+
+def _api_lineage(lineage_id):
+    """«El rastro»: evolución de un linaje (clave lineage_id, estable) a lo largo
+    de los ciclos, con la lectura en lenguaje llano y la banda actual. Read-only.
+
+    Devuelve None si el lineage no existe (el caller responde 404).
+    """
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        lr = conn.execute(
+            "SELECT tema_id, cluster_label, first_seen, last_seen, n_ciclos, first_band_ts"
+            " FROM cluster_lineage WHERE lineage_id=? ORDER BY n_ciclos DESC LIMIT 1",
+            (lineage_id,)).fetchone()
+        if not lr:
+            return None
+        serie = _lineage_serie(conn, lineage_id)
+        for r in serie:
+            r["utc"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(r["cycle_ts"]))
+            r["banda"] = _BAND_CODE.get(r["band"], "NORMAL")
+            r["score"] = round(float(r["overall_score"] or 0), 1)
+        cl = conn.execute(
+            "SELECT overall_score, coordination_score, amplification_score, anomaly_score,"
+            " infrastructure_score, alternative_explanations, narrative_subtype"
+            " FROM clusters WHERE cluster_label=? LIMIT 1", (lr["cluster_label"],)).fetchone()
+        explicacion, rol = None, None
+        if cl:
+            _c = _cons_mod()
+            p = _c._principal(cl["alternative_explanations"])
+            lect = _c.LECTURA.get(p.get("code"), _c.LECTURA["unresolved"])
+            explicacion = {"code": p.get("code"), "label": p.get("label"),
+                           "lectura": lect[0], "detalle": lect[1], "riesgo": lect[2]}
+            try:
+                rol = (json.loads(cl["narrative_subtype"] or "{}") or {}).get("dominant")
+            except Exception:
+                rol = None
+        out = {
+            "meta": _api_meta(),
+            "lineage_id": lineage_id,
+            "tema": lr["tema_id"],
+            "tema_nombre": next((t["nombre"] for t in _temas_catalogo()
+                                 if t["tema"] == lr["tema_id"]), lr["tema_id"]),
+            "cluster_label": lr["cluster_label"],
+            "activo": bool(cl),
+            "primero_utc": (time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(lr["first_seen"]))
+                            if lr["first_seen"] else None),
+            "ciclos": lr["n_ciclos"],
+            "en_banda_alta_desde": (time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(lr["first_band_ts"]))
+                                    if lr["first_band_ts"] else None),
+            "serie": serie,
+            "tendencia": _tendencia(serie),
+            "componentes": ({"coordination": cl["coordination_score"],
+                             "amplification": cl["amplification_score"],
+                             "anomaly": cl["anomaly_score"],
+                             "infrastructure": cl["infrastructure_score"]} if cl else None),
+            "explicacion": explicacion,
+            "rol": rol,
+            "web": f"{BASE_URL}/n/{lineage_id}",
+            "disclaimer": _DISCLAIMER_CLUSTER,
+        }
+        if serie:
+            a = serie[-1]
+            out["actual"] = {"utc": a["utc"], "banda": a["banda"], "score": a["score"],
+                             "n_cuentas": a["n_accounts"], "n_eventos": a["n_events"],
+                             "n_fuentes": a["n_sources"]}
+        return out
+    finally:
+        conn.close()
+
+
 def _tipos_map(conn, tema=None, cluster=None):
     """{cluster_label: {tipo, flags, lectura}} via detection/tipologia.py."""
     try:
@@ -953,6 +1057,10 @@ def _openapi_spec():
                 "parameters": [{"name": "label", "in": "path", "required": True, "schema": {"type": "string"},
                                 "example": "frontera_sur_cluster_000"}],
                 "responses": {"200": {"description": "OK"}, "404": {"description": "Cluster no encontrado"}}}},
+            "/api/v1/lineage/{lineage_id}": {"get": {"summary": "El rastro: evolución de una narrativa por ciclo",
+                "parameters": [{"name": "lineage_id", "in": "path", "required": True, "schema": {"type": "string"},
+                                "example": "frontera_sur_cluster_000@1789928930"}],
+                "responses": {"200": {"description": "OK"}, "404": {"description": "Lineage no encontrado"}}}},
             "/api/v1/tema/{slug}/serie": {"get": {"summary": "Serie diaria de un tema (eventos/autores/fuentes por día)",
                 "parameters": [{"name": "slug", "in": "path", "required": True, "schema": {"type": "string"}},
                                 {"name": "dias", "in": "query", "required": False,
@@ -1225,6 +1333,7 @@ class H(BaseHTTPRequestHandler):
                     {"path": "/api/v1/buscar?q=<texto>[&tema=<slug>][&limite=10]", "desc": "Busca clusters por texto (fragmentos redactados)"},
                     {"path": "/api/v1/caso/<slug>", "desc": "Caso/subcaso (JSON); CSV en /api/v1/caso/<slug>/datos.csv"},
                     {"path": "/api/v1/cluster/<label>", "desc": "Cluster completo + evidencia (eventos)"},
+                    {"path": "/api/v1/lineage/<lineage_id>", "desc": "El rastro: evolución de una narrativa (serie por ciclo) + lectura en llano"},
                     {"path": "/api/v1/openapi.json", "desc": "Especificación OpenAPI 3.0"},
                     {"path": "/api/v1/health", "desc": "Estado del servicio"},
                 ],
@@ -1349,6 +1458,15 @@ class H(BaseHTTPRequestHandler):
             payload["meta"] = _api_meta()
             payload["disclaimer"] = _DISCLAIMER_CLUSTER
             return self._send(200, payload)
+        # Rastro de una narrativa: serie temporal por linaje (cluster_snapshots)
+        if path.startswith("/api/v1/lineage/"):
+            lid = urllib.parse.unquote(path[len("/api/v1/lineage/"):].strip("/"))
+            if not re.match(r"^[a-z0-9_]+_cluster_[0-9]{3}@[0-9]+$", lid):
+                return self._send(400, {"error": "lineage_id invalido"})
+            d = _api_lineage(lid)
+            if d is None:
+                return self._send(404, {"error": f"lineage no encontrado: {lid}"})
+            return self._send(200, d)
         # Permalink estable de una campana sostenida: /c/<lineage_id>
         # (el lineage_id NO cambia entre ciclos aunque cambie el cluster_label).
         if path.startswith("/c/"):

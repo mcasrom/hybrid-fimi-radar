@@ -1214,7 +1214,7 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
         _lbl = c["cluster_label"]
         _lid = linaje[3] if (linaje and len(linaje) > 3 and linaje[3]) else None
         if _lid:
-            _share_url = "/c/%s" % _lid
+            _share_url = "/n/%s" % _lid
         else:
             _share_url = "#%s" % _lbl
         _tema_nm = str(c["tema_id"]).replace("_", " ").title()
@@ -1235,6 +1235,8 @@ def _cluster_detail_html(c, a, comps, contenido=None, diver=None, dominios=None,
             'margin:6px 0 10px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;'
             'border-radius:8px;font-size:.78rem;align-items:center">'
             '<span style="color:#475569;font-weight:600">Compartir:</span>'
+            '<a href="' + _url_enc + '" target="_blank" rel="noopener" style="' + _btn_st + ';'
+            'color:#b45309;font-weight:700;text-decoration:none">\u2197 Ver el rastro</a>'
             '<button type="button" data-net="copy" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
             ' onclick="fimiShare(this)" style="' + _btn_st + '">\U0001f517 Copiar enlace</button>'
             '<button type="button" data-net="share" data-url="' + _url_enc + '" data-text="' + _txt_enc + '"'
@@ -5184,10 +5186,11 @@ window.fimiDrawerClose=function(){
       h+='</div>';
     }
     h+='<div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">';
+    if(d.lineage&&d.lineage.lineage_id){h+='<a href="/n/'+encodeURIComponent(d.lineage.lineage_id)+'" style="'+btn()+'">&#128301; Ver el rastro</a>';}
     h+='<a href="/informes/visual/'+encodeURIComponent(tema)+'.html" style="'+btn()+'">&#128196; Informe del tema</a>';
     h+='<a href="/api/export?cluster='+encodeURIComponent(label)+'&fmt=csv" style="'+btn()+'">&#11015; CSV</a>';
     h+='<a href="/api/export?cluster='+encodeURIComponent(label)+'&fmt=gexf" style="'+btn()+'">&#128376; GEXF</a>';
-    h+='<button onclick="var u=location.origin+String.fromCharCode(47,99,47)+encodeURIComponent('+JSON.stringify(lid)+');if(navigator.clipboard){navigator.clipboard.writeText(u);this.textContent=String.fromCharCode(10003,32,67,111,112,105,97,100,111);}" style="'+btn()+'">&#128279; Copiar enlace</button>';
+    if(d.lineage&&d.lineage.lineage_id){h+='<button onclick="var u=location.origin+String.fromCharCode(47,110,47)+encodeURIComponent('+JSON.stringify(lid)+');if(navigator.clipboard){navigator.clipboard.writeText(u);this.textContent=String.fromCharCode(10003,32,67,111,112,105,97,100,111);}" style="'+btn()+'">&#128279; Copiar enlace</button>';}
     h+='</div>';
     h+='<div style="margin-top:12px;font-size:.72rem;color:#94a3b8;line-height:1.5">&#9878; Senal, no atribucion. Una banda alta = amplificacion medida, <b>no</b> coordinacion confirmada. Los identificadores de cluster no son estables entre ciclos.</div>';
     h+='</div>';

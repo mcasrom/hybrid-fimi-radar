@@ -117,6 +117,21 @@ def main():
         "DELETE FROM cluster_events WHERE cluster_id NOT IN (SELECT id FROM clusters)")
     n_purgados += cur.rowcount
 
+    # snapshots por ciclo: ventana rodante (enrolla a diario + borra el detalle viejo)
+    try:
+        from detection import snapshots
+        if args.dry:
+            n_snap = snapshots.count_old(conn)
+            if n_snap:
+                _info(f"snapshots >{snapshots.RETENCION_DIAS}d (dry): {n_snap} filas")
+        else:
+            n_snap = snapshots.prune(conn)
+            if n_snap:
+                _info(f"snapshots podados (>{snapshots.RETENCION_DIAS}d): {n_snap} filas")
+        n_purgados += n_snap
+    except Exception as e:
+        _info(f"snapshots prune error: {e}")
+
     if not args.dry:
         # primero eliminamos event_temas de los events borrados (hecho arriba por NOT IN)
         conn.commit()
