@@ -58,6 +58,9 @@ CICLO_H = 7.0
 # ~90 d y la ventana casi no recorta).
 RUN_WARN = 65_000
 RUN_BAD = 80_000
+# Ventana por defecto de un tema si config.yaml no declara `ventana_dias`
+# (el cron usa este mismo default). El peor run se calcula por tema con SU
+# ventana real, no con este valor fijo.
 VENTANA_DIAS_CHECK = 45
 
 
@@ -194,30 +197,34 @@ def chequea():
     except Exception as e:
         issues.append({"check": "descarte", "nivel": "warn", "msg": f"error descarte: {e}"})
 
-    # 6) tamaño del INPUT del run MÁS pesado (mayor ventana por tema) — el OOM
-    # escala con el mayor run, no con el corpus total. Ver RUN_WARN/RUN_BAD.
+    # 6) tamaño del INPUT del run MÁS pesado — el OOM escala con el mayor run,
+    # no con el corpus total. Cada tema corre con SU propia ventana
+    # (temas.<tema>.ventana_dias; por defecto 45 d), así que el peor caso se
+    # calcula con la ventana REAL de cada tema (no un 45 fijo). Ver RUN_WARN/RUN_BAD.
     try:
-        _cut = int(datetime.datetime.now().timestamp()) - VENTANA_DIAS_CHECK * 86400
-        _row = con.execute(
-            "SELECT et.tema_id, COUNT(*) n FROM event_temas et"
-            " JOIN events e ON e.id=et.event_id"
-            " WHERE e.timestamp>=? GROUP BY et.tema_id ORDER BY n DESC LIMIT 1",
-            (_cut,)).fetchone()
-        _tema, n_run = (_row[0], _row[1]) if _row else ("—", 0)
+        _tema, n_run, _vent = "—", 0, None
+        for _t in activos:
+            _w = int((temas_cfg.get(_t) or {}).get("ventana_dias", VENTANA_DIAS_CHECK))
+            _cut = int(datetime.datetime.now().timestamp()) - _w * 86400
+            _n = con.execute(
+                "SELECT COUNT(*) FROM event_temas et JOIN events e ON e.id=et.event_id"
+                " WHERE et.tema_id=? AND e.timestamp>=?",
+                (_t, _cut)).fetchone()[0]
+            if _n > n_run:
+                _tema, n_run, _vent = _t, _n, _w
         n_ev = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
         _tail = f" (corpus total {n_ev:,})"
+        _lbl = f"«{_tema}» {n_run:,} ev/ventana {_vent}d"
         if n_run >= RUN_BAD:
             issues.append({"check": "corpus_input", "nivel": "bad",
-                           "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d — "
-                                  f"cerca del OOM (~85k/run). Acortar --ventana-dias o liberar RAM.{_tail}"})
+                           "msg": f"run mayor {_lbl} — cerca del OOM (~85k/run). "
+                                  f"Acortar la ventana de «{_tema}» o liberar RAM.{_tail}"})
         elif n_run >= RUN_WARN:
             issues.append({"check": "corpus_input", "nivel": "warn",
-                           "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d — "
-                                  f"vigilar (OOM ~85k/run).{_tail}"})
+                           "msg": f"run mayor {_lbl} — vigilar (OOM ~85k/run).{_tail}"})
         else:
             ok.append({"check": "corpus_input",
-                       "msg": f"run mayor «{_tema}» {n_run:,} ev/ventana {VENTANA_DIAS_CHECK}d (margen); "
-                              f"corpus {n_ev:,}"})
+                       "msg": f"run mayor {_lbl} (margen); corpus {n_ev:,}"})
     except Exception as e:
         issues.append({"check": "corpus", "nivel": "warn", "msg": f"error corpus: {e}"})
 
