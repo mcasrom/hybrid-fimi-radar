@@ -726,6 +726,67 @@ def _api_lineage(lineage_id):
         conn.close()
 
 
+def _api_lineages(limit=60, tema=None):
+    """Directorio de «rastros»: el último punto de cada linaje (read-only).
+
+    Devuelve la foto más reciente de cada lineage_id desde `cluster_snapshots`
+    (la misma fuente que /api/v1/lineage/<id>), ordenada por score. Sirve de
+    índice para /n/ y para descubrir qué narrativas se están siguiendo.
+    """
+    try:
+        lim = max(1, min(300, int(limit)))
+    except (TypeError, ValueError):
+        lim = 60
+    if tema is not None:
+        tema = str(tema).strip() or None
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        sql = (
+            "SELECT s.lineage_id, s.cycle_ts, s.band, s.overall_score,"
+            " s.n_events, s.n_accounts, s.n_sources,"
+            " lin.tema_id, lin.cluster_label, lin.n_ciclos, lin.first_seen,"
+            " (SELECT 1 FROM clusters c WHERE c.cluster_label=lin.cluster_label LIMIT 1) AS activo"
+            " FROM cluster_snapshots s"
+            " JOIN (SELECT lineage_id, MAX(cycle_ts) AS mx FROM cluster_snapshots"
+            "       GROUP BY lineage_id) m"
+            "   ON m.lineage_id=s.lineage_id AND m.mx=s.cycle_ts"
+            " JOIN cluster_lineage lin ON lin.lineage_id=s.lineage_id"
+        )
+        params = []
+        if tema:
+            sql += " WHERE lin.tema_id=?"
+            params.append(tema)
+        sql += " ORDER BY s.overall_score DESC, s.n_accounts DESC LIMIT ?"
+        params.append(lim)
+        rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+    cat = {t["tema"]: t for t in _temas_catalogo()}
+    out = []
+    for r in rows:
+        out.append({
+            "lineage_id": r["lineage_id"],
+            "tema": r["tema_id"],
+            "tema_nombre": (cat.get(r["tema_id"], {}) or {}).get("nombre", r["tema_id"]),
+            "cluster_label": r["cluster_label"],
+            "banda": _BAND_CODE.get(r["band"], "NORMAL"),
+            "score": round(float(r["overall_score"] or 0), 1),
+            "n_cuentas": r["n_accounts"],
+            "n_eventos": r["n_events"],
+            "n_fuentes": r["n_sources"],
+            "ciclos_linaje": r["n_ciclos"],
+            "ultimo_utc": (time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(r["cycle_ts"]))
+                           if r["cycle_ts"] else None),
+            "primero_utc": (time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(r["first_seen"]))
+                            if r["first_seen"] else None),
+            "activo": bool(r["activo"]),
+            "web": f"{BASE_URL}/n/{r['lineage_id']}",
+        })
+    return {"meta": _api_meta(), "n": len(out), "rastros": out,
+            "disclaimer": _DISCLAIMER_CLUSTER}
+
+
 def _tipos_map(conn, tema=None, cluster=None):
     """{cluster_label: {tipo, flags, lectura}} via detection/tipologia.py."""
     try:
@@ -1057,6 +1118,12 @@ def _openapi_spec():
                 "parameters": [{"name": "label", "in": "path", "required": True, "schema": {"type": "string"},
                                 "example": "frontera_sur_cluster_000"}],
                 "responses": {"200": {"description": "OK"}, "404": {"description": "Cluster no encontrado"}}}},
+            "/api/v1/lineages": {"get": {"summary": "Directorio de rastros: último punto de cada linaje (índice de /n/)",
+                "parameters": [{"name": "limit", "in": "query", "required": False,
+                                "schema": {"type": "integer", "default": 60, "minimum": 1, "maximum": 300}},
+                               {"name": "tema", "in": "query", "required": False,
+                                "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "OK"}}}},
             "/api/v1/lineage/{lineage_id}": {"get": {"summary": "El rastro: evolución de una narrativa por ciclo",
                 "parameters": [{"name": "lineage_id", "in": "path", "required": True, "schema": {"type": "string"},
                                 "example": "frontera_sur_cluster_000@1789928930"}],
@@ -1333,6 +1400,7 @@ class H(BaseHTTPRequestHandler):
                     {"path": "/api/v1/buscar?q=<texto>[&tema=<slug>][&limite=10]", "desc": "Busca clusters por texto (fragmentos redactados)"},
                     {"path": "/api/v1/caso/<slug>", "desc": "Caso/subcaso (JSON); CSV en /api/v1/caso/<slug>/datos.csv"},
                     {"path": "/api/v1/cluster/<label>", "desc": "Cluster completo + evidencia (eventos)"},
+                    {"path": "/api/v1/lineages", "desc": "Directorio de rastros (último punto de cada linaje; índice de /n/)"},
                     {"path": "/api/v1/lineage/<lineage_id>", "desc": "El rastro: evolución de una narrativa (serie por ciclo) + lectura en llano"},
                     {"path": "/api/v1/openapi.json", "desc": "Especificación OpenAPI 3.0"},
                     {"path": "/api/v1/health", "desc": "Estado del servicio"},
@@ -1458,6 +1526,11 @@ class H(BaseHTTPRequestHandler):
             payload["meta"] = _api_meta()
             payload["disclaimer"] = _DISCLAIMER_CLUSTER
             return self._send(200, payload)
+        # Directorio de rastros (índice): último punto de cada linaje.
+        if path == "/api/v1/lineages":
+            return self._send(200, _api_lineages(
+                (q.get("limit") or ["60"])[0],
+                (q.get("tema") or [None])[0]))
         # Rastro de una narrativa: serie temporal por linaje (cluster_snapshots)
         if path.startswith("/api/v1/lineage/"):
             lid = urllib.parse.unquote(path[len("/api/v1/lineage/"):].strip("/"))

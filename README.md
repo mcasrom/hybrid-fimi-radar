@@ -184,6 +184,16 @@ muestra el valor vivo):
   en **CSS puro, sin JavaScript** y responsive. Los dos listados de **episodios** (25 automáticos + 5
   curados a mano) van **plegados** bajo «Ver los N episodios · clic para abrir»: la misma información
   **bajo demanda**, menos densidad y nada eliminado (el contenido sigue en el DOM, indexable).
+- **El rastro — serie temporal y seguimiento de una narrativa** (18-oct): cada ciclo guarda el
+  score y la banda de cada clúster (`cluster_snapshots`, retención 60 d con roll diario a
+  `cluster_snapshots_daily`), así que una narrativa se puede **seguir** por su `lineage_id` estable:
+  `GET /api/v1/lineage/<lineage_id>` devuelve la **serie por ciclo**, la banda/score actual, la
+  **tendencia** (7 d), la lectura en llano y los componentes. Hay un **directorio de rastros** en
+  [`/n/`](https://fimi.viajeinteligencia.com/n/) —y por API `GET /api/v1/lineages?limit=&tema=`,
+  último punto de cada linaje—; cada tarjeta del dashboard y el panel del clúster enlazan
+  **«Ver el rastro»**. La serie por ciclo **arranca el 18-oct**, así que hasta acumular varios
+  puntos la página lo dice («N puntos de serie») en vez de simular una tendencia. Read-only: no
+  toca scoring, bandas ni atribución.
 - **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
   (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
   **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →

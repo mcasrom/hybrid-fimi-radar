@@ -168,6 +168,16 @@ the live value):
   no JavaScript**, and responsive. The two **episode** lists (25 automatic + 5 hand-curated) are now
   **collapsed** behind a single «Ver los N episodios · clic para abrir» line: the same information
   **on demand**, less density, nothing removed (the content stays in the DOM, indexable).
+- **The trail — time series and per-narrative tracking** (18-Oct): every cycle stores each
+  cluster's score and band (`cluster_snapshots`, 60-day retention with a daily roll-up into
+  `cluster_snapshots_daily`), so a narrative can be **followed** by its stable `lineage_id`:
+  `GET /api/v1/lineage/<lineage_id>` returns the **per-cycle series**, current band/score, the
+  **7-day trend**, the plain-language reading and the components. There is an **index of trails** at
+  [`/n/`](https://fimi.viajeinteligencia.com/n/) —and via API `GET /api/v1/lineages?limit=&tema=`,
+  the latest point of every lineage—; every dashboard card and the cluster drawer link to
+  **"View the trail"**. The per-cycle series **starts on 18-Oct**, so until it has several points
+  the page says so ("N series points") instead of faking a trend. Read-only: it does not touch
+  scoring, bands or attribution.
 - **API for journalists** (6-Oct): daily series per topic (`/api/v1/tema/<slug>/serie?dias=30`,
   aggregates only) and cluster search (`/api/v1/buscar?q=&tema=&limite=`, redacted snippets,
   no authors). Documented in `/api.html` and the OpenAPI spec.
