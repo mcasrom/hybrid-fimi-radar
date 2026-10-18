@@ -5266,8 +5266,22 @@ window.fimiDrawerClose=function(){
     _age_max = max((_now_h - ts for t, ts in _cyc if t in _temas_act and ts), default=0) / 3600.0
     _pct_sin = (100.0 * _sin_tema / n_events) if n_events else 0.0
     _sin_act = int(_sr.get('bajas', 0) or 0) + int(_sr.get('inactivas', 0) or 0)
-    _sem_color = "#b45309" if _sin_act else "#166534"
-    _semaforo = (f"⚠️ {_sin_act} fuentes sin actividad reciente" if _sin_act else "✅ operativo")
+    _feed = {}
+    try:
+        _fp = ROOT / "data" / "feed_health.json"
+        if _fp.exists():
+            _feed = json.loads(_fp.read_text(encoding="utf-8"))
+    except Exception:
+        _feed = {}
+    _fr = _feed.get("resumen", {}) if isinstance(_feed, dict) else {}
+    _feed_bad = int(_fr.get("http_error", 0) or 0) + int(_fr.get("sin_items", 0) or 0) + int(_fr.get("error", 0) or 0)
+    _sem_color = "#b45309" if (_sin_act or _feed_bad) else "#166534"
+    if _feed_bad:
+        _semaforo = f"⚠️ {_feed_bad} feeds con incidencia (sonda)"
+    elif _sin_act:
+        _semaforo = f"⚠️ {_sin_act} fuentes sin eventos recientes"
+    else:
+        _semaforo = "✅ operativo"
     salud_card = (
         f"<div class='card' id='salud-datos' style='margin:0 0 14px;padding:12px 16px;"
         f"background:#fff;border:1px solid #e2e8f0;border-left:5px solid {_sem_color};border-radius:12px'>"
@@ -5277,11 +5291,11 @@ window.fimiDrawerClose=function(){
         "</div>"
         "<div style='display:flex;flex-wrap:wrap;gap:10px'>"
         f"<div style='flex:1 1 120px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#16a34a'>{_sr.get('activas', '—')}</div><div style='font-size:.74rem;color:#166534'>activas (7 d)</div></div>"
-        f"<div style='flex:1 1 120px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#d97706'>{_sr.get('bajas', '—')}</div><div style='font-size:.74rem;color:#92400e'>bajas (7–30 d)</div></div>"
-        f"<div style='flex:1 1 120px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#dc2626'>{_sr.get('inactivas', '—')}</div><div style='font-size:.74rem;color:#991b1b'>inactivas (&gt;30 d)</div></div>"
+        f"<div style='flex:1 1 120px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#d97706'>{_sr.get('bajas', '—')}</div><div style='font-size:.74rem;color:#92400e'>sin eventos (7–30 d)</div></div>"
+        f"<div style='flex:1 1 120px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#dc2626'>{_sr.get('inactivas', '—')}</div><div style='font-size:.74rem;color:#991b1b'>sin eventos (&gt;30 d)</div></div>"
         f"<div style='flex:1 1 120px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;text-align:center'><div style='font-size:1.7rem;font-weight:800;color:#475569'>{_pct_sin:.0f} %</div><div style='font-size:.74rem;color:#334155'>sin tema</div></div>"
         "</div>"
-        f"<div style='font-size:.74rem;color:#64748b;margin-top:7px;line-height:1.4'>{_sr.get('total', '—')} fuentes en el monitor · {n_sources} en la BD · {_mil(n_events)} eventos · {_fresh}/{len(_temas_act)} temas con snapshot &lt;6 h · ciclo más antiguo {_age_max:.1f} h · retraso de captura: n/d · duplicados: n/d · <a href='/#sistema'>detalle</a></div></div>"
+        f"<div style='font-size:.74rem;color:#64748b;margin-top:7px;line-height:1.4'>{_sr.get('total', '—')} fuentes en el monitor · {n_sources} en la BD · {_mil(n_events)} eventos · {_fresh}/{len(_temas_act)} temas con snapshot &lt;6 h · ciclo más antiguo {_age_max:.1f} h · retraso de captura: n/d · duplicados: n/d · feeds (sonda): {_fr.get('ok','—')}/{_fr.get('feeds','—')} ok{(' · ' + str(_feed_bad) + ' incidencias') if _feed_bad else ''} · «sin eventos» ≠ feed caído · <a href='/#sistema'>detalle</a></div></div>"
     )
     version_box = (
         "<div class='card' id='dato-version' style='margin:10px 0 4px;padding:11px 16px;"

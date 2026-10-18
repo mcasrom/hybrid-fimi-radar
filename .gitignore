@@ -53,6 +53,8 @@ data/eventos_sin_tema.csv
 # estado de rotación de publicación en redes (runtime)
 data/rotacion_estado.json
 data/vigilancia_estado.json
+# sonda de feeds (detection/probe_feeds.py): estado runtime, se regenera a diario
+data/feed_health.json
 
 # registro de accesos (detection/accesos.py): la BD es acumulativa y el salt
 # seudoniza IP de terceros. El salt NO puede salir de aqui.

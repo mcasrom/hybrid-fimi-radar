@@ -40,6 +40,8 @@ def probe(f, cutoff):
         return rec
     try:
         r = requests.get(url, headers={"User-Agent": UA}, timeout=12, allow_redirects=True)
+        if r.status_code == 403:
+            r = requests.get(url, headers={"User-Agent": "Feedly/1.0 (+http://www.feedly.com/fetcher.html)"}, timeout=12, allow_redirects=True)
         rec["http"] = r.status_code
         d = feedparser.parse(r.content)
         rec["items"] = len(d.entries)
