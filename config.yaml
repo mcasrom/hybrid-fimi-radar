@@ -716,18 +716,18 @@ feeds:
     académica."
   analytical_relevance: alta
 
-- nombre: AI News
-  url: https://www.artificialintelligence-news.com/feed/
-  tipo: media
-  pais: GB
-  idioma: en
-  bias: center
-  reliability: mixed
-  transparency: medium
-  note: "Portal especializado en IA. Noticias de industria, investigación y regulación;
-    volumen medio, verificabilidad variable."
-  analytical_relevance: media
-
+# - nombre: AI News
+#   url: https://www.artificialintelligence-news.com/feed/
+#   tipo: media
+#   pais: GB
+#   idioma: en
+#   bias: center
+#   reliability: mixed
+#   transparency: medium
+#   note: "Portal especializado en IA. Noticias de industria, investigación y regulación;
+#     volumen medio, verificabilidad variable."
+#   analytical_relevance: media
+# 
 - nombre: Numerama
   url: https://www.numerama.com/feed/
   tipo: media
@@ -962,17 +962,17 @@ feeds:
   tema: espana_elecciones
   note: 'Prensa gratuita española, alto volumen; vigilar ruido.'
   analytical_relevance: media
-- nombre: RTVE España
-  url: https://www.rtve.es/rss/temas_espana.xml
-  tipo: media
-  idioma: es
-  pais: ES
-  bias: center
-  reliability: high
-  transparency: high
-  tema: espana_elecciones
-  note: 'Ente público español, sección España.'
-  analytical_relevance: media
+# - nombre: RTVE España
+#   url: https://www.rtve.es/rss/temas_espana.xml
+#   tipo: media
+#   idioma: es
+#   pais: ES
+#   bias: center
+#   reliability: high
+#   transparency: high
+#   tema: espana_elecciones
+#   note: 'Ente público español, sección España.'
+#   analytical_relevance: media
 - nombre: El Pais Espana (seccion)
   url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/espana/portada
   tipo: media
