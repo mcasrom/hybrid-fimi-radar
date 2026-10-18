@@ -11,6 +11,11 @@ ciclos (data/fuentes_estado.json) para no repetir el mismo aviso.
 
 Avisos a mejoras (recuperación) NO se envían: no son urgentes y el dashboard
 ya muestra el estado actual. El fichero de estado se actualiza siempre.
+
+Distinción clave (18-oct): «salud de fuentes» mide EVENTOS (match de keywords),
+NO si el feed vive. Un feed que respira (sonda detection/probe_feeds.py →
+data/feed_health.json, estado 'ok') pero no genera eventos NO es un riesgo de
+fuente, es falta de coincidencias: se registra pero NO se manda como «en riesgo».
 """
 import json
 import os
@@ -28,6 +33,7 @@ from health_fuentes import analizar  # noqa: E402
 
 URL_DASH = "https://fimi.viajeinteligencia.com"
 STATE = ROOT / "data" / "fuentes_estado.json"
+PROBE = ROOT / "data" / "feed_health.json"
 CHAT = int(os.environ.get("FIMI_HEALTH_CHAT", "47652516"))
 PEOR = {"activa": 0, "baja": 1, "inactiva": 2}
 
@@ -48,6 +54,22 @@ def _estado_txt(estado):
     return {"activa": "activa", "baja": "actividad baja", "inactiva": "inactiva"}.get(estado, estado)
 
 
+def _feeds_vivos():
+    """nombre -> estado de la sonda de feeds (data/feed_health.json). {} si no hay."""
+    try:
+        d = json.loads(PROBE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return {f["nombre"]: f.get("estado")
+            for f in d.get("fuentes", []) if f.get("nombre")}
+
+
+def _probe_txt(probe):
+    """Traduce el estado de la sonda a texto corto ('' si es ok/None)."""
+    return {"http_error": "feed inaccesible", "sin_items": "feed sin items",
+            "error": "feed con error", "parado": "feed parado"}.get(probe, "")
+
+
 def main(dry_run: bool = False):
     load_env(ROOT / ".env")
     token = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "")
@@ -57,6 +79,7 @@ def main(dry_run: bool = False):
     fuentes = data.get("fuentes", [])
     resumen = data.get("resumen", {})
     estado_actual = {f["clave"]: f["estado"] for f in fuentes}
+    vivos = _feeds_vivos()  # nombre -> estado de la sonda (feed vivo, no eventos)
 
     prev = {}
     if STATE.exists():
@@ -83,7 +106,7 @@ def main(dry_run: bool = False):
         dias = 0
         if f.get("last_ts"):
             dias = int((time.time() - f["last_ts"]) / 86400)
-        avisos.append((clave, anterior, estado, nombre, tipo, dias))
+        avisos.append((clave, anterior, estado, nombre, tipo, dias, vivos.get(nombre)))
 
     STATE.write_text(json.dumps(prev, ensure_ascii=False, indent=2))
 
@@ -92,20 +115,38 @@ def main(dry_run: bool = False):
               f"{resumen.get('bajas')} bajas, {resumen.get('inactivas')} inactivas)")
         return
 
+    # Un feed que respira (sonda OK) pero no genera eventos NO es un riesgo de
+    # fuente: es falta de coincidencias. Se registra, pero no se manda como tal.
+    riesgo = [a for a in avisos if a[6] != "ok"]
+    benigno = [a for a in avisos if a[6] == "ok"]
+    if benigno:
+        print(f"[fuentes] {len(benigno)} sin coincidencias (feed vivo): "
+              + ", ".join(a[3] for a in benigno))
+
+    if not riesgo:
+        if dry_run:
+            print("[fuentes][dry] solo feeds vivos sin coincidencias — no se envía")
+        return
+
     if not token or ":" not in token:
-        print(f"[fuentes] sin token — {len(avisos)} aviso(s) NO enviado(s)")
-        for a in avisos:
+        print(f"[fuentes] sin token — {len(riesgo)} aviso(s) NO enviado(s)")
+        for a in riesgo:
             print("   ", a)
         return
 
     lineas = ["🔌 <b>Radar FIMI — fuentes en riesgo</b>"]
-    for clave, anterior, estado, nombre, tipo, dias in avisos:
+    for clave, anterior, estado, nombre, tipo, dias, probe in riesgo:
         emoji = "🔴" if estado == "inactiva" else "🟠"
         ant = _estado_txt(anterior)
         act = _estado_txt(estado)
-        dias_txt = f" ({dias} días sin publicar)" if dias else ""
+        dias_txt = f" ({dias} días sin eventos)" if dias else ""
+        pv = _probe_txt(probe)
+        pv_txt = f" · {pv}" if pv else ""
         lineas.append(f"{emoji} <b>{nombre}</b> ({tipo})\n"
-                      f"   {ant} → <b>{act}</b>{dias_txt}")
+                      f"   {ant} → <b>{act}</b>{dias_txt}{pv_txt}")
+    if benigno:
+        lineas.append("\n🟢 Feed vivo · sin coincidencias (no es riesgo): "
+                      + ", ".join(a[3] for a in benigno))
     lineas.append(f"\nEstado: {resumen.get('activas')} activas · "
                   f"{resumen.get('bajas')} baja(s) · {resumen.get('inactivas')} inactiva(s)")
     lineas.append(f"Detalle: {URL_DASH}/#fuentes")
@@ -119,7 +160,7 @@ def main(dry_run: bool = False):
             "chat_id": str(CHAT), "text": text, "parse_mode": "HTML",
             "disable_web_page_preview": True,
         }, timeout=30)
-        print(f"[fuentes] telegram HTTP {r.status_code} — {len(avisos)} aviso(s)")
+        print(f"[fuentes] telegram HTTP {r.status_code} — {len(riesgo)} aviso(s)")
     except Exception as e:
         print(f"[fuentes] error telegram: {e}")
 
