@@ -318,16 +318,16 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
   note: 'Radio pública francesa. MBFC: Least Biased, Mostly Factual.'
   analytical_relevance: media
-- nombre: France 24
-  url: https://www.france24.com/fr/rss
-  tipo: media
-  idioma: fr
-  bias: least-biased
-  reliability: high
-  transparency: high
-  factcheck_url: https://mediabiasfactcheck.com/france24/
-  note: 'TV pública francesa. Verificador IFCN. MBFC: Least Biased, High.'
-  analytical_relevance: media
+# - nombre: France 24
+#   url: https://www.france24.com/fr/rss
+#   tipo: media
+#   idioma: fr
+#   bias: least-biased
+#   reliability: high
+#   transparency: high
+#   factcheck_url: https://mediabiasfactcheck.com/france24/
+#   note: 'TV pública francesa. Verificador IFCN. MBFC: Least Biased, High.'
+#   analytical_relevance: media
 - nombre: EUvsDisinfo
   url: https://euvsdisinfo.eu/feed/
   tipo: osint
