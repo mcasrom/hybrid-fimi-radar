@@ -51,13 +51,27 @@ CAPTURA_MAX_H = 7.5
 # ventana para considerar "el run del tema corrió en el último ciclo"
 CICLO_H = 7.0
 # OOM por RUN, no por corpus total: el run más pesado es el de la MAYOR ventana
-# por tema (el cron corre --ventana-dias 60). Medido 13-oct-2026:
-#   defensa 9.130 ev -> 389 MB ; oriente_medio 56.558 ev -> 2.270 MB (VmHWM)
-# => ~40 KB/evento; el OOM (~3,4 GB) se alcanza a ~85 k ev/run. Avisamos por el
-# MAYOR run (ventana), no por el corpus total (métrica engañosa: la historia es
-# ~90 d y la ventana casi no recorta).
-RUN_WARN = 65_000
-RUN_BAD = 80_000
+# por tema (el cron corre --ventana-dias con la ventana de config.yaml). Avisamos
+# por el MAYOR run (ventana REAL), no por el corpus total (métrica engañosa: la
+# historia es ~90 d y la ventana casi no recorta).
+#
+# Recalibrado 19-oct-2026 tras la optimización de memoria (bloques en
+# build_edges / near_duplicate_ratio, commit 18e43ac/eedae1a). Densidad medida:
+#   elecciones 64.479 ev -> 1.002 MB ; oriente_medio 48.974 ev -> 881 MB (VmHWM)
+#   => ~15,5-18 KB/evento (la calibración de 13-oct daba 40 KB/evento y el
+#   umbral 65k/80k saltaría sin riesgo real: elecciones estabiliza a 45 d en
+#   ~81k ev con el pico medido < 1 GiB).
+# Con ~2,3 Gi disponibles: 100 k ev ~ 1,6 GB de pico (vigilar) y 125 k ev ~ 2,0 GB
+# (zona de swap/OOM: los OOM históricos mataron runs de 1,6-2,5 GB de RSS).
+RUN_WARN = 100_000
+RUN_BAD = 125_000
+# Pico RSS MEDIDO en los últimos runs (logs/fimi_rss.log, /usr/bin/time -a del
+# cron): señal real frente al modelo "eventos x KB". 1,8 Gi = vigilar;
+# 2,2 Gi = casi seguro OOM con la base del sistema en uso.
+RSS_LOG = ROOT / "logs" / "fimi_rss.log"
+RSS_WARN_KB = 1_800_000
+RSS_BAD_KB = 2_200_000
+RSS_LECTURA = 18  # runs leídos del final (9 temas x 2 ciclos)
 # Ventana por defecto de un tema si config.yaml no declara `ventana_dias`
 # (el cron usa este mismo default). El peor run se calcula por tema con SU
 # ventana real, no con este valor fijo.
@@ -217,16 +231,45 @@ def chequea():
         _lbl = f"«{_tema}» {n_run:,} ev/ventana {_vent}d"
         if n_run >= RUN_BAD:
             issues.append({"check": "corpus_input", "nivel": "bad",
-                           "msg": f"run mayor {_lbl} — cerca del OOM (~85k/run). "
+                           "msg": f"run mayor {_lbl} — umbral de OOM (RUN_BAD {RUN_BAD:,}). "
                                   f"Acortar la ventana de «{_tema}» o liberar RAM.{_tail}"})
         elif n_run >= RUN_WARN:
             issues.append({"check": "corpus_input", "nivel": "warn",
-                           "msg": f"run mayor {_lbl} — vigilar (OOM ~85k/run).{_tail}"})
+                           "msg": f"run mayor {_lbl} — vigilar (RUN_WARN {RUN_WARN:,}).{_tail}"})
         else:
             ok.append({"check": "corpus_input",
                        "msg": f"run mayor {_lbl} (margen); corpus {n_ev:,}"})
     except Exception as e:
         issues.append({"check": "corpus", "nivel": "warn", "msg": f"error corpus: {e}"})
+
+    # 6b) pico de RAM MEDIDO en los últimos runs (fimi_rss.log) — señal real
+    # frente al modelo de "eventos x KB". Si falta el log se avisa: un guardia
+    # que deja de medir es tan malo como uno que grita de más (regla 4).
+    try:
+        if RSS_LOG.exists():
+            lineas = RSS_LOG.read_text(encoding="utf-8",
+                                       errors="replace").splitlines()[-RSS_LECTURA:]
+            pico, pico_tema = 0, "—"
+            for ln in lineas:
+                m = re.search(r"run tema=(\S+):.*\s(\d+) KB RSS", ln)
+                if m and int(m.group(2)) > pico:
+                    pico, pico_tema = int(m.group(2)), m.group(1)
+            if pico:
+                lbl = f"«{pico_tema}» {pico:,} KB ({pico / 1024 / 1024:.2f} GiB)"
+                if pico >= RSS_BAD_KB:
+                    issues.append({"check": "pico_rss", "nivel": "bad",
+                                   "msg": f"pico de RAM medido {lbl} — zona de OOM."})
+                elif pico >= RSS_WARN_KB:
+                    issues.append({"check": "pico_rss", "nivel": "warn",
+                                   "msg": f"pico de RAM medido {lbl} — vigilar."})
+                else:
+                    ok.append({"check": "pico_rss",
+                               "msg": f"pico de RAM medido {lbl} (margen)"})
+        else:
+            issues.append({"check": "pico_rss", "nivel": "warn",
+                           "msg": f"no existe {RSS_LOG.name}: sin medición de pico de RAM"})
+    except Exception as e:
+        issues.append({"check": "pico_rss", "nivel": "warn", "msg": f"error pico_rss: {e}"})
 
     con.close()
     nivel = "bad" if any(i["nivel"] == "bad" for i in issues) else (
