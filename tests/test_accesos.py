@@ -47,6 +47,13 @@ CASOS_IP = [
     ("209.151.149.77", "HUMANO_PROBABLE", "móvil: no debe tocarse"),
     ("46.222.153.79", "HUMANO_PROBABLE", "residencial: no debe tocarse"),
     ("88.188.15.150", "HUMANO_PROBABLE", "residencial: no debe tocarse"),
+    # --- IPv6 de nube (19-oct-2026): DATACENTER_CIDRS no tenía ninguno ---
+    ("2409:8714:e95:490:28::", "BOT", "nube china (familia Chrome/151)"),
+    ("240e:96a:4c00:102a:32::", "BOT", "nube china (China Telecom)"),
+    ("2408:862e:ff:fe32:4000:0:2:18", "BOT", "nube china (China Unicom)"),
+    ("2a03:2880:f100::1", "BOT", "Facebook/Meta"),
+    ("2604:2dc0::1", "BOT", "HostUS"),
+    ("2607:f8b0:400c:c31::10", "BOT", "Google"),
 ]
 
 # (ruta, es_profunda_esperada, porque)
@@ -111,6 +118,23 @@ CASOS_UA = [
      "/", 200, "ASISTENTE_IA", "rastreador de asistente"),
     ("Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)",
      "/", 200, "ASISTENTE_IA", "rastreador de OpenAI"),
+    # --- familias de escáner que se colaban como humano (19-oct-2026) ---
+    ("Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/"
+     "605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
+     "/research.html", 200, "BOT",
+     "iOS 13.2.3 (dic-2019): 188 IPs de nube china, 1 req/IP"),
+    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:49.0) Gecko/20100101"
+     " Firefox/49.0", "/research.html", 200, "BOT",
+     "Firefox 49: firma clásica de escáner"),
+    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101"
+     " Firefox/148.0", "/research.html", 200, "HUMANO_PROBABLE",
+     "Firefox reciente: un navegador viejo real NO se toca"),
+    ("Mastodon/4.3.0 (http.rb/5.2.0)", "/", 200, "BOT",
+     "servidor del fediverso pidiendo la tarjeta OG tras publicar"),
+    ("Misskey/2024.9.0 (https://misskey.example)", "/", 200, "BOT",
+     "servidor del fediverso"),
+    ("Chrome Privacy Preserving Prefetch Proxy", "/research.html", 200, "BOT",
+     "prefetch de Chrome: no es una lectura"),
 ]
 
 

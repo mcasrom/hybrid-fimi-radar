@@ -7,6 +7,10 @@ y avisa UNA vez por marca nueva (dedup en data/.oom_rss_estado.json).
 
 Objetivo: confirmar que la ventana 30 d de oriente_medio bajo el pico (~-450 MB).
 No toca BD ni scoring.
+
+Nota 2026-10-19: el cron pasa a correr DESPUES de cada ciclo (:15 de 2,8,14,20) y
+la marca es una HUELLA de los valores (no el indice de linea), porque el RSS log
+rota cada dia a las 00:00 y un indice reiniciado haria saltarse el aviso.
 """
 from __future__ import annotations
 
@@ -53,23 +57,23 @@ def _telegram(txt: str) -> bool:
 
 
 def _ultimos() -> dict:
-    """Ultima medicion por tema (KB) + su numero de linea (marca de ciclo)."""
+    """Ultima medicion por tema (KB)."""
     if not LOG.exists():
         return {}
     out = {}
-    for i, ln in enumerate(LOG.read_text(encoding="utf-8").splitlines()):
+    for ln in LOG.read_text(encoding="utf-8").splitlines():
         m = re.search(r"run tema=(\w+): [\d.]+ s\s+(\d+) KB RSS", ln)
         if m and m.group(1) in TEMAS:
-            out[m.group(1)] = (int(m.group(2)), i)
+            out[m.group(1)] = int(m.group(2))
     return out
 
 
 def main() -> int:
     ult = _ultimos()
     if not ult:
-        print("[oom-aviso] sin mediciones en el log", file=sys.stderr)
-        return 1
-    marca = max(v[1] for v in ult.values())
+        print("[oom-aviso] sin mediciones en el log (ciclo en curso o log recien rotado)", file=sys.stderr)
+        return 0
+    marca = ",".join(f"{t}={ult[t]}" for t in TEMAS if t in ult)
     est = {}
     if ESTADO.exists():
         try:
@@ -82,8 +86,7 @@ def main() -> int:
     lin = []
     for t in TEMAS:
         if t in ult:
-            kb = ult[t][0]
-            lin.append(f"- {t}: {kb/1024:.0f} MB")
+            lin.append(f"- {t}: {ult[t]/1024:.0f} MB")
     txt = ("Pico RSS tras el ciclo (ventana oriente_medio=30 d)\n"
            + "\n".join(lin) + "\nEsperado oriente_medio ~1.900 MB (antes ~2.340)."
            " Si bajo y no hay OOM -> confirmado.")

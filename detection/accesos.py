@@ -103,6 +103,16 @@ DATACENTER_CIDRS = [
     # Azure / GCP (sin uso residencial conocido)
     "20.0.0.0/11", "51.4.0.0/15", "51.8.0.0/16", "51.10.0.0/15",
     "34.64.0.0/10", "35.184.0.0/13", "35.224.0.0/12", "104.196.0.0/14",
+    # IPv6 de nube (19-oct-2026). `DATACENTER_CIDRS` NO tenía NINGÚN IPv6, así
+    # que una IP de nube IPv6 no se reconocía nunca y caía como "humano".
+    # Medido (host=fimi, 01→18 oct): la familia Chrome/151 tenía 331 IPs, de
+    # las que 306 son IPv6 chinas (2409:/2408:/240e: = China Mobile/Unicom/
+    # Telecom Cloud); también aparecen Facebook, Datacamp, HostUS y Google.
+    "2409::/16", "2408::/16", "240e::/16",   # nube de operadores en China
+    "2a03:2880::/32",                          # Facebook / Meta
+    "2a02:6ea0::/32",                          # Datacamp
+    "2604:2dc0::/32",                          # HostUS
+    "2607:f8b0::/32",                          # Google
 ]
 
 _DATACENTER = None
@@ -174,6 +184,33 @@ UA_IA = re.compile(
 UA_IA_GENTE = re.compile(
     r"claude-user|claude-web|chatgpt-user|perplexity-user", re.I
 )
+
+# Familias de escáner que imitan navegador y se colaban como HUMANO_PROBABLE.
+# Medido en los logs (host=fimi, 18 d, 01→18 oct-2026):
+#   · iPhone OS 13_2_3 (dic-2019): 188 IPs, TODAS IPv4 de nube china (Tencent:
+#     43.x / 49.51 / 170.106…), 1 req/IP. No es un iPhone de 2019 leyendo.
+#   · Firefox <=49: firma clásica de escáner (la versión que ven los listados
+#     de bots); aparece a diario desde nube. Firefox/50+ NO se toca: un
+#     navegador viejo sigue siendo una persona.
+#   · Fediverso: un servidor Mastodon/Misskey pide la tarjeta OG cada vez que
+#     publicamos; no es una persona (publicamos nosotros, no nos lee).
+#   · Chrome Privacy Preserving Prefetch Proxy: prefetch de Chrome, no lectura.
+IPHONE_OLD = re.compile(r"iPhone OS 13_2_3", re.I)
+OLD_FIREFOX = re.compile(r"Firefox/([0-4]?\d)(?:\.|$)")
+FEDIVERSE = re.compile(
+    r"Mastodon/|http\.rb/|Pleroma|Misskey|Akkoma|GoToSocial|Peertube|"
+    r"Friendica|BookWyrm|appview",
+    re.I,
+)
+PREFETCH = re.compile(r"privacy.?preserving.?prefetch", re.I)
+
+
+def es_ua_escanner(ua):
+    """UA que imita navegador pero no es una persona."""
+    u = ua or ""
+    return bool(IPHONE_OLD.search(u) or OLD_FIREFOX.search(u)
+                or FEDIVERSE.search(u) or PREFETCH.search(u))
+
 
 # Un Chrome de verdad manda SIEMPRE cuatro componentes de versión
 # (`Chrome/120.0.0.0`). "Chrome/120.0" o "Chrome/126" los manda un crawler que
@@ -353,7 +390,7 @@ def clasificar(ip, ruta, status, ua):
         return "BOT", scan, prof
     if UA_IA.search(ua or ""):
         return "ASISTENTE_IA", scan, prof
-    if UA_BOT.search(ua or "") or es_ua_imitada(ua):
+    if UA_BOT.search(ua or "") or es_ua_imitada(ua) or es_ua_escanner(ua):
         return "BOT", scan, prof
     if scan:
         return "BOT", scan, prof

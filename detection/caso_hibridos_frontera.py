@@ -886,12 +886,12 @@ def compute_series(ids, hechos, dias=30):
     if ids:
         chq = ",".join("?" * len(ids))
         for (ts,) in con.execute("SELECT timestamp FROM events WHERE id IN (" + chq + ")", list(ids)):
-            k = _dt.datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+            k = _dt.datetime.fromtimestamp(ts, _dt.timezone.utc).strftime("%Y-%m-%d")
             pub[k] = pub.get(k, 0) + 1
     con.close()
     his = {}
     for x in (hechos or {}).get("historias", []):
-        k = _dt.datetime.utcfromtimestamp(x["fecha"]).strftime("%Y-%m-%d")
+        k = _dt.datetime.fromtimestamp(x["fecha"], _dt.timezone.utc).strftime("%Y-%m-%d")
         his[k] = his.get(k, 0) + 1
     dz = sorted(set(pub) | set(his))[-dias:]
     return {"dias": dz, "pub": [pub.get(k, 0) for k in dz], "his": [his.get(k, 0) for k in dz]}
