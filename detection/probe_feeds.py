@@ -22,6 +22,9 @@ import yaml
 CFG = "/home/deploy/hybrid-fimi-radar/config.yaml"
 OUT = "/home/deploy/hybrid-fimi-radar/data/feed_health.json"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
+# UA de collectors/capture.py: melillahoy 403 a los dos anteriores pero lo sirve
+# a este, así la sonda debe probarlo para no marcar como caído un feed vivo.
+UA_CAPTURE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ECR-capture/0.1"
 
 
 def last_date(entries):
@@ -42,13 +45,19 @@ def probe(f, cutoff):
         r = requests.get(url, headers={"User-Agent": UA}, timeout=12, allow_redirects=True)
         if r.status_code == 403:
             r = requests.get(url, headers={"User-Agent": "Feedly/1.0 (+http://www.feedly.com/fetcher.html)"}, timeout=12, allow_redirects=True)
+        if r.status_code == 403:
+            r = requests.get(url, headers={"User-Agent": UA_CAPTURE}, timeout=12, allow_redirects=True)
         rec["http"] = r.status_code
         d = feedparser.parse(r.content)
+        if r.status_code == 403:
+            d = feedparser.parse(url, agent=UA_CAPTURE)
+            if d.entries:
+                rec["http"] = 200
         rec["items"] = len(d.entries)
         dt = last_date(d.entries)
         if dt:
             rec["ultimo"] = dt.strftime("%Y-%m-%d")
-        if r.status_code != 200:
+        if rec["http"] != 200:
             rec["estado"] = "http_error"
         elif rec["items"] == 0:
             rec["estado"] = "sin_items"

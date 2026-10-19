@@ -26,6 +26,10 @@ DB = ROOT / "data" / "radar.db"
 OUT = ROOT / "data" / "raw" / f"events_{datetime.utcnow().strftime('%Y%m%d_%H%M')}.json"
 from detection import tema_reglas as tr  # noqa: E402  (fuente única de reglas de tema)
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ECR-capture/0.1"
+# Segundo UA para RSS (idéntico al de detection/probe_feeds.py): cada sitio
+# bloquea uno distinto — abc 403 al UA por defecto de feedparser, lamoncloa 403
+# al de captura, melillahoy 403 al de la sonda. Hacen falta los dos.
+UA_RSS = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 
 # Canales Telegram públicos (ejemplos genéricos; configúralos en config.yaml)
 TELEGRAM_CHANNELS = []  # p.ej. ["elfarodeceuta", "maldita_es"]
@@ -367,11 +371,30 @@ def grab_mastodon(query, instance="mastodon.social", n=50):
 
 
 def grab_rss_feed(name, url, n=40):
-    """RSS oficial/mediático vía feedparser (fuente prioritaria del prompt)."""
+    """RSS oficial/mediático vía feedparser (fuente prioritaria del prompt).
+
+    Prueba dos UA (UA y UA_RSS) porque los bloqueos 403 son por sitio y sin
+    fallback cada uno deja un fallo distinto: abc 0 eventos en 14 d con el UA
+    por defecto de feedparser. Un status>=400 o un feed ilegible se registra
+    en err() porque feedparser no lanza excepción (regla 4)."""
     out = []
     try:
         import feedparser
-        feed = feedparser.parse(url)
+        feed = None
+        last_status = None
+        for agent in (UA, UA_RSS):
+            f = feedparser.parse(url, agent=agent)
+            last_status = getattr(f, "status", None)
+            if last_status is None or int(last_status) < 400:
+                feed = f
+                break
+        if feed is None:
+            err(f"rss:{name}", RuntimeError(f"HTTP {last_status} en {url}"))
+            return out
+        if not feed.entries and feed.bozo:
+            err(f"rss:{name}",
+                getattr(feed, "bozo_exception", None) or RuntimeError("feed ilegible sin items"))
+            return out
         for e in feed.entries[:n]:
             ts = int(time.mktime(e.get("published_parsed") or e.get("updated_parsed") or time.gmtime()))
             title = e.get("title", "")
