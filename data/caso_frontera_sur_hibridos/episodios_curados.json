@@ -1,87 +1,108 @@
 {
-  "_nota": "Episodios curados A MANO (prefijo CUR-; los automaticos usan AUTO-). La columna 'fuente' son los enlaces disponibles en el corpus (muchos de Google News, agregador; varios son dominio raiz, no URL de articulo). 'fuente_primaria' indica el actor/oficio que sostiene el hecho y su estado de localizacion. NO se inventan URLs.",
-  "_actualizado": "2026-10-15",
-  "episodios": [
-    {
-      "id": "CUR-2026-001",
-      "titulo": "Fragata marroquí (Mohamed VI) en aguas próximas a Ceuta y despliegue de la Armada",
-      "periodo": "12-15 oct 2026",
-      "tipo": "Militar / marítimo",
-      "afirmacion": "Medios españoles afirman que la fragata insignia de la Marina marroquí (Mohamed VI) navegó en aguas próximas a Ceuta en torno a la crisis migratoria, y que la Armada española activó fragatas con base en Rota y el BAM 'Rayo'.",
-      "actores": "España (Armada, Delegación del Gobierno) · Marruecos (Marina Real)",
-      "fuente": [
-        "https://www.infodefensa.com/ (Infodefensa: foto de la fragata Hassan II saliendo de Ksar Sghir)",
-        "https://www.theobjective.com/ (The Objective: «¡Basta ya!» llamada de la Armada)",
-        "https://www.elconfidencial.com/ (El Confidencial)"
-      ],
-      "fuente_primaria": "Pendiente: nota/comunicado oficial del Ministerio de Defensa o de la Armada (no localizado con URL verificable). Existe la versión oficial del delegado del Gobierno («patrullaje ordinario») reportada por El Pueblo de Ceuta.",
-      "estado_verificacion": "Reportado por múltiples medios; versión oficial divergente (Gobierno lo califica de rutina). No verificado por fuentes primarias.",
-      "explicacion_alternativa": "Tránsito/patrullaje ordinario de la Marina marroquí; el despliegue español como respuesta de rutina o preventiva. La coincidencia temporal con la crisis migratoria pudo amplificarse en prensa.",
-      "limites": "El número de titulares NO es el número de incursiones. No hay confirmación oficial independiente de una «incursión»."
-    },
-    {
-      "id": "CUR-2026-002",
-      "titulo": "Desarrollo de un dron «kamikaze» marroquí de largo alcance",
-      "periodo": "24-29 sep 2026",
-      "tipo": "Militar / tecnológico",
-      "afirmacion": "Medios especializados y generalistas afirman que Marruecos desarrolla su primer dron «kamikaze» capaz de alcanzar objetivos en territorio español.",
-      "actores": "Marruecos (industria de defensa)",
-      "fuente": [
-        "https://www.theobjective.com/ (The Objective)",
-        "https://www.infodefensa.com/ (Infodefensa)"
-      ],
-      "fuente_primaria": "Pendiente: fuentes de defensa especializadas (Infodefensa); sin comunicado oficial marroquí localizado.",
-      "estado_verificacion": "Reportado por prensa especializada; sin confirmación estatal.",
-      "explicacion_alternativa": "Programa de defensa legítimo y defensivo; cobertura con tono de amenaza sin cambios verificables de capacidad operativa contra España.",
-      "limites": "«Capaz de atacar cualquier punto de España» es una afirmación de alcance técnico, no un hecho de agresión."
-    },
-    {
-      "id": "CUR-2026-003",
-      "titulo": "Drones marroquíes: interferencia y vigilancia",
-      "periodo": "24 sep–oct 2026",
-      "tipo": "Militar / vigilancia",
-      "afirmacion": "Se publica que España pidió a Marruecos ajustar la altura de sus drones tras interferir uno en un aterrizaje, y que un dron marroquí sobrevoló/vigiló una manifestación en la frontera de El Tarajal.",
-      "actores": "España (aviación civil/AENA implícito) · Marruecos (FAR)",
-      "fuente": [
-        "https://www.rt.com/ (RT en Español)",
-        "https://okdiario.com/ (okdiario)"
-      ],
-      "fuente_primaria": "Pendiente: AENA / Enaire (aviación civil) no localizado con URL verificable.",
-      "estado_verificacion": "Reportado; sin confirmación oficial.",
-      "explicacion_alternativa": "Vuelos de vigilancia fronteriza de rutina; error/incidente puntual.",
-      "limites": "No verifica el vuelo concreto descrito en cada publicación."
-    },
-    {
-      "id": "CUR-2026-004",
-      "titulo": "Presión migratoria y empadronamientos en la frontera",
-      "periodo": "jul – oct 2026",
-      "tipo": "Fronterizo / migratorio",
-      "afirmacion": "Cobertura continuada de la presión migratoria sobre Ceuta/Melilla/Canarias y de empadronamientos irregulares investigados (UCRIF).",
-      "actores": "España (Policía/UCRIF, Delegación) · Marruecos (frontera)",
-      "fuente": [
-        "https://www.canariasenpleno.com/ (Canarias en Pleno)",
-        "https://elfarodeceuta.es/ (El Faro de Ceuta)",
-        "https://melillahoy.es/ (Melilla Hoy)"
-      ],
-      "fuente_primaria": "Pendiente: Ministerio del Interior / UCRIF (datos de detenciones); cifras citadas en prensa.",
-      "estado_verificacion": "Reportado; cifras oficiales citadas por prensa.",
-      "explicacion_alternativa": "Flujos migratorios por causas socioeconómicas y de conflicto, no necesariamente instrumentados como coerción.",
-      "limites": "La coincidencia temporal migración↔movimiento naval no prueba uso deliberado."
-    },
-    {
-      "id": "CUR-2026-005",
-      "titulo": "Discurso político: acusaciones de «hostigamiento» a Marruecos",
-      "periodo": "29-30 sep 2026",
-      "tipo": "Político / discursivo",
-      "afirmacion": "Actores políticos españoles acusan al Gobierno de «colaborar con Marruecos en su hostigamiento a Ceuta».",
-      "actores": "España (PP: Díaz de Otazu) · Gobierno de España",
-      "fuente": [
-        "https://melillahoy.es/diaz-de-otazu-acusa-al-gobierno-de-colaborar-con-marruecos-en-el-hostigamiento-a-ceuta"
-      ],
-      "fuente_primaria": "Declaraciones del propio actor político (primaria: sus declaraciones; enlace de prensa como traza).",
-      "estado_verificacion": "Declaración pública (hecho discursivo verificable como declaración; su contenido no).",
-      "explicacion_alternativa": "Controversia política interna; no es evidencia de acción híbrida por Marruecos.",
-      "limites": "Una acusación publicada no equivale a un hecho demostrado."
-    }
-  ]
+ "_nota": "Episodios curados A MANO (prefijo CUR-; los automaticos usan AUTO-). La columna 'fuente' son los enlaces disponibles en el corpus (muchos de Google News, agregador; varios son dominio raiz, no URL de articulo). 'fuente_primaria' indica el actor/oficio que sostiene el hecho y su estado de localizacion. NO se inventan URLs.",
+ "_actualizado": "2026-10-21",
+ "episodios": [
+  {
+   "id": "CUR-2026-001",
+   "titulo": "Fragata marroquí (Mohamed VI) en aguas próximas a Ceuta y despliegue de la Armada",
+   "periodo": "12-15 oct 2026",
+   "tipo": "Militar / marítimo",
+   "afirmacion": "Medios españoles afirman que la fragata insignia de la Marina marroquí (Mohamed VI) navegó en aguas próximas a Ceuta en torno a la crisis migratoria, y que la Armada española activó fragatas con base en Rota y el BAM 'Rayo'.",
+   "actores": "España (Armada, Delegación del Gobierno) · Marruecos (Marina Real)",
+   "fuente": [
+    "https://www.infodefensa.com/ (Infodefensa: foto de la fragata Hassan II saliendo de Ksar Sghir)",
+    "https://www.theobjective.com/ (The Objective: «¡Basta ya!» llamada de la Armada)",
+    "https://www.elconfidencial.com/ (El Confidencial)"
+   ],
+   "fuente_primaria": "Pendiente: nota/comunicado oficial del Ministerio de Defensa o de la Armada (no localizado con URL verificable). Existe la versión oficial del delegado del Gobierno («patrullaje ordinario») reportada por El Pueblo de Ceuta.",
+   "estado_verificacion": "Reportado por múltiples medios; versión oficial divergente (Gobierno lo califica de rutina). No verificado por fuentes primarias.",
+   "explicacion_alternativa": "Tránsito/patrullaje ordinario de la Marina marroquí; el despliegue español como respuesta de rutina o preventiva. La coincidencia temporal con la crisis migratoria pudo amplificarse en prensa.",
+   "limites": "El número de titulares NO es el número de incursiones. No hay confirmación oficial independiente de una «incursión»."
+  },
+  {
+   "id": "CUR-2026-002",
+   "titulo": "Desarrollo de un dron «kamikaze» marroquí de largo alcance",
+   "periodo": "24-29 sep 2026",
+   "tipo": "Militar / tecnológico",
+   "afirmacion": "Medios especializados y generalistas afirman que Marruecos desarrolla su primer dron «kamikaze» capaz de alcanzar objetivos en territorio español.",
+   "actores": "Marruecos (industria de defensa)",
+   "fuente": [
+    "https://www.theobjective.com/ (The Objective)",
+    "https://www.infodefensa.com/ (Infodefensa)"
+   ],
+   "fuente_primaria": "Pendiente: fuentes de defensa especializadas (Infodefensa); sin comunicado oficial marroquí localizado.",
+   "estado_verificacion": "Reportado por prensa especializada; sin confirmación estatal.",
+   "explicacion_alternativa": "Programa de defensa legítimo y defensivo; cobertura con tono de amenaza sin cambios verificables de capacidad operativa contra España.",
+   "limites": "«Capaz de atacar cualquier punto de España» es una afirmación de alcance técnico, no un hecho de agresión."
+  },
+  {
+   "id": "CUR-2026-003",
+   "titulo": "Drones marroquíes: interferencia y vigilancia",
+   "periodo": "24 sep–oct 2026",
+   "tipo": "Militar / vigilancia",
+   "afirmacion": "Se publica que España pidió a Marruecos ajustar la altura de sus drones tras interferir uno en un aterrizaje, y que un dron marroquí sobrevoló/vigiló una manifestación en la frontera de El Tarajal.",
+   "actores": "España (aviación civil/AENA implícito) · Marruecos (FAR)",
+   "fuente": [
+    "https://www.rt.com/ (RT en Español)",
+    "https://okdiario.com/ (okdiario)"
+   ],
+   "fuente_primaria": "Pendiente: AENA / Enaire (aviación civil) no localizado con URL verificable.",
+   "estado_verificacion": "Reportado; sin confirmación oficial.",
+   "explicacion_alternativa": "Vuelos de vigilancia fronteriza de rutina; error/incidente puntual.",
+   "limites": "No verifica el vuelo concreto descrito en cada publicación."
+  },
+  {
+   "id": "CUR-2026-004",
+   "titulo": "Presión migratoria y empadronamientos en la frontera",
+   "periodo": "jul – oct 2026",
+   "tipo": "Fronterizo / migratorio",
+   "afirmacion": "Cobertura continuada de la presión migratoria sobre Ceuta/Melilla/Canarias y de empadronamientos irregulares investigados (UCRIF).",
+   "actores": "España (Policía/UCRIF, Delegación) · Marruecos (frontera)",
+   "fuente": [
+    "https://www.canariasenpleno.com/ (Canarias en Pleno)",
+    "https://elfarodeceuta.es/ (El Faro de Ceuta)",
+    "https://melillahoy.es/ (Melilla Hoy)"
+   ],
+   "fuente_primaria": "Pendiente: Ministerio del Interior / UCRIF (datos de detenciones); cifras citadas en prensa.",
+   "estado_verificacion": "Reportado; cifras oficiales citadas por prensa.",
+   "explicacion_alternativa": "Flujos migratorios por causas socioeconómicas y de conflicto, no necesariamente instrumentados como coerción.",
+   "limites": "La coincidencia temporal migración↔movimiento naval no prueba uso deliberado."
+  },
+  {
+   "id": "CUR-2026-005",
+   "titulo": "Discurso político: acusaciones de «hostigamiento» a Marruecos",
+   "periodo": "29-30 sep 2026",
+   "tipo": "Político / discursivo",
+   "afirmacion": "Actores políticos españoles acusan al Gobierno de «colaborar con Marruecos en su hostigamiento a Ceuta».",
+   "actores": "España (PP: Díaz de Otazu) · Gobierno de España",
+   "fuente": [
+    "https://melillahoy.es/diaz-de-otazu-acusa-al-gobierno-de-colaborar-con-marruecos-en-el-hostigamiento-a-ceuta"
+   ],
+   "fuente_primaria": "Declaraciones del propio actor político (primaria: sus declaraciones; enlace de prensa como traza).",
+   "estado_verificacion": "Declaración pública (hecho discursivo verificable como declaración; su contenido no).",
+   "explicacion_alternativa": "Controversia política interna; no es evidencia de acción híbrida por Marruecos.",
+   "limites": "Una acusación publicada no equivale a un hecho demostrado."
+  },
+  {
+   "id": "CUR-2026-006",
+   "titulo": "Marruecos negocia el escudo israelí «Honda de David» (David's Sling)",
+   "periodo": "7 sep – 21 oct 2026",
+   "tipo": "Militar / defensa aérea",
+   "afirmacion": "Medios españoles e israelíes sitúan a Marruecos en negociación avanzada para comprar el sistema israelí David's Sling («Honda de David»), un escudo antimisiles y antidrones de hasta 300 km de alcance. La Razón lo presentó como compra el 7-sep-2026; el 21-oct El Español, Antena 3, Atalayar y Atlántico Hoy hablan de negociación/aceleración tras la cumbre militar de Marrakech.",
+   "actores": "Marruecos (FAR) · Israel (industria de defensa) · España (Canarias y Ceuta como referencia estratégica)",
+   "fuente": [
+    "https://www.elespanol.com/observatorio-defensa/20261021/marruecos-ultima-compra-honda-david-cupula-israeli-km-alcance-destruir-misiles-drones/1003744421115_0.html",
+    "https://www.larazon.es/ (La Razón, 7-sep-2026: «compra del sistema israelí David's Sling»)",
+    "https://www.antena3.com/ (Antena 3 Noticias, 21-oct-2026: «negocia la compra»)",
+    "https://www.atalayar.com/ (Atalayar, 21-oct-2026: contrato tras la cumbre de Marrakech)",
+    "https://www.moroccoworldnews.com/ (12-oct-2026: conversaciones avanzadas)",
+    "https://militarywatchmagazine.com/ (10-oct-2026: conversaciones avanzadas)",
+    "https://www.jpost.com/ (14-oct-2026: cumbre y relaciones defensa Israel-Marruecos)"
+   ],
+   "fuente_primaria": "Pendiente: anuncio oficial de las FAR (Marruecos), del Ministerio de Defensa israelí o de la industria (Rafael/Elbit). No localizado con URL verificable; la cobertura se apoya en fuentes periodísticas.",
+   "estado_verificacion": "Múltiples medios ES/IL desde el 7-sep-2026. El 21-oct varios describen negociación avanzada o aceleración del contrato; no hay confirmación oficial ni importe/entrega verificables. Distinguir «negocia» de «compra cerrada».",
+   "explicacion_alternativa": "Ruido/filtración negociadora: la operación se reportó en septiembre y se reencuadra como «aceleración» coincidiendo con la cumbre militar de Marrakech y con la crisis de Ceuta. El interés por defensa antimisiles/drones es coherente con el rearme marroquí ya documentado, pero el alcance de 300 km es la cifra que dan los medios, no una ficha oficial.",
+   "limites": "No confirma contrato, importe, número de baterías ni calendario de entrega. El volumen de titulares no equivale a capacidades desplegadas. La pieza no forma clúster en el radar: es evidencia de contexto, no señal de amplificación coordinada."
+  }
+ ]
 }
