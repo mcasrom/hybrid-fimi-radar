@@ -1847,6 +1847,13 @@ def main():
         "x": (f"Presión híbrida en Frontera Sur (Marruecos): {d['clusters_nucleo']} clusters "
               f"núcleo, {d['nucleo']['eventos']} eventos, {_dlt} vs 8 sem. Señal, no atribución. {_url}"),
     }
+    # Episodios curados en el JSON publico (la API los expone en episodios_curados)
+    try:
+        doc["episodios_curados"] = json.load(open(CURADOS, encoding="utf-8")).get("episodios", [])
+    except (OSError, ValueError) as _ex:
+        print("[caso-hibridos] curados no incluidos en JSON:", _ex, file=sys.stderr)
+        doc["episodios_curados"] = []
+    doc.setdefault("meta", {})["episodios_curados"] = len(doc["episodios_curados"])
     os.makedirs(os.path.dirname(JSON_OUT), exist_ok=True)
     json.dump(doc, open(JSON_OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print("[caso-hibridos] JSON ->", JSON_OUT)
