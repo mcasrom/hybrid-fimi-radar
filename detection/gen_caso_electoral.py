@@ -283,6 +283,7 @@ def main():
 <p class="tag">Amplificación medida en varios procesos electorales — <b>panorama, no un caso</b>.</p>
 <div class="box"><b>Encuadre.</b> Esto <b>no</b> dice si hay una campaña ni quién está detrás. Agrega la <b>amplificación</b> medida (varias cuentas repiten lo mismo a la vez) en el tema <code>elecciones</code>, que cubre varios países y procesos. Una banda alta es <b>amplificación</b>, no coordinación confirmada.</div>
 <p style='font-size:.8rem;color:#64748b'>¿Te encuentras una de estas URL compartida? <a href='/consulta.html' style='color:#c2410c;font-weight:600'>Consulta su huella →</a> (eco de prensa, difusión de una fuente o amplificación anómala).</p>
+<div class="box" style="border-left:4px solid #0f766e"><b>Datos del 29N.</b> Sondeos, censo, participación y escaños, con fuente y rango: <a href="https://elecciones29n.pruebapublica.com/?utm_source=fimi&amp;utm_medium=crosspromo&amp;utm_campaign=29n" style="font-weight:600">observatorio electoral 29N →</a></div>
 <div class="kpis">
   <div class="kpi"><b>{n(ev['n'])}</b><span>eventos (30 d)</span></div>
   <div class="kpi"><b>{n(ev['a'])}</b><span>autores distintos</span></div>
