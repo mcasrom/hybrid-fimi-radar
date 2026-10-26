@@ -1,0 +1,56 @@
+# English editorial translations for data/protestas.yaml.
+# Keyed by the stable episode id; not used by the radar.
+ESP-BARCELONA-2026-10-24:
+  nombre: "Riots after the Blocus call"
+  estado: "Diffusion documented; authors and direction of the riots unknown"
+  detonante: "TikTok and messaging groups; no public list of demands"
+  convocantes: "Network of more than twenty anonymous Blocus accounts; account holders unidentified"
+  demandas: []
+  llamada: "Youth gathering called on social media; it led to looting and clashes"
+  alcance: "Barcelona; accounts and groups also in Madrid and other cities"
+  nota: "More than 100 arrested, a quarter of them minors (Infobae). Mossos say detainees did not come from France."
+FRA-2026-10-24:
+  nombre: "National marches for schools and the cost of living"
+  estado: "Documented fact"
+  detonante: "Teacher shortages, crumbling classrooms and the cost of living"
+  convocantes: "UNEF, CGT and other unions; secondary-school students"
+  demandas:
+    - "More teachers and smaller classes"
+    - "Better school buildings"
+    - "A response to the cost of living"
+  llamada: "National marches; 400,000 according to the government, 800,000 according to unions"
+  alcance: "Paris, Marseille, Lyon, Lille, Bordeaux and Orléans, among others"
+  nota: "Both figures are shown together because they are not comparable with counts from other countries."
+ITA-MILAN-2026-10-17:
+  nombre: "Riots on the second day of mobilisations"
+  estado: "Arrests documented; authorship of the violence unidentified"
+  detonante: "Cost-of-living pressure and youth discontent"
+  convocantes: "Unidentified youth calls"
+  demandas:
+    - "Against the rising cost of living"
+  llamada: "Mobilisations in Milan, Turin and Bologna"
+  alcance: "Milan; unrest also in northern Italy"
+  nota: "More than 200 arrested, around 80% minors (Europa Press)."
+ALB-2026-10-24:
+  nombre: "Protests against the hotel complex and Rama's government"
+  estado: "Protests documented; the 'hybrid war' claim has no public evidence"
+  detonante: "Luxury hotel complex in a nature reserve; corruption and education costs"
+  convocantes: "Students and a civic movement"
+  demandas:
+    - "Resignation of Prime Minister Edi Rama"
+    - "Stop the hotel complex in the reserve"
+    - "Universities and public education"
+  llamada: "Protests outside government buildings; five months of mobilisation"
+  alcance: "Tirana and other Albanian cities"
+  nota: "The government calls it 'hybrid war'; experts consulted by DW see no public evidence for those claims."
+NPL-2025-09:
+  nombre: "Protests after the ban on 26 platforms"
+  estado: "Government fell; 76 dead"
+  detonante: "Ban on 26 platforms and anger at corruption"
+  convocantes: "Decentralised youth movement"
+  demandas:
+    - "Repeal the platform ban"
+    - "Against corruption and nepotism"
+  llamada: "Protests in Kathmandu and other cities; resignation of the prime minister"
+  alcance: "Nepal; a reference for later mobilisations in Madagascar and elsewhere"
+  nota: "Death toll and government outcome from the linked public chronology."

@@ -31,9 +31,11 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "radar.db"
 YAML_PATH = ROOT / "data" / "protestas.yaml"
+EN_YAML_PATH = ROOT / "data" / "protestas_en.yaml"
 JSON_OUT = Path("/var/www/fimi/datos/protestas.json")
 SCHEMA_OUT = Path("/var/www/fimi/datos/protestas.schema.json")
 HTML_OUT = Path("/var/www/fimi/casos/protestas/index.html")
+HTML_EN = Path("/var/www/fimi/casos/protestas/en.html")
 TEMA = "protestas_juveniles"
 
 sys.path.insert(0, str(ROOT))
@@ -48,6 +50,11 @@ BAND_COL = {
     "NORMAL": "#94a3b8",
 }
 BAND_ORDER = ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH", "NORMAL"]
+BAND_EN = {"CRITICAL": "Very high amplification", "HIGH": "High amplification",
+           "ANOMALOUS": "Anomalous amplification", "WATCH": "Under observation", "NORMAL": "Normal"}
+PAIS_EN = {"España": "Spain", "Francia": "France", "Italia": "Italy", "Albania": "Albania", "Nepal": "Nepal"}
+CIUDAD_EN = {"Barcelona": "Barcelona", "Varias ciudades": "Several cities", "Milán": "Milan",
+             "Tirana": "Tirana", "Katmandú": "Kathmandu"}
 
 
 def n(x) -> str:
@@ -117,7 +124,14 @@ def arc_path(cx, cy, r1, r2, a0, a1) -> str:
 
 
 def cargar_episodios() -> list:
-    return yaml.safe_load(YAML_PATH.read_text(encoding="utf-8")) or []
+    eps = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8")) or []
+    try:
+        en = yaml.safe_load(EN_YAML_PATH.read_text(encoding="utf-8")) or {}
+    except OSError:
+        en = {}
+    for e in eps:
+        e["en"] = en.get(e.get("id"), {})
+    return eps
 
 
 def señal(conn) -> dict:
@@ -152,6 +166,11 @@ def señal(conn) -> dict:
     for i in range(14):
         d = start + timedelta(days=i)
         daily.append({"fecha": d.isoformat(), "eventos": raw.get(d.isoformat(), 0)})
+    weekly = [{"week": r[0], "eventos": r[1]} for r in conn.execute(
+        "SELECT strftime('%Y-W%W', e.timestamp, 'unixepoch') w, COUNT(*) "
+        "FROM events e JOIN event_temas et ON et.event_id=e.id "
+        "WHERE et.tema_id=? AND e.timestamp>=strftime('%s', ?) GROUP BY w ORDER BY w",
+        (TEMA, (hoy - timedelta(days=56)).isoformat()))]
     # dominios (solo URL; no cuentas)
     doms = {}
     for r in conn.execute(
@@ -202,13 +221,14 @@ def señal(conn) -> dict:
         "max_score": round(max((r["overall_score"] or 0 for r in cl), default=0), 1),
         "top_clusters": top_clusters[:16],
         "daily": daily,
+        "weekly": weekly,
         "fuentes": fuentes,
         "persistencia": persistencia,
         "top_dominios": [{"dominio": d, "eventos": c, "tipo": tipo_dominio(d)} for d, c in top_doms],
     }
 
 
-def svg_timeline(epis: list) -> str:
+def svg_timeline(epis: list, lang: str = "es") -> str:
     if not epis:
         return "<p class='meta'>Sin episodios.</p>"
     eps = sorted(epis, key=lambda e: (fecha(e.get("fecha")), str(e.get("pais"))))
@@ -224,8 +244,12 @@ def svg_timeline(epis: list) -> str:
         x = x0 + i * step
         up = i % 2 == 0
         col = "#f97316" if i == len(eps) - 1 else "#0ea5e9"
-        label = f"{e.get('ciudad')} · {e.get('pais')}"
-        lines = wrap(e.get("nombre"), 23)
+        if lang == "en":
+            label = f"{CIUDAD_EN.get(str(e.get('ciudad')), e.get('ciudad'))} · {PAIS_EN.get(str(e.get('pais')), e.get('pais'))}"
+            lines = wrap(e.get("en", {}).get("nombre") or e.get("nombre"), 23)
+        else:
+            label = f"{e.get('ciudad')} · {e.get('pais')}"
+            lines = wrap(e.get("nombre"), 23)
         if up:
             out.append(f'<line x1="{x:.1f}" y1="{y-12}" x2="{x:.1f}" y2="118" stroke="#94a3b8"/>')
             out.append(f'<text x="{x:.1f}" y="36" text-anchor="middle" class="tl-date">{dmy(e.get("fecha"))}</text>')
@@ -239,12 +263,12 @@ def svg_timeline(epis: list) -> str:
             for j, line in enumerate(lines[:3]):
                 out.append(f'<text x="{x:.1f}" y="{304+j*18}" text-anchor="middle" class="tl-name">{esc(line)}</text>')
         out.append(f'<circle cx="{x:.1f}" cy="{y}" r="9" fill="{col}" stroke="#fff" stroke-width="3"><title>{esc(e.get("nombre"))}</title></circle>')
-    out.append(f'<text x="{x0}" y="374" class="tl-note">Secuencia editorial de los episodios curados · no es una escala temporal</text>')
+    out.append(f'<text x="{x0}" y="374" class="tl-note">{"Editorial sequence of curated episodes · not a time scale" if lang == "en" else "Secuencia editorial de los episodios curados · no es una escala temporal"}</text>')
     out.append("</svg>")
     return "".join(out)
 
 
-def svg_bands(bands: dict) -> str:
+def svg_bands(bands: dict, lang: str = "es") -> str:
     total = sum((bands.get(b, 0) or 0) for b in BAND_ORDER)
     W, H = 480, 260
     cx, cy, r1, r2 = 132, 128, 92, 58
@@ -260,19 +284,19 @@ def svg_bands(bands: dict) -> str:
             out.append(f'<path d="{arc_path(cx, cy, r1, r2, a, a+sweep)}" fill="{BAND_COL[b]}"><title>{esc(BAND_ES.get(b,b))}: {c}</title></path>')
             a += sweep
     out.append(f'<text x="{cx}" y="{cy-4}" text-anchor="middle" class="donut-num">{total}</text>')
-    out.append(f'<text x="{cx}" y="{cy+18}" text-anchor="middle" class="donut-lab">clústeres</text>')
+    out.append(f'<text x="{cx}" y="{cy+18}" text-anchor="middle" class="donut-lab">{"clusters" if lang == "en" else "clústeres"}</text>')
     yy = 42
     for b in BAND_ORDER:
         c = bands.get(b, 0) or 0
         out.append(f'<rect x="252" y="{yy-10}" width="10" height="10" rx="2" fill="{BAND_COL[b]}"/>')
-        out.append(f'<text x="270" y="{yy}" class="legend">{esc(BAND_ES.get(b,b))}</text>')
+        out.append(f'<text x="270" y="{yy}" class="legend">{esc((BAND_EN if lang == "en" else BAND_ES).get(b,b))}</text>')
         out.append(f'<text x="458" y="{yy}" text-anchor="end" class="legend-n">{c}</text>')
         yy += 35
     out.append("</svg>")
     return "".join(out)
 
 
-def svg_scatter(clusters: list) -> str:
+def svg_scatter(clusters: list, lang: str = "es") -> str:
     pts = [c for c in clusters if c.get("cuentas", 0) > 0][:16]
     W, H = 980, 360
     L, R, T, B = 64, 26, 24, 58
@@ -287,11 +311,11 @@ def svg_scatter(clusters: list) -> str:
         out.append(f'<text x="{L-10}" y="{y+4:.1f}" text-anchor="end" class="axis">{yv}</text>')
     y60 = T + ph * 0.4
     out.append(f'<line x1="{L}" y1="{y60:.1f}" x2="{W-R}" y2="{y60:.1f}" stroke="#f97316" stroke-dasharray="5 5"/>')
-    out.append(f'<text x="{W-R-8}" y="{y60-8:.1f}" text-anchor="end" class="axis-hot">banda alta ≥60</text>')
+    out.append(f'<text x="{W-R-8}" y="{y60-8:.1f}" text-anchor="end" class="axis-hot">{"high band ≥60" if lang == "en" else "banda alta ≥60"}</text>')
     for xv in range(0, xmax + 1, max(1, xmax // 5)):
         x = L + pw * xv / xmax
         out.append(f'<text x="{x:.1f}" y="{H-B+22}" text-anchor="middle" class="axis">{xv}</text>')
-    out.append(f'<text x="{L+pw/2}" y="{H-16}" text-anchor="middle" class="axis-title">cuentas en el clúster</text>')
+    out.append(f'<text x="{L+pw/2}" y="{H-16}" text-anchor="middle" class="axis-title">{"accounts in cluster" if lang == "en" else "cuentas en el clúster"}</text>')
     for c in pts:
         x = L + pw * min(c["cuentas"], xmax) / xmax
         y = T + ph * (1 - min(c["score"], ymax) / ymax)
@@ -302,12 +326,12 @@ def svg_scatter(clusters: list) -> str:
         c = max(pts, key=lambda x: x["score"])
         x = L + pw * min(c["cuentas"], xmax) / xmax
         y = T + ph * (1 - min(c["score"], ymax) / ymax)
-        out.append(f'<text x="{x+12:.1f}" y="{y-10:.1f}" class="point-lab">máx {c["score"]:.0f} · {c["cuentas"]} cuentas</text>')
+        out.append(f'<text x="{x+12:.1f}" y="{y-10:.1f}" class="point-lab">{"max" if lang == "en" else "máx"} {c["score"]:.0f} · {c["cuentas"]} {"accounts" if lang == "en" else "cuentas"}</text>')
     out.append("</svg>")
     return "".join(out)
 
 
-def svg_daily(daily: list, epis: list) -> str:
+def svg_daily(daily: list, epis: list, lang: str = "es") -> str:
     W, H = 980, 240
     L, R, T, B = 56, 24, 22, 44
     pw, ph = W - L - R, H - T - B
@@ -343,17 +367,42 @@ def svg_daily(daily: list, epis: list) -> str:
         if i is None:
             continue
         x = L + pw * i / max(1, len(daily) - 1)
-        label = f"{dm(d)} · {len(es)} episodio" + ("s" if len(es) != 1 else "")
+        label = f"{dm(d)} · {len(es)} {'episode' if lang == 'en' else 'episodio'}" + ("" if lang == "en" or len(es) == 1 else "s")
         anchor = "end" if x > W - 140 else ("start" if x < L + 100 else "middle")
         tx = x - 4 if anchor == "end" else (x + 4 if anchor == "start" else x)
         out.append(f'<line x1="{x:.1f}" y1="{T}" x2="{x:.1f}" y2="{T+ph}" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 5"/>')
         out.append(f'<text x="{tx:.1f}" y="{T-7}" text-anchor="{anchor}" class="axis-mark">{esc(label)}</text>')
-    out.append(f'<text x="{L}" y="{H-8}" class="axis-title">eventos etiquetados por día · marcas = episodios curados en la ventana</text>')
+    out.append(f'<text x="{L}" y="{H-8}" class="axis-title">{"events/day · marks = curated episodes in window" if lang == "en" else "eventos etiquetados por día · marcas = episodios curados en la ventana"}</text>')
     out.append("</svg>")
     return "".join(out)
 
 
-def svg_domains(doms: list) -> str:
+
+def svg_weeks(weeks: list, lang: str = "es") -> str:
+    """Barras semanales; contexto de captura, no tendencia del fenómeno."""
+    if not weeks:
+        return "<p class='meta'>Sin semanas.</p>"
+    W, H = 980, 250
+    L, R, T, B = 62, 24, 26, 48
+    pw, ph = W - L - R, H - T - B
+    vmax = max([1] + [w["eventos"] for w in weeks])
+    bw = pw / max(1, len(weeks))
+    out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Eventos por semana; contexto de captura" class="chart">']
+    for yv in (0, vmax // 2, vmax):
+        y = T + ph * (1 - yv / vmax)
+        out.append(f'<line x1="{L}" y1="{y:.1f}" x2="{W-R}" y2="{y:.1f}" stroke="#e2e8f0"/>')
+        out.append(f'<text x="{L-8}" y="{y+4:.1f}" text-anchor="end" class="axis">{yv}</text>')
+    for i, w in enumerate(weeks):
+        x = L + i * bw + bw * 0.18
+        hh = max(2, ph * w["eventos"] / vmax)
+        y = T + ph - hh
+        out.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw*0.64:.1f}" height="{hh:.1f}" rx="5" fill="#38bdf8" fill-opacity=".8"><title>{w["week"]}: {w["eventos"]}</title></rect>')
+        out.append(f'<text x="{x+bw*0.32:.1f}" y="{H-B+18}" text-anchor="middle" class="axis">{w["week"].split("-")[-1]}</text>')
+    out.append(f'<text x="{L}" y="{H-8}" class="axis-title">{"events/week · capture context; not a baseline of the phenomenon" if lang == "en" else "eventos por semana · captura; no es una línea base del fenómeno"}</text>')
+    out.append("</svg>")
+    return "".join(out)
+
+def svg_domains(doms: list, lang: str = "es") -> str:
     if not doms:
         return "<p class='meta'>Sin dominios.</p>"
     plot = [d for d in doms if d.get("tipo") != "agregador"][:8] or doms[:8]
@@ -364,7 +413,8 @@ def svg_domains(doms: list) -> str:
     for i, d in enumerate(plot):
         y = y0 + i * row
         w = max(3, (x1 - x0) * d["eventos"] / vmax)
-        out.append(f'<text x="{x0-10}" y="{y+16}" text-anchor="end" class="dom-lab">{esc(d["dominio"][:25])} · {esc(d.get("tipo", "otro"))}</text>')
+        tt = {"medio": "media", "agregador": "aggregator", "plataforma": "platform", "otro": "other"}.get(d.get("tipo"), d.get("tipo", "other")) if lang == "en" else d.get("tipo", "otro")
+        out.append(f'<text x="{x0-10}" y="{y+16}" text-anchor="end" class="dom-lab">{esc(d["dominio"][:25])} · {esc(tt)}</text>')
         out.append(f'<rect x="{x0}" y="{y+4}" width="{x1-x0}" height="17" rx="8" fill="#f1f5f9"/>')
         out.append(f'<rect x="{x0}" y="{y+4}" width="{w:.1f}" height="17" rx="8" fill="#0ea5e9"><title>{esc(d["dominio"])}: {d["eventos"]}</title></rect>')
         out.append(f'<text x="{x0+w+8:.1f}" y="{y+17}" class="dom-num">{n(d["eventos"])}</text>')
@@ -372,7 +422,7 @@ def svg_domains(doms: list) -> str:
     return "".join(out)
 
 
-def svg_mechanism() -> str:
+def svg_mechanism(lang: str = "es") -> str:
     W, H = 1000, 300
     labels = [
         ("1", "Malestar", ["vivienda, escuela,", "coste de vida, empleo"]),
@@ -380,6 +430,12 @@ def svg_mechanism() -> str:
         ("3", "Plataforma", ["TikTok / Instagram", "+ mensajería cerrada"]),
         ("4", "Símbolo", ["blocus, «como en", "Francia», One Piece"]),
         ("5", "Respuesta", ["detenciones, límites,", "ley y orden"]),
+    ] if lang != "en" else [
+        ("1", "Grievance", ["housing, schools,", "cost of living, jobs"]),
+        ("2", "Trigger", ["one concrete case", "that fits in 30 s"]),
+        ("3", "Platform", ["TikTok / Instagram", "+ closed messaging"]),
+        ("4", "Symbol", ["blocus, 'like in", "France', One Piece"]),
+        ("5", "Response", ["arrests, limits,", "law and order"]),
     ]
     bw, gap, x0, y = 172, 25, 25, 54
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Mecanismo de propagación en cinco piezas" class="chart">',
@@ -396,10 +452,30 @@ def svg_mechanism() -> str:
         if i < len(labels) - 1:
             out.append(f'<line x1="{x+bw+4}" y1="{y+66}" x2="{x+bw+gap-4}" y2="{y+66}" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>')
     out.append(f'<path d="M {x0+4*bw+4*gap-6} {y+142} C {x0+4*bw+4*gap-6} {y+208} {x0+2*bw+2*gap} {y+208} {x0+2*bw+2*gap} {y+190}" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arr)"/>')
-    out.append(f'<text x="{W/2}" y="{H-10}" text-anchor="middle" class="mech-note">La respuesta puede convertirse en un nuevo detonante · marco analítico, no secuencia causal</text>')
+    out.append(f'<text x="{W/2}" y="{H-10}" text-anchor="middle" class="mech-note">{"The response can become a new trigger · analytical frame, not a causal sequence" if lang == "en" else "La respuesta puede convertirse en un nuevo detonante · marco analítico, no secuencia causal"}</text>')
     out.append("</svg>")
     return "".join(out)
 
+
+JS_FILTER = """
+<script>
+(function(){
+  const cards = Array.from(document.querySelectorAll('.episode'));
+  const pais = document.getElementById('f-pais');
+  const tipo = document.getElementById('f-tipo');
+  const count = document.getElementById('f-count');
+  function apply(){
+    let n=0;
+    cards.forEach(c=>{
+      const ok = (!pais.value || c.dataset.pais===pais.value) && (!tipo.value || c.dataset.tipo===tipo.value);
+      c.hidden = !ok; if(ok) n++;
+    });
+    if(count) count.textContent = n + ' de ' + cards.length + ' episodios';
+  }
+  if(pais&&tipo){ pais.addEventListener('change',apply); tipo.addEventListener('change',apply); apply(); }
+})();
+</script>
+"""
 
 CSS = """
 :root{--navy:#0b1220;--ink:#1e293b;--muted:#64748b;--line:#e2e8f0;--orange:#f97316;--blue:#38bdf8;--bg:#f3f6fb;--teal:#0e9f6e}
@@ -452,7 +528,7 @@ h3{font-size:1.04rem;margin:0 0 .35rem}
 .two{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;align-items:start}
 .two-charts{grid-template-columns:.72fr 1.28fr}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.episode{background:#fff;border:1px solid var(--line);border-left:5px solid var(--orange);border-radius:14px;padding:17px;margin:12px 0;box-shadow:0 8px 18px #0f172a06}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 15px;margin:12px 0}.filters label{font-size:.8rem;color:#475569;font-weight:700}.filters select{margin-left:6px;padding:5px 7px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f172a;font:inherit}.episode{background:#fff;border:1px solid var(--line);border-left:5px solid var(--orange);border-radius:14px;padding:17px;margin:12px 0;box-shadow:0 8px 18px #0f172a06}
 .episode .num{float:right;color:#cbd5e1;font-weight:800;font-size:1.1rem}
 .episode h3{margin-top:2px}
 .episode p{margin:.35em 0}
@@ -496,11 +572,20 @@ def render(epis: list, s: dict, ahora: str) -> str:
             f"{esc(urllib.parse.urlparse(u).netloc.replace('www.', ''))}</a> "
             for u in (e.get("fuentes") or [])
         )
+        refs = e.get("lineage_refs") or []
+        if refs:
+            map_html = " · ".join(
+                f"<a href='https://fimi.viajeinteligencia.com/n/{esc(r)}' target='_blank' rel='noopener noreferrer'>{esc(r.split('@')[0])}</a>"
+                for r in refs)
+            map_html = "Clúster asociado: " + map_html
+        else:
+            map_html = "No observado en la ventana del piloto."
         eps_html.append(f"""
-        <article class="episode">
+        <article class="episode" data-pais="{esc(e.get('pais'))}" data-tipo="{esc(e.get('tipo_detonante') or 'otro')}">
           <span class="num">{i:02d}</span>
           <div class="meta">{dmy(e.get('fecha'))} · {esc(e.get('pais'))} · {esc(e.get('ciudad'))}</div>
           <h3>{esc(e.get('nombre'))}</h3>
+          <p class="meta"><b>Señal del radar:</b> {map_html}</p>
           <p class="meta"><b>Estado:</b> {esc(e.get('estado'))}</p>
           <p><b>Detonante:</b> {esc(e.get('detonante'))}</p>
           <p><b>Quién convoca:</b> {esc(e.get('convocantes'))}</p>
@@ -546,6 +631,8 @@ def render(epis: list, s: dict, ahora: str) -> str:
 <title>Protestas juveniles · observatorio de amplificación</title>
 <meta name="robots" content="noindex,follow">
 <meta name="description" content="Cronología, señal de amplificación, mecanismo y episodios curados de la ola de protestas juveniles 2025-26.">
+<link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
+<link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
 <header><div class="wrap"><a class="brand" href="/">📡 Observatorio <span>/ protestas juveniles</span></a></div></header>
 <main class="wrap">
@@ -553,7 +640,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
   <p class="kicker">Piloto de amplificación</p>
   <h1>La ola juvenil, en una página</h1>
   <p class="lead">Del malestar a la calle y de la calle al feed. Qué está documentado, qué se repite y qué sigue siendo atribución. El radar mide amplificación y extensión; no identifica autores ni intención.</p>
-  <p><span class="badge">Piloto</span><span class="badge">Sin atribución</span><span class="badge">Fuentes enlazadas</span></p>
+  <p><span class="badge">Piloto</span><span class="badge">Sin atribución</span><span class="badge">Fuentes enlazadas</span><a class="badge" href="en.html">English</a></p>
   <div class="hero-stats">
     <div class="hero-stat"><b>{n(s['eventos'])}</b><span>eventos etiquetados</span></div>
     <div class="hero-stat"><b>{n(s['cuentas'])}</b><span>cuentas distintas</span></div>
@@ -594,11 +681,17 @@ def render(epis: list, s: dict, ahora: str) -> str:
     <div class="chart-card"><h3>Cuentas frente a score</h3><p class="meta">Cada círculo es un clúster. Tamaño = eventos; color = banda.</p>{svg_scatter(s['top_clusters'])}</div>
   </div>
   <div class="chart-card"><h3>Ritmo de conversación</h3><p class="meta">Eventos etiquetados por día en la ventana del piloto.</p>{svg_daily(s['daily'], epis)}</div>
+  <div class="chart-card"><h3>Contexto de captura · 8 semanas + actual</h3><p class="meta">El salto de la semana 42 refleja sobre todo el cambio de cobertura del radar, no un aumento súbito de protestas. Se muestra como contexto, no como línea base.</p>{svg_weeks(s['weekly'])}</div>
 </section>
 
 <section>
   <h2>Episodios curados</h2>
-  <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster <b>no es automática</b>: no se inventa. Fuentes consultadas el 26/10/2026.</p>
+  <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster es <b>manual y revisable</b>: no se inventa. Fuentes consultadas el 26/10/2026.</p>
+  <div class="filters">
+    <label>Región <select id="f-pais"><option value="">Todas</option>{''.join(f'<option value="{esc(x)}">{esc(x)}</option>' for x in sorted({str(e.get('pais')) for e in epis}))}</select></label>
+    <label>Tipo de detonante <select id="f-tipo"><option value="">Todos</option>{''.join(f'<option value="{v}">{esc(k)}</option>' for v,k in [('redes','Redes / plataformas'),('educacion','Educación'),('coste','Coste de vida'),('corrupcion','Corrupción')])}</select></label>
+    <span id="f-count" class="meta"></span>
+  </div>
   {''.join(eps_html)}
 </section>
 
@@ -628,6 +721,132 @@ def render(epis: list, s: dict, ahora: str) -> str:
 <p><a href="/datos/protestas.json">Datos abiertos (JSON)</a> · <a href="/datos/protestas.schema.json">Esquema JSON</a> · <a href="/informes/visual/protestas_juveniles.html">Informe visual</a> · <a href="/">Volver al radar</a></p>
 <footer>Elaborado con asistencia de IA y revisión humana. Fuentes enlazadas en el texto. — @pruebapublica<br>
 Piloto de amplificación · no indexado hasta revisión · {esc(ahora)} UTC</footer>
+</main>
+{JS_FILTER}
+</body></html>"""
+
+
+def _en(e, key, fallback=""):
+    v = (e.get("en") or {}).get(key)
+    return v if v not in (None, "") else (e.get(key) or fallback)
+
+
+def render_en(epis: list, s: dict, ahora: str) -> str:
+    rows = []
+    for e in sorted(epis, key=lambda x: (fecha(x.get("fecha")), str(x.get("pais")))):
+        dem = _en(e, "demandas", []) or []
+        dem_txt = "<br>".join(f"• {esc(x)}" for x in dem) or "<span class='meta'>No public list located.</span>"
+        refs = e.get("lineage_refs") or []
+        radar = " · ".join(
+            f"<a href='https://fimi.viajeinteligencia.com/n/{esc(r)}' target='_blank' rel='noopener noreferrer'>{esc(r.split('@')[0])}</a>"
+            for r in refs) or "<span class='meta'>Not observed in this window</span>"
+        src = "".join(
+            f"<a href='{esc(u)}' target='_blank' rel='noopener noreferrer'>{esc(urllib.parse.urlparse(u).netloc.replace('www.', ''))}</a> "
+            for u in (e.get("fuentes") or [])
+        )
+        place = f"{CIUDAD_EN.get(str(e.get('ciudad')), e.get('ciudad'))}, {PAIS_EN.get(str(e.get('pais')), e.get('pais'))}"
+        rows.append(f"""<tr>
+          <td>{dmy(e.get('fecha'))}</td>
+          <td>{esc(place)}</td>
+          <td>{esc(_en(e, 'nombre'))}<br><span class="meta">{esc(_en(e, 'estado'))}</span></td>
+          <td>{esc(_en(e, 'detonante'))}</td>
+          <td>{dem_txt}</td>
+          <td>{esc(_en(e, 'llamada'))}<br><span class="meta">Radar: {radar} · Sources: {src or '—'}</span></td>
+        </tr>""")
+
+    high = s["bandas"].get("HIGH", 0) + s["bandas"].get("CRITICAL", 0)
+    top_src = " · ".join(f"{f['fuente']} {f['pct']}%" for f in s.get("fuentes", [])[:2])
+    peak = max(s.get("daily", []), key=lambda x: x.get("eventos", 0), default=None)
+    peak_txt = dmy(peak["fecha"]) if peak else "—"
+    pers = s.get("persistencia", {})
+    hi_accounts = (s.get("top_clusters") or [{}])[0].get("cuentas", 0)
+
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Youth protests · amplification observatory</title>
+<meta name="robots" content="noindex,follow">
+<meta name="description" content="Chronology, amplification signal, mechanism and curated episodes of the 2025–26 youth protest wave.">
+<link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
+<link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
+<style>{CSS}</style></head><body>
+<header><div class="wrap"><a class="brand" href="/">📡 Observatory <span>/ youth protests</span></a></div></header>
+<main class="wrap">
+<section class="hero">
+  <p class="kicker">Amplification pilot</p>
+  <h1>The youth wave, on one page</h1>
+  <p class="lead">From grievance to the street and from the street to the feed. What is documented, what is repeated, and what remains attribution. The radar measures amplification and reach; it does not identify authors or intent.</p>
+  <p><span class="badge">Pilot</span><span class="badge">No attribution</span><span class="badge">Linked sources</span><a class="badge" href="./">Español</a></p>
+  <div class="hero-stats">
+    <div class="hero-stat"><b>{n(s['eventos'])}</b><span>tagged events</span></div>
+    <div class="hero-stat"><b>{n(s['cuentas'])}</b><span>distinct accounts</span></div>
+    <div class="hero-stat"><b>{n(s['clusters'])}</b><span>clusters</span></div>
+    <div class="hero-stat"><b>{n(high)}</b><span>in high band</span></div>
+  </div>
+</section>
+
+<div class="note"><b>How to read this page.</b> KPIs and clusters come from the pilot's topic tagging. Demands and calls are curated citations, not automatic extraction. A <span class="term" title="A score band that indicates anomalous amplification; it does not confirm coordination or authorship.">high band</span> means <b>anomalous amplification</b>, not confirmed coordination. Updated: {esc(ahora)} UTC · last observation: {dt(s['hasta'])}.</div>
+
+<div class="takeaways"><h2>Key takeaways</h2><ul>
+<li><b>{n(s.get('signal_clusters', 0))} of {n(s['clusters'])}</b> clusters have signal (≥3 accounts); {n(s.get('small_clusters', 0))} are small groups.</li>
+<li><b>{n(high)}</b> in high band and <b>0</b> cross-account synchronies. High band means amplification, not authorship.</li>
+<li>Coverage is dominated by <b>{esc(top_src or '—')}</b>.</li>
+<li>Persistence: <b>{n(pers.get('max_ciclos', 0))} cycle</b> per lineage. One cycle cannot give a reliable half-life.</li>
+</ul></div>
+
+<div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>; the only high-band cluster is explained by source amplification/echo, not coordination. It has <b>{hi_accounts} accounts</b>: publication threshold is 3; CRITICAL is 10. <b>1 cluster is under manual review</b>; coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{sum(1 for c in s.get('top_clusters', []) if 58.9 <= c.get('score', 0) <= 59.1)} clusters tie at 59</b>. <b>We cannot conclude</b> that the wave is orchestrated.</div>
+
+<details class="glossary"><summary>What do “high band”, “cluster”, “score” and “persistence” mean?</summary>
+<p><b>Cluster:</b> a group of events connected by content, links, time or accounts. It is not proof of coordination. <b>Score:</b> a combination of coordination, similarity, amplification, infrastructure and anomaly (0–100); it is not a probability. <b>High band:</b> score ≥60; it indicates anomalous amplification. <b>Persistence:</b> number of cycles a lineage survives; one cycle is not enough for a half-life.</p>
+</details>
+
+<div class="limits"><h2>What this radar does not see</h2><ul>
+<li><b>The original call.</b> TikTok, Instagram, WhatsApp, Telegram and Discord are not captured; the radar does not observe where the protest is organised.</li>
+<li><b>The street.</b> No own counts of attendees, arrests or injuries: episode figures are quoted from sources.</li>
+<li><b>Representativeness.</b> Bluesky and Google News dominate capture; this is not a representative sample of Spanish conversation.</li>
+<li><b>People.</b> No minors or individual accounts are identified.</li>
+<li><b>Baseline.</b> “Anomalous” is relative to this window; there is no eight-week baseline. Weight changes would move the 60 cut.</li>
+</ul></div>
+
+<section>
+  <h2>Chronology: from Kathmandu to Barcelona</h2>
+  <p class="meta">Five curated episodes separate the fact, the demand and the call. The order is editorial, not a time scale.</p>
+  <div class="chart-card">{svg_timeline(epis, 'en')}</div>
+</section>
+
+<section>
+  <h2>The signal, in three views</h2>
+  <div class="two two-charts">
+    <div class="chart-card"><h3>Clusters by band</h3><p class="meta">All clusters; most are small groups.</p>{svg_bands(s['bandas'], 'en')}</div>
+    <div class="chart-card"><h3>Accounts vs score</h3><p class="meta">Each circle is a cluster. Size = events; colour = band.</p>{svg_scatter(s['top_clusters'], 'en')}</div>
+  </div>
+  <div class="chart-card"><h3>Conversation rhythm</h3><p class="meta">Tagged events per day in the pilot window.</p>{svg_daily(s['daily'], epis, 'en')}</div>
+  <div class="chart-card"><h3>Capture context · 8 weeks + current</h3><p class="meta">The jump in week 42 mostly reflects a change in radar coverage, not a sudden rise in protests. It is context, not a baseline.</p>{svg_weeks(s['weekly'], 'en')}</div>
+</section>
+
+<section>
+  <h2>Curated episodes</h2>
+  <p class="meta">No public list of demands is invented. The episode-to-cluster link is manual and revisable. Sources accessed 26 Oct 2026.</p>
+  <div style="overflow:auto"><table>
+    <thead><tr><th>Date</th><th>Place</th><th>Episode / status</th><th>Trigger</th><th>Declared demands</th><th>Call / radar</th></tr></thead>
+    <tbody>{''.join(rows)}</tbody>
+  </table></div>
+</section>
+
+<section><h2>The mechanism: five pieces</h2><div class="chart-card">{svg_mechanism('en')}</div></section>
+
+<section><h2>Who amplifies</h2>
+  <div class="chart-card"><h3>Domains with more events</h3><p class="meta">Google News is excluded from the chart as an aggregator; it is press echo, not an independent source.</p>{svg_domains(s['top_dominios'], 'en')}</div>
+</section>
+
+<section><h2>What to watch</h2><div class="three">
+  <div class="card"><h3>Reach</h3><p class="meta">Whether the same slogans cross borders without a local trigger.</p></div>
+  <div class="card"><h3>Amplification</h3><p class="meta">Whether accounts and domains repeat the same content in a short window.</p></div>
+  <div class="card"><h3>Attribution</h3><p class="meta">Only with independent evidence. The radar does not provide it.</p></div>
+</div></section>
+
+<p><a href="/datos/protestas.json">Open data (JSON)</a> · <a href="/datos/protestas.schema.json">JSON schema</a> · <a href="/informes/visual/protestas_juveniles.html">Visual report</a> · <a href="./">Español</a> · <a href="/">Back to radar</a></p>
+<footer>Produced with AI assistance and human review. Linked sources. — @pruebapublica<br>
+Amplification pilot · noindex until review · {esc(ahora)} UTC</footer>
 </main></body></html>"""
 
 
@@ -676,7 +895,8 @@ def main() -> int:
     if not a.json_only:
         HTML_OUT.parent.mkdir(parents=True, exist_ok=True)
         HTML_OUT.write_text(render(epis, s, ahora), encoding="utf-8")
-        print(f"[protestas] HTML -> {HTML_OUT}")
+        HTML_EN.write_text(render_en(epis, s, ahora), encoding="utf-8")
+        print(f"[protestas] HTML -> {HTML_OUT} (+ EN)")
     return 0
 
 

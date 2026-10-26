@@ -11,6 +11,9 @@
 # Actualizado: 2026-10-26.
 
 - id: ESP-BARCELONA-2026-10-24
+  tipo_detonante: redes
+  lineage_refs:
+  - protestas_juveniles_cluster_003@1793020772
   pais: España
   ciudad: Barcelona
   fecha: 2026-10-24
@@ -28,6 +31,9 @@
   nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia."
 
 - id: FRA-2026-10-24
+  tipo_detonante: educacion
+  lineage_refs:
+  - protestas_juveniles_cluster_016@1793020772
   pais: Francia
   ciudad: Varias ciudades
   fecha: 2026-10-24
@@ -47,6 +53,8 @@
   nota: "Las dos cifras se muestran juntas porque no son comparables con recuentos de otros países."
 
 - id: ITA-MILAN-2026-10-17
+  tipo_detonante: coste
+  lineage_refs: []
   pais: Italia
   ciudad: Milán
   fecha: 2026-10-17
@@ -64,6 +72,9 @@
   nota: "Más de 200 detenidos, en torno al 80 % menores (Europa Press)."
 
 - id: ALB-2026-10-24
+  tipo_detonante: corrupcion
+  lineage_refs:
+  - protestas_juveniles_cluster_030@1793020772
   pais: Albania
   ciudad: Tirana
   fecha: 2026-10-24
@@ -83,6 +94,8 @@
   nota: "El Gobierno habla de «guerra híbrida»; expertos consultados por DW no ven evidencia pública de esas atribuciones."
 
 - id: NPL-2025-09
+  tipo_detonante: redes
+  lineage_refs: []
   pais: Nepal
   ciudad: Katmandú
   fecha: 2025-09-08
