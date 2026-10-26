@@ -2,6 +2,8 @@
 cd /home/deploy/hybrid-fimi-radar
 # 1) Captura: eventos nuevos con su tema (keywords/feeds del config)
 .venv/bin/python collectors/capture.py --no-analyze >> logs/capture.log 2>&1
+# 1b) Vigilancia de volumen Telegram (no captura, solo lectura + aviso)
+.venv/bin/python detection/monitor_telegram.py --tg >> logs/telegram.log 2>&1
 # 2) Detección por TEMA: cada tema ACTIVO del catálogo corre su propio pipeline
 #    (filtra sus eventos via event_temas y reemplaza su snapshot de clusters).
 #    Se salta los temas cerrados (estado != produccion|piloto) — su pipeline se

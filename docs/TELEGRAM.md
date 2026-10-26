@@ -47,3 +47,28 @@ El checker no escribe en la base; solo comprueba HTTP, título y mensajes visibl
 - Un canal público no es una muestra representativa de Telegram.
 - El HTML de `t.me/s/` puede cambiar o limitar peticiones; el collector registra el error y sigue.
 - No se usan grupos privados ni automatización de cuentas.
+
+## Vigilancia de volumen
+
+Línea base al añadir los canales (26-oct-2026): **79 eventos Telegram/24 h** y **1.001/14 d**, ≈**1,1 %** del corpus.
+
+El monitor `detection/monitor_telegram.py` corre tras la captura y avisa solo al cambiar de nivel:
+
+| Nivel | 24 h | 6 h | Cuota del corpus 24 h |
+|---|---:|---:|---:|
+| Aviso | 300 | 100 | 5 % |
+| Crítico | 650 | 220 | 10 % |
+
+También avisa si un canal supera **100 eventos/24 h** (aviso) o **180** (crítico). El estado se guarda en `data/telegram_volume_state.json` para no repetir el mismo aviso.
+
+**Tope duro:** `TG_MAX_PER_CYCLE = 250` en `collectors/capture.py`. Con 18 canales × 20 mensajes posibles, el máximo teórico sería 360/ciclo; el tope corta a 250 y lo deja en `logs/capture.log`.
+
+**Interruptor manual:** si un canal se dispara, comentar su línea en `config.yaml → telegram_canales` o en `data/telegram_protestas.yaml`; el siguiente ciclo deja de leerlo. No hay que reiniciar servicios.
+
+Comandos:
+
+```bash
+.venv/bin/python detection/monitor_telegram.py --json
+.venv/bin/python detection/monitor_telegram.py --tg
+.venv/bin/python scripts/check_telegram.py
+```
