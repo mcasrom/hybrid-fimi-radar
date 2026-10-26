@@ -145,9 +145,9 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 Snapshot (10/Oct/2026, **v0.2.1**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
-- **9 temas activos** (7 en producción + 2 en piloto: `elecciones`, `defensa_espana`); `espana_elecciones` (29-N) está en producción.
+- **8 temas activos** (7 en producción + 1 en piloto: `defensa_espana`). **`elecciones` cerrado el 26-oct-2026** (histórico conservado); `espana_elecciones` (29-N) está en producción.
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
-- **~233.000 eventos** y **~1.600 clusters** (9 temas activos, a 10/Oct/2026): la API
+- **~233.000 eventos** y **~1.600 clusters** (8 temas activos, a 10/Oct/2026): la API
   (`/api/v1/temas`) cuenta **99 en banda alta** (HIGH/CRITICAL, score ≥60) y **0 CRITICAL**.
   **Estas cifras cambian en cada ciclo** (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
@@ -261,8 +261,8 @@ muestra el valor vivo):
 ### Correcciones 26-oct-2026
 
 - **Suscripciones**: `send_email()` registra el id de Resend y los fallos con el correo enmascarado; `FIMI_EMAIL_DRY_RUN=1` permite probar sin enviar; la API devuelve 502 si el envío inmediato falla. Un pendiente con MX nulo o rebote no se reintenta: no se envía recordatorio a direcciones no entregables.
-- **Promoción persistente**: `check_promocion.py` ya no cuenta ciclos desde `fimi.log` (la rotación los borraba). Incrementa `ciclos` y `ultimo_ciclo` en `data/promocion_<tema>.json`, una vez por snapshot. Estado tras la corrección: `defensa_espana` 3/8 y `elecciones` 3/96.
-- **Solapamiento `elecciones`**: 77.421 eventos; **11.156** compartidos con `espana_elecciones`, **3.390** con `eeuu_politica` y **63.007** solo en `elecciones`. Recomendación: **cerrar `elecciones` como tema activo ahora** y conservar su histórico; España y EEUU ya tienen temas propios. Si después del 29-N se quiere mantener el panorama internacional, reabrirlo como **`elecciones_internacionales`** con países/procesos concretos y sin términos genéricos (`elecciones`, `electoral`, `sondeos`). No promover el piloto amplio tal cual.
+- **Promoción persistente**: `check_promocion.py` ya no cuenta ciclos desde `fimi.log` (la rotación los borraba). Incrementa `ciclos` y `ultimo_ciclo` en `data/promocion_<tema>.json`, una vez por snapshot. `defensa_espana` sigue en piloto (**3/8**); `elecciones` quedó cerrado y ya no se promociona.
+- **`elecciones` cerrado el 26-oct-2026**: 77.421 eventos históricos; **11.156** compartidos con `espana_elecciones`, **3.390** con `eeuu_politica` y **63.007** solo en `elecciones`. Se cierra como tema activo (captura y pipeline) y se conserva el histórico. España y EEUU ya tienen temas propios. Si después del 29-N se quiere mantener el panorama internacional, se reabrirá como **`elecciones_internacionales`** con países/procesos concretos y sin términos genéricos (`elecciones`, `electoral`, `sondeos`). **No se promueve** el piloto amplio.
 
 ## 5. Limitaciones conocidas
 

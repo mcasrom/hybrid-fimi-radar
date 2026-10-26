@@ -564,9 +564,9 @@ def main():
     # mencionan el dominio de pasada. Los eventos que se queden sin ningún tema
     # se descartan (no se vuelcan al default frontera_sur).
     _filtros_cfg = {t: (m or {}).get("filtro") for t, m in _temas_cfg.items()
-                    if (m or {}).get("filtro")}
+                    if t not in _cerrados and (m or {}).get("filtro")}
     _contextos_cfg = {t: (m or {}).get("contexto") for t, m in _temas_cfg.items()
-                      if (m or {}).get("contexto")}
+                      if t not in _cerrados and (m or {}).get("contexto")}
     if _filtros_cfg or _contextos_cfg:
         try:
             _norm, _mat = tr.normalizar, tr._matches

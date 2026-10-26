@@ -1150,8 +1150,8 @@ temas:
         infrastructure: 0.1111
         anomaly: 0.4444
   elecciones:
-    estado: piloto
-    nombre: Elecciones e interferencia electoral
+    estado: cerrado
+    nombre: Elecciones e interferencia electoral (cerrado · histórico)
     # Ventanas de validación/cierre para un tema de CICLO LARGO (electoral): la
     # promoción exige 30 días (no 72 h) y el cierre no se sugiere con elecciones
     # registradas a ±120 días (evita cerrar el tema en un valle entre procesos).
