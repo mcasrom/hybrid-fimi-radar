@@ -27,6 +27,8 @@ for t, m in temas.items():
 done
 # 2a) Contraste con verificadores (Maldita/Newtral -> posible_bulos; solo lectura
 #     del corpus + sus tablas propias; la tarjeta la renderiza el dashboard).
+# 2c) Salud de temas fresca para el informe visual (max/sync no dependen del 08:00)
+.venv/bin/python detection/salud_panel.py --json data/salud_temas.json >> logs/salud_panel.log 2>&1
 .venv/bin/python detection/verifica.py >> logs/fimi.log 2>&1
 # 2b) Bitacora: sembrar la entrada 'inicio' de cada tema con findings (idempotente;
 #     no duplica). Cubre los temas creados editando config.yaml (no via

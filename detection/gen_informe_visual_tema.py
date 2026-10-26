@@ -30,8 +30,18 @@ DB = os.path.join(ROOT, "data", "radar.db")
 CFG = os.path.join(ROOT, "config.yaml")
 SALUD = os.path.join(ROOT, "data", "salud_temas.json")
 OUT_DIR = "/var/www/fimi/informes/visual"
-ACTIVOS = ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
-           "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_elecciones"]
+def _temas_activos():
+    """Temas en produccion o piloto, desde config.yaml (no una lista fija)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(CFG, encoding="utf-8")) or {}
+        return [t for t, m in (cfg.get("temas") or {}).items()
+                if (m or {}).get("estado", "produccion") in ("produccion", "piloto")]
+    except Exception:
+        return ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
+                "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_elecciones"]
+
+ACTIVOS = _temas_activos()
 
 # Hipotesis (attribution.py) -> etiqueta en espanol natural (coincide con gen_fimi_html.py)
 HYP_ES = {

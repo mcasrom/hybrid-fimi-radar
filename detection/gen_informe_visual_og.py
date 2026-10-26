@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1200, 630
 DB = "/home/deploy/hybrid-fimi-radar/data/radar.db"
+CFG = "/home/deploy/hybrid-fimi-radar/config.yaml"
 OUT = "/var/www/fimi/informes/visual"
 FD = "/home/deploy/.local/lib/python3.12/site-packages/matplotlib/mpl-data/fonts/ttf"
 BOLD = FD + "/DejaVuSans-Bold.ttf"
@@ -23,8 +24,17 @@ WHITE = (255, 255, 255)
 SOFT = (205, 216, 233)
 ACCENT = (234, 88, 12)
 TILE = (255, 255, 255)
-ACTIVOS = ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
-           "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_elecciones"]
+def _temas_activos():
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(CFG, encoding="utf-8")) or {}
+        return [t for t, m in (cfg.get("temas") or {}).items()
+                if (m or {}).get("estado", "produccion") in ("produccion", "piloto")]
+    except Exception:
+        return ["frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
+                "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_elecciones"]
+
+ACTIVOS = _temas_activos()
 NOMBRES = {
     "frontera_sur": "Frontera Sur (España–Marruecos)",
     "oriente_medio": "Oriente Medio",
@@ -35,6 +45,7 @@ NOMBRES = {
     "energia": "Energía",
     "defensa_espana": "España — defensa y amenazas híbridas",
     "espana_elecciones": "España — elecciones generales",
+    "protestas_juveniles": "Protestas juveniles y amplificación",
 }
 
 
