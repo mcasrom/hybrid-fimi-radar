@@ -41,3 +41,16 @@ def test_registro_curado():
         assert isinstance(e["demandas"], list)
         assert e["fuentes"], e["id"]
         assert e["fuente_primaria"] is None, e["id"]
+
+
+def test_informe_sin_senal_no_revienta():
+    from detection.gen_informe_visual_tema import render
+    kpi = {
+        "n_ev": 10, "n_au_cl": 0, "n_au": 5, "n_fuentes": 2,
+        "tmin": 1793000000, "tmax": 1793003600, "inicio": 1793003600,
+        "theme_daily": {},
+    }
+    h = render("protestas_juveniles", "Protestas juveniles", [], kpi, None, [], 14)
+    assert "Sin clústeres con señal" in h
+    assert "ventana 14 d" in h
+    assert "No significa que no haya protestas" in h

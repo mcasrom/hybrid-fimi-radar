@@ -187,6 +187,15 @@ def load_keywords(tema):
     return out
 
 
+def load_ventana(tema):
+    try:
+        import yaml
+        cfg = yaml.safe_load(open(CFG, encoding="utf-8")) or {}
+        return int((cfg.get("temas", {}).get(tema) or {}).get("ventana_dias", 45))
+    except Exception:
+        return 45
+
+
 def load_clusters_counts():
     """Cifras de clusters por tema tal como las publica el dashboard (raw y sin repetir señal)."""
     try:
@@ -413,7 +422,7 @@ def spider(series):
             f"{''.join(rings)}{''.join(spokes)}{''.join(polys)}{''.join(labels)}</svg>")
 
 
-def render(tema, nombre, clusters, kpi, salud, keywords=None):
+def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Sprint A (A1, 12-oct): conjunto PUBLICADO = clusters con señal (≥3 cuentas).
@@ -551,12 +560,22 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
     tot_ev = kpi["n_ev"]  # all-time (canónico)
     _h3txt = (f"{h3} clusters muestran" if h3 != 1 else "1 cluster muestra")
-    lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. La hipótesis dominante del conjunto es "
-               f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
-               f"{_h3txt} señal compatible con influencia extranjera (H3). "
-               f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
-               f"una banda alta es amplificación medida, no campaña confirmada.")
-    concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta.")
+    if n:
+        lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. La hipótesis dominante del conjunto es "
+                   f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
+                   f"{_h3txt} señal compatible con influencia extranjera (H3). "
+                   f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
+                   f"una banda alta es amplificación medida, no campaña confirmada.")
+        concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta.")
+    else:
+        lectura = (f"El tema tiene <b>{n_raw_inf}</b> clústeres cargados, pero <b>ninguno alcanza el umbral de señal</b> "
+                   f"(≥3 cuentas): quedan agregados como muestra pequeña. No hay una banda alta que interpretar. "
+                   f"El volumen de eventos no es prueba de coordinación ni de campaña.")
+        concl = (f"Sin clústeres con señal (≥3 cuentas) en este tema: {n_raw_inf} cargados, "
+                 f"{n_par_inf} agregados como muestra pequeña, 0 en banda alta. "
+                 f"No significa que no haya protestas: significa que, con estas keywords y esta ventana, "
+                 f"no hay un grupo de ≥3 cuentas con señal suficiente. "
+                 f"El informe no puede afirmar ni descartar coordinación; solo constata que no hay señal suficiente.")
     # ritmo del cluster top + linea base del tema (noticias)
     tl_svg = ""
     ritmo = ""
@@ -621,7 +640,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None):
         tema_def = (f"<details class='tdef'><summary>Cómo se define «{esc(nombre)}»: términos y ventana</summary>"
                     f"<p class='cs'>Términos de seguimiento ({len(_kws)}): <code>{esc(' · '.join(_kws))}</code></p>"
                     f"<p class='cs'>Periodo del corpus: {_tmin_s} → {_tmax_s} (incluye <b>backfill</b> retrospectivo). "
-                    f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: 45 días. El corpus llega "
+                    f"Ingesta del tema (primer hallazgo persistido): desde {_ini_s}. Ventana de análisis: {ventana} días. «Días operando» cuenta desde el primer hallazgo, no desde el evento más antiguo; el corpus puede incluir backfill. El corpus llega "
                     f"también por búsqueda en las plataformas con estos términos y sus variantes.</p></details>")
     _tp = top or {}
     _radar_tabla = ("<details class='tdef'><summary>Ver los valores del radar (tabla)</summary>"
@@ -751,7 +770,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div>
       <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
       <h1>{esc(nombre)}</h1>
-      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana 45 d) · {esc(_sello)}</div>
+      <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana {ventana} d) · {esc(_sello)}</div>
     </div>
   </div>
   <div class="btns">
@@ -784,9 +803,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     {spider([("Tema (mediana)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (mediana)", med, NAVY)])}
     <p class="cs">Mediana de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
     dimensiones distintas (0-100) y <b>no</b> suman el score global. <b>Infraestructura y densidad suelen saturar</b> (tope de normalización): valores altos pueden reflejar una comunidad que comparte prensa, no necesariamente un operador.</p>{_radar_tabla}</div>
-  <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else '—'}</h2>
-    <p class="cs"><span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span>
-    {'' if not top else f"&nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}"}</p>
+  <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else 'sin clúster con señal'}</h2>
+    <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}</p>
     <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
     <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades. Las hipótesis se puntúan de forma independiente (pueden aparecer varias como compatibles); no son mutuamente excluyentes.</p>
@@ -813,7 +831,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
       <p class="cs" style="margin-top:4px;color:#94a3b8">{tamano}</p></div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
-        <span class="chip" style="background:{BAND_COL[bd]}">{esc(top['banda']) if top else '—'} (max {top['ov']:.0f}/100)</span></div>
+        <span class="chip" style="background:{BAND_COL[bd]}">{f"{esc(top['banda'])} (max {top['ov']:.0f}/100)" if top else "Sin clúster con señal"}</span></div>
       <p class="cs" style="color:#94a3b8">Bandas (score 0-100): Normal &lt;20 · En observación 20-39 · Amplificación anómala 40-59 · Alta 60-79 · Muy alta 80+. La banda es el <b>score global compuesto</b> (sincronía, anomalía, infraestructura y densidad), <b>no</b> el componente de amplificación: un cluster puede estar en banda alta por infraestructura/densidad, no por difusión.</p>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Amplificación global</div>
         <div class="hbar">{bar(med['amp'], ACCENT)}</div><div class="hval">{med['amp']:.0f}</div></div>
@@ -871,7 +889,7 @@ def main():
             print("sin clusters:", tema)
             continue
         nombre = names.get(tema, tema)
-        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema))
+        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema), load_ventana(tema))
         with open(os.path.join(a.out, tema + ".html"), "w", encoding="utf-8") as f:
             f.write(html_out)
         hechos.append((tema, nombre, len(clusters)))
