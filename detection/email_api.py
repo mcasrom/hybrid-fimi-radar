@@ -42,6 +42,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -90,20 +91,43 @@ def short_id(canal: str, destino: str) -> str:
     return hashlib.sha256(f"{canal}:{destino}".encode()).hexdigest()[:24]
 
 
+def _mask_email(to: str) -> str:
+    try:
+        local, domain = to.rsplit("@", 1)
+        return (local[:1] or "?") + "***@" + domain
+    except ValueError:
+        return "***"
+
+
 def send_email(to, subject, html):
-    """Envía un email vía Resend (urllib, User-Agent como el newsletter)."""
+    """Envía un email vía Resend y deja traza. No registra la dirección completa."""
     key, frm = resend_cfg()
     if not key or not frm:
+        print(f"[email] sin RESEND_API_KEY/RESEND_FROM · to={_mask_email(to)}", file=sys.stderr)
         return False
+    if os.environ.get("FIMI_EMAIL_DRY_RUN") == "1":
+        print(f"[email][dry] {_mask_email(to)} · {subject}", file=sys.stderr)
+        return True
     ua = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120"}
     payload = json.dumps({"from": frm, "to": [to], "subject": subject, "html": html}).encode()
     h = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
     h.update(ua)
     req = urllib.request.Request("https://api.resend.com/emails", data=payload, headers=h, method="POST")
     try:
-        urllib.request.urlopen(req, timeout=30)
-        return True
-    except Exception:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            body = r.read(500).decode("utf-8", "replace")
+            try:
+                rid = json.loads(body).get("id", "")
+            except Exception:
+                rid = ""
+            print(f"[email] ok id={rid} · to={_mask_email(to)} · {subject}", file=sys.stderr)
+            return True
+    except urllib.error.HTTPError as e:
+        detail = e.read(300).decode("utf-8", "replace")
+        print(f"[email] HTTP {e.code} · to={_mask_email(to)} · {detail}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"[email] {type(e).__name__} · to={_mask_email(to)} · {str(e)[:200]}", file=sys.stderr)
         return False
 
 
@@ -1663,7 +1687,9 @@ class H(BaseHTTPRequestHandler):
                          (json.dumps(temas), proyecto, frecuencia, sid))
             conn.commit()
             conn.close()
-            self._reenviar_confirmacion(email, sid, temas)
+            if not self._reenviar_confirmacion(email, sid, temas):
+                return self._send(502, {"ok": False, "error": "send",
+                                        "message": "No he podido enviar el correo de confirmación."})
             return self._send(200, {"ok": True, "confirmado": False})
         conn.execute(
             "INSERT INTO suscripciones (id, canal, destino, temas, frecuencia, confirmado, proyecto)"
@@ -1671,7 +1697,9 @@ class H(BaseHTTPRequestHandler):
             (sid, "email", email, json.dumps(temas), frecuencia, 0, proyecto))
         conn.commit()
         conn.close()
-        self._reenviar_confirmacion(email, sid, temas)
+        if not self._reenviar_confirmacion(email, sid, temas):
+            return self._send(502, {"ok": False, "error": "send",
+                                    "message": "No he podido enviar el correo de confirmación."})
         return self._send(200, {"ok": True, "confirmado": False})
 
     def _reenviar_confirmacion(self, email, sid, temas):
@@ -1698,7 +1726,7 @@ class H(BaseHTTPRequestHandler):
                     '<p>Si no fuiste tú, ignora este correo.</p>'
                     '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com · 1 email/semana, baja en 1 clic</p></div>')
             subj = "Radar FIMI · Confirma tu suscripción"
-        send_email(email, subj, html)
+        return send_email(email, subj, html)
 
     def _avisar_dueno(self, texto, canal="web"):
         """Reenvía una sugerencia de tema al administrador (Telegram + email info-fimi)."""

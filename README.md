@@ -258,6 +258,12 @@ muestra el valor vivo):
   (diferida) → la portada baja a **~147 KB brotli** (−12 %) manteniendo toda la funcionalidad.
 - Última release: **v0.2.1** (incluye el snapshot de dataset con DOI).
 
+### Correcciones 26-oct-2026
+
+- **Suscripciones**: `send_email()` registra el id de Resend y los fallos con el correo enmascarado; `FIMI_EMAIL_DRY_RUN=1` permite probar sin enviar; la API devuelve 502 si el envío inmediato falla. Un pendiente con MX nulo o rebote no se reintenta: no se envía recordatorio a direcciones no entregables.
+- **Promoción persistente**: `check_promocion.py` ya no cuenta ciclos desde `fimi.log` (la rotación los borraba). Incrementa `ciclos` y `ultimo_ciclo` en `data/promocion_<tema>.json`, una vez por snapshot. Estado tras la corrección: `defensa_espana` 3/8 y `elecciones` 3/96.
+- **Solapamiento `elecciones`**: 77.421 eventos; **11.156** compartidos con `espana_elecciones`, **3.390** con `eeuu_politica` y **63.007** solo en `elecciones`. Recomendación: **cerrar `elecciones` como tema activo ahora** y conservar su histórico; España y EEUU ya tienen temas propios. Si después del 29-N se quiere mantener el panorama internacional, reabrirlo como **`elecciones_internacionales`** con países/procesos concretos y sin términos genéricos (`elecciones`, `electoral`, `sondeos`). No promover el piloto amplio tal cual.
+
 ## 5. Limitaciones conocidas
 
 - **Atribución estructural únicamente:** no consulta evidencia organizativa (salvo una

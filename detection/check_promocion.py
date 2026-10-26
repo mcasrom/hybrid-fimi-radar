@@ -25,8 +25,8 @@ compatibilidad con el despliegue original). El estado se guarda por tema en
 data/promocion_<tema>.json, así cada piloto tiene su propia ventana.
 
 Robustez:
-  - Ciclos se cuentan vía BD (DISTINCT created_at de clusters del tema), NO del
-    log: inmune a la rotación de logs (tail -100 a 5MB en el cron).
+  - Ciclos se cuentan de forma **persistente** en promocion_<tema>.json,
+    incrementando una vez por snapshot nuevo del tema; no se leen del log.
   - Errores: err_total se re-sincroniza si el log rota (err_total < err_base),
     para no reiniciar en falso por rotación.
 
@@ -136,6 +136,17 @@ def count_tracebacks_tema():
                if _t == TEMA and _tr)
 
 
+def ciclo_actual():
+    """Identificador del último snapshot del tema (created_at de clusters)."""
+    try:
+        c = sqlite3.connect(DB)
+        row = c.execute("SELECT MAX(created_at) FROM clusters WHERE tema_id=?", (TEMA,)).fetchone()
+        c.close()
+        return int(row[0]) if row and row[0] is not None else 0
+    except Exception:
+        return 0
+
+
 def ciclos_snapshot(inicio):
     """Ciclos de snapshot completos y EXITOSOS del tema dentro de la ventana.
 
@@ -226,6 +237,7 @@ def main():
              "notificado_ready": notificado,
              "ventana_h": VENTANA_H, "min_ciclos": MIN_CICLOS,
              "ciclos": ciclos if ciclos is not None else state.get("ciclos", 0),
+             "ultimo_ciclo": state.get("ultimo_ciclo", 0),
              "errores": max(0, err_total - err_base)}, indent=2))
 
     def send_wrap(texto):
@@ -251,7 +263,9 @@ def main():
         inicio = now
         err_base = err_total
         ready, notificado = False, False
-        guardar()
+        state["ciclos"] = 0
+        state["ultimo_ciclo"] = 0
+        guardar(0)
         print(f"[promocion] ventana reiniciada ({nuevos} errores)")
         return
 
@@ -259,7 +273,9 @@ def main():
     if inicio is None:
         inicio = now
         err_base = err_total
-        guardar()
+        state["ciclos"] = 0
+        state["ultimo_ciclo"] = 0
+        guardar(0)
         print(f"[promocion] ventana iniciada — {VENTANA_H:.0f}h de observación para {TEMA}")
         return
 
@@ -270,7 +286,13 @@ def main():
 
     # 5) Ventana en curso
     elapsed_h = (now - inicio) / 3600.0
-    ciclos = ciclos_snapshot(inicio)
+    # Contador persistente: cada snapshot nuevo del tema suma 1; no depende del log.
+    ciclos = int(state.get("ciclos", 0))
+    ultimo = int(state.get("ultimo_ciclo", 0) or 0)
+    cid = ciclo_actual()
+    if cid and cid > ultimo:
+        ciclos += 1
+        state["ultimo_ciclo"] = cid
     guardar(ciclos)  # persistir progreso (lo muestra el panel admin)
 
     if elapsed_h >= VENTANA_H and ciclos >= MIN_CICLOS:
