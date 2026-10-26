@@ -1403,6 +1403,17 @@ temas:
         amplification: 0.1111
         infrastructure: 0.1111
         anomaly: 0.4444
+  protestas_juveniles:
+    estado: piloto
+    nombre: Protestas juveniles y amplificación
+    ventana_dias: 14
+    scoring:
+      weights:
+        synchronization: 0.1667
+        content_similarity: 0.1667
+        amplification: 0.1111
+        infrastructure: 0.1111
+        anomaly: 0.4444
 keywords:
 - palabra: Ceuta
   plataformas:
@@ -1865,6 +1876,67 @@ keywords:
   - bluesky
   - google-news
   tema: espana_elecciones
+# === Keywords protestas_juveniles (piloto 26-oct-2026) ===
+- palabra: blocus
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas juveniles
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protesta estudiantil
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: student protests
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: gen z protests
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Barcelona
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Francia
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Albania
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Serbia
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Nepal
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Madagascar
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protestas Milán
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
 telegram_canales:
 - elfarodeceuta
 - maldita_es

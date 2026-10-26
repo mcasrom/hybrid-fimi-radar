@@ -1,0 +1,102 @@
+# Registro curado de episodios de protestas juveniles.
+#
+# Una fila por episodio. El radar mide AMPLIFICACIÓN y extensión con las
+# keywords del tema `protestas_juveniles`; este registro aporta lo que el
+# pipeline NO puede inferir: demandas y llamadas documentadas, con su fuente.
+#
+# Regla: `fuente_primaria` solo se rellena si existe un documento primario
+# localizado. Si no, queda vacío y se usan fuentes periodísticas enlazadas.
+# No se atribuye autoría ni intención sin prueba independiente.
+#
+# Actualizado: 2026-10-26.
+
+- id: ESP-BARCELONA-2026-10-24
+  pais: España
+  ciudad: Barcelona
+  fecha: 2026-10-24
+  nombre: Disturbios tras la convocatoria de Blocus
+  estado: "Difusión documentada; autoría y dirección de los disturbios, desconocidas"
+  detonante: "Convocatoria en TikTok y grupos de mensajería; no hay un pliego público de demandas"
+  convocantes: "Red de más de veinte cuentas anónimas («Blocus»); titulares no identificados"
+  demandas: []
+  llamada: "Concentración juvenil convocada en redes; derivó en saqueos y enfrentamientos"
+  alcance: "Barcelona; cuentas y grupos también en Madrid y otras ciudades"
+  fuente_primaria: null
+  fuentes:
+    - https://www.infobae.com/espana/2026/10/25/que-es-blocus-la-red-de-perfiles-anonimos-de-tiktok-que-movilizo-a-cientos-de-jovenes-antes-de-los-disturbios-de-barcelona/
+    - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
+  nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia."
+
+- id: FRA-2026-10-24
+  pais: Francia
+  ciudad: Varias ciudades
+  fecha: 2026-10-24
+  nombre: Marchas nacionales por la escuela y el coste de vida
+  estado: "Hecho documentado"
+  detonante: "Falta de profesorado, aulas deterioradas y coste de vida"
+  convocantes: "UNEF, CGT y otros sindicatos; estudiantes de secundaria"
+  demandas:
+    - "Más profesorado y menos alumnos por aula"
+    - "Mejores condiciones de los centros educativos"
+    - "Respuesta al coste de vida"
+  llamada: "Marchas nacionales; 400.000 según el Gobierno y 800.000 según los sindicatos"
+  alcance: "París, Marsella, Lyon, Lille, Burdeos y Orleans, entre otras ciudades"
+  fuente_primaria: null
+  fuentes:
+    - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
+  nota: "Las dos cifras se muestran juntas porque no son comparables con recuentos de otros países."
+
+- id: ITA-MILAN-2026-10-17
+  pais: Italia
+  ciudad: Milán
+  fecha: 2026-10-17
+  nombre: Disturbios en la segunda jornada de movilizaciones
+  estado: "Detenciones documentadas; autoría de la violencia, no identificada"
+  detonante: "Encarecimiento de la vida y malestar juvenil"
+  convocantes: "Convocatorias juveniles no identificadas"
+  demandas:
+    - "Contra el encarecimiento de la vida"
+  llamada: "Movilizaciones en Milán, Turín y Bolonia"
+  alcance: "Milán; disturbios también en el norte de Italia"
+  fuente_primaria: null
+  fuentes:
+    - https://www.diarioestrategia.cl/texto-diario/mostrar/6057316/200-detenidos-mayoria-menores-durante-segunda-jornada-disturbios-saqueos-milan
+  nota: "Más de 200 detenidos, en torno al 80 % menores (Europa Press)."
+
+- id: ALB-2026-10-24
+  pais: Albania
+  ciudad: Tirana
+  fecha: 2026-10-24
+  nombre: Protestas contra el complejo hotelero y el Gobierno de Rama
+  estado: "Protestas documentadas; la atribución de «guerra híbrida» no tiene evidencia pública"
+  detonante: "Complejo hotelero de lujo en una reserva natural; corrupción y coste educativo"
+  convocantes: "Estudiantes y movimiento ciudadano"
+  demandas:
+    - "Dimisión del primer ministro Edi Rama"
+    - "Alto al complejo hotelero en la reserva"
+    - "Universidades y educación pública"
+  llamada: "Protestas ante el Gobierno; cinco meses de movilización"
+  alcance: "Tirana y otras ciudades albanesas"
+  fuente_primaria: null
+  fuentes:
+    - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
+  nota: "El Gobierno habla de «guerra híbrida»; expertos consultados por DW no ven evidencia pública de esas atribuciones."
+
+- id: NPL-2025-09
+  pais: Nepal
+  ciudad: Katmandú
+  fecha: 2025-09-08
+  nombre: Protestas tras la prohibición de 26 plataformas
+  estado: "Gobierno caído; 76 muertos"
+  detonante: "Prohibición de 26 plataformas y malestar por corrupción"
+  convocantes: "Movimiento juvenil descentralizado"
+  demandas:
+    - "Derogar la prohibición de las plataformas"
+    - "Contra la corrupción y el nepotismo"
+  llamada: "Protestas en Katmandú y otras ciudades; dimisión del primer ministro"
+  alcance: "Nepal; referente para movilizaciones posteriores en Madagascar y otros países"
+  fuente_primaria: null
+  fuentes:
+    - https://en.wikipedia.org/wiki/2025_Nepalese_Gen_Z_protests
+    - https://publications.civicus.org/publications/2026-state-of-civil-society-report/gen-z-protests-new-resistance-rises/
+  nota: "Cifra de muertos y resultado del Gobierno según la cronología pública enlazada."

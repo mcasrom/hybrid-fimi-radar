@@ -40,6 +40,8 @@ done
 # 3f) Dataset publico del caso Ceuta (frozen V1 + live) -> JSON/CSV citables en /datos/casos/
 .venv/bin/python detection/export_caso_ceuta.py >> logs/fimi.log 2>&1
 .venv/bin/python detection/gen_caso_electoral.py >> logs/fimi.log 2>&1
+# 3i) Ficha curada del piloto de protestas juveniles (no toca scoring)
+.venv/bin/python detection/protestas.py >> logs/fimi.log 2>&1
 # 3g) Subcaso hibrido Frontera Sur (Marruecos): JSON + pagina (solo lectura BD)
 .venv/bin/python detection/caso_hibridos_frontera.py >> logs/fimi.log 2>&1
 # 3h) Tarjeta OG del subcaso (grafico de la serie nucleo 12 sem; 1200x630)
