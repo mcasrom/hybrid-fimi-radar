@@ -8,7 +8,7 @@ from detection import tema_reglas as tr  # noqa: E402
 
 
 ACTIVOS_ESPERADOS = {
-    "frontera_sur", "oriente_medio", "elecciones", "inteligencia_artificial",
+    "frontera_sur", "oriente_medio", "inteligencia_artificial",
     "eeuu_politica", "sahel", "energia", "defensa_espana", "espana_elecciones",
 }
 
@@ -20,6 +20,7 @@ def test_temas_activos_y_cerrados_disjuntos():
     # Regresión: los temas cerrados NO deben colarse como activos.
     # 5-oct-2026: politica_nacional se renombró a espana_elecciones (ahora piloto).
     assert "espana_elecciones" in activos
+    assert "elecciones" in cerrados
     assert "geopolitica_ue_marruecos" in cerrados
     # 27/Sep: espana_amenazas_hibridas se fusionó en defensa_espana (decisión B).
     assert "espana_amenazas_hibridas" in cerrados
