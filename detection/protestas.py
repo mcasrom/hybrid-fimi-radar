@@ -32,11 +32,13 @@ ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "radar.db"
 YAML_PATH = ROOT / "data" / "protestas.yaml"
 JSON_OUT = Path("/var/www/fimi/datos/protestas.json")
+SCHEMA_OUT = Path("/var/www/fimi/datos/protestas.schema.json")
 HTML_OUT = Path("/var/www/fimi/casos/protestas/index.html")
 TEMA = "protestas_juveniles"
 
 sys.path.insert(0, str(ROOT))
 from detection.bandas import BAND_ES, banda  # noqa: E402
+from detection.mainstream import MAINSTREAM  # noqa: E402
 
 BAND_COL = {
     "CRITICAL": "#dc2626",
@@ -69,6 +71,18 @@ def dmy(x) -> str:
         return f"{d}/{m}/{y}"
     except ValueError:
         return s
+
+
+def tipo_dominio(h: str) -> str:
+    h = (h or "").lower()
+    if h in {"news.google.com", "news.google.es"}:
+        return "agregador"
+    if h in {"youtube.com", "youtu.be", "tiktok.com", "x.com", "twitter.com",
+             "instagram.com", "facebook.com", "reddit.com"}:
+        return "plataforma"
+    if h in MAINSTREAM:
+        return "medio"
+    return "otro"
 
 
 def dm(x) -> str:
@@ -150,6 +164,16 @@ def señal(conn) -> dict:
         if host:
             doms[host] = doms.get(host, 0) + 1
     top_doms = sorted(doms.items(), key=lambda x: -x[1])[:8]
+    src = {r[0]: r[1] for r in conn.execute(
+        "SELECT e.source, COUNT(*) FROM events e JOIN event_temas et ON et.event_id=e.id "
+        "WHERE et.tema_id=? GROUP BY e.source ORDER BY 2 DESC", (TEMA,))}
+    stot = sum(src.values()) or 1
+    fuentes = [{"fuente": k, "n": v, "pct": round(100 * v / stot, 1)} for k, v in src.items()]
+    prow = conn.execute(
+        "SELECT COUNT(*), MAX(n_ciclos), AVG(n_ciclos) FROM cluster_lineage WHERE tema_id=?",
+        (TEMA,)).fetchone()
+    persistencia = {"linajes": int(prow[0] or 0), "max_ciclos": int(prow[1] or 0),
+                    "media_ciclos": round(float(prow[2] or 0), 2)}
     top_clusters = []
     for r in cl:
         b = banda(r["overall_score"] or 0)
@@ -168,11 +192,15 @@ def señal(conn) -> dict:
         "desde": int(t0) if t0 else None,
         "hasta": int(t1) if t1 else None,
         "clusters": len(cl),
+        "signal_clusters": sum(1 for r in cl if int(r["n_au"] or 0) >= 3),
+        "small_clusters": sum(1 for r in cl if int(r["n_au"] or 0) < 3),
         "bandas": bandas,
         "max_score": round(max((r["overall_score"] or 0 for r in cl), default=0), 1),
         "top_clusters": top_clusters[:16],
         "daily": daily,
-        "top_dominios": [{"dominio": d, "eventos": c} for d, c in top_doms],
+        "fuentes": fuentes,
+        "persistencia": persistencia,
+        "top_dominios": [{"dominio": d, "eventos": c, "tipo": tipo_dominio(d)} for d, c in top_doms],
     }
 
 
@@ -275,7 +303,7 @@ def svg_scatter(clusters: list) -> str:
     return "".join(out)
 
 
-def svg_daily(daily: list) -> str:
+def svg_daily(daily: list, epis: list) -> str:
     W, H = 980, 240
     L, R, T, B = 56, 24, 22, 44
     pw, ph = W - L - R, H - T - B
@@ -300,7 +328,23 @@ def svg_daily(daily: list) -> str:
         if i in (0, len(pts) - 1) or d["eventos"] == vmax:
             out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="#f97316" stroke="#fff" stroke-width="2"><title>{d["fecha"]}: {d["eventos"]}</title></circle>')
             out.append(f'<text x="{x:.1f}" y="{H-B+20}" text-anchor="middle" class="axis">{dm(d["fecha"])}</text>')
-    out.append(f'<text x="{L}" y="{H-8}" class="axis-title">eventos etiquetados por día · últimos 14 días</text>')
+    # hitos curados dentro de la ventana
+    by_day = {}
+    for e in epis or []:
+        d = fecha(e.get("fecha"))[:10]
+        if any(x["fecha"] == d for x in daily):
+            by_day.setdefault(d, []).append(e)
+    for d, es in by_day.items():
+        i = next((j for j, x in enumerate(daily) if x["fecha"] == d), None)
+        if i is None:
+            continue
+        x = L + pw * i / max(1, len(daily) - 1)
+        label = f"{dm(d)} · {len(es)} episodio" + ("s" if len(es) != 1 else "")
+        anchor = "end" if x > W - 140 else ("start" if x < L + 100 else "middle")
+        tx = x - 4 if anchor == "end" else (x + 4 if anchor == "start" else x)
+        out.append(f'<line x1="{x:.1f}" y1="{T}" x2="{x:.1f}" y2="{T+ph}" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 5"/>')
+        out.append(f'<text x="{tx:.1f}" y="{T-7}" text-anchor="{anchor}" class="axis-mark">{esc(label)}</text>')
+    out.append(f'<text x="{L}" y="{H-8}" class="axis-title">eventos etiquetados por día · marcas = episodios curados en la ventana</text>')
     out.append("</svg>")
     return "".join(out)
 
@@ -315,7 +359,7 @@ def svg_domains(doms: list) -> str:
     for i, d in enumerate(doms):
         y = y0 + i * row
         w = max(3, (x1 - x0) * d["eventos"] / vmax)
-        out.append(f'<text x="{x0-10}" y="{y+16}" text-anchor="end" class="dom-lab">{esc(d["dominio"][:31])}</text>')
+        out.append(f'<text x="{x0-10}" y="{y+16}" text-anchor="end" class="dom-lab">{esc(d["dominio"][:25])} · {esc(d.get("tipo", "otro"))}</text>')
         out.append(f'<rect x="{x0}" y="{y+4}" width="{x1-x0}" height="17" rx="8" fill="#f1f5f9"/>')
         out.append(f'<rect x="{x0}" y="{y+4}" width="{w:.1f}" height="17" rx="8" fill="#0ea5e9"><title>{esc(d["dominio"])}: {d["eventos"]}</title></rect>')
         out.append(f'<text x="{x0+w+8:.1f}" y="{y+17}" class="dom-num">{n(d["eventos"])}</text>')
@@ -381,6 +425,15 @@ h3{font-size:1.04rem;margin:0 0 .35rem}
 .kpi span{font-size:.76rem;color:var(--muted)}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 8px 20px #0f172a06}
 .note{background:#fff7ed;border-left:4px solid var(--orange);padding:13px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+.takeaways{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin:16px 0;box-shadow:0 8px 18px #0f172a06}
+.takeaways h2{margin:0 0 6px;font-size:1.1rem}
+.takeaways ul{margin:0 0 0 1.1rem;padding:0}
+.takeaways li{margin:3px 0}
+.term{border-bottom:1px dotted #f97316;cursor:help}
+.glossary{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:12px 0;font-size:.9rem}
+.glossary summary{cursor:pointer;font-weight:700;color:#0f172a}
+.glossary p{margin:8px 0 0;color:#475569}
+.axis-mark{font-size:10px;fill:#0ea5e9;font-weight:700}
 .meta{font-size:.82rem;color:var(--muted)}
 .tag{display:inline-block;background:#f1f5f9;border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:.74rem;margin:2px 4px 2px 0}
 .chart-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:14px 0;box-shadow:0 8px 20px #0f172a06}
@@ -456,10 +509,18 @@ def render(epis: list, s: dict, ahora: str) -> str:
         for c in s["top_clusters"][:8]
     ) or "<tr><td colspan='5'>Sin clusters todavía.</td></tr>"
     doms = "".join(
-        f"<tr><td>{esc(d['dominio'])}</td><td>{n(d['eventos'])}</td></tr>"
+        f"<tr><td>{esc(d['dominio'])}</td><td>{esc(d.get('tipo','otro'))}</td><td>{n(d['eventos'])}</td></tr>"
         for d in s["top_dominios"]
-    ) or "<tr><td colspan='2'>Sin dominios todavía.</td></tr>"
+    ) or "<tr><td colspan='3'>Sin dominios todavía.</td></tr>"
     high = s["bandas"].get("HIGH", 0) + s["bandas"].get("CRITICAL", 0)
+    top_src = " · ".join(f"{f['fuente']} {f['pct']}%" for f in s.get("fuentes", [])[:2])
+    pers = s.get("persistencia", {})
+    takeaways = [
+        f"<b>{n(s.get('signal_clusters', 0))} de {n(s['clusters'])}</b> clústeres tienen señal (≥3 cuentas); {n(s.get('small_clusters', 0))} son grupos pequeños.",
+        f"<b>{n(high)}</b> en banda alta y <b>0</b> sincronías entre cuentas distintas. La banda alta mide amplificación, no autoría.",
+        f"La conversación viene sobre todo de <b>{esc(top_src or '—')}</b>.",
+        f"Persistencia: <b>{n(pers.get('max_ciclos', 0))} ciclo</b> por linaje. Con un solo ciclo no hay vida media fiable.",
+    ]
 
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -482,7 +543,13 @@ def render(epis: list, s: dict, ahora: str) -> str:
   </div>
 </section>
 
-<div class="note"><b>Cómo leer esta página.</b> Los KPIs y los clústeres salen de <code>event_temas</code> del tema <code>{TEMA}</code>. Las demandas y llamadas son una selección curada de fuentes públicas, no una extracción automática. Una banda alta significa <b>amplificación anómala</b>, no coordinación confirmada. Actualizado: {esc(ahora)} UTC · última observación: {dt(s['hasta'])}.</div>
+<div class="note"><b>Cómo leer esta página.</b> Los KPIs y los clústeres salen de <code>event_temas</code> del tema <code>{TEMA}</code>. Las demandas y llamadas son una selección curada de fuentes públicas, no una extracción automática. Una <span class="term" title="Banda de score que indica amplificación anómala; no confirma coordinación ni autoría.">banda alta</span> significa <b>amplificación anómala</b>, no coordinación confirmada. Actualizado: {esc(ahora)} UTC · última observación: {dt(s['hasta'])}.</div>
+
+<div class="takeaways"><h2>Lo esencial</h2><ul>{''.join(f'<li>{x}</li>' for x in takeaways)}</ul></div>
+
+<details class="glossary"><summary>Qué significan «banda alta», «clúster», «score» y «persistencia»</summary>
+<p><b>Clúster:</b> grupo de eventos que el sistema conecta por contenido, enlaces, tiempo o cuentas. No es una prueba de coordinación. <b>Score:</b> combinación de coordinación, similitud, amplificación, infraestructura y anomalía (0–100); no es una probabilidad. <b>Banda alta:</b> score ≥60; indica amplificación anómala. <b>Amplificación anómala:</b> patrón de repetición o extensión fuera de lo esperado; no identifica autor. <b>Persistencia:</b> número de ciclos en los que sobrevive un linaje; con un solo ciclo no hay vida media fiable. <a href="/glosario.html#casa">Glosario completo</a>.</p>
+</details>
 
 <section>
   <h2>Cronología: de Katmandú a Barcelona</h2>
@@ -496,7 +563,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
     <div class="chart-card"><h3>Reparto por banda</h3><p class="meta">Todos los clústeres del tema; la mayoría son grupos pequeños.</p>{svg_bands(s['bandas'])}</div>
     <div class="chart-card"><h3>Cuentas frente a score</h3><p class="meta">Cada círculo es un clúster. Tamaño = eventos; color = banda.</p>{svg_scatter(s['top_clusters'])}</div>
   </div>
-  <div class="chart-card"><h3>Ritmo de conversación</h3><p class="meta">Eventos etiquetados por día en la ventana del piloto.</p>{svg_daily(s['daily'])}</div>
+  <div class="chart-card"><h3>Ritmo de conversación</h3><p class="meta">Eventos etiquetados por día en la ventana del piloto.</p>{svg_daily(s['daily'], epis)}</div>
 </section>
 
 <section>
@@ -512,7 +579,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
 
 <section>
   <h2>Quién amplifica</h2>
-  <div class="chart-card"><h3>Dominios con más eventos</h3><p class="meta">Presencia en enlaces del tema; no implica coordinación ni participación del medio.</p>{svg_domains(s['top_dominios'])}</div>
+  <div class="chart-card"><h3>Dominios con más eventos</h3><p class="meta">Presencia en enlaces del tema; no implica coordinación ni participación del medio.</p>{svg_domains(s["top_dominios"])}<div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Dominio</th><th>Tipo</th><th>Eventos</th></tr></thead><tbody>{doms}</tbody></table></div></div>
     <div class="chart-card"><h3>Clústeres con más señal</h3>
       <div style="overflow:auto"><table><thead><tr><th>Clúster</th><th>Score</th><th>Banda</th><th>Cuentas</th><th>Eventos</th></tr></thead><tbody>{top}</tbody></table></div>
       <p class="meta" style="margin-top:10px">Cifras calculadas desde <code>radar.db</code>; no son hechos verificados.</p>
@@ -528,7 +595,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
   </div>
 </section>
 
-<p><a href="/datos/protestas.json">Datos abiertos (JSON)</a> · <a href="/informes/visual/protestas_juveniles.html">Informe visual</a> · <a href="/">Volver al radar</a> · <a href="/casos/electoral/">Panorama electoral</a></p>
+<p><a href="/datos/protestas.json">Datos abiertos (JSON)</a> · <a href="/datos/protestas.schema.json">Esquema JSON</a> · <a href="/informes/visual/protestas_juveniles.html">Informe visual</a> · <a href="/">Volver al radar</a> · <a href="/casos/electoral/">Panorama electoral</a></p>
 <footer>Elaborado con asistencia de IA y revisión humana. Fuentes enlazadas en el texto. — @pruebapublica<br>
 Piloto <code>{TEMA}</code> · no indexado hasta revisión · {esc(ahora)} UTC</footer>
 </main></body></html>"""
@@ -547,6 +614,34 @@ def main() -> int:
     data = {"tema": TEMA, "actualizado": ahora, "episodios": epis, "senal": s}
     JSON_OUT.parent.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Observatorio 29N · protestas juveniles",
+        "type": "object",
+        "required": ["tema", "actualizado", "episodios", "senal"],
+        "properties": {
+            "tema": {"type": "string", "const": TEMA},
+            "actualizado": {"type": "string"},
+            "episodios": {"type": "array", "items": {"type": "object"}},
+            "senal": {
+                "type": "object",
+                "properties": {
+                    "eventos": {"type": "integer"},
+                    "cuentas": {"type": "integer"},
+                    "clusters": {"type": "integer"},
+                    "signal_clusters": {"type": "integer"},
+                    "small_clusters": {"type": "integer"},
+                    "bandas": {"type": "object"},
+                    "top_clusters": {"type": "array"},
+                    "daily": {"type": "array"},
+                    "fuentes": {"type": "array"},
+                    "persistencia": {"type": "object"},
+                    "top_dominios": {"type": "array"},
+                },
+            },
+        },
+    }
+    SCHEMA_OUT.write_text(json.dumps(schema, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[protestas] JSON -> {JSON_OUT} ({len(epis)} episodios, {s['eventos']} eventos)")
     if not a.json_only:
         HTML_OUT.parent.mkdir(parents=True, exist_ok=True)
