@@ -78,3 +78,5 @@ data/caso_frontera_sur_hibridos/.parte_estado.json
 data/.oom_rss_estado.json
 data/alertas_estado.json
 data/seguimiento_state.json
+
+data/telegram_volume_state.json

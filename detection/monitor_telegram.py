@@ -42,8 +42,8 @@ def load_env(path: Path):
             if ln and not ln.startswith("#") and "=" in ln:
                 k, v = ln.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip("'\""))
-    except OSError:
-        pass
+    except OSError as e:
+        print(f"[tg-monitor] .env no legible: {e}", file=sys.stderr)
 
 
 def send_tg(text: str) -> bool:
@@ -111,8 +111,9 @@ def main() -> int:
     prev = {}
     try:
         prev = json.loads(STATE.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+    except (OSError, ValueError) as e:
+        print(f"[tg-monitor] estado previo no legible: {e}", file=sys.stderr)
+        prev = {}
     state = {"level": level, "at": now, "reasons": reasons}
     STATE.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
 
