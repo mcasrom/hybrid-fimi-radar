@@ -4878,7 +4878,7 @@ def main():
         _salud_temas_html = ("<div class='card' id='salud-temas'><h3>Salud de los temas</h3>"
                              "<p class='caption'>Score continuo 0-100 por tema (volumen de hallazgos/día, "
                              "narrativas sostenidas, señal del último cluster y madurez). Mismo criterio que el "
-                             "check de cierre, sin decidir nada: orienta la revisión de mantenimiento del administrador.</p>"
+                             "check de cierre, sin decidir nada: orienta la revisión de mantenimiento del administrador. Solo temas activos; los cerrados quedan en la Bitácora.</p>"
                              "<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse;"
                              "font-size:.82rem'>"
                              "<tr><th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Tema</th>"
@@ -4888,7 +4888,7 @@ def main():
                              "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Sostenidas</th>"
                              "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Señal</th>"
                              "<th style='text-align:left;padding:5px 8px;border-bottom:1px solid #e2e8f0'>Op.</th></tr>")
-        for _st_k in sorted(_salud_temas.values(), key=lambda x: x.get("score", 0)):
+        for _st_k in sorted([_v for _v in _salud_temas.values() if _v.get("tema") in temas], key=lambda x: x.get("score", 0)):
             _nm = _st_k.get("nombre", _st_k.get("tema", "?"))
             _cod = _st_k.get("tema", "")
             _sc = _st_k.get("score", 0)
