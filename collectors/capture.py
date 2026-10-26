@@ -97,8 +97,10 @@ def grab_telegram(channel):
                 continue
             ts = int(datetime.fromisoformat(dm.group(1).replace("+00:00", "")).timestamp())
             text = re.sub(r"<[^>]+>", " ", tm.group(1)).strip()[:500]
+            post_id = block.split('"', 1)[0].split("/", 1)[-1].split("?", 1)[0]
+            post_url = f"https://t.me/{channel}/{post_id}" if post_id else ""
             out.append({"timestamp": ts, "author": f"tg:{channel}", "text": text,
-                        "url": "", "hashtags": "", "mentions": "", "action": "post",
+                        "url": post_url, "hashtags": "", "mentions": "", "action": "post",
                         "source": f"telegram:{channel}"})
         out = out[:MAX_PER_SOURCE]
     except Exception as e:

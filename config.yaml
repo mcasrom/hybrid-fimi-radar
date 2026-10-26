@@ -1944,6 +1944,19 @@ telegram_canales:
 - meduzalive
 - AlMayadeenEnglish
 - PressTV
+# === Canales públicos para protestas_juveniles (verificados 26-oct-2026) ===
+- elpais
+- eldiarioes
+- laSexta
+- publico_es
+- elconfidencial
+- elperiodico
+- france24
+- repubblica
+- danas
+- balkaninsight
+- bellingcat
+- guardian
 # APARCADOS 2-oct: `timesofisrael` e `i24NEWS_EN` se leen en cada ciclo y NO
 # matchean ninguna keyword de los 8 temas -> 0 eventos desde el alta (27-Sep),
 # verificado en `health_fuentes.py` (n90=0, last_ts=null). Mismo criterio que los

@@ -1,0 +1,89 @@
+# Canales públicos de Telegram para el piloto `protestas_juveniles`.
+# Solo canales; no grupos privados, no mensajes directos, no cuentas personales.
+# Verificados con https://t.me/s/<canal> el 26-oct-2026 (200 + mensajes visibles).
+# El collector usa el HTML público; no hay login ni API key.
+# Esquema del evento: author = tg:<canal> · source = telegram:<canal>.
+
+- canal: elpais
+  nombre: EL PAÍS
+  pais: España
+  tipo: medio nacional
+  url: https://t.me/s/elpais
+  estado: activo
+
+- canal: eldiarioes
+  nombre: eldiario.es
+  pais: España
+  tipo: medio nacional
+  url: https://t.me/s/eldiarioes
+  estado: activo
+
+- canal: laSexta
+  nombre: LaSexta
+  pais: España
+  tipo: televisión
+  url: https://t.me/s/laSexta
+  estado: activo
+
+- canal: publico_es
+  nombre: Público
+  pais: España
+  tipo: medio nacional
+  url: https://t.me/s/publico_es
+  estado: activo
+
+- canal: elconfidencial
+  nombre: El Confidencial
+  pais: España
+  tipo: medio nacional
+  url: https://t.me/s/elconfidencial
+  estado: activo
+
+- canal: elperiodico
+  nombre: El Periódico política
+  pais: España
+  tipo: medio nacional
+  url: https://t.me/s/elperiodico
+  estado: activo
+
+- canal: france24
+  nombre: FRANCE 24
+  pais: Francia
+  tipo: medio internacional
+  url: https://t.me/s/france24
+  estado: activo
+
+- canal: repubblica
+  nombre: la Repubblica
+  pais: Italia
+  tipo: medio nacional
+  url: https://t.me/s/repubblica
+  estado: activo
+
+- canal: danas
+  nombre: Danas
+  pais: Serbia
+  tipo: medio nacional
+  url: https://t.me/s/danas
+  estado: activo
+
+- canal: balkaninsight
+  nombre: Balkan Insight
+  pais: Balcanes
+  tipo: medio especializado
+  url: https://t.me/s/balkaninsight
+  estado: activo
+
+- canal: bellingcat
+  nombre: Bellingcat
+  pais: Internacional
+  tipo: OSINT
+  url: https://t.me/s/bellingcat
+  estado: activo
+
+- canal: guardian
+  nombre: The Guardian
+  pais: Reino Unido
+  tipo: medio internacional
+  url: https://t.me/s/guardian
+  estado: activo
