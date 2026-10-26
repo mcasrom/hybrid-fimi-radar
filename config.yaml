@@ -1150,8 +1150,9 @@ temas:
         infrastructure: 0.1111
         anomaly: 0.4444
   elecciones:
-    estado: cerrado
-    nombre: Elecciones e interferencia electoral (cerrado · histórico)
+    estado: produccion
+    nombre: Elecciones e interferencia electoral
+    ventana_dias: 14  # núcleo FIMI: ventana corta para no cargar el corpus histórico
     # Ventanas de validación/cierre para un tema de CICLO LARGO (electoral): la
     # promoción exige 30 días (no 72 h) y el cierre no se sugiere con elecciones
     # registradas a ±120 días (evita cerrar el tema en un valle entre procesos).
@@ -1180,23 +1181,14 @@ temas:
     # electoral real (evita que "afd" del boletín meteorológico "Area Forecast
     # Discussion", o menciones tangenciales, lo etiqueten como electoral).
     filtro:
-    - elecciones
-    - electoral
-    - campaña electoral
-    - urnas
-    - papeletas
     - fraude electoral
-    - medio mandato
-    - sondeos
-    - votantes
+    - afd
     # Términos electorales DE/SE (idiomas de los feeds del capítulo electoral):
     # sin ellos, el contenido electoral alemán/sueco no pasa el gate del tema.
     - landtagswahl
     - bundestagswahl
     - europawahl
     - wahlkampf
-    - wahlen
-    - wähler
     # Términos electorales NATIVOS de los procesos de alto valor registrados en
     # data/elecciones.yaml (Rusia/LV/BS/SR/PT/BG, 17-sep-2026): sin ellos el
     # discurso doméstico de esos países no pasa el gate del tema.
@@ -1451,11 +1443,17 @@ keywords:
   - bluesky
   - google-news
 - palabra: inmigración irregular
+  plataformas: []
 - palabra: سبتة
+  plataformas: []
 - palabra: مليلية
+  plataformas: []
 - palabra: مضيق جبل طارق
+  plataformas: []
 - palabra: Ceuta Maroc
+  plataformas: []
 - palabra: Melilla Maroc
+  plataformas: []
 - palabra: frontière Maroc Espagne
   plataformas:
   - google-news
@@ -1618,33 +1616,12 @@ keywords:
   plataformas:
   - bluesky
   - google-news
-- palabra: elecciones
+- palabra: fraude electoral
   plataformas: &id004
   - bluesky
   - google-news
   tema: elecciones
-- palabra: electoral
-  plataformas: *id004
-  tema: elecciones
-- palabra: urnas
-  plataformas: *id004
-  tema: elecciones
-- palabra: papeletas
-  plataformas: *id004
-  tema: elecciones
-- palabra: fraude electoral
-  plataformas: *id004
-  tema: elecciones
 - palabra: afd
-  plataformas: *id004
-  tema: elecciones
-- palabra: medio mandato
-  plataformas: *id004
-  tema: elecciones
-- palabra: sondeos
-  plataformas: *id004
-  tema: elecciones
-- palabra: votantes
   plataformas: *id004
   tema: elecciones
 - palabra: landtagswahl
@@ -1657,12 +1634,6 @@ keywords:
   plataformas: *id004
   tema: elecciones
 - palabra: wahlkampf
-  plataformas: *id004
-  tema: elecciones
-- palabra: wahlen
-  plataformas: *id004
-  tema: elecciones
-- palabra: wähler
   plataformas: *id004
   tema: elecciones
 - palabra: riksdag
