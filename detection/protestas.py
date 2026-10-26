@@ -214,7 +214,7 @@ def svg_timeline(epis: list) -> str:
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-labelledby="tlt tl" class="chart">',
            '<title id="tlt">Cronología de los episodios curados</title>',
            '<desc id="tl">Cinco hitos de la ola, ordenados de 2025 a 2026.</desc>',
-           '<defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>',
+           f'<defs><linearGradient id="tg" gradientUnits="userSpaceOnUse" x1="{x0}" y1="{y}" x2="{x1}" y2="{y}"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>',
            f'<line x1="{x0}" y1="{y}" x2="{x1}" y2="{y}" stroke="url(#tg)" stroke-width="4" stroke-linecap="round"/>']
     for i, e in enumerate(eps):
         x = x0 + i * step
