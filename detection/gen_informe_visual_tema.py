@@ -514,7 +514,7 @@ def _anexo_protestas(con, tema):
         f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
         f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
         f"<td>{mil(r.get('eventos', 0))}</td><td>{esc(r.get('estado'))}</td></tr>"
-        for r in ext.get("filas", []))
+        for r in ext.get("filas", []) if r.get("tipo") != "término genérico")
     return (f"<section><h2>Anexo curado — convocatorias, fuentes y extensión</h2>"
             f"<p class='cs'><b>Fuera del score y de las bandas.</b> Datos curados o léxicos; no son una muestra representativa del tema. "
             f"No se usa un eje izquierda-derecha.</p>"
@@ -532,7 +532,7 @@ def _anexo_protestas(con, tema):
             f"<div style='overflow:auto'><table style='width:100%;border-collapse:collapse;font-size:.76rem'>"
             f"<thead><tr><th>Símbolo</th><th>Tipo</th><th>Países en 72 h</th><th>Eventos</th><th>Estado</th></tr></thead>"
             f"<tbody>{ext_rows}</tbody></table></div>"
-            f"<p class='cs' style='color:#94a3b8'>{esc(ext.get('nota', ''))}</p></section>")
+            f"<p class='cs' style='color:#94a3b8'>{esc(ext.get('nota', ''))} Se omiten términos genéricos (huelga, manifestación).</p></section>")
 
 
 def _verif_state(e):
@@ -582,6 +582,8 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
     _social = [c for c in clusters if track_of(c) in ("social", "mixto")]
     _prensa_max = max((c["ov"] for c in _prensa), default=0)
     _social_max = max((c["ov"] for c in _social), default=0)
+    _mixed = tracks.get("mixto", 0)
+    _none = tracks.get("sin_pista", 0)
     _peer_cl = _peer_high = 0
     _peer_n = 0
     for _t, _v in (salud_all or {}).items():
@@ -617,6 +619,8 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
         f"score máximo {_social_max:.0f}/100 · incluye los mixtos.</p>"
         f"<p class='cs' style='color:#64748b'>{_social_names}</p></div>"
         "</div>"
+        f"<p class='cs' style='color:#64748b'>Mixtos: <b>{_mixed}</b> · sin pista dominante: <b>{_none}</b> · "
+        f"total: {n}. Las dos columnas incluyen los mixtos y se solapan.</p>"
         "<p class='cs'>Clasificación a partir de las explicaciones alternativas ya calculadas: "
         "<b>eco de prensa</b> = <code>mainstream_echo</code> compatible o plausible; "
         "<b>amplificación social</b> = <code>cross_account_synchrony</code> o "
@@ -667,10 +671,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
         f"<div class='tile'><div class='k'>{esc(v)}</div><div class='kl'>{esc(l)}</div><div class='ks'>{esc(sub)}</div></div>"
         for (l, v, sub) in kpi_tiles)
     if n:
-        exec_txt = (f"<b>Lectura rápida.</b> {mil(kpi['n_ev'])} eventos y {n} clusters con señal; "
-                    f"{len(altos)} en banda alta ({len(ev_low_alta)} con evidencia baja). "
-                    f"Pista dominante: <b>{TRACK_ES[track_top]}</b> ({tracks.get(track_top, 0)} de {n}). "
-                    f"{(salud or {}).get('sync', 0)} sincronías entre cuentas distintas. "
+        exec_txt = (f"<b>Lectura rápida.</b> {(salud or {}).get('sync', 0)} sincronías entre cuentas distintas · "
+                    f"<b>{len(ev_low_alta)} candidatos de evidencia baja</b> · "
+                    f"<b>{len(_prensa)}/{n} eco de prensa</b> · <b>{len(_social)}/{n} amplificación social</b> · "
+                    f"{mil(kpi['n_ev'])} eventos. Pista dominante: <b>{TRACK_ES[track_top]}</b>. "
                     f"No se atribuye actor.")
     else:
         exec_txt = ("<b>Lectura rápida.</b> Sin clusters con señal en esta ventana: "
@@ -937,21 +941,33 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 @media print{{body{{background:#fff}} .btns{{display:none}} section{{break-inside:avoid;border-color:#ddd}} .hd{{-webkit-print-color-adjust:exact}}}}
 @media(max-width:760px){{.tiles{{grid-template-columns:repeat(3,1fr)}} .two,.three{{grid-template-columns:1fr}} .metric{{grid-template-columns:repeat(2,1fr)}}}}
 """
+    _sync_n = int((salud or {}).get("sync", 0) or 0)
+    if tema == "protestas_juveniles":
+        _page_title = "Protestas juveniles: mucho eco, sin coordinación confirmada · Observatorio"
+        _og_title = "Protestas juveniles: mucho eco, sin coordinación confirmada"
+        _og_desc = (f"{mil(kpi['n_ev'])} eventos observados · {_sync_n} sincronías entre cuentas · "
+                    f"{len(ev_low_alta)} candidatos de evidencia baja. Señal ≠ atribución.")
+        _robots = "noindex,follow"
+    else:
+        _page_title = f"Informe visual — {nombre} · Observatorio de amplificación"
+        _og_title = f"Informe visual — {nombre}"
+        _og_desc = "Qué se observa, señales, hipótesis alternativas y límites. Amplificación medida, no coordinación confirmada."
+        _robots = "index, follow"
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Informe visual — {esc(nombre)} · Observatorio de amplificación</title>
-<meta name="description" content="Informe visual del tema {esc(nombre)}: qué se observa, señales, hipótesis alternativas y límites. Señal, no atribución.">
+<title>{esc(_page_title)}</title>
+<meta name="description" content="{esc(_og_desc)}">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="{esc(_robots)}">
 <script type="application/ld+json">{{"@context":"https://schema.org","@type":"Report","name":"Informe visual — {esc(nombre)}","url":"https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html","description":"Radiografía de la amplificación medida en el tema {esc(nombre)}: qué se observa, hipótesis alternativas y límites. Señal, no atribución.","dateModified":"{datetime.now(timezone.utc).date().isoformat()}","author":{{"@type":"Person","name":"M. Castillo"}},"publisher":{{"@type":"Organization","name":"Observatorio de amplificación","url":"https://fimi.viajeinteligencia.com/"}},"license":"https://creativecommons.org/licenses/by/4.0/","isPartOf":{{"@type":"WebSite","name":"Observatorio de amplificación","url":"https://fimi.viajeinteligencia.com/"}}}}</script>
 <meta property="og:type" content="article">
-<meta property="og:title" content="Informe visual — {esc(nombre)}">
-<meta property="og:description" content="Qué se observa, señales, hipótesis alternativas y límites. Amplificación medida, no coordinación confirmada.">
+<meta property="og:title" content="{esc(_og_title)}">
+<meta property="og:description" content="{esc(_og_desc)}">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/informes/visual/{esc(tema)}.html">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Informe visual — {esc(nombre)}">
+<meta name="twitter:title" content="{esc(_og_title)}">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-{esc(tema)}.png">
 <style>{css}</style></head><body>
 <div class="hd"><div class="wrap">
@@ -992,7 +1008,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
       Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes (un evento = una pieza capturada).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} aquí: solo clusters cuyo contenido explica el tema); este informe analiza por tema_id ({n_raw_inf}). La banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} en esa vista); este informe analiza por tema_id ({n_raw_inf}). No son universos idénticos ni se suman. La banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -1006,6 +1022,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div><h2>Cluster top (mayor score{', evidencia baja' if top_low else ''}) — {esc(top['label']) if top else 'sin clúster con señal'}</h2>
     <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}{" <span class='chip' style='background:#fef3c7;color:#92400e'>candidato, no conclusión</span>" if top_low else ""}</p>
     {"<p class='cs' style='color:#92400e'><b>Evidencia baja:</b> el score alto no compensa un n pequeño. Se muestra para seguimiento, no como hallazgo principal.</p>" if top_low else ""}
+    {"<p class='cs' style='color:#92400e'><b>Sin contenido suficiente:</b> no hay dominios asociados; el top por score no se presenta como hallazgo.</p>" if top and not top["doms"] else ""}
     <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
     <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades. Las hipótesis se puntúan de forma independiente (pueden aparecer varias como compatibles); no son mutuamente excluyentes.</p>

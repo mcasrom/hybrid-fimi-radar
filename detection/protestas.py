@@ -814,9 +814,9 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
         f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
         f"<td>{n(r.get('eventos', 0))}</td><td>{n(r.get('cuentas', 0))}</td>"
         f"<td>{esc(r.get('estado', '—'))}</td></tr>"
-        for r in _ext.get("filas", []))
+        for r in _ext.get("filas", []) if r.get("tipo") != "término genérico")
     ext_html = (f"<section><h2>Extensión entre países (exploratoria)</h2>"
-                f"<p class='meta'>{esc(_ext.get('nota', ''))} Ventana: {n(_ext.get('ventana_h', 72))} h.</p>"
+                f"<p class='meta'>{esc(_ext.get('nota', ''))} Ventana: {n(_ext.get('ventana_h', 72))} h. Se omiten términos genéricos.</p>"
                 f"<div style='overflow:auto'><table><thead><tr><th>Símbolo</th><th>Tipo</th>"
                 f"<th>Países en 72 h</th><th>Eventos</th><th>Cuentas</th><th>Estado</th></tr></thead>"
                 f"<tbody>{_ext_rows}</tbody></table></div>"
@@ -1020,9 +1020,9 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
         f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
         f"<td>{n(r.get('eventos', 0))}</td><td>{n(r.get('cuentas', 0))}</td>"
         f"<td>{esc(r.get('estado', '—'))}</td></tr>"
-        for r in _ext.get("filas", []))
+        for r in _ext.get("filas", []) if r.get("tipo") != "término genérico")
     ext_html_en = (f"<section><h2>Cross-country extension (exploratory)</h2>"
-                   f"<p class='meta'>{esc(_ext.get('nota', ''))} Window: {n(_ext.get('ventana_h', 72))} h.</p>"
+                   f"<p class='meta'>{esc(_ext.get('nota', ''))} Window: {n(_ext.get('ventana_h', 72))} h. Generic terms are omitted.</p>"
                    f"<div style='overflow:auto'><table><thead><tr><th>Symbol</th><th>Type</th>"
                    f"<th>Countries in 72 h</th><th>Events</th><th>Accounts</th><th>Status</th></tr></thead>"
                    f"<tbody>{_ext_rows}</tbody></table></div>"

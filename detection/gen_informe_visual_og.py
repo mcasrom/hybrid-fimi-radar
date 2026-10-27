@@ -84,6 +84,29 @@ def kpis(con, tema):
     return n, alta, au
 
 
+def _protestas_kpis(con):
+    ev = con.execute(
+        "SELECT COUNT(*) FROM events e JOIN event_temas et ON et.event_id=e.id "
+        "WHERE et.tema_id='protestas_juveniles'").fetchone()[0]
+    alta = con.execute(
+        "SELECT COUNT(*) FROM clusters c WHERE c.tema_id='protestas_juveniles'"
+        " AND c.overall_score>=60"
+        " AND (SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
+        " WHERE ce.cluster_id=c.id) >= 3").fetchone()[0]
+    low = con.execute(
+        "SELECT COUNT(*) FROM clusters c WHERE c.tema_id='protestas_juveniles'"
+        " AND c.overall_score>=60"
+        " AND (SELECT COUNT(*) FROM cluster_events ce WHERE ce.cluster_id=c.id) < 30"
+        " AND (SELECT COUNT(DISTINCT ce.author) FROM cluster_events ce"
+        " WHERE ce.cluster_id=c.id) >= 3").fetchone()[0]
+    sync = con.execute(
+        "SELECT COUNT(*) FROM clusters c, json_each(c.alternative_explanations) j"
+        " WHERE c.tema_id='protestas_juveniles'"
+        " AND json_extract(j.value,'$.code')='cross_account_synchrony'"
+        " AND json_extract(j.value,'$.status')='supported'").fetchone()[0]
+    return ev, alta, low, sync
+
+
 def render(con, tema, nombre):
     n, alta, au = kpis(con, tema)
     img = Image.new("RGB", (W, H), NAVY)
@@ -95,25 +118,36 @@ def render(con, tema, nombre):
         d.line([(0, y), (W, y)], fill=c)
     d.rectangle([0, 0, W, 12], fill=ACCENT)
     d.text((64, 60), "OBSERVATORIO DE AMPLIFICACIÓN · INFORME VISUAL", font=F(BOLD, 19), fill=ACCENT)
-    lines = wrap(d, nombre, F(BOLD, 56), W - 128)
+    if tema == "protestas_juveniles":
+        ev, _h, low, sync = _protestas_kpis(con)
+        title = "Protestas juveniles: mucho eco, sin coordinación confirmada"
+        subtitle = f"{ev:,} eventos observados · {sync} sincronías · {low} candidatos de evidencia baja"
+        tiles = [(ev, "eventos"), (sync, "sincronías"), (low, "candidatos de evidencia baja")]
+    else:
+        title = nombre
+        subtitle = "Qué se observa, señales, hipótesis alternativas y límites."
+        tiles = [(n, "clusters"), (au, "cuentas en clusters"), (alta, "en banda alta")]
+    lines = wrap(d, title, F(BOLD, 56), W - 128)
     y = 104
     for ln in lines[:2]:
         d.text((64, y), ln, font=F(BOLD, 56), fill=WHITE)
         y += 66
-    d.text((64, y + 8), "Qué se observa, señales, hipótesis alternativas y límites.", font=F(REG, 22), fill=SOFT)
+    d.text((64, y + 8), subtitle, font=F(REG, 22), fill=SOFT)
     # tiles KPI
     ty = 360
     tw, th, gap = 240, 118, 22
     x = 64
-    for val, lab in [(n, "clusters"), (au, "cuentas en clusters"), (alta, "en banda alta")]:
+    for val, lab in tiles:
         d.rounded_rectangle([x, ty, x + tw, ty + th], 14, fill=TILE)
-        d.text((x + 26, ty + 20), str(val), font=F(BOLD, 46), fill=NAVY)
+        d.text((x + 26, ty + 20), f"{val:,}".replace(",", "."), font=F(BOLD, 46), fill=NAVY)
         d.text((x + 26, ty + 78), lab, font=F(REG, 18), fill=(71, 85, 105))
         x += tw + gap
     # pie
     d.rectangle([0, H - 62, W, H], fill=NAVY2)
-    d.text((64, H - 42), "Señal detectada ≠ desinformación confirmada ≠ atribución de actor.",
-           font=F(REG, 17), fill=SOFT)
+    footer = ("Señal ≠ atribución. Una banda alta no confirma coordinación."
+              if tema == "protestas_juveniles" else
+              "Señal detectada ≠ desinformación confirmada ≠ atribución de actor.")
+    d.text((64, H - 42), footer, font=F(REG, 17), fill=SOFT)
     url = "fimi.viajeinteligencia.com/informes/visual/"
     uw = d.textlength(url, font=F(BOLD, 17))
     d.text((W - 64 - uw, H - 42), url, font=F(BOLD, 17), fill=WHITE)
