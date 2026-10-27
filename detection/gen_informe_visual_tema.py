@@ -982,7 +982,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 
 <div class="two">
   <section><h2>Dominios más compartidos (top)</h2>{dom_bars}
-    <p class="cs" style="margin-top:8px">Dominios presentes en enlaces compartidos por cuentas de los <b>20 clusters de mayor score</b> del tema (no solo del cluster top). La frecuencia no implica participación del medio en una operación ni demuestra coordinación entre quienes comparten.</p></section>
+    <p class="cs" style="margin-top:8px">Unidad: <b>número de clusters</b> (no eventos) de los 20 de mayor score en los que aparece el dominio. La página de casos mide eventos; las cifras no son comparables directamente. La frecuencia no implica participación del medio en una operación ni demuestra coordinación entre quienes comparten.</p></section>
   <section><h2>Hipótesis más frecuente del tema</h2>
     <p class="cs" style="margin-top:0">Número de clusters cuya hipótesis de <b>mayor puntuación</b> es cada una.
     El tema puede tener una hipótesis más frecuente distinta de la del <b>cluster top</b> (arriba).</p>

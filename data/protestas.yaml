@@ -28,7 +28,7 @@
   fuentes:
     - https://www.infobae.com/espana/2026/10/25/que-es-blocus-la-red-de-perfiles-anonimos-de-tiktok-que-movilizo-a-cientos-de-jovenes-antes-de-los-disturbios-de-barcelona/
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
-  nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia."
+  nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia. La mención a la red de cuentas es una cita de la fuente; el radar no observa sincronías ni confirma organización."
 
 - id: FRA-2026-10-24
   tipo_detonante: educacion
@@ -69,7 +69,7 @@
   fuente_primaria: null
   fuentes:
     - https://www.diarioestrategia.cl/texto-diario/mostrar/6057316/200-detenidos-mayoria-menores-durante-segunda-jornada-disturbios-saqueos-milan
-  nota: "Más de 200 detenidos, en torno al 80 % menores (Europa Press)."
+  nota: "Más de 200 detenidos, en torno al 80 % menores (Europa Press). Cifra provisional de fuente secundaria; no verificada por el radar."
 
 - id: ALB-2026-10-24
   tipo_detonante: corrupcion
@@ -112,4 +112,4 @@
   fuentes:
     - https://en.wikipedia.org/wiki/2025_Nepalese_Gen_Z_protests
     - https://publications.civicus.org/publications/2026-state-of-civil-society-report/gen-z-protests-new-resistance-rises/
-  nota: "Cifra de muertos y resultado del Gobierno según la cronología pública enlazada."
+  nota: "Cifra de 76 muertos y resultado del Gobierno según la cronología pública enlazada (Wikipedia). Fuente secundaria; no verificada por el radar."

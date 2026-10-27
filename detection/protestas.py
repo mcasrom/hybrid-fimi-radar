@@ -41,6 +41,7 @@ TEMA = "protestas_juveniles"
 sys.path.insert(0, str(ROOT))
 from detection.bandas import BAND_ES, banda  # noqa: E402
 from detection.mainstream import MAINSTREAM  # noqa: E402
+from detection import metricas_tema as _mt  # noqa: E402
 
 BAND_COL = {
     "CRITICAL": "#dc2626",
@@ -89,6 +90,30 @@ def tipo_dominio(h: str) -> str:
         return "plataforma"
     if h in MAINSTREAM:
         return "medio"
+    return "otro"
+
+
+AGENCIAS = {"efe.com", "europapress.es", "reuters.com", "apnews.com", "afp.com",
+            "ansa.it", "dpa.com", "afpforum.com"}
+MEDIOS_EXTRA = {"infobae.com", "tovima.com", "diarioestrategia.cl", "dw.com"}
+ORGANIZACIONES = {"civicus.org", "publications.civicus.org"}
+
+
+def nivel_fuente(h: str) -> str:
+    h = (h or "").lower().replace("www.", "")
+    if "wikipedia.org" in h:
+        return "wiki"
+    if h in AGENCIAS:
+        return "agencia"
+    if h in MAINSTREAM or h in MEDIOS_EXTRA:
+        return "medio"
+    if h in ORGANIZACIONES:
+        return "organización"
+    if h in {"news.google.com", "news.google.es"}:
+        return "agregador"
+    if h in {"youtube.com", "youtu.be", "tiktok.com", "x.com", "twitter.com",
+             "instagram.com", "facebook.com", "reddit.com"}:
+        return "plataforma"
     return "otro"
 
 
@@ -150,9 +175,17 @@ def señal(conn) -> dict:
         (TEMA,),
     )]
     bandas = {b: 0 for b in BAND_ORDER}
+    bandas_signal = {b: 0 for b in BAND_ORDER}
     for r in cl:
         b = banda(r["overall_score"] or 0)
         bandas[b] = bandas.get(b, 0) + 1
+        if int(r["n_au"] or 0) >= 3:
+            bandas_signal[b] = bandas_signal.get(b, 0) + 1
+    tie59_all = sum(1 for r in cl if 58.9 <= float(r["overall_score"] or 0) <= 59.1)
+    tie59_signal = sum(1 for r in cl
+                       if int(r["n_au"] or 0) >= 3
+                       and 58.9 <= float(r["overall_score"] or 0) <= 59.1)
+    n_au_cl = _mt.cuentas_en_clusters(conn, TEMA)
     # ritmo diario de los últimos 14 días, con ceros incluidos
     hoy = datetime.now(timezone.utc).date()
     start = hoy - timedelta(days=13)
@@ -212,14 +245,19 @@ def señal(conn) -> dict:
     return {
         "eventos": n_ev or 0,
         "cuentas": n_aut or 0,
+        "cuentas_cluster": n_au_cl,
         "desde": int(t0) if t0 else None,
         "hasta": int(t1) if t1 else None,
         "clusters": len(cl),
         "signal_clusters": sum(1 for r in cl if int(r["n_au"] or 0) >= 3),
         "small_clusters": sum(1 for r in cl if int(r["n_au"] or 0) < 3),
         "bandas": bandas,
+        "bandas_signal": bandas_signal,
+        "tie59_all": tie59_all,
+        "tie59_signal": tie59_signal,
         "max_score": round(max((r["overall_score"] or 0 for r in cl), default=0), 1),
         "top_clusters": top_clusters[:16],
+        "top_signal": [c for c in top_clusters if c["cuentas"] >= 3][:8],
         "daily": daily,
         "weekly": weekly,
         "fuentes": fuentes,
@@ -570,6 +608,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
         fuentes = "".join(
             f"<a href='{esc(u)}' target='_blank' rel='noopener noreferrer'>"
             f"{esc(urllib.parse.urlparse(u).netloc.replace('www.', ''))}</a> "
+            f"<span class='meta'>({esc(nivel_fuente(urllib.parse.urlparse(u).netloc))})</span> "
             for u in (e.get("fuentes") or [])
         )
         refs = e.get("lineage_refs") or []
@@ -602,9 +641,9 @@ def render(epis: list, s: dict, ahora: str) -> str:
         for b in BAND_ORDER if s["bandas"].get(b, 0)
     ) or "<tr><td colspan='2'>Sin clusters todavía.</td></tr>"
     top = "".join(
-        f"<tr><td>{esc(c['label'])}</td><td>{c['score']:.1f}</td><td>{esc(c['banda_es'])}</td><td>{n(c['cuentas'])}</td><td>{n(c['eventos'])}</td><td>{c.get('coord',0):.0f}</td><td>{c.get('amp',0):.0f}</td><td>{c.get('infra',0):.0f}</td><td>{c.get('anom',0):.0f}</td></tr>"
-        for c in s["top_clusters"][:8]
-    ) or "<tr><td colspan='9'>Sin clusters todavía.</td></tr>"
+        f"<tr><td>{esc(c['label'])}</td><td>{c['score']:.1f}</td><td>{esc(c['banda_es'])}{' <span class=meta>· evidencia baja</span>' if c['banda'] == 'HIGH' and (c['cuentas'] < 8 or c['eventos'] < 30) else (' <span class=meta>· muestra pequeña</span>' if c['cuentas'] < 8 or c['eventos'] < 30 else '')}</td><td>{n(c['cuentas'])}</td><td>{n(c['eventos'])}</td><td>{c.get('coord',0):.0f}</td><td>{c.get('amp',0):.0f}</td><td>{c.get('infra',0):.0f}</td><td>{c.get('anom',0):.0f}</td></tr>"
+        for c in (s.get("top_signal") or [c for c in s["top_clusters"] if c["cuentas"] >= 3])[:8]
+    ) or "<tr><td colspan='9'>Sin clusters con señal.</td></tr>"
     doms = "".join(
         f"<tr><td>{esc(d['dominio'])}</td><td>{esc(d.get('tipo','otro'))}</td><td>{n(d['eventos'])}</td></tr>"
         for d in s["top_dominios"]
@@ -614,23 +653,41 @@ def render(epis: list, s: dict, ahora: str) -> str:
     pers = s.get("persistencia", {})
     peak = max(s.get("daily", []), key=lambda x: x.get("eventos", 0), default=None)
     peak_txt = dmy(peak["fecha"]) if peak else "—"
-    tie59 = sum(1 for c in s.get("top_clusters", []) if 58.9 <= c.get("score", 0) <= 59.1)
-    hi_accounts = (s.get("top_clusters") or [{}])[0].get("cuentas", 0)
+    tie59 = int(s.get("tie59_signal") or 0)
+    tie59_all = int(s.get("tie59_all") or 0)
+    hi_accounts = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("cuentas", 0)
+    hi_events = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("eventos", 0)
+    hi_low = hi_events < 30 or hi_accounts < 8
+    cuentas_cluster = int(s.get("cuentas_cluster") or 0)
+    bandas_signal = s.get("bandas_signal") or {}
+    small_bands = {b: max(0, int(s["bandas"].get(b, 0)) - int(bandas_signal.get(b, 0)))
+                   for b in BAND_ORDER}
+    _btxt = lambda d: ", ".join(f"{n(v)} {BAND_ES.get(b, b).lower()}"
+                                for b, v in ((b, int(d.get(b, 0))) for b in BAND_ORDER) if v)
+    bandas_all_txt = _btxt(s["bandas"])
+    bandas_sig_txt = _btxt(bandas_signal)
+    bandas_small_txt = _btxt(small_bands)
     agg = next((d for d in s.get("top_dominios", []) if d.get("tipo") == "agregador"), None)
     agg_txt = (f"Google News ({n(agg['eventos'])}) se excluye del gráfico por ser agregador: es eco de prensa, no una fuente independiente."
                if agg else "Los agregadores se excluyen del gráfico: son eco de prensa, no fuentes independientes.")
     takeaways = [
         f"<b>{n(s.get('signal_clusters', 0))} de {n(s['clusters'])}</b> clústeres tienen señal (≥3 cuentas); {n(s.get('small_clusters', 0))} son grupos pequeños.",
-        f"<b>{n(high)}</b> en banda alta y <b>0</b> sincronías entre cuentas distintas. La banda alta mide amplificación, no autoría.",
+        f"<b>{n(high)}</b> en banda alta y <b>0</b> sincronías entre cuentas distintas. "
+        f"El único caso tiene <b>{'evidencia baja' if hi_low else 'evidencia suficiente'}</b> "
+        f"({n(hi_events)} eventos, {n(hi_accounts)} cuentas).",
+        f"<b>{n(s.get('cuentas', 0))}</b> cuentas distintas en el tema; <b>{n(cuentas_cluster)}</b> dentro de clústeres.",
+        f"Bandas: <b>{esc(bandas_sig_txt)}</b> sobre {n(s.get('signal_clusters', 0))} con señal. "
+        f"Los {n(s.get('small_clusters', 0))} grupos pequeños aportan <b>{esc(bandas_small_txt)}</b>; total, {esc(bandas_all_txt)}.",
         f"La conversación viene sobre todo de <b>{esc(top_src or '—')}</b>.",
-        f"Persistencia: <b>{n(pers.get('max_ciclos', 0))} ciclo</b> por linaje. Con un solo ciclo no hay vida media fiable.",
+        f"Persistencia: hasta <b>{n(pers.get('max_ciclos', 0))} ciclos de pipeline</b> por linaje; "
+        f"no equivale a una línea base de ocho semanas.",
     ]
 
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Protestas juveniles · observatorio de amplificación</title>
+<title>Ola juvenil: lo documentado y lo que el radar no ve</title>
 <meta name="robots" content="noindex,follow">
-<meta name="description" content="Cronología, señal de amplificación, mecanismo y episodios curados de la ola de protestas juveniles 2025-26.">
+<meta name="description" content="Qué está documentado sobre la ola de protestas juveniles, qué se repite en el radar y qué no puede concluirse.">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
@@ -638,12 +695,12 @@ def render(epis: list, s: dict, ahora: str) -> str:
 <main class="wrap">
 <section class="hero">
   <p class="kicker">Piloto de amplificación</p>
-  <h1>La ola juvenil, en una página</h1>
+  <h1>Ola juvenil: lo documentado y lo que el radar no ve</h1>
   <p class="lead">Del malestar a la calle y de la calle al feed. Qué está documentado, qué se repite y qué sigue siendo atribución. El radar mide amplificación y extensión; no identifica autores ni intención.</p>
   <p><span class="badge">Piloto</span><span class="badge">Sin atribución</span><span class="badge">Fuentes enlazadas</span><a class="badge" href="en.html">English</a></p>
   <div class="hero-stats">
     <div class="hero-stat"><b>{n(s['eventos'])}</b><span>eventos etiquetados</span></div>
-    <div class="hero-stat"><b>{n(s['cuentas'])}</b><span>cuentas distintas</span></div>
+    <div class="hero-stat"><b>{n(s['cuentas'])} / {n(cuentas_cluster)}</b><span>cuentas tema / clústeres</span></div>
     <div class="hero-stat"><b>{n(s['clusters'])}</b><span>clústeres</span></div>
     <div class="hero-stat"><b>{n(high)}</b><span>en banda alta</span></div>
   </div>
@@ -653,19 +710,19 @@ def render(epis: list, s: dict, ahora: str) -> str:
 
 <div class="takeaways"><h2>Lo esencial</h2><ul>{''.join(f'<li>{x}</li>' for x in takeaways)}</ul></div>
 
-<div class="conclusion"><b>Lectura de hoy.</b> El pico de actividad capturada es del <b>{peak_txt}</b>, posterior a los disturbios del 24-oct. <b>No hay sincronías entre cuentas distintas</b>; el único clúster en banda alta se explica por amplificación/eco de fuente, no por coordinación. Tiene <b>{hi_accounts} cuentas</b>: el umbral de publicación es 3; el de CRITICAL, 10. Queda <b>1 clúster en revisión manual</b>; la cobertura es Bluesky + Google News, no la convocatoria original. El corte en 60 es convencional: <b>{tie59} clústeres empatan en 59</b>, así que la frontera no es una verdad natural. <b>No se puede concluir</b> que la ola esté orquestada.</div>
+<div class="conclusion"><b>Lectura de hoy.</b> El pico de actividad capturada es del <b>{peak_txt}</b>, posterior a los disturbios del 24-oct. <b>No hay sincronías entre cuentas distintas</b>. El único clúster en banda alta es un <b>candidato de evidencia baja</b> ({n(hi_events)} eventos, {n(hi_accounts)} cuentas): su H2 mide estructura de URLs compartidas, no autoría, y la explicación automática queda <b>no concluyente</b>. No se lee como coordinación confirmada. La cobertura es Bluesky + Google News, no la convocatoria original. El corte en 60 es convencional: <b>{tie59} de los 20 con señal empatan en 59</b> ({tie59_all} de 51; uno de ellos tiene solo 2 cuentas y queda fuera de la tabla). <b>No se puede concluir</b> que la ola esté orquestada.</div>
 
 <details class="glossary"><summary>Qué significan «banda alta», «clúster», «score» y «persistencia»</summary>
-<p><b>Clúster:</b> grupo de eventos que el sistema conecta por contenido, enlaces, tiempo o cuentas. No es una prueba de coordinación. <b>Score:</b> combinación de coordinación, similitud, amplificación, infraestructura y anomalía (0–100); no es una probabilidad. <b>Banda alta:</b> score ≥60; indica amplificación anómala. <b>Amplificación anómala:</b> patrón de repetición o extensión fuera de lo esperado; no identifica autor. <b>Persistencia:</b> número de ciclos en los que sobrevive un linaje; con un solo ciclo no hay vida media fiable. <a href="/glosario.html#casa">Glosario completo</a>.</p>
+<p><b>Clúster:</b> grupo de eventos que el sistema conecta por contenido, enlaces, tiempo o cuentas. No es una prueba de coordinación. <b>Score:</b> combinación de coordinación, similitud, amplificación, infraestructura y anomalía (0–100); no es una probabilidad. <b>Banda alta:</b> score ≥60; indica amplificación anómala. <b>Amplificación anómala:</b> patrón de repetición o extensión fuera de lo esperado; no identifica autor. <b>Persistencia:</b> número de ciclos en los que sobrevive un linaje; con pocos ciclos no hay vida media fiable. <a href="/glosario.html#casa">Glosario completo</a>.</p>
 </details>
 
 <div class="limits"><h2>Qué no ve este radar</h2><ul>
-<li><b>La convocatoria original.</b> TikTok, Instagram, WhatsApp, Telegram y Discord no se capturan; el radar no observa dónde se organiza la protesta.</li>
-<li><b>La calle.</b> No hay asistentes, detenciones ni heridos propios: las cifras de los episodios son citas de fuentes, no medición del radar.</li>
-<li><b>Representatividad.</b> Bluesky y Google News dominan la captura; no es una muestra representativa de la conversación española.</li>
+<li><b>La convocatoria original.</b> TikTok, Instagram, WhatsApp y Discord no se capturan. Telegram solo se lee en canales públicos, no en grupos ni mensajes privados; el radar no observa dónde se organiza la protesta.</li>
+<li><b>La calle.</b> No hay asistentes, detenciones ni heridos propios: las cifras de los episodios son citas provisionales, no medición del radar.</li>
+<li><b>Fuentes primarias.</b> No se localizó fuente primaria en 5 de 5 episodios. Las cifras de víctimas y detenidos proceden de fuentes secundarias y no están verificadas por el radar; se muestran para contexto, no como dato propio.</li>
+<li><b>Representatividad.</b> Bluesky y Google News dominan la captura; no es una muestra representativa de la conversación juvenil.</li>
 <li><b>Personas.</b> No se identifican menores ni cuentas individuales. Los datos de detenciones son agregados y provisionales.</li>
-<li><b>Línea base.</b> «Anómalo» es relativo a esta quincena; no hay ocho semanas de referencia. Un cambio de pesos movería la frontera de 60.</li>
-<li><b>Vida media.</b> El piloto tiene un solo ciclo; la persistencia real necesita varios ciclos.</li>
+<li><b>Línea base.</b> El contexto de ocho semanas es histórico de captura del sistema, no una línea base del tema. El piloto acumula hasta cinco ciclos de pipeline en menos de 24 h; «anómalo» es relativo a esta ventana y un cambio de pesos movería el corte de 60.</li>
 </ul></div>
 
 <section>
@@ -677,7 +734,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
 <section>
   <h2>La señal, en tres planos</h2>
   <div class="two two-charts">
-    <div class="chart-card"><h3>Reparto por banda</h3><p class="meta">Todos los clústeres del tema; la mayoría son grupos pequeños.</p>{svg_bands(s['bandas'])}</div>
+    <div class="chart-card"><h3>Reparto por banda</h3><p class="meta">{n(s.get('signal_clusters', 0))} con señal y {n(s.get('small_clusters', 0))} grupos pequeños. Los pequeños aportan {esc(bandas_small_txt)}; no hay banda alta entre ellos.</p>{svg_bands(s['bandas'])}</div>
     <div class="chart-card"><h3>Cuentas frente a score</h3><p class="meta">Cada círculo es un clúster. Tamaño = eventos; color = banda.</p>{svg_scatter(s['top_clusters'])}</div>
   </div>
   <div class="chart-card"><h3>Ritmo de conversación</h3><p class="meta">Eventos etiquetados por día en la ventana del piloto.</p>{svg_daily(s['daily'], epis)}</div>
@@ -686,7 +743,8 @@ def render(epis: list, s: dict, ahora: str) -> str:
 
 <section>
   <h2>Episodios curados</h2>
-  <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster es <b>manual y revisable</b>: no se inventa. Fuentes consultadas el 26/10/2026.</p>
+  <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster es <b>manual y revisable</b>: no confirma el episodio ni se inventa. Fuentes consultadas el 26/10/2026.</p>
+  <p class="meta"><b>Criterio de inclusión:</b> cinco episodios con componente juvenil/estudiantil, detonante local identificable y cobertura internacional. Es una selección editorial, no aleatoria ni exhaustiva; el orden no implica continuidad temporal. <b>Nivel de fuente:</b> agencia/oficial &gt; medio &gt; agregador/wiki; las cifras sensibles sin agencia u oficial quedan como provisionales.</p>
   <div class="filters">
     <label>Región <select id="f-pais"><option value="">Todas</option>{''.join(f'<option value="{esc(x)}">{esc(x)}</option>' for x in sorted({str(e.get('pais')) for e in epis}))}</select></label>
     <label>Tipo de detonante <select id="f-tipo"><option value="">Todos</option>{''.join(f'<option value="{v}">{esc(k)}</option>' for v,k in [('redes','Redes / plataformas'),('educacion','Educación'),('coste','Coste de vida'),('corrupcion','Corrupción')])}</select></label>
@@ -702,10 +760,10 @@ def render(epis: list, s: dict, ahora: str) -> str:
 
 <section>
   <h2>Quién amplifica</h2>
-  <div class="chart-card"><h3>Dominios con más eventos</h3><p class="meta">Presencia en enlaces del tema; no implica coordinación ni participación del medio. <b>{agg_txt}</b></p>{svg_domains(s["top_dominios"])}<div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Dominio</th><th>Tipo</th><th>Eventos</th></tr></thead><tbody>{doms}</tbody></table></div></div>
+  <div class="chart-card"><h3>Dominios con más eventos</h3><p class="meta">Unidad: eventos (no clústeres); el informe visual usa clústeres. No implica coordinación ni participación del medio. <b>{agg_txt}</b></p>{svg_domains(s["top_dominios"])}<div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Dominio</th><th>Tipo</th><th>Eventos</th></tr></thead><tbody>{doms}</tbody></table></div></div>
     <div class="chart-card"><h3>Clústeres con más señal</h3>
       <div style="overflow:auto"><table><thead><tr><th>Clúster</th><th>Score</th><th>Banda</th><th>Cuentas</th><th>Eventos</th><th>Coord.</th><th>Amp.</th><th>Infra.</th><th>Anom.</th></tr></thead><tbody>{top}</tbody></table></div>
-      <p class="meta" style="margin-top:10px">Cifras calculadas desde la base del radar; no son hechos verificados.</p>
+      <p class="meta" style="margin-top:10px">Solo clústeres con señal (≥3 cuentas). Cifras calculadas desde la base del radar; no son hechos verificados.</p>
     </div>
 </section>
 
@@ -742,6 +800,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
             for r in refs) or "<span class='meta'>Not observed in this window</span>"
         src = "".join(
             f"<a href='{esc(u)}' target='_blank' rel='noopener noreferrer'>{esc(urllib.parse.urlparse(u).netloc.replace('www.', ''))}</a> "
+            f"<span class='meta'>({esc(nivel_fuente(urllib.parse.urlparse(u).netloc))})</span> "
             for u in (e.get("fuentes") or [])
         )
         place = f"{CIUDAD_EN.get(str(e.get('ciudad')), e.get('ciudad'))}, {PAIS_EN.get(str(e.get('pais')), e.get('pais'))}"
@@ -759,13 +818,26 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
     peak = max(s.get("daily", []), key=lambda x: x.get("eventos", 0), default=None)
     peak_txt = dmy(peak["fecha"]) if peak else "—"
     pers = s.get("persistencia", {})
-    hi_accounts = (s.get("top_clusters") or [{}])[0].get("cuentas", 0)
+    hi_accounts = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("cuentas", 0)
+    hi_events = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("eventos", 0)
+    hi_low = hi_events < 30 or hi_accounts < 8
+    cuentas_cluster = int(s.get("cuentas_cluster") or 0)
+    tie59 = int(s.get("tie59_signal") or 0)
+    tie59_all = int(s.get("tie59_all") or 0)
+    bandas_signal = s.get("bandas_signal") or {}
+    small_bands = {b: max(0, int(s["bandas"].get(b, 0)) - int(bandas_signal.get(b, 0)))
+                   for b in BAND_ORDER}
+    _ben = lambda d: ", ".join(f"{n(v)} {(BAND_EN.get(b, b)).lower()}"
+                               for b, v in ((b, int(d.get(b, 0))) for b in BAND_ORDER) if v)
+    bandas_all_txt = _ben(s["bandas"])
+    bandas_sig_txt = _ben(bandas_signal)
+    bandas_small_txt = _ben(small_bands)
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Youth protests · amplification observatory</title>
+<title>Youth wave: what is documented and what the radar does not see</title>
 <meta name="robots" content="noindex,follow">
-<meta name="description" content="Chronology, amplification signal, mechanism and curated episodes of the 2025–26 youth protest wave.">
+<meta name="description" content="What is documented about the youth protest wave, what repeats in the radar, and what cannot be concluded.">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
@@ -773,12 +845,12 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 <main class="wrap">
 <section class="hero">
   <p class="kicker">Amplification pilot</p>
-  <h1>The youth wave, on one page</h1>
+  <h1>Youth wave: what is documented and what the radar does not see</h1>
   <p class="lead">From grievance to the street and from the street to the feed. What is documented, what is repeated, and what remains attribution. The radar measures amplification and reach; it does not identify authors or intent.</p>
   <p><span class="badge">Pilot</span><span class="badge">No attribution</span><span class="badge">Linked sources</span><a class="badge" href="./">Español</a></p>
   <div class="hero-stats">
     <div class="hero-stat"><b>{n(s['eventos'])}</b><span>tagged events</span></div>
-    <div class="hero-stat"><b>{n(s['cuentas'])}</b><span>distinct accounts</span></div>
+    <div class="hero-stat"><b>{n(s['cuentas'])} / {n(cuentas_cluster)}</b><span>topic / cluster accounts</span></div>
     <div class="hero-stat"><b>{n(s['clusters'])}</b><span>clusters</span></div>
     <div class="hero-stat"><b>{n(high)}</b><span>in high band</span></div>
   </div>
@@ -788,23 +860,26 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 
 <div class="takeaways"><h2>Key takeaways</h2><ul>
 <li><b>{n(s.get('signal_clusters', 0))} of {n(s['clusters'])}</b> clusters have signal (≥3 accounts); {n(s.get('small_clusters', 0))} are small groups.</li>
-<li><b>{n(high)}</b> in high band and <b>0</b> cross-account synchronies. High band means amplification, not authorship.</li>
+<li><b>{n(high)}</b> in high band and <b>0</b> cross-account synchronies. The only case has <b>{'low evidence' if hi_low else 'enough evidence'}</b> ({n(hi_events)} events, {n(hi_accounts)} accounts).</li>
+<li><b>{n(s.get('cuentas', 0))}</b> distinct topic accounts; <b>{n(cuentas_cluster)}</b> inside clusters.</li>
+<li>Bands: <b>{esc(bandas_sig_txt)}</b> across {n(s.get('signal_clusters', 0))} with signal. The {n(s.get('small_clusters', 0))} small groups add <b>{esc(bandas_small_txt)}</b>; total, {esc(bandas_all_txt)}.</li>
 <li>Coverage is dominated by <b>{esc(top_src or '—')}</b>.</li>
-<li>Persistence: <b>{n(pers.get('max_ciclos', 0))} cycle</b> per lineage. One cycle cannot give a reliable half-life.</li>
+<li>Persistence: up to <b>{n(pers.get('max_ciclos', 0))} pipeline cycles</b> per lineage; this is not an eight-week baseline.</li>
 </ul></div>
 
-<div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>; the only high-band cluster is explained by source amplification/echo, not coordination. It has <b>{hi_accounts} accounts</b>: publication threshold is 3; CRITICAL is 10. <b>1 cluster is under manual review</b>; coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{sum(1 for c in s.get('top_clusters', []) if 58.9 <= c.get('score', 0) <= 59.1)} clusters tie at 59</b>. <b>We cannot conclude</b> that the wave is orchestrated.</div>
+<div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>. The only high-band cluster is a <b>low-evidence candidate</b> ({n(hi_events)} events, {n(hi_accounts)} accounts): its H2 measures shared-URL structure, not authorship, and the automatic explanation is <b>inconclusive</b>. It is not confirmed coordination. Coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{tie59} of the 20 with signal tie at 59</b> ({tie59_all} of 51; one has only 2 accounts and is outside the table). <b>We cannot conclude</b> that the wave is orchestrated.</div>
 
 <details class="glossary"><summary>What do “high band”, “cluster”, “score” and “persistence” mean?</summary>
-<p><b>Cluster:</b> a group of events connected by content, links, time or accounts. It is not proof of coordination. <b>Score:</b> a combination of coordination, similarity, amplification, infrastructure and anomaly (0–100); it is not a probability. <b>High band:</b> score ≥60; it indicates anomalous amplification. <b>Persistence:</b> number of cycles a lineage survives; one cycle is not enough for a half-life.</p>
+<p><b>Cluster:</b> a group of events connected by content, links, time or accounts. It is not proof of coordination. <b>Score:</b> a combination of coordination, similarity, amplification, infrastructure and anomaly (0–100); it is not a probability. <b>High band:</b> score ≥60; it indicates anomalous amplification. <b>Persistence:</b> number of cycles a lineage survives; a few cycles are not enough for a half-life.</p>
 </details>
 
 <div class="limits"><h2>What this radar does not see</h2><ul>
-<li><b>The original call.</b> TikTok, Instagram, WhatsApp, Telegram and Discord are not captured; the radar does not observe where the protest is organised.</li>
-<li><b>The street.</b> No own counts of attendees, arrests or injuries: episode figures are quoted from sources.</li>
-<li><b>Representativeness.</b> Bluesky and Google News dominate capture; this is not a representative sample of Spanish conversation.</li>
+<li><b>The original call.</b> TikTok, Instagram, WhatsApp and Discord are not captured. Telegram is read only in public channels, not groups or private messages; the radar does not observe where the protest is organised.</li>
+<li><b>The street.</b> No own counts of attendees, arrests or injuries: episode figures are provisional quotes, not radar measurements.</li>
+<li><b>Primary sources.</b> No primary source was located for 5 of 5 episodes. Victim and arrest figures come from secondary sources and are not verified by the radar; they are shown as context, not as our own data.</li>
+<li><b>Representativeness.</b> Bluesky and Google News dominate capture; this is not a representative sample of youth conversation.</li>
 <li><b>People.</b> No minors or individual accounts are identified.</li>
-<li><b>Baseline.</b> “Anomalous” is relative to this window; there is no eight-week baseline. Weight changes would move the 60 cut.</li>
+<li><b>Baseline.</b> The eight-week context is system capture history, not a topic baseline. The pilot has up to five pipeline cycles in under 24 hours; “anomalous” is relative to this window and weight changes would move the 60 cut.</li>
 </ul></div>
 
 <section>
@@ -816,7 +891,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 <section>
   <h2>The signal, in three views</h2>
   <div class="two two-charts">
-    <div class="chart-card"><h3>Clusters by band</h3><p class="meta">All clusters; most are small groups.</p>{svg_bands(s['bandas'], 'en')}</div>
+    <div class="chart-card"><h3>Clusters by band</h3><p class="meta">{n(s.get('signal_clusters', 0))} with signal and {n(s.get('small_clusters', 0))} small groups. Small groups add {esc(bandas_small_txt)}; none is in the high band.</p>{svg_bands(s['bandas'], 'en')}</div>
     <div class="chart-card"><h3>Accounts vs score</h3><p class="meta">Each circle is a cluster. Size = events; colour = band.</p>{svg_scatter(s['top_clusters'], 'en')}</div>
   </div>
   <div class="chart-card"><h3>Conversation rhythm</h3><p class="meta">Tagged events per day in the pilot window.</p>{svg_daily(s['daily'], epis, 'en')}</div>
@@ -825,7 +900,8 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 
 <section>
   <h2>Curated episodes</h2>
-  <p class="meta">No public list of demands is invented. The episode-to-cluster link is manual and revisable. Sources accessed 26 Oct 2026.</p>
+  <p class="meta">No public list of demands is invented. The episode-to-cluster link is manual and revisable; it does not confirm the episode. Sources accessed 26 Oct 2026.</p>
+  <p class="meta"><b>Inclusion criterion:</b> five episodes with a youth/student component, an identifiable local trigger and international coverage. This is an editorial selection, neither random nor exhaustive; order does not imply continuity. <b>Source level:</b> agency/official &gt; media &gt; aggregator/wiki; sensitive figures without an agency or official source remain provisional.</p>
   <div style="overflow:auto"><table>
     <thead><tr><th>Date</th><th>Place</th><th>Episode / status</th><th>Trigger</th><th>Declared demands</th><th>Call / radar</th></tr></thead>
     <tbody>{''.join(rows)}</tbody>
@@ -835,7 +911,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 <section><h2>The mechanism: five pieces</h2><div class="chart-card">{svg_mechanism('en')}</div></section>
 
 <section><h2>Who amplifies</h2>
-  <div class="chart-card"><h3>Domains with more events</h3><p class="meta">Google News is excluded from the chart as an aggregator; it is press echo, not an independent source.</p>{svg_domains(s['top_dominios'], 'en')}</div>
+  <div class="chart-card"><h3>Domains with more events</h3><p class="meta">Unit: events (not clusters); the visual report uses clusters. Google News is excluded from the chart as an aggregator; it is press echo, not an independent source.</p>{svg_domains(s['top_dominios'], 'en')}</div>
 </section>
 
 <section><h2>What to watch</h2><div class="three">
@@ -877,11 +953,16 @@ def main() -> int:
                 "properties": {
                     "eventos": {"type": "integer"},
                     "cuentas": {"type": "integer"},
+                    "cuentas_cluster": {"type": "integer"},
                     "clusters": {"type": "integer"},
                     "signal_clusters": {"type": "integer"},
                     "small_clusters": {"type": "integer"},
                     "bandas": {"type": "object"},
+                    "bandas_signal": {"type": "object"},
+                    "tie59_all": {"type": "integer"},
+                    "tie59_signal": {"type": "integer"},
                     "top_clusters": {"type": "array"},
+                    "top_signal": {"type": "array"},
                     "daily": {"type": "array"},
                     "fuentes": {"type": "array"},
                     "persistencia": {"type": "object"},

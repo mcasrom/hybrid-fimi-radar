@@ -8,7 +8,7 @@ ESP-BARCELONA-2026-10-24:
   demandas: []
   llamada: "Youth gathering called on social media; it led to looting and clashes"
   alcance: "Barcelona; accounts and groups also in Madrid and other cities"
-  nota: "More than 100 arrested, a quarter of them minors (Infobae). Mossos say detainees did not come from France."
+  nota: "More than 100 arrested, a quarter of them minors (Infobae). Mossos say detainees did not come from France. The anonymous-account network is quoted from the source; the radar does not observe synchronies or confirm organisation."
 FRA-2026-10-24:
   nombre: "National marches for schools and the cost of living"
   estado: "Documented fact"
@@ -30,7 +30,7 @@ ITA-MILAN-2026-10-17:
     - "Against the rising cost of living"
   llamada: "Mobilisations in Milan, Turin and Bologna"
   alcance: "Milan; unrest also in northern Italy"
-  nota: "More than 200 arrested, around 80% minors (Europa Press)."
+  nota: "More than 200 arrested, around 80% minors (Europa Press). Provisional secondary-source figure; not verified by the radar."
 ALB-2026-10-24:
   nombre: "Protests against the hotel complex and Rama's government"
   estado: "Protests documented; the 'hybrid war' claim has no public evidence"
@@ -53,4 +53,4 @@ NPL-2025-09:
     - "Against corruption and nepotism"
   llamada: "Protests in Kathmandu and other cities; resignation of the prime minister"
   alcance: "Nepal; a reference for later mobilisations in Madagascar and elsewhere"
-  nota: "Death toll and government outcome from the linked public chronology."
+  nota: "Death toll (76) and government outcome from the linked public chronology (Wikipedia). Secondary source; not verified by the radar."
