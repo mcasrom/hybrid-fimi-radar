@@ -24,8 +24,10 @@ def test_tema_piloto_acotado():
 def test_keywords_del_tema():
     cfg = _cfg()
     kws = [k for k in cfg["keywords"] if (k.get("tema") or "frontera_sur") == "protestas_juveniles"]
-    assert len(kws) == 12
+    assert len(kws) == 20
     assert any(k["palabra"] == "blocus" for k in kws)
+    assert any(k["palabra"] == "student protest" for k in kws)
+    assert any(k["palabra"] == "protesti studenti" for k in kws)
     assert all("protestas" not in k["palabra"] or " " in k["palabra"] for k in kws)
 
 
