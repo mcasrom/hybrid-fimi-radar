@@ -18,6 +18,7 @@ import os
 import re
 import sqlite3
 import sys
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -138,6 +139,39 @@ def band_for(score):
     if s >= 20:
         return "WATCH"
     return "NORMAL"
+
+
+TRACK_ES = {
+    "prensa": "Eco de prensa",
+    "social": "Amplificación social",
+    "mixto": "Mixto",
+    "sin_pista": "Sin pista dominante",
+}
+
+
+def _alt_on(c, code):
+    for a in c.get("alt") or []:
+        if a.get("code") == code and a.get("status") in ("supported", "plausible"):
+            return True
+    return False
+
+
+def track_of(c):
+    press = _alt_on(c, "mainstream_echo")
+    social = (_alt_on(c, "cross_account_synchrony")
+              or _alt_on(c, "synchronized_without_operator"))
+    if press and social:
+        return "mixto"
+    if press:
+        return "prensa"
+    if social:
+        return "social"
+    return "sin_pista"
+
+
+def ev_low(c):
+    return ((c.get("ov") or 0) >= 60
+            and ((c.get("n_ev") or 0) < 30 or (c.get("n_au") or 0) < 8))
 
 
 def host(url):
@@ -265,12 +299,16 @@ def cargar_tema(con, tema):
             hyps = json.loads(hyps) if hyps else []
         except (ValueError, TypeError):
             hyps = []
+        try:
+            alt = json.loads(alt) if alt else []
+        except (ValueError, TypeError):
+            alt = []
         clusters.append({
             "id": cid, "label": label, "ov": float(ov or 0), "banda": band_for(ov),
             "coord": float(coord or 0), "amp": float(amp or 0), "anom": float(anom or 0),
             "infra": float(infra or 0), "dens": float(dens or 0),
             "kc": kc or 0, "kcs": kcs or 0, "n_ev": n_ev, "n_au": n_au, "t0": t0,
-            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "daily": daily, "txt": txt,
+            "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "alt": alt, "daily": daily, "txt": txt,
             "atr": atr or "UNKNOWN", "conf": conf or "NO_ATTRIBUTION", "asses": asses or "",
         })
     # KPIs de tema (misma definicion que informe_tema.py)
@@ -432,7 +470,7 @@ def spider(series):
             f"{''.join(rings)}{''.join(spokes)}{''.join(polys)}{''.join(labels)}</svg>")
 
 
-def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
+def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_all=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Sprint A (A1, 12-oct): conjunto PUBLICADO = clusters con señal (≥3 cuentas).
@@ -464,6 +502,57 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
     altos = [c for c in clusters if c["ov"] >= 60]
     top = clusters[0] if clusters else None
     mas_anom = max(clusters, key=lambda c: c["anom"]) if clusters else None
+    ev_low_alta = [c for c in altos if ev_low(c)]
+    top_low = bool(top and ev_low(top))
+    tracks = Counter(track_of(c) for c in clusters)
+    track_max = {k: max((c["ov"] for c in clusters if track_of(c) == k), default=0)
+                 for k in TRACK_ES}
+    track_top = max(TRACK_ES, key=lambda k: (tracks.get(k, 0), track_max.get(k, 0)))
+    _prensa = [c for c in clusters if track_of(c) in ("prensa", "mixto")]
+    _social = [c for c in clusters if track_of(c) in ("social", "mixto")]
+    _prensa_max = max((c["ov"] for c in _prensa), default=0)
+    _social_max = max((c["ov"] for c in _social), default=0)
+    _peer_cl = _peer_high = 0
+    _peer_n = 0
+    for _t, _v in (salud_all or {}).items():
+        if _t == tema:
+            continue
+        try:
+            _pc = int(_v.get("clusters") or 0)
+            _ph = int(_v.get("high") or 0)
+        except (TypeError, ValueError):
+            continue
+        if _pc > 0:
+            _peer_cl += _pc
+            _peer_high += _ph
+            _peer_n += 1
+    _peer_rate = (100 * _peer_high / _peer_cl) if _peer_cl else 0.0
+    _this_rate = (100 * len(altos) / n) if n else 0.0
+    base_html = ""
+    if _peer_cl:
+        base_html = (f"<p class='cs'><b>Base de comparación:</b> {_peer_n} otros temas activos, "
+                     f"{_peer_high} de {_peer_cl} clusters con señal en banda alta "
+                     f"({_peer_rate:.1f} %); este tema, {len(altos)} de {n} "
+                     f"({_this_rate:.1f} %). Es una referencia operativa entre temas, "
+                     f"no un tema de control neutral.</p>")
+    _press_names = " · ".join(esc(c["label"]) for c in sorted(_prensa, key=lambda x: -x["ov"])[:3]) or "—"
+    _social_names = " · ".join(esc(c["label"]) for c in sorted(_social, key=lambda x: -x["ov"])[:3]) or "—"
+    track_html = (
+        "<section><h2>Dos pistas: eco de prensa vs amplificación social</h2>"
+        "<div class='two'>"
+        f"<div><b>Eco de prensa</b><p class='cs'><b>{len(_prensa)}</b> de {n} clusters con señal · "
+        f"score máximo {_prensa_max:.0f}/100 · incluye los mixtos.</p>"
+        f"<p class='cs' style='color:#64748b'>{_press_names}</p></div>"
+        f"<div><b>Amplificación social</b><p class='cs'><b>{len(_social)}</b> de {n} clusters con señal · "
+        f"score máximo {_social_max:.0f}/100 · incluye los mixtos.</p>"
+        f"<p class='cs' style='color:#64748b'>{_social_names}</p></div>"
+        "</div>"
+        "<p class='cs'>Clasificación a partir de las explicaciones alternativas ya calculadas: "
+        "<b>eco de prensa</b> = <code>mainstream_echo</code> compatible o plausible; "
+        "<b>amplificación social</b> = <code>cross_account_synchrony</code> o "
+        "<code>synchronized_without_operator</code> compatible o plausible. Las pistas no son "
+        "excluyentes: un cluster puede ser mixto. «Amplificación social» no es coordinación confirmada.</p></section>"
+    )
     _ini = kpi.get("inicio") or kpi.get("tmin")
     try:
         _ini_s = datetime.fromtimestamp(int(_ini), tz=timezone.utc).strftime("%d/%m/%Y") if _ini else "—"
@@ -471,7 +560,6 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
         _ini_s = "—"
     dias = dias_desde(_ini)
     # hipotesis dominante del tema (moda del top de cada cluster)
-    from collections import Counter
     cnt = Counter()
     for c in clusters:
         ct, _ = hyp_top(c)
@@ -495,10 +583,12 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
     # (cargados por tema_id), nunca mezclado con la vista del dashboard.
     _sub_cl = ((f"{n_raw_inf} cargados · {n} con señal · +{n_par_inf} agregados"
                 if n_par_inf else f"{n_raw_inf} cargados"))
+    _high_sub = (f"≥60 · {len(ev_low_alta)} con evidencia baja"
+                 if ev_low_alta else "≥60")
     kpi_tiles = [
         ("clusters", n, _sub_cl),
         ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
-        ("en banda alta", len(altos), "≥60"),
+        ("en banda alta", len(altos), _high_sub),
         ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
         ("H3 como máx", h3, "del tema"),
         ("días operando", dias, f"desde {_ini_s}"),
@@ -506,6 +596,15 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
     tiles = "".join(
         f"<div class='tile'><div class='k'>{esc(v)}</div><div class='kl'>{esc(l)}</div><div class='ks'>{esc(sub)}</div></div>"
         for (l, v, sub) in kpi_tiles)
+    if n:
+        exec_txt = (f"<b>Lectura rápida.</b> {mil(kpi['n_ev'])} eventos y {n} clusters con señal; "
+                    f"{len(altos)} en banda alta ({len(ev_low_alta)} con evidencia baja). "
+                    f"Pista dominante: <b>{TRACK_ES[track_top]}</b> ({tracks.get(track_top, 0)} de {n}). "
+                    f"{(salud or {}).get('sync', 0)} sincronías entre cuentas distintas. "
+                    f"No se atribuye actor.")
+    else:
+        exec_txt = ("<b>Lectura rápida.</b> Sin clusters con señal en esta ventana: "
+                    "no hay una banda alta que interpretar.")
     # Sprint A (A1): distribución de scores del conjunto publicado + muro 39/59.
     distrib = _pr.bloque_distribucion_html(
         _pr.resumen_distribucion([c["ov"] for c in clusters]),
@@ -529,11 +628,14 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
         doms_txt = " · ".join(f"{esc(d)}" for d, _ in c["doms"][:3]) or "—"
         _small = (" · <span style='color:#b45309;font-weight:700'>muestra pequeña</span>"
                   if c["n_ev"] < 30 else "")
+        _ev = (" · <span class='chip' style='background:#fef3c7;color:#92400e'>evidencia baja</span>"
+               if ev_low(c) else "")
+        _tr = TRACK_ES[track_of(c)]
         cards += (
             f"<div class='ccard'><div class='cchead'><b>{esc(c['label'])}</b>"
             f"<span class='chip' style='background:{BAND_COL[c['banda']]}'>{c['ov']:.0f}/100 · {esc(c['banda'])}</span></div>"
-            f"<p class='cs'>{esc(BAND_ES[c['banda']])} (banda global) · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}{_small}</p>"
-            f"<p class='cs'><b>Hipótesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
+            f"<p class='cs'>{esc(BAND_ES[c['banda']])} (banda global) · {c['n_au']} cuentas · {c['n_ev']} eventos · núcleo k={c['kc']}{_small}{_ev}</p>"
+            f"<p class='cs'><b>Pista:</b> {esc(_tr)} · <b>Hipótesis top:</b> {esc(ct or '—')} — {esc(HYP_ES.get(ct, '—'))}</p>"
             f"<p class='cs'><b>De qué habla:</b> {doms_txt}</p>"
             f"<div class='cact'>"
             f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={esc(c['label'])}&fmt=csv'>CSV</a>"
@@ -559,10 +661,15 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
                       f"<div class='hname'>{esc(HYP_ES.get(code, ''))}</div>"
                       f"<div class='hbar'>{bar(100 * c / max(1, n), NAVY)}</div><div class='hval'>{c}</div></div>")
     mas_anom_txt = ""
+    _lab_anom = "Lo más anómalo"
     if mas_anom:
         _mal = esc(mas_anom["label"])
+        _ev = (" <span class='chip' style='background:#fef3c7;color:#92400e'>evidencia baja</span>"
+               if ev_low(mas_anom) else "")
+        if ev_low(mas_anom):
+            _lab_anom = "Candidato en vigilancia (mayor anomalía)"
         mas_anom_txt = (f"<b>{_mal}</b> "
-                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}/100 (componente, no global)</span>"
+                        f"<span class='chip' style='background:#fee2e2;color:#b91c1c'>anomalía {mas_anom['anom']:.0f}/100 (componente, no global)</span>{_ev}"
                         f" <span style='font-size:.72rem;color:#64748b'>· {mas_anom['n_ev']} eventos · {mas_anom['n_au']} cuentas</span>"
                         f" <span style='font-size:.72rem'>· "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=csv'>CSV</a> "
@@ -576,7 +683,13 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
                    f"{_h3txt} señal compatible con influencia extranjera (H3). "
                    f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
                    f"una banda alta es amplificación medida, no campaña confirmada.")
-        concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta.")
+        concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta. "
+                 f"Pista dominante: <b>{TRACK_ES[track_top]}</b> ({tracks.get(track_top, 0)} de {n}); "
+                 f"las pistas se solapan entre sí y no son una atribución.")
+        if top_low:
+            concl += (f" La banda alta es un <b>candidato de evidencia baja</b> "
+                      f"({top['n_ev']} eventos, {top['n_au']} cuentas): no sostiene una conclusión "
+                      f"de coordinación ni de campaña.")
     else:
         lectura = (f"El tema tiene <b>{n_raw_inf}</b> clústeres cargados, pero <b>ninguno alcanza el umbral de señal</b> "
                    f"(≥3 cuentas): quedan agregados como muestra pequeña. No hay una banda alta que interpretar. "
@@ -638,8 +751,14 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45):
     # distribucion de tamaños de cluster
     _nacs = sorted(c["n_au"] for c in clusters)
     _alta_small = sum(1 for c in altos if c["n_ev"] < 30)
-    tamano = (f"Tamaño: mediana <b>{median(_nacs):.0f}</b> cuentas por cluster (n={n}); de los "
-              f"<b>{len(altos)}</b> en banda alta, <b>{_alta_small}</b> tienen &lt;30 eventos (muestra pequeña).")
+    _tam_head = f"Tamaño: mediana <b>{median(_nacs):.0f}</b> cuentas por cluster (n={n}); "
+    if len(altos) == 1:
+        tamano = (_tam_head + f"el único cluster en banda alta "
+                  f"{'tiene' if _alta_small else 'no tiene'} &lt;30 eventos"
+                  f"{' (muestra pequeña).' if _alta_small else '.'}")
+    else:
+        tamano = (_tam_head + f"de los <b>{len(altos)}</b> en banda alta, "
+                  f"<b>{_alta_small}</b> tienen &lt;30 eventos (muestra pequeña).")
     # como se define el tema (transparencia)
     _kws = keywords or []
     _dd_all = sorted(kpi.get("theme_daily", {}))
@@ -794,10 +913,11 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 
 <section>
   <h2>Qué está pasando</h2>
+  <p class="cs" style="background:#fff7ed;border-left:4px solid #f59e0b;padding:9px 12px;border-radius:6px">{exec_txt}</p>
   <div class="tiles">{tiles}</div>
   {distrib}
   <div class="two" style="margin-top:14px">
-    <div><b>Lo más anómalo</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
+    <div><b>{_lab_anom}</b><p class="cs" style="margin-top:6px">{mas_anom_txt or '—'}</p></div>
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
@@ -813,8 +933,9 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     {spider([("Tema (mediana)", med, NAVY), ("Cluster top", (top or {{'coord':0}}), ACCENT)] if top else [("Tema (mediana)", med, NAVY)])}
     <p class="cs">Mediana de {n} clusters. El cluster top se dibuja en azul. Los componentes miden
     dimensiones distintas (0-100) y <b>no</b> suman el score global. <b>Infraestructura y densidad suelen saturar</b> (tope de normalización): valores altos pueden reflejar una comunidad que comparte prensa, no necesariamente un operador.</p>{_radar_tabla}</div>
-  <div><h2>Cluster top (mayor score) — {esc(top['label']) if top else 'sin clúster con señal'}</h2>
-    <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}</p>
+  <div><h2>Cluster top (mayor score{', evidencia baja' if top_low else ''}) — {esc(top['label']) if top else 'sin clúster con señal'}</h2>
+    <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}{" <span class='chip' style='background:#fef3c7;color:#92400e'>candidato, no conclusión</span>" if top_low else ""}</p>
+    {"<p class='cs' style='color:#92400e'><b>Evidencia baja:</b> el score alto no compensa un n pequeño. Se muestra para seguimiento, no como hallazgo principal.</p>" if top_low else ""}
     <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
     <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades. Las hipótesis se puntúan de forma independiente (pueden aparecer varias como compatibles); no son mutuamente excluyentes.</p>
@@ -830,6 +951,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <p class="cs" style="color:#94a3b8">Barras = eventos/día de <b>{esc(top['label']) if top else '—'}</b>; línea = volumen diario del tema (línea base, escala propia). El contraste con la línea base ayuda a separar una <b>reacción al ciclo de noticias</b> de una actividad propia del cluster. «Pico del tema» = día con volumen ≥ percentil 90 del periodo; la línea va en escala propia (independiente de las barras).{_elec_note}</p>
 </section>
 
+{track_html}
+
 <section>
   <h2>Lectura del tema y métricas</h2>
   <div class="two">
@@ -838,7 +961,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
         <div><b>{mil(tot_ev)}</b>eventos del tema</div><div><b>{mil(kpi.get('n_fuentes', 0))}</b>fuentes del tema</div>
         <div><b>{n}</b>clusters</div>        <div><b>{mil(kpi.get('n_au_cl', kpi['n_au']))}</b>cuentas</div></div>
       <p class="cs" style="margin-top:10px">{cobertura}</p>
-      <p class="cs" style="margin-top:4px;color:#94a3b8">{tamano}</p></div>
+      <p class="cs" style="margin-top:4px;color:#94a3b8">{tamano}</p>
+      {base_html}</div>
     <div>
       <div class="hrow"><div class="hname" style="width:auto;flex:1">Banda de alerta</div>
         <span class="chip" style="background:{BAND_COL[bd]}">{f"{esc(top['banda'])} (max {top['ov']:.0f}/100)" if top else "Sin clúster con señal"}</span></div>
@@ -852,7 +976,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 </section>
 
 <section><h2>Clusters destacados</h2><div class="three">{cards}</div>
-  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad). Los exports (CSV/JSON/GEXF) <b>pseudonimizan</b> las cuentas («cuenta-N») y <b>redactan</b> textos; no incluyen identificadores de cuenta.</p></section>
+  <p class="cs" style="margin-top:10px">Cada hallazgo enlaza su evidencia exportable (CSV/JSON/GEXF). El detalle técnico completo está en el radar. «<b>muestra pequeña</b>» = menos de 30 eventos: con n bajo la puntuación es más sensible al ruido (mostramos el tamaño de muestra en lugar de un intervalo de confianza, porque la puntuación no es una probabilidad). Un HIGH con &lt;30 eventos o &lt;8 cuentas se marca como <b>evidencia baja / candidato</b> y no se presenta como conclusión. Los exports (CSV/JSON/GEXF) <b>pseudonimizan</b> las cuentas («cuenta-N») y <b>redactan</b> textos; no incluyen identificadores de cuenta.</p></section>
 
 {paises_html}
 
@@ -899,7 +1023,7 @@ def main():
             print("sin clusters:", tema)
             continue
         nombre = names.get(tema, tema)
-        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema), load_ventana(tema))
+        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema), load_ventana(tema), salud)
         with open(os.path.join(a.out, tema + ".html"), "w", encoding="utf-8") as f:
             f.write(html_out)
         hechos.append((tema, nombre, len(clusters)))
