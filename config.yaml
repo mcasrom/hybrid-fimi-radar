@@ -1937,6 +1937,47 @@ keywords:
   plataformas:
   - bluesky
   - google-news
+# === Keywords multilingues protestas (27-oct-2026) ===
+- palabra: student protest
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: youth protests
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: manifestation lycéens
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: manifestation etudiants
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: blokade
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: sciopero studenti
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: proteste studenti
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
+- palabra: protesti studenti
+  tema: protestas_juveniles
+  plataformas:
+  - bluesky
+  - google-news
 telegram_canales:
 - elfarodeceuta
 - maldita_es
