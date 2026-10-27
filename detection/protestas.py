@@ -34,6 +34,7 @@ YAML_PATH = ROOT / "data" / "protestas.yaml"
 EN_YAML_PATH = ROOT / "data" / "protestas_en.yaml"
 JSON_OUT = Path("/var/www/fimi/datos/protestas.json")
 SCHEMA_OUT = Path("/var/www/fimi/datos/protestas.schema.json")
+SALUD_PATH = ROOT / "data" / "salud_temas.json"
 HTML_OUT = Path("/var/www/fimi/casos/protestas/index.html")
 HTML_EN = Path("/var/www/fimi/casos/protestas/en.html")
 TEMA = "protestas_juveniles"
@@ -159,6 +160,63 @@ def cargar_episodios() -> list:
     return eps
 
 
+def base_comparacion(signal_clusters: int, high: int) -> dict:
+    try:
+        d = json.loads(SALUD_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    peers = []
+    for t in d.get("temas") or []:
+        if not isinstance(t, dict) or t.get("tema") == TEMA:
+            continue
+        try:
+            pc = int(t.get("clusters") or 0)
+            ph = int(t.get("high") or 0)
+        except (TypeError, ValueError):
+            continue
+        if pc > 0:
+            peers.append((pc, ph))
+    ncl = sum(pc for pc, _ in peers)
+    nhi = sum(ph for _, ph in peers)
+    if not ncl:
+        return {}
+    return {"temas": len(peers), "clusters": ncl, "high": nhi,
+            "rate": round(100 * nhi / ncl, 1),
+            "tema_rate": round(100 * high / signal_clusters, 1) if signal_clusters else 0.0}
+
+
+def validar_senal(s: dict) -> list:
+    errs = []
+    for k in ("eventos", "cuentas", "cuentas_cluster", "clusters",
+              "signal_clusters", "small_clusters", "bandas", "bandas_signal"):
+        if k not in s:
+            errs.append("falta %s" % k)
+    if errs:
+        return errs
+    if s["signal_clusters"] + s["small_clusters"] != s["clusters"]:
+        errs.append("señal + pequeños != clusters")
+    if sum(int(v) for v in s["bandas"].values()) != s["clusters"]:
+        errs.append("suma de bandas != clusters")
+    if sum(int(v) for v in s["bandas_signal"].values()) != s["signal_clusters"]:
+        errs.append("suma de bandas_signal != signal_clusters")
+    for b, v in s["bandas_signal"].items():
+        if int(v) > int(s["bandas"].get(b, 0)):
+            errs.append("banda_signal %s > banda total" % b)
+    if int(s["cuentas_cluster"]) > int(s["cuentas"]):
+        errs.append("cuentas_cluster > cuentas")
+    top = s.get("top_signal") or []
+    if any(int(c.get("cuentas") or 0) < 3 for c in top):
+        errs.append("top_signal incluye un cluster con <3 cuentas")
+    if top != sorted(top, key=lambda c: -float(c.get("score") or 0)):
+        errs.append("top_signal no está ordenado por score")
+    ties = sum(1 for c in top if 58.9 <= float(c.get("score") or 0) <= 59.1)
+    if int(s.get("tie59_signal") or 0) != ties:
+        errs.append("tie59_signal no coincide con top_signal")
+    if int(s.get("tie59_all") or 0) < int(s.get("tie59_signal") or 0):
+        errs.append("tie59_all < tie59_signal")
+    return errs
+
+
 def señal(conn) -> dict:
     row = conn.execute(
         "SELECT COUNT(*), COUNT(DISTINCT e.author), MIN(e.timestamp), MAX(e.timestamp) "
@@ -242,10 +300,13 @@ def señal(conn) -> dict:
             "infra": round(float(r["infrastructure_score"] or 0), 1),
             "anom": round(float(r["anomaly_score"] or 0), 1),
         })
+    high = bandas.get("HIGH", 0) + bandas.get("CRITICAL", 0)
+    base = base_comparacion(sum(1 for r in cl if int(r["n_au"] or 0) >= 3), high)
     return {
         "eventos": n_ev or 0,
         "cuentas": n_aut or 0,
         "cuentas_cluster": n_au_cl,
+        "base": base,
         "desde": int(t0) if t0 else None,
         "hasta": int(t1) if t1 else None,
         "clusters": len(cl),
@@ -682,6 +743,14 @@ def render(epis: list, s: dict, ahora: str) -> str:
         f"Persistencia: hasta <b>{n(pers.get('max_ciclos', 0))} ciclos de pipeline</b> por linaje; "
         f"no equivale a una línea base de ocho semanas.",
     ]
+    _base = s.get("base") or {}
+    if _base:
+        takeaways.append(
+            f"<b>Base de comparación:</b> {n(_base.get('high', 0))} de {n(_base.get('clusters', 0))} "
+            f"clusters en banda alta en otros {n(_base.get('temas', 0))} temas "
+            f"({_base.get('rate', 0):.1f} %); este tema, {n(high)} de {n(s.get('signal_clusters', 0))} "
+            f"({_base.get('tema_rate', 0):.1f} %). Referencia operativa, no control neutral."
+        )
 
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -832,6 +901,12 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
     bandas_all_txt = _ben(s["bandas"])
     bandas_sig_txt = _ben(bandas_signal)
     bandas_small_txt = _ben(small_bands)
+    _base = s.get("base") or {}
+    _base_en = (f"<li><b>Comparison baseline:</b> {n(_base.get('high', 0))} of {n(_base.get('clusters', 0))} "
+                f"clusters in the high band across {n(_base.get('temas', 0))} other topics "
+                f"({_base.get('rate', 0):.1f} %); this topic, {n(high)} of {n(s.get('signal_clusters', 0))} "
+                f"({_base.get('tema_rate', 0):.1f} %). Operational reference, not a neutral control.</li>"
+                if _base else "")
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -865,6 +940,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 <li>Bands: <b>{esc(bandas_sig_txt)}</b> across {n(s.get('signal_clusters', 0))} with signal. The {n(s.get('small_clusters', 0))} small groups add <b>{esc(bandas_small_txt)}</b>; total, {esc(bandas_all_txt)}.</li>
 <li>Coverage is dominated by <b>{esc(top_src or '—')}</b>.</li>
 <li>Persistence: up to <b>{n(pers.get('max_ciclos', 0))} pipeline cycles</b> per lineage; this is not an eight-week baseline.</li>
+{_base_en}
 </ul></div>
 
 <div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>. The only high-band cluster is a <b>low-evidence candidate</b> ({n(hi_events)} events, {n(hi_accounts)} accounts): its H2 measures shared-URL structure, not authorship, and the automatic explanation is <b>inconclusive</b>. It is not confirmed coordination. Coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{tie59} of the 20 with signal tie at 59</b> ({tie59_all} of 51; one has only 2 accounts and is outside the table). <b>We cannot conclude</b> that the wave is orchestrated.</div>
@@ -935,6 +1011,10 @@ def main() -> int:
     conn.row_factory = sqlite3.Row
     s = señal(conn)
     conn.close()
+    errores = validar_senal(s)
+    if errores:
+        print("[protestas] consistencia rota: " + "; ".join(errores), file=sys.stderr)
+        return 2
     ahora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     data = {"tema": TEMA, "actualizado": ahora, "episodios": epis, "senal": s}
     JSON_OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -954,6 +1034,7 @@ def main() -> int:
                     "eventos": {"type": "integer"},
                     "cuentas": {"type": "integer"},
                     "cuentas_cluster": {"type": "integer"},
+                    "base": {"type": "object"},
                     "clusters": {"type": "integer"},
                     "signal_clusters": {"type": "integer"},
                     "small_clusters": {"type": "integer"},
