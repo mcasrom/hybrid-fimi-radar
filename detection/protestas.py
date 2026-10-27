@@ -23,6 +23,7 @@ import sqlite3
 import sys
 import textwrap
 import urllib.parse
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -43,6 +44,7 @@ sys.path.insert(0, str(ROOT))
 from detection.bandas import BAND_ES, banda  # noqa: E402
 from detection.mainstream import MAINSTREAM  # noqa: E402
 from detection import metricas_tema as _mt  # noqa: E402
+from detection.protestas_extension import calcular as calcular_extension  # noqa: E402
 
 BAND_COL = {
     "CRITICAL": "#dc2626",
@@ -661,6 +663,24 @@ footer{border-top:1px solid var(--line);margin-top:30px;padding:20px 0 40px;colo
 """
 
 
+def _verif(e: dict, lang: str = "es") -> dict:
+    if lang == "en":
+        v = (e.get("en") or {}).get("verificacion")
+        if isinstance(v, dict):
+            return v
+    v = e.get("verificacion")
+    return v if isinstance(v, dict) else {}
+
+
+def _verif_summary(epis: list, lang: str = "es") -> str:
+    c = Counter(str(_verif(e, lang).get("estado") or "sin_auditar") for e in epis)
+    if lang == "en":
+        return (f"Source audit: {c.get('oficial', 0)}/5 official, {c.get('agencia', 0)}/5 agency, "
+                f"{c.get('secundaria', 0)}/5 secondary, 0/5 primary.")
+    return (f"Auditoría de fuentes: {c.get('oficial', 0)}/5 oficial, {c.get('agencia', 0)}/5 agencia, "
+            f"{c.get('secundaria', 0)}/5 secundaria, 0/5 primaria.")
+
+
 def render(epis: list, s: dict, ahora: str) -> str:
     eps_html = []
     for i, e in enumerate(sorted(epis, key=lambda x: (fecha(x.get("fecha")), str(x.get("pais")))), 1):
@@ -694,6 +714,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
           <p class="meta"><b>Alcance:</b> {esc(e.get('alcance'))}</p>
           <p class="meta"><b>Límite:</b> {esc(e.get('nota'))}</p>
           <p class="meta"><b>Fuente primaria:</b> {esc(e.get('fuente_primaria') or 'No localizada')}</p>
+          <p class="meta"><b>Verificación:</b> {esc(_verif(e).get('estado', 'sin auditar'))} — {esc(_verif(e).get('nota', ''))}</p>
           <p class="meta">Fuentes consultadas: {fuentes or '—'}</p>
         </article>""")
 
@@ -731,6 +752,20 @@ def render(epis: list, s: dict, ahora: str) -> str:
     agg = next((d for d in s.get("top_dominios", []) if d.get("tipo") == "agregador"), None)
     agg_txt = (f"Google News ({n(agg['eventos'])}) se excluye del gráfico por ser agregador: es eco de prensa, no una fuente independiente."
                if agg else "Los agregadores se excluyen del gráfico: son eco de prensa, no fuentes independientes.")
+    _ext = s.get("extension") or {}
+    _ext_rows = "".join(
+        f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
+        f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
+        f"<td>{n(r.get('eventos', 0))}</td><td>{n(r.get('cuentas', 0))}</td>"
+        f"<td>{esc(r.get('estado', '—'))}</td></tr>"
+        for r in _ext.get("filas", []))
+    ext_html = (f"<section><h2>Extensión entre países (exploratoria)</h2>"
+                f"<p class='meta'>{esc(_ext.get('nota', ''))} Ventana: {n(_ext.get('ventana_h', 72))} h.</p>"
+                f"<div style='overflow:auto'><table><thead><tr><th>Símbolo</th><th>Tipo</th>"
+                f"<th>Países en 72 h</th><th>Eventos</th><th>Cuentas</th><th>Estado</th></tr></thead>"
+                f"<tbody>{_ext_rows}</tbody></table></div>"
+                f"<p class='meta'>«Extensión observada» = ≥2 países y ≥10 eventos; no implica coordinación. "
+                f"Los términos genéricos se muestran para contexto, no como símbolos de campaña.</p></section>")
     takeaways = [
         f"<b>{n(s.get('signal_clusters', 0))} de {n(s['clusters'])}</b> clústeres tienen señal (≥3 cuentas); {n(s.get('small_clusters', 0))} son grupos pequeños.",
         f"<b>{n(high)}</b> en banda alta y <b>0</b> sincronías entre cuentas distintas. "
@@ -800,6 +835,8 @@ def render(epis: list, s: dict, ahora: str) -> str:
   <div class="chart-card">{svg_timeline(epis)}</div>
 </section>
 
+{ext_html}
+
 <section>
   <h2>La señal, en tres planos</h2>
   <div class="two two-charts">
@@ -814,6 +851,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
   <h2>Episodios curados</h2>
   <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster es <b>manual y revisable</b>: no confirma el episodio ni se inventa. Fuentes consultadas el 26/10/2026.</p>
   <p class="meta"><b>Criterio de inclusión:</b> cinco episodios con componente juvenil/estudiantil, detonante local identificable y cobertura internacional. Es una selección editorial, no aleatoria ni exhaustiva; el orden no implica continuidad temporal. <b>Nivel de fuente:</b> agencia/oficial &gt; medio &gt; agregador/wiki; las cifras sensibles sin agencia u oficial quedan como provisionales.</p>
+  <p class="meta"><b>{_verif_summary(epis)}</b></p>
   <div class="filters">
     <label>Región <select id="f-pais"><option value="">Todas</option>{''.join(f'<option value="{esc(x)}">{esc(x)}</option>' for x in sorted({str(e.get('pais')) for e in epis}))}</select></label>
     <label>Tipo de detonante <select id="f-tipo"><option value="">Todos</option>{''.join(f'<option value="{v}">{esc(k)}</option>' for v,k in [('redes','Redes / plataformas'),('educacion','Educación'),('coste','Coste de vida'),('corrupcion','Corrupción')])}</select></label>
@@ -879,7 +917,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
           <td>{esc(_en(e, 'nombre'))}<br><span class="meta">{esc(_en(e, 'estado'))}</span></td>
           <td>{esc(_en(e, 'detonante'))}</td>
           <td>{dem_txt}</td>
-          <td>{esc(_en(e, 'llamada'))}<br><span class="meta">Radar: {radar} · Sources: {src or '—'}</span></td>
+          <td>{esc(_en(e, 'llamada'))}<br><span class="meta">Radar: {radar} · Sources: {src or '—'} · Verification: {esc(_verif(e, 'en').get('estado', 'not audited'))}</span></td>
         </tr>""")
 
     high = s["bandas"].get("HIGH", 0) + s["bandas"].get("CRITICAL", 0)
@@ -901,6 +939,20 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
     bandas_all_txt = _ben(s["bandas"])
     bandas_sig_txt = _ben(bandas_signal)
     bandas_small_txt = _ben(small_bands)
+    _ext = s.get("extension") or {}
+    _ext_rows = "".join(
+        f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
+        f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
+        f"<td>{n(r.get('eventos', 0))}</td><td>{n(r.get('cuentas', 0))}</td>"
+        f"<td>{esc(r.get('estado', '—'))}</td></tr>"
+        for r in _ext.get("filas", []))
+    ext_html_en = (f"<section><h2>Cross-country extension (exploratory)</h2>"
+                   f"<p class='meta'>{esc(_ext.get('nota', ''))} Window: {n(_ext.get('ventana_h', 72))} h.</p>"
+                   f"<div style='overflow:auto'><table><thead><tr><th>Symbol</th><th>Type</th>"
+                   f"<th>Countries in 72 h</th><th>Events</th><th>Accounts</th><th>Status</th></tr></thead>"
+                   f"<tbody>{_ext_rows}</tbody></table></div>"
+                   f"<p class='meta'>“Observed extension” = ≥2 countries and ≥10 events; it does not imply coordination. "
+                   f"Generic terms are shown for context, not as campaign symbols.</p></section>")
     _base = s.get("base") or {}
     _base_en = (f"<li><b>Comparison baseline:</b> {n(_base.get('high', 0))} of {n(_base.get('clusters', 0))} "
                 f"clusters in the high band across {n(_base.get('temas', 0))} other topics "
@@ -964,6 +1016,8 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
   <div class="chart-card">{svg_timeline(epis, 'en')}</div>
 </section>
 
+{ext_html_en}
+
 <section>
   <h2>The signal, in three views</h2>
   <div class="two two-charts">
@@ -978,6 +1032,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
   <h2>Curated episodes</h2>
   <p class="meta">No public list of demands is invented. The episode-to-cluster link is manual and revisable; it does not confirm the episode. Sources accessed 26 Oct 2026.</p>
   <p class="meta"><b>Inclusion criterion:</b> five episodes with a youth/student component, an identifiable local trigger and international coverage. This is an editorial selection, neither random nor exhaustive; order does not imply continuity. <b>Source level:</b> agency/official &gt; media &gt; aggregator/wiki; sensitive figures without an agency or official source remain provisional.</p>
+  <p class="meta"><b>{_verif_summary(epis, 'en')}</b></p>
   <div style="overflow:auto"><table>
     <thead><tr><th>Date</th><th>Place</th><th>Episode / status</th><th>Trigger</th><th>Declared demands</th><th>Call / radar</th></tr></thead>
     <tbody>{''.join(rows)}</tbody>
@@ -1010,6 +1065,7 @@ def main() -> int:
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     s = señal(conn)
+    s["extension"] = calcular_extension(conn)
     conn.close()
     errores = validar_senal(s)
     if errores:
@@ -1035,6 +1091,7 @@ def main() -> int:
                     "cuentas": {"type": "integer"},
                     "cuentas_cluster": {"type": "integer"},
                     "base": {"type": "object"},
+                    "extension": {"type": "object"},
                     "clusters": {"type": "integer"},
                     "signal_clusters": {"type": "integer"},
                     "small_clusters": {"type": "integer"},

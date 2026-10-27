@@ -9,6 +9,10 @@ ESP-BARCELONA-2026-10-24:
   llamada: "Youth gathering called on social media; it led to looting and clashes"
   alcance: "Barcelona; accounts and groups also in Madrid and other cities"
   nota: "More than 100 arrested, a quarter of them minors (Infobae). Mossos say detainees did not come from France. The anonymous-account network is quoted from the source; the radar does not observe synchronies or confirm organisation."
+  verificacion:
+    estado: secondary
+    nota: "Police figure quoted by Infobae; no official Mossos statement located."
+
 FRA-2026-10-24:
   nombre: "National marches for schools and the cost of living"
   estado: "Documented fact"
@@ -21,6 +25,10 @@ FRA-2026-10-24:
   llamada: "National marches; 400,000 according to the government, 800,000 according to unions"
   alcance: "Paris, Marseille, Lyon, Lille, Bordeaux and Orléans, among others"
   nota: "Both figures are shown together because they are not comparable with counts from other countries."
+  verificacion:
+    estado: secondary
+    nota: "Government and union figures quoted by Tovima; no comparable official record located."
+
 ITA-MILAN-2026-10-17:
   nombre: "Riots on the second day of mobilisations"
   estado: "Arrests documented; authorship of the violence unidentified"
@@ -31,6 +39,10 @@ ITA-MILAN-2026-10-17:
   llamada: "Mobilisations in Milan, Turin and Bologna"
   alcance: "Milan; unrest also in northern Italy"
   nota: "More than 200 arrested, around 80% minors (Europa Press). Provisional secondary-source figure; not verified by the radar."
+  verificacion:
+    estado: agency
+    nota: "Europa Press copy republished by Estrategia; not checked against the Italian Interior Ministry."
+
 ALB-2026-10-24:
   nombre: "Protests against the hotel complex and Rama's government"
   estado: "Protests documented; the 'hybrid war' claim has no public evidence"
@@ -43,6 +55,10 @@ ALB-2026-10-24:
   llamada: "Protests outside government buildings; five months of mobilisation"
   alcance: "Tirana and other Albanian cities"
   nota: "The government calls it 'hybrid war'; experts consulted by DW see no public evidence for those claims."
+  verificacion:
+    estado: secondary
+    nota: "Government claim and expert rebuttal quoted by Tovima; no independent public evidence."
+
 NPL-2025-09:
   nombre: "Protests after the ban on 26 platforms"
   estado: "Government fell; 76 dead"
@@ -54,3 +70,6 @@ NPL-2025-09:
   llamada: "Protests in Kathmandu and other cities; resignation of the prime minister"
   alcance: "Nepal; a reference for later mobilisations in Madagascar and elsewhere"
   nota: "Death toll (76) and government outcome from the linked public chronology (Wikipedia). Secondary source; not verified by the radar."
+  verificacion:
+    estado: secondary
+    nota: "76 per chronology and Kathmandu Post; Reuters confirmed only 72/74; no official source located."

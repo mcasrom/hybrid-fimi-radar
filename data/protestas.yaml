@@ -29,6 +29,10 @@
     - https://www.infobae.com/espana/2026/10/25/que-es-blocus-la-red-de-perfiles-anonimos-de-tiktok-que-movilizo-a-cientos-de-jovenes-antes-de-los-disturbios-de-barcelona/
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
   nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia. La mención a la red de cuentas es una cita de la fuente; el radar no observa sincronías ni confirma organización."
+  verificacion:
+    estado: secundaria
+    nivel: medio
+    nota: "Cifra policial citada por Infobae; no se localizó comunicado oficial de Mossos."
 
 - id: FRA-2026-10-24
   tipo_detonante: educacion
@@ -51,6 +55,10 @@
   fuentes:
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
   nota: "Las dos cifras se muestran juntas porque no son comparables con recuentos de otros países."
+  verificacion:
+    estado: secundaria
+    nivel: medio
+    nota: "Cifras de Gobierno y sindicatos citadas por Tovima; no se localizó acta oficial comparable."
 
 - id: ITA-MILAN-2026-10-17
   tipo_detonante: coste
@@ -70,6 +78,10 @@
   fuentes:
     - https://www.diarioestrategia.cl/texto-diario/mostrar/6057316/200-detenidos-mayoria-menores-durante-segunda-jornada-disturbios-saqueos-milan
   nota: "Más de 200 detenidos, en torno al 80 % menores (Europa Press). Cifra provisional de fuente secundaria; no verificada por el radar."
+  verificacion:
+    estado: agencia
+    nivel: agencia
+    nota: "Europa Press reproducido por Estrategia; no contrastado con el Ministerio del Interior italiano."
 
 - id: ALB-2026-10-24
   tipo_detonante: corrupcion
@@ -92,6 +104,10 @@
   fuentes:
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
   nota: "El Gobierno habla de «guerra híbrida»; expertos consultados por DW no ven evidencia pública de esas atribuciones."
+  verificacion:
+    estado: secundaria
+    nivel: medio
+    nota: "Atribución gubernamental y réplica de expertos citadas por Tovima; sin evidencia pública independiente."
 
 - id: NPL-2025-09
   tipo_detonante: redes
@@ -113,3 +129,7 @@
     - https://en.wikipedia.org/wiki/2025_Nepalese_Gen_Z_protests
     - https://publications.civicus.org/publications/2026-state-of-civil-society-report/gen-z-protests-new-resistance-rises/
   nota: "Cifra de 76 muertos y resultado del Gobierno según la cronología pública enlazada (Wikipedia). Fuente secundaria; no verificada por el radar."
+  verificacion:
+    estado: secundaria
+    nivel: medio
+    nota: "76 según cronología y Kathmandu Post; Reuters solo confirmó 72/74; no hay fuente oficial localizada."
