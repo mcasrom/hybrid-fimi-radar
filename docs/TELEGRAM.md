@@ -61,7 +61,7 @@ El monitor `detection/monitor_telegram.py` corre tras la captura y avisa solo al
 
 También avisa si un canal supera **100 eventos/24 h** (aviso) o **180** (crítico). El estado se guarda en `data/telegram_volume_state.json` para no repetir el mismo aviso.
 
-**Tope duro:** `TG_MAX_PER_CYCLE = 250` en `collectors/capture.py`. Con 18 canales × 20 mensajes posibles, el máximo teórico sería 360/ciclo; el tope corta a 250 y lo deja en `logs/capture.log`.
+**Tope duro:** `TG_MAX_PER_CYCLE = 360` en `collectors/capture.py`, equivalente a 18 canales × 20 mensajes. Al contar mensajes descargados (no solo los que pasan el filtro), un tope menor saltaba Bellingcat y The Guardian; ahora se leen todos. El monitor sigue midiendo solo eventos guardados.
 
 **Interruptor manual:** si un canal se dispara, comentar su línea en `config.yaml → telegram_canales` o en `data/telegram_protestas.yaml`; el siguiente ciclo deja de leerlo. No hay que reiniciar servicios.
 

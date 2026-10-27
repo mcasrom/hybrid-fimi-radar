@@ -35,10 +35,10 @@ UA_RSS = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0 Safari
 TELEGRAM_CHANNELS = []  # p.ej. ["elfarodeceuta", "maldita_es"]
 BLUESKY_QUERIES = []    # p.ej. ["elecciones", "voto"]
 MAX_PER_SOURCE = 100
-# Tope duro de seguridad para Telegram: 18 canales x 20 mensajes = 360/ciclo.
+# Tope duro de seguridad para Telegram: 18 canales x 20 mensajes = 360/ciclo; el tope debe cubrirlos todos.
 # El monitor avisa mucho antes (100/6 h), pero este cap evita una subida
 # accidental de corpus si cambia el HTML de t.me/s.
-TG_MAX_PER_CYCLE = 250
+TG_MAX_PER_CYCLE = 360
 # Ventana temporal de captura: descarta eventos mas antiguos que N dias.
 # El radar detecta campanas a corto plazo (la retencion purga events>90d);
 # capturar historico (p.ej. posts de 2025 que devuelven las busquedas) genera
