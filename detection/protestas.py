@@ -47,6 +47,27 @@ from detection import metricas_tema as _mt  # noqa: E402
 from detection.protestas_extension import calcular as calcular_extension  # noqa: E402
 from detection.convocatorias import cargar_registro  # noqa: E402
 
+
+CONV_TIPO_ES = {"red_anonima": "Red anónima", "sindicato": "Sindicato",
+                "partido_juvenil": "Partido juvenil", "movimiento_estudiantil": "Movimiento estudiantil",
+                "plataforma": "Plataforma", "desconocido": "Desconocido"}
+CONV_ADSC_ES = {"sin_adscripcion": "Sin adscripción", "autodeclarada": "Autodeclarada",
+                "oficial": "Oficial", "atribuida_por_medio": "Atribuida por medio"}
+CONV_MARCO_ES = {"educacion": "educación", "coste_vida": "coste de vida",
+                 "vivienda": "vivienda", "corrupcion": "corrupción",
+                 "anti_gobierno": "anti-gobierno", "anti_policia": "anti-policía",
+                 "sin_pliego_publico": "sin pliego público"}
+CONV_TIPO_EN = {"red_anonima": "Anonymous network", "sindicato": "Union",
+                "partido_juvenil": "Youth party", "movimiento_estudiantil": "Student movement",
+                "plataforma": "Platform", "desconocido": "Unknown"}
+CONV_ADSC_EN = {"sin_adscripcion": "No declared affiliation", "autodeclarada": "Self-declared",
+                "oficial": "Official", "atribuida_por_medio": "Media-attributed"}
+CONV_MARCO_EN = {"educacion": "education", "coste_vida": "cost of living",
+                 "vivienda": "housing", "corrupcion": "corruption",
+                 "anti_gobierno": "anti-government", "anti_policia": "anti-police",
+                 "sin_pliego_publico": "no public demands"}
+CONV_ESTADO_EN = {"celebrada": "held", "desconvocada": "called off", "anunciada": "announced"}
+
 BAND_COL = {
     "CRITICAL": "#dc2626",
     "HIGH": "#f97316",
@@ -756,26 +777,36 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     conv = conv or {}
     _conv_rows = "".join(
         f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
-        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
-        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        f"<td>{esc(x.get('convocante'))}</td>"
+        f"<td>{esc(CONV_TIPO_ES.get(x.get('convocante_tipo'), x.get('convocante_tipo') or '—'))}</td>"
+        f"<td>{esc(CONV_ADSC_ES.get(x.get('adscripcion'), x.get('adscripcion') or '—'))}</td>"
+        f"<td>{esc(' · '.join(CONV_MARCO_ES.get(m, m) for m in (x.get('marco') or [])) or '—')}</td>"
+        f"<td>{esc(x.get('estado'))}</td><td>{esc(x.get('evidencia') or '—')}</td>"
+        f"<td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
         for x in (conv.get("convocatorias") or []))
     conv_html = (f"<section><h2>Convocatorias públicas</h2>"
                  f"<p class='meta'>Registro curado de llamadas públicas. No se accede a grupos privados, DMs ni cuentas personales. "
                  f"Estado según la fuente, no confirmación del hecho. Actualizado: {esc(conv.get('actualizado') or '—')}.</p>"
-                 f"<div style='overflow:auto'><table><thead><tr><th>Fecha</th><th>Ciudad</th><th>Convoca</th>"
-                 f"<th>Estado</th><th>Canal</th><th>Fuente</th></tr></thead><tbody>{_conv_rows or '<tr><td colspan=6>Sin convocatorias registradas.</td></tr>'}</tbody></table></div>"
+                 f"<div style='overflow:auto'><table><thead><tr><th>Fecha</th><th>Ciudad</th><th>Convoca</th><th>Tipo</th>"
+                 f"<th>Adscripción</th><th>Marco</th><th>Estado</th><th>Evidencia</th><th>Fuente</th></tr></thead><tbody>{_conv_rows or '<tr><td colspan=9>Sin convocatorias registradas.</td></tr>'}</tbody></table></div>"
+                 f"<p class='meta'>La adscripción y el marco son del convocante, no de todos los participantes; no se usa un eje izquierda-derecha.</p>"
                  f"<p class='meta'><a href='/datos/convocatorias.json'>Datos abiertos de convocatorias (JSON)</a></p></section>")
     conv = conv or {}
     _conv_rows_en = "".join(
         f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
-        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
-        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        f"<td>{esc(x.get('convocante'))}</td>"
+        f"<td>{esc(CONV_TIPO_EN.get(x.get('convocante_tipo'), x.get('convocante_tipo') or '—'))}</td>"
+        f"<td>{esc(CONV_ADSC_EN.get(x.get('adscripcion'), x.get('adscripcion') or '—'))}</td>"
+        f"<td>{esc(' · '.join(CONV_MARCO_EN.get(m, m) for m in (x.get('marco') or [])) or '—')}</td>"
+        f"<td>{esc(CONV_ESTADO_EN.get(x.get('estado'), x.get('estado')))}</td><td>{esc(x.get('evidencia') or '—')}</td>"
+        f"<td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
         for x in (conv.get("convocatorias") or []))
     conv_html_en = (f"<section><h2>Public calls</h2>"
                     f"<p class='meta'>Curated registry of public calls. No private groups, DMs or personal accounts. "
                     f"Status follows the source, not confirmation of the event. Updated: {esc(conv.get('actualizado') or '—')}.</p>"
-                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th>"
-                    f"<th>Status</th><th>Channel</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=6>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th><th>Type</th>"
+                    f"<th>Affiliation</th><th>Frame</th><th>Status</th><th>Evidence</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=9>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<p class='meta'>Affiliation and frame describe the caller, not all participants; no left-right axis is used.</p>"
                     f"<p class='meta'><a href='/datos/convocatorias.json'>Open call data (JSON)</a></p></section>")
     _ext = s.get("extension") or {}
     _ext_rows = "".join(
@@ -969,14 +1000,19 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     conv = conv or {}
     _conv_rows_en = "".join(
         f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
-        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
-        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        f"<td>{esc(x.get('convocante'))}</td>"
+        f"<td>{esc(CONV_TIPO_EN.get(x.get('convocante_tipo'), x.get('convocante_tipo') or '—'))}</td>"
+        f"<td>{esc(CONV_ADSC_EN.get(x.get('adscripcion'), x.get('adscripcion') or '—'))}</td>"
+        f"<td>{esc(' · '.join(CONV_MARCO_EN.get(m, m) for m in (x.get('marco') or [])) or '—')}</td>"
+        f"<td>{esc(CONV_ESTADO_EN.get(x.get('estado'), x.get('estado')))}</td><td>{esc(x.get('evidencia') or '—')}</td>"
+        f"<td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
         for x in (conv.get("convocatorias") or []))
     conv_html_en = (f"<section><h2>Public calls</h2>"
                     f"<p class='meta'>Curated registry of public calls. No private groups, DMs or personal accounts. "
                     f"Status follows the source, not confirmation of the event. Updated: {esc(conv.get('actualizado') or '—')}.</p>"
-                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th>"
-                    f"<th>Status</th><th>Channel</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=6>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th><th>Type</th>"
+                    f"<th>Affiliation</th><th>Frame</th><th>Status</th><th>Evidence</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=9>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<p class='meta'>Affiliation and frame describe the caller, not all participants; no left-right axis is used.</p>"
                     f"<p class='meta'><a href='/datos/convocatorias.json'>Open call data (JSON)</a></p></section>")
     _ext = s.get("extension") or {}
     _ext_rows = "".join(

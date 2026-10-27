@@ -17,45 +17,61 @@ convocatorias:
     ciudad: Barcelona
     pais: España
     convocante: Blocus
+    convocante_tipo: red_anonima
+    adscripcion: sin_adscripcion
+    marco: [educacion, coste_vida]
+    evidencia: media
     canal: TikTok / Telegram (grupos privados no monitorizados)
     url_publica: https://www.infobae.com/espana/2026/10/25/que-es-blocus-la-red-de-perfiles-anonimos-de-tiktok-que-movilizo-a-cientos-de-jovenes-antes-de-los-disturbios-de-barcelona/
     estado: celebrada
     fuente: Infobae
     confianza: media
-    nota: "Cifras policiales citadas por el medio; no hay comunicado oficial localizado."
+    nota: "Cifras policiales citadas por el medio; no hay comunicado oficial localizado. La adscripción es del convocante, no de los participantes."
   - id: MAD-2026-10-31
     fecha_detectada: 2026-10-27
     fecha_evento: 2026-10-31
     ciudad: Madrid
     pais: España
     convocante: Blocus
+    convocante_tipo: red_anonima
+    adscripcion: sin_adscripcion
+    marco: [educacion, coste_vida]
+    evidencia: media
     canal: TikTok / Telegram (grupos privados no monitorizados)
     url_publica: https://www.eldebate.com/espana/20261027/red-blocus-desconvoca-manifestacion-violenta-sabado-madrid-poli-vuelto-enterar_474285.html
     estado: desconvocada
     fuente: El Debate
     confianza: media
-    nota: "Desconvocatoria según el medio; no se accede al grupo privado."
+    nota: "Desconvocatoria según el medio; no se accede al grupo privado. La adscripción es del convocante, no de los participantes."
   - id: VAL-2026-10-31
     fecha_detectada: 2026-10-27
     fecha_evento: 2026-10-31
     ciudad: Valencia
     pais: España
     convocante: Blocus
+    convocante_tipo: red_anonima
+    adscripcion: sin_adscripcion
+    marco: [educacion, coste_vida, sin_pliego_publico]
+    evidencia: media
     canal: TikTok / Telegram (grupos privados no monitorizados)
     url_publica: https://www.abc.es/espana/comunidad-valenciana/policia-monitoriza-pasos-focus-valencia-sabado-halloween-20261027121307-nt.html
     estado: anunciada
     fuente: ABC
     confianza: media
-    nota: "La Policía monitoriza la convocatoria; estado público, no confirmación de asistencia."
+    nota: "La Policía monitoriza la convocatoria; estado público, no confirmación de asistencia. Sin pliego público localizado; la adscripción es del convocante."
   - id: BCN-2026-10-31
     fecha_detectada: 2026-10-26
     fecha_evento: 2026-10-31
     ciudad: Barcelona
     pais: España
     convocante: Blocus
+    convocante_tipo: red_anonima
+    adscripcion: sin_adscripcion
+    marco: [educacion, coste_vida]
+    evidencia: media
     canal: Telegram público citado por Maldita (grupo privado no monitorizado)
     url_publica: https://maldita.es/investigaciones/20261026/blocus-bcn-31-octubre-telegram/
     estado: anunciada
     fuente: Maldita.es
     confianza: media
-    nota: "Investigación periodística sobre un grupo de Telegram; no se accede al grupo."
+    nota: "Investigación periodística sobre un grupo de Telegram; no se accede al grupo. La adscripción es del convocante, no de los participantes."

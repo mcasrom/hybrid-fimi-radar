@@ -37,3 +37,14 @@ def test_detectar_exige_ciudad_y_deduplica():
     cand = detectar(_db())
     assert [x["ciudades"] for x in cand] == [["Madrid"], ["Barcelona"]]
     assert all(x["estado_candidato"] == "revisar" for x in cand)
+
+
+def test_registro_incluye_campos_recomendados():
+    from detection.convocatorias import cargar_registro
+    reg = cargar_registro()
+    assert reg["convocatorias"]
+    for x in reg["convocatorias"]:
+        assert x.get("convocante_tipo")
+        assert x.get("adscripcion")
+        assert isinstance(x.get("marco"), list) and x["marco"]
+        assert x.get("evidencia") in {"alta", "media", "baja"}
