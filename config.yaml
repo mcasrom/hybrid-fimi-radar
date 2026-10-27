@@ -1986,17 +1986,13 @@ telegram_canales:
 - AlMayadeenEnglish
 - PressTV
 # === Canales públicos para protestas_juveniles (verificados 26-oct-2026) ===
+# APARCADOS 27-oct-2026: 6 canales sin actividad reciente (2015-2025) y 0 eventos útiles.
+# No se borran del registro histórico, pero no se leen en cada ciclo.
 - elpais
 - eldiarioes
-- laSexta
 - publico_es
 - elconfidencial
-- elperiodico
-- france24
 - repubblica
-- danas
-- balkaninsight
-- bellingcat
 - guardian
 # APARCADOS 2-oct: `timesofisrael` e `i24NEWS_EN` se leen en cada ciclo y NO
 # matchean ninguna keyword de los 8 temas -> 0 eventos desde el alta (27-Sep),

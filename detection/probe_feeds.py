@@ -53,6 +53,11 @@ def probe(f, cutoff):
             d = feedparser.parse(url, agent=UA_CAPTURE)
             if d.entries:
                 rec["http"] = 200
+        if r.status_code in (301, 302, 303, 307, 308):
+            d2 = feedparser.parse(url, agent=UA_CAPTURE)
+            if d2.entries:
+                d = d2
+                rec["http"] = 200
         rec["items"] = len(d.entries)
         dt = last_date(d.entries)
         if dt:

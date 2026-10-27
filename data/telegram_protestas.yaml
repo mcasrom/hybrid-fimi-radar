@@ -1,3 +1,5 @@
+# 27-oct-2026: retirados laSexta, elperiodico, france24, danas, balkaninsight y bellingcat
+# (último mensaje 2015-2025; 0 eventos útiles). Se conserva el registro histórico en git.
 # Canales públicos de Telegram para el piloto `protestas_juveniles`.
 # Solo canales; no grupos privados, no mensajes directos, no cuentas personales.
 # Verificados con https://t.me/s/<canal> el 26-oct-2026 (200 + mensajes visibles).
@@ -18,13 +20,6 @@
   url: https://t.me/s/eldiarioes
   estado: activo
 
-- canal: laSexta
-  nombre: LaSexta
-  pais: España
-  tipo: televisión
-  url: https://t.me/s/laSexta
-  estado: activo
-
 - canal: publico_es
   nombre: Público
   pais: España
@@ -39,46 +34,11 @@
   url: https://t.me/s/elconfidencial
   estado: activo
 
-- canal: elperiodico
-  nombre: El Periódico política
-  pais: España
-  tipo: medio nacional
-  url: https://t.me/s/elperiodico
-  estado: activo
-
-- canal: france24
-  nombre: FRANCE 24
-  pais: Francia
-  tipo: medio internacional
-  url: https://t.me/s/france24
-  estado: activo
-
 - canal: repubblica
   nombre: la Repubblica
   pais: Italia
   tipo: medio nacional
   url: https://t.me/s/repubblica
-  estado: activo
-
-- canal: danas
-  nombre: Danas
-  pais: Serbia
-  tipo: medio nacional
-  url: https://t.me/s/danas
-  estado: activo
-
-- canal: balkaninsight
-  nombre: Balkan Insight
-  pais: Balcanes
-  tipo: medio especializado
-  url: https://t.me/s/balkaninsight
-  estado: activo
-
-- canal: bellingcat
-  nombre: Bellingcat
-  pais: Internacional
-  tipo: OSINT
-  url: https://t.me/s/bellingcat
   estado: activo
 
 - canal: guardian
