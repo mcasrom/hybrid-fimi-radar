@@ -24,6 +24,8 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import metricas_tema as _mt  # noqa: E402  (definiciones canonicas por tema)
 import presentacion as _pr  # noqa: E402  (Sprint A: conjunto publicado + distribución)
+import convocatorias as _conv  # noqa: E402
+import protestas_extension as _ext  # noqa: E402
 import captacion as _cap  # noqa: E402  (bloque de captación newsletter)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -470,7 +472,75 @@ def spider(series):
             f"{''.join(rings)}{''.join(spokes)}{''.join(polys)}{''.join(labels)}</svg>")
 
 
-def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_all=None):
+def _fdate(x) -> str:
+    s = str(x or "")
+    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+        return s[8:10] + "/" + s[5:7] + "/" + s[:4]
+    return s
+
+
+def _anexo_protestas(con, tema):
+    if tema != "protestas_juveniles":
+        return ""
+    reg = _conv.cargar_registro()
+    convs = reg.get("convocatorias") or []
+    tipo = {"red_anonima": "Red anónima", "sindicato": "Sindicato",
+            "partido_juvenil": "Partido juvenil", "movimiento_estudiantil": "Movimiento estudiantil",
+            "plataforma": "Plataforma", "desconocido": "Desconocido"}
+    adsc = {"sin_adscripcion": "Sin adscripción", "autodeclarada": "Autodeclarada",
+            "oficial": "Oficial", "atribuida_por_medio": "Atribuida por medio"}
+    marco = {"educacion": "educación", "coste_vida": "coste de vida", "vivienda": "vivienda",
+             "corrupcion": "corrupción", "anti_gobierno": "anti-gobierno",
+             "anti_policia": "anti-policía", "sin_pliego_publico": "sin pliego público"}
+    rows = "".join(
+        f"<tr><td>{_fdate(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
+        f"<td>{esc(x.get('convocante'))}</td><td>{esc(tipo.get(x.get('convocante_tipo'), x.get('convocante_tipo') or '—'))}</td>"
+        f"<td>{esc(adsc.get(x.get('adscripcion'), x.get('adscripcion') or '—'))}</td>"
+        f"<td>{esc(' · '.join(marco.get(m, m) for m in (x.get('marco') or [])) or '—')}</td>"
+        f"<td>{esc(x.get('estado'))}</td><td>{esc(x.get('evidencia') or '—')}</td>"
+        f"<td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        for x in convs)
+    try:
+        import yaml
+        eps = yaml.safe_load(open(os.path.join(ROOT, "data", "protestas.yaml"), encoding="utf-8").read()) or []
+    except (OSError, ValueError):
+        eps = []
+    oficial = sum(1 for e in eps if (_verif_state(e) == "oficial"))
+    agencia = sum(1 for e in eps if (_verif_state(e) == "agencia"))
+    secundaria = sum(1 for e in eps if (_verif_state(e) == "secundaria"))
+    primaria = sum(1 for e in eps if e.get("fuente_primaria"))
+    ext = _ext.calcular(con, tema)
+    ext_rows = "".join(
+        f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
+        f"<td>{esc(', '.join(r.get('paises_72h') or []) or '—')}</td>"
+        f"<td>{mil(r.get('eventos', 0))}</td><td>{esc(r.get('estado'))}</td></tr>"
+        for r in ext.get("filas", []))
+    return (f"<section><h2>Anexo curado — convocatorias, fuentes y extensión</h2>"
+            f"<p class='cs'><b>Fuera del score y de las bandas.</b> Datos curados o léxicos; no son una muestra representativa del tema. "
+            f"No se usa un eje izquierda-derecha.</p>"
+            f"<h3 style='font-size:.88rem;color:{MUT}'>Convocatorias públicas ({len(convs)})</h3>"
+            f"<div style='overflow:auto'><table style='width:100%;border-collapse:collapse;font-size:.76rem'>"
+            f"<thead><tr><th>Fecha</th><th>Ciudad</th><th>Convoca</th><th>Tipo</th><th>Adscripción</th><th>Marco</th><th>Estado</th><th>Evidencia</th><th>Fuente</th></tr></thead>"
+            f"<tbody>{rows or '<tr><td colspan=9>Sin convocatorias registradas.</td></tr>'}</tbody></table></div>"
+            f"<p class='cs' style='color:#94a3b8'>La adscripción y el marco son del convocante, no de todos los participantes. "
+            f"<a href='https://fimi.viajeinteligencia.com/casos/protestas/'>Ficha de caso</a> · "
+            f"<a href='/datos/convocatorias.json'>JSON</a></p>"
+            f"<h3 style='font-size:.88rem;color:{MUT}'>Auditoría de fuentes (5 episodios curados)</h3>"
+            f"<p class='cs'>{oficial}/5 oficial · {agencia}/5 agencia · {secundaria}/5 secundaria · {primaria}/5 primaria. "
+            f"La auditoría es de los episodios, no de los 2.000+ eventos del tema.</p>"
+            f"<h3 style='font-size:.88rem;color:{MUT}'>Extensión entre países (exploratoria)</h3>"
+            f"<div style='overflow:auto'><table style='width:100%;border-collapse:collapse;font-size:.76rem'>"
+            f"<thead><tr><th>Símbolo</th><th>Tipo</th><th>Países en 72 h</th><th>Eventos</th><th>Estado</th></tr></thead>"
+            f"<tbody>{ext_rows}</tbody></table></div>"
+            f"<p class='cs' style='color:#94a3b8'>{esc(ext.get('nota', ''))}</p></section>")
+
+
+def _verif_state(e):
+    v = e.get("verificacion") or {}
+    return v.get("estado") if isinstance(v, dict) else None
+
+
+def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_all=None, anexo=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Sprint A (A1, 12-oct): conjunto PUBLICADO = clusters con señal (≥3 cuentas).
@@ -992,6 +1062,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <p class="cs" style="margin-top:8px"><b>Cómo leer H2 (verificado en código):</b> H2 = estructura mutua (núcleo k≥2 de ≥3 cuentas con URLs/dominios compartidos) × (sincronía temporal×0,55 + resto). La «sincronía» de H2 es proximidad temporal continua, <b>no</b> el contador «sincronías entre cuentas distintas» (ese exige ≥5 cuentas sin dominante, mismo contenido y ventana ≤24 h). Por eso una H2 alta puede coexistir con 0 sincronías contadas; H2b vale 0 por construcción cuando hay estructura. Detalle en <a href="/metodo.html">Método</a>.</p></section>
 </div>
 
+{anexo or ''}
+
 <section style="border-left:5px solid {BAND_COL[bd]}"><h2>Conclusión</h2><p class="cs">{concl}</p>
   <p class="cs" style="margin-top:6px"><b>Señal, no atribución.</b> Actor: UNKNOWN · evaluación: no concluyente. La interpretación final requiere validación externa y análisis experto.</p></section>
 <p class='cs' style='font-size:.8rem;color:#64748b'>¿Ves alguna de estas URL circulando? <a href='/consulta.html'>Consulta su huella →</a> (eco de prensa, una fuente o amplificación anómala).</p>
@@ -1023,7 +1095,8 @@ def main():
             print("sin clusters:", tema)
             continue
         nombre = names.get(tema, tema)
-        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema), load_ventana(tema), salud)
+        anexo = _anexo_protestas(con, tema)
+        html_out = render(tema, nombre, clusters, kpi, salud.get(tema), load_keywords(tema), load_ventana(tema), salud, anexo)
         with open(os.path.join(a.out, tema + ".html"), "w", encoding="utf-8") as f:
             f.write(html_out)
         hechos.append((tema, nombre, len(clusters)))
