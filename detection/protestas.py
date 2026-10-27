@@ -45,6 +45,7 @@ from detection.bandas import BAND_ES, banda  # noqa: E402
 from detection.mainstream import MAINSTREAM  # noqa: E402
 from detection import metricas_tema as _mt  # noqa: E402
 from detection.protestas_extension import calcular as calcular_extension  # noqa: E402
+from detection.convocatorias import cargar_registro  # noqa: E402
 
 BAND_COL = {
     "CRITICAL": "#dc2626",
@@ -320,7 +321,7 @@ def señal(conn) -> dict:
         "tie59_signal": tie59_signal,
         "max_score": round(max((r["overall_score"] or 0 for r in cl), default=0), 1),
         "top_clusters": top_clusters[:16],
-        "top_signal": [c for c in top_clusters if c["cuentas"] >= 3][:8],
+        "top_signal": [c for c in top_clusters if c["cuentas"] >= 3],
         "daily": daily,
         "weekly": weekly,
         "fuentes": fuentes,
@@ -681,7 +682,7 @@ def _verif_summary(epis: list, lang: str = "es") -> str:
             f"{c.get('secundaria', 0)}/5 secundaria, 0/5 primaria.")
 
 
-def render(epis: list, s: dict, ahora: str) -> str:
+def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     eps_html = []
     for i, e in enumerate(sorted(epis, key=lambda x: (fecha(x.get("fecha")), str(x.get("pais")))), 1):
         dem = e.get("demandas") or []
@@ -752,6 +753,30 @@ def render(epis: list, s: dict, ahora: str) -> str:
     agg = next((d for d in s.get("top_dominios", []) if d.get("tipo") == "agregador"), None)
     agg_txt = (f"Google News ({n(agg['eventos'])}) se excluye del gráfico por ser agregador: es eco de prensa, no una fuente independiente."
                if agg else "Los agregadores se excluyen del gráfico: son eco de prensa, no fuentes independientes.")
+    conv = conv or {}
+    _conv_rows = "".join(
+        f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
+        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
+        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        for x in (conv.get("convocatorias") or []))
+    conv_html = (f"<section><h2>Convocatorias públicas</h2>"
+                 f"<p class='meta'>Registro curado de llamadas públicas. No se accede a grupos privados, DMs ni cuentas personales. "
+                 f"Estado según la fuente, no confirmación del hecho. Actualizado: {esc(conv.get('actualizado') or '—')}.</p>"
+                 f"<div style='overflow:auto'><table><thead><tr><th>Fecha</th><th>Ciudad</th><th>Convoca</th>"
+                 f"<th>Estado</th><th>Canal</th><th>Fuente</th></tr></thead><tbody>{_conv_rows or '<tr><td colspan=6>Sin convocatorias registradas.</td></tr>'}</tbody></table></div>"
+                 f"<p class='meta'><a href='/datos/convocatorias.json'>Datos abiertos de convocatorias (JSON)</a></p></section>")
+    conv = conv or {}
+    _conv_rows_en = "".join(
+        f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
+        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
+        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        for x in (conv.get("convocatorias") or []))
+    conv_html_en = (f"<section><h2>Public calls</h2>"
+                    f"<p class='meta'>Curated registry of public calls. No private groups, DMs or personal accounts. "
+                    f"Status follows the source, not confirmation of the event. Updated: {esc(conv.get('actualizado') or '—')}.</p>"
+                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th>"
+                    f"<th>Status</th><th>Channel</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=6>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<p class='meta'><a href='/datos/convocatorias.json'>Open call data (JSON)</a></p></section>")
     _ext = s.get("extension") or {}
     _ext_rows = "".join(
         f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
@@ -814,7 +839,7 @@ def render(epis: list, s: dict, ahora: str) -> str:
 
 <div class="takeaways"><h2>Lo esencial</h2><ul>{''.join(f'<li>{x}</li>' for x in takeaways)}</ul></div>
 
-<div class="conclusion"><b>Lectura de hoy.</b> El pico de actividad capturada es del <b>{peak_txt}</b>, posterior a los disturbios del 24-oct. <b>No hay sincronías entre cuentas distintas</b>. El único clúster en banda alta es un <b>candidato de evidencia baja</b> ({n(hi_events)} eventos, {n(hi_accounts)} cuentas): su H2 mide estructura de URLs compartidas, no autoría, y la explicación automática queda <b>no concluyente</b>. No se lee como coordinación confirmada. La cobertura es Bluesky + Google News, no la convocatoria original. El corte en 60 es convencional: <b>{tie59} de los 20 con señal empatan en 59</b> ({tie59_all} de 51; uno de ellos tiene solo 2 cuentas y queda fuera de la tabla). <b>No se puede concluir</b> que la ola esté orquestada.</div>
+<div class="conclusion"><b>Lectura de hoy.</b> El pico de actividad capturada es del <b>{peak_txt}</b>, posterior a los disturbios del 24-oct. <b>No hay sincronías entre cuentas distintas</b>. {("El único clúster en banda alta es" if high == 1 else f"De los {n(high)} clústeres en banda alta, el de mayor score es")} un <b>{("candidato de evidencia baja" if hi_low else "clúster de evidencia suficiente")}</b> ({n(hi_events)} eventos, {n(hi_accounts)} cuentas): su H2 mide estructura de URLs compartidas, no autoría, y la explicación automática queda <b>no concluyente</b>. No se lee como coordinación confirmada. La cobertura es Bluesky + Google News, no la convocatoria original. El corte en 60 es convencional: <b>{tie59} de los {n(s.get('signal_clusters', 0))} con señal empatan en 59</b> ({tie59_all} de {n(s['clusters'])}; el de 2 cuentas queda fuera de la tabla). <b>No se puede concluir</b> que la ola esté orquestada.</div>
 
 <details class="glossary"><summary>Qué significan «banda alta», «clúster», «score» y «persistencia»</summary>
 <p><b>Clúster:</b> grupo de eventos que el sistema conecta por contenido, enlaces, tiempo o cuentas. No es una prueba de coordinación. <b>Score:</b> combinación de coordinación, similitud, amplificación, infraestructura y anomalía (0–100); no es una probabilidad. <b>Banda alta:</b> score ≥60; indica amplificación anómala. <b>Amplificación anómala:</b> patrón de repetición o extensión fuera de lo esperado; no identifica autor. <b>Persistencia:</b> número de ciclos en los que sobrevive un linaje; con pocos ciclos no hay vida media fiable. <a href="/glosario.html#casa">Glosario completo</a>.</p>
@@ -834,6 +859,8 @@ def render(epis: list, s: dict, ahora: str) -> str:
   <p class="meta">Cinco episodios curados para separar el hecho, la demanda y la llamada. El orden es editorial; no es una escala temporal.</p>
   <div class="chart-card">{svg_timeline(epis)}</div>
 </section>
+
+{conv_html}
 
 {ext_html}
 
@@ -896,7 +923,7 @@ def _en(e, key, fallback=""):
     return v if v not in (None, "") else (e.get(key) or fallback)
 
 
-def render_en(epis: list, s: dict, ahora: str) -> str:
+def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     rows = []
     for e in sorted(epis, key=lambda x: (fecha(x.get("fecha")), str(x.get("pais")))):
         dem = _en(e, "demandas", []) or []
@@ -939,6 +966,18 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
     bandas_all_txt = _ben(s["bandas"])
     bandas_sig_txt = _ben(bandas_signal)
     bandas_small_txt = _ben(small_bands)
+    conv = conv or {}
+    _conv_rows_en = "".join(
+        f"<tr><td>{dmy(x.get('fecha_evento'))}</td><td>{esc(x.get('ciudad'))}</td>"
+        f"<td>{esc(x.get('convocante'))}</td><td>{esc(x.get('estado'))}</td>"
+        f"<td>{esc(x.get('canal'))}</td><td><a href='{esc(x.get('url_publica'))}' target='_blank' rel='noopener noreferrer'>{esc(x.get('fuente'))}</a></td></tr>"
+        for x in (conv.get("convocatorias") or []))
+    conv_html_en = (f"<section><h2>Public calls</h2>"
+                    f"<p class='meta'>Curated registry of public calls. No private groups, DMs or personal accounts. "
+                    f"Status follows the source, not confirmation of the event. Updated: {esc(conv.get('actualizado') or '—')}.</p>"
+                    f"<div style='overflow:auto'><table><thead><tr><th>Date</th><th>City</th><th>Caller</th>"
+                    f"<th>Status</th><th>Channel</th><th>Source</th></tr></thead><tbody>{_conv_rows_en or '<tr><td colspan=6>No calls registered.</td></tr>'}</tbody></table></div>"
+                    f"<p class='meta'><a href='/datos/convocatorias.json'>Open call data (JSON)</a></p></section>")
     _ext = s.get("extension") or {}
     _ext_rows = "".join(
         f"<tr><td>{esc(r.get('simbolo'))}</td><td>{esc(r.get('tipo'))}</td>"
@@ -995,7 +1034,7 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
 {_base_en}
 </ul></div>
 
-<div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>. The only high-band cluster is a <b>low-evidence candidate</b> ({n(hi_events)} events, {n(hi_accounts)} accounts): its H2 measures shared-URL structure, not authorship, and the automatic explanation is <b>inconclusive</b>. It is not confirmed coordination. Coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{tie59} of the 20 with signal tie at 59</b> ({tie59_all} of 51; one has only 2 accounts and is outside the table). <b>We cannot conclude</b> that the wave is orchestrated.</div>
+<div class="conclusion"><b>Today's reading.</b> The captured activity peaks on <b>{peak_txt}</b>, after the 24 Oct riots. <b>No cross-account synchronies</b>. {("The only high-band cluster is" if high == 1 else f"Of the {n(high)} high-band clusters, the highest-scoring one is")} a <b>{("low-evidence candidate" if hi_low else "sufficient-evidence cluster")}</b> ({n(hi_events)} events, {n(hi_accounts)} accounts): its H2 measures shared-URL structure, not authorship, and the automatic explanation is <b>inconclusive</b>. It is not confirmed coordination. Coverage is Bluesky + Google News, not the original call. The cut at 60 is conventional: <b>{tie59} of the {n(s.get('signal_clusters', 0))} with signal tie at 59</b> ({tie59_all} of {n(s['clusters'])}; the one with 2 accounts is outside the table). <b>We cannot conclude</b> that the wave is orchestrated.</div>
 
 <details class="glossary"><summary>What do “high band”, “cluster”, “score” and “persistence” mean?</summary>
 <p><b>Cluster:</b> a group of events connected by content, links, time or accounts. It is not proof of coordination. <b>Score:</b> a combination of coordination, similarity, amplification, infrastructure and anomaly (0–100); it is not a probability. <b>High band:</b> score ≥60; it indicates anomalous amplification. <b>Persistence:</b> number of cycles a lineage survives; a few cycles are not enough for a half-life.</p>
@@ -1015,6 +1054,8 @@ def render_en(epis: list, s: dict, ahora: str) -> str:
   <p class="meta">Five curated episodes separate the fact, the demand and the call. The order is editorial, not a time scale.</p>
   <div class="chart-card">{svg_timeline(epis, 'en')}</div>
 </section>
+
+{conv_html_en}
 
 {ext_html_en}
 
@@ -1066,13 +1107,14 @@ def main() -> int:
     conn.row_factory = sqlite3.Row
     s = señal(conn)
     s["extension"] = calcular_extension(conn)
+    conv = cargar_registro()
     conn.close()
     errores = validar_senal(s)
     if errores:
         print("[protestas] consistencia rota: " + "; ".join(errores), file=sys.stderr)
         return 2
     ahora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    data = {"tema": TEMA, "actualizado": ahora, "episodios": epis, "senal": s}
+    data = {"tema": TEMA, "actualizado": ahora, "episodios": epis, "senal": s, "convocatorias": conv}
     JSON_OUT.parent.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     schema = {
@@ -1084,6 +1126,7 @@ def main() -> int:
             "tema": {"type": "string", "const": TEMA},
             "actualizado": {"type": "string"},
             "episodios": {"type": "array", "items": {"type": "object"}},
+            "convocatorias": {"type": "object"},
             "senal": {
                 "type": "object",
                 "properties": {
@@ -1113,8 +1156,8 @@ def main() -> int:
     print(f"[protestas] JSON -> {JSON_OUT} ({len(epis)} episodios, {s['eventos']} eventos)")
     if not a.json_only:
         HTML_OUT.parent.mkdir(parents=True, exist_ok=True)
-        HTML_OUT.write_text(render(epis, s, ahora), encoding="utf-8")
-        HTML_EN.write_text(render_en(epis, s, ahora), encoding="utf-8")
+        HTML_OUT.write_text(render(epis, s, ahora, conv), encoding="utf-8")
+        HTML_EN.write_text(render_en(epis, s, ahora, conv), encoding="utf-8")
         print(f"[protestas] HTML -> {HTML_OUT} (+ EN)")
     return 0
 

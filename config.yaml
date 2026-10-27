@@ -2024,6 +2024,7 @@ telegram_canales:
 - elconfidencial
 - repubblica
 - guardian
+- UGT_es
 # APARCADOS 2-oct: `timesofisrael` e `i24NEWS_EN` se leen en cada ciclo y NO
 # matchean ninguna keyword de los 8 temas -> 0 eventos desde el alta (27-Sep),
 # verificado en `health_fuentes.py` (n90=0, last_ts=null). Mismo criterio que los

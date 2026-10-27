@@ -47,3 +47,10 @@
   tipo: medio internacional
   url: https://t.me/s/guardian
   estado: activo
+
+- canal: UGT_es
+  nombre: UGT
+  pais: España
+  tipo: sindicato
+  url: https://t.me/s/UGT_es
+  estado: activo
