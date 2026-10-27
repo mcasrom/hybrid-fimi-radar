@@ -491,6 +491,36 @@ feeds:
 
 
   analytical_relevance: media
+- nombre: RFI Afrique
+  url: https://www.rfi.fr/fr/afrique/rss
+  tipo: media
+  idioma: fr
+  bias: least-biased
+  reliability: mostly-factual
+  transparency: high
+  factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
+  note: 'RFI África. Cobertura regional; fuente pública francesa.'
+  analytical_relevance: alta
+- nombre: Studio Tamani (ML)
+  url: https://www.studiotamani.org/feed
+  tipo: media
+  pais: ML
+  idioma: fr
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: 'Radio local maliense (Studio Tamani). Cobertura de Mali y Sahel.'
+  analytical_relevance: alta
+- nombre: Sahelien
+  url: https://sahelien.com/feed/
+  tipo: media
+  pais: ML
+  idioma: fr
+  bias: center
+  reliability: mostly-factual
+  transparency: medium
+  note: 'Medio independiente del Sahel; contexto local y verificación.'
+  analytical_relevance: alta
 - nombre: OilPrice (EN)
   url: https://oilprice.com/rss/main
   tipo: media

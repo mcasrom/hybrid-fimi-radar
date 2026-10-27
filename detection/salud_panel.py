@@ -20,7 +20,7 @@ import json
 import os
 import sqlite3
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -79,6 +79,13 @@ def calcular(dias: int = DIAS_DEFECTO, db: Path = DB_DEFECTO) -> dict:
     ):
         eventos[r["t"]] += r["n"]
         fuentes[r["t"]][r["s"]] = r["n"]
+    fuentes_senal: dict[str, Counter] = defaultdict(Counter)
+    for r in con.execute(
+        "SELECT c.tema_id t, ce.source s, COUNT(*) n FROM clusters c"
+        " JOIN cluster_events ce ON ce.cluster_id=c.id"
+        " WHERE c.overall_score>=60 GROUP BY c.tema_id, ce.source",
+    ):
+        fuentes_senal[r["t"]][r["s"]] += r["n"]
 
     cl: dict[str, dict] = defaultdict(lambda: {
         "clusters": 0, "high": 0, "anom": 0, "max": 0.0,
@@ -112,6 +119,8 @@ def calcular(dias: int = DIAS_DEFECTO, db: Path = DB_DEFECTO) -> dict:
     for t in _temas_activos():
         f = fuentes.get(t, {})
         dep, top = _dependencia(f)
+        fs = fuentes_senal.get(t, {})
+        dep_senal, top_senal = _dependencia(fs)
         d = cl.get(t, {})
         temas.append({
             "tema": t,
@@ -119,6 +128,8 @@ def calcular(dias: int = DIAS_DEFECTO, db: Path = DB_DEFECTO) -> dict:
             "fuentes": len(f),
             "dependencia_pct": dep,
             "fuente_top": top,
+            "dependencia_senal_pct": dep_senal,
+            "fuente_senal_top": top_senal,
             "clusters": d.get("clusters", 0),
             "high": d.get("high", 0),
             "anom": d.get("anom", 0),
@@ -158,10 +169,15 @@ def _avisos(temas: list[dict], cl: dict) -> list[dict]:
             avisos.append({"tipo": "tema_ciego", "tema": nombre, "nivel": "alto",
                            "detalle": f"{s.get('sin_etiquetar', '?')} eventos sin etiquetar"})
         if t["eventos"] >= MIN_EVENTOS_AVISO:
-            # dependencia extrema de una sola fuente
+            dep_s = t.get("dependencia_senal_pct", 0)
+            top_s = t.get("fuente_senal_top", "—")
             if t["dependencia_pct"] >= UMBRAL_DEPENDENCIA:
-                avisos.append({"tipo": "dependencia", "tema": nombre, "nivel": "medio",
-                               "detalle": f"{t['dependencia_pct']}% de {t['fuente_top']}"})
+                nivel = "alto" if dep_s >= 90 and t.get("high", 0) else "medio"
+                detalle = f"cobertura {t['dependencia_pct']}% de {t['fuente_top']}"
+                if t.get("high", 0):
+                    detalle += f" · HIGH {dep_s}% de {top_s}"
+                avisos.append({"tipo": "dependencia", "tema": nombre, "nivel": nivel,
+                               "detalle": detalle})
             # senal baja: casi todo feed y sin sincronias
             d = cl.get(nombre, {})
             if d.get("clusters") and t["sync"] == 0:
@@ -184,11 +200,12 @@ def _cabecera(r: dict) -> str:
 
 def a_markdown(r: dict) -> str:
     L = [f"# {_cabecera(r)}", "",
-         "| Tema | ev | fuentes | dep% | HIGH | ANOM | max | sync | feed | potN |",
-         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+         "| Tema | ev | fuentes | dep% | depS% | HIGH | ANOM | max | sync | feed | potN |",
+         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for t in r["temas"]:
         L.append(f"| {t['tema']} | {t['eventos']} | {t['fuentes']} | {t['dependencia_pct']} |"
-                 f" {t['high']} | {t['anom']} | {t['max']} | {t['sync']} | {t['feed']} | {t['pot_narrativas']} |")
+                 f" {t.get('dependencia_senal_pct', 0)} | {t['high']} | {t['anom']} | {t['max']} |"
+                 f" {t['sync']} | {t['feed']} | {t['pot_narrativas']} |")
     L += ["", "## Avisos a vigilar"]
     if not r["avisos"]:
         L.append("- (ninguno)")

@@ -49,3 +49,16 @@ def test_avisos_tema_sin_volumen_no_avisa(monkeypatch, tmp_path):
     temas = [{"tema": "x", "eventos": 10, "dependencia_pct": 99,
               "fuente_top": "bluesky", "sync": 0, "pot_narrativas": 0}]
     assert sp._avisos(temas, {}) == []
+
+
+def test_aviso_dependencia_senal_no_genera_alarma_extra(monkeypatch, tmp_path):
+    est = tmp_path / "kw.json"
+    est.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(sp, "ESTADO_KEYWORDS", est)
+    temas = [{
+        "tema": "sahel", "eventos": 1000, "dependencia_pct": 80,
+        "fuente_top": "bluesky", "high": 12, "dependencia_senal_pct": 100,
+        "fuente_senal_top": "bluesky", "sync": 0, "pot_narrativas": 0,
+    }]
+    avisos = sp._avisos(temas, {"sahel": {"clusters": 10, "feed": 2}})
+    assert not [a for a in avisos if a["tipo"] == "dependencia_senal"]
