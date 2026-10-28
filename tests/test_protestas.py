@@ -33,7 +33,7 @@ def test_keywords_del_tema():
 
 def test_registro_curado():
     eps = _eps()
-    assert len(eps) == 5
+    assert len(eps) == 6
     ids = [e["id"] for e in eps]
     assert len(ids) == len(set(ids))
     for e in eps:
@@ -43,6 +43,9 @@ def test_registro_curado():
         assert isinstance(e["demandas"], list)
         assert e["fuentes"], e["id"]
         assert e["fuente_primaria"] is None, e["id"]
+    by_id = {e["id"]: e for e in eps}
+    assert str(by_id["FRA-2026-10-17"]["fecha"]) == "2026-10-17"
+    assert str(by_id["ALB-2026-10-13"]["fecha"]) == "2026-10-13"
 
 
 def test_informe_sin_senal_no_revienta():

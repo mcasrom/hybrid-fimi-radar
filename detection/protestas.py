@@ -360,7 +360,7 @@ def svg_timeline(epis: list, lang: str = "es") -> str:
     step = (x1 - x0) / max(1, len(eps) - 1)
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-labelledby="tlt tl" class="chart">',
            '<title id="tlt">Cronología de los episodios curados</title>',
-           '<desc id="tl">Cinco hitos de la ola, ordenados de 2025 a 2026.</desc>',
+           '<desc id="tl">Episodios de la ola, ordenados de 2025 a 2026.</desc>',
            f'<defs><linearGradient id="tg" gradientUnits="userSpaceOnUse" x1="{x0}" y1="{y}" x2="{x1}" y2="{y}"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>',
            f'<line x1="{x0}" y1="{y}" x2="{x1}" y2="{y}" stroke="url(#tg)" stroke-width="4" stroke-linecap="round"/>']
     for i, e in enumerate(eps):
@@ -697,10 +697,10 @@ def _verif(e: dict, lang: str = "es") -> dict:
 def _verif_summary(epis: list, lang: str = "es") -> str:
     c = Counter(str(_verif(e, lang).get("estado") or "sin_auditar") for e in epis)
     if lang == "en":
-        return (f"Source audit: {c.get('oficial', 0)}/5 official, {c.get('agencia', 0)}/5 agency, "
-                f"{c.get('secundaria', 0)}/5 secondary, 0/5 primary.")
-    return (f"Auditoría de fuentes: {c.get('oficial', 0)}/5 oficial, {c.get('agencia', 0)}/5 agencia, "
-            f"{c.get('secundaria', 0)}/5 secundaria, 0/5 primaria.")
+        return (f"Source audit: {c.get('oficial', 0)}/{len(epis)} official, {c.get('agencia', 0)}/{len(epis)} agency, "
+                f"{c.get('secundaria', 0)}/{len(epis)} secondary, 0/{len(epis)} primary.")
+    return (f"Auditoría de fuentes: {c.get('oficial', 0)}/{len(epis)} oficial, {c.get('agencia', 0)}/{len(epis)} agencia, "
+            f"{c.get('secundaria', 0)}/{len(epis)} secundaria, 0/{len(epis)} primaria.")
 
 
 def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
@@ -850,9 +850,9 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ola juvenil: lo documentado y lo que el radar no ve</title>
+<title>Protestas juveniles: eco en plataformas capturadas (piloto)</title>
 <meta name="robots" content="noindex,follow">
-<meta name="description" content="Qué está documentado sobre la ola de protestas juveniles, qué se repite en el radar y qué no puede concluirse.">
+<meta name="description" content="Piloto de amplificación: qué se observa en Bluesky y Google News sobre las protestas juveniles, qué es contexto y qué no puede concluirse.">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
@@ -860,7 +860,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <main class="wrap">
 <section class="hero">
   <p class="kicker">Piloto de amplificación</p>
-  <h1>Ola juvenil: lo documentado y lo que el radar no ve</h1>
+  <h1>Protestas juveniles: eco en plataformas capturadas</h1>
   <p class="lead">Del malestar a la calle y de la calle al feed. Qué está documentado, qué se repite y qué sigue siendo atribución. El radar mide amplificación y extensión; no identifica autores ni intención.</p>
   <p><span class="badge">Piloto</span><span class="badge">Sin atribución</span><span class="badge">Fuentes enlazadas</span><a class="badge" href="en.html">English</a></p>
   <div class="hero-stats">
@@ -884,7 +884,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <div class="limits"><h2>Qué no ve este radar</h2><ul>
 <li><b>La convocatoria original.</b> TikTok, Instagram, WhatsApp y Discord no se capturan. Telegram solo se lee en canales públicos, no en grupos ni mensajes privados; el radar no observa dónde se organiza la protesta.</li>
 <li><b>La calle.</b> No hay asistentes, detenciones ni heridos propios: las cifras de los episodios son citas provisionales, no medición del radar.</li>
-<li><b>Fuentes primarias.</b> No se localizó fuente primaria en 5 de 5 episodios. Las cifras de víctimas y detenidos proceden de fuentes secundarias y no están verificadas por el radar; se muestran para contexto, no como dato propio.</li>
+<li><b>Fuentes primarias.</b> No se localizó fuente primaria en {len(epis)} de {len(epis)} episodios. Las cifras de víctimas y detenidos proceden de fuentes secundarias y no están verificadas por el radar; se muestran para contexto, no como dato propio.</li>
 <li><b>Representatividad.</b> Bluesky y Google News dominan la captura; no es una muestra representativa de la conversación juvenil.</li>
 <li><b>Personas.</b> No se identifican menores ni cuentas individuales. Los datos de detenciones son agregados y provisionales.</li>
 <li><b>Línea base.</b> El contexto de ocho semanas es histórico de captura del sistema, no una línea base del tema. El piloto acumula hasta diez ciclos de pipeline por linaje; hasta cinco pueden caer en menos de 24 h. «Anómalo» es relativo a esta ventana y un cambio de pesos movería el corte de 60.</li>
@@ -892,7 +892,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 
 <section>
   <h2>Cronología: de Katmandú a Barcelona</h2>
-  <p class="meta">Cinco episodios curados para separar el hecho, la demanda y la llamada. El orden es editorial; no es una escala temporal.</p>
+  <p class="meta">Episodios curados para separar el hecho, la demanda y la llamada; los anteriores al 26/10 son contexto, no corpus del piloto. El orden es editorial; no es una escala temporal.</p>
   <div class="chart-card">{svg_timeline(epis)}</div>
 </section>
 
@@ -913,7 +913,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <section>
   <h2>Episodios curados</h2>
   <p class="meta">No todas las protestas tienen un pliego público: cuando no lo hay, se dice. La correspondencia entre un episodio y un clúster es <b>manual y revisable</b>: no confirma el episodio ni se inventa. Fuentes consultadas el 26/10/2026.</p>
-  <p class="meta"><b>Criterio de inclusión:</b> cinco episodios con componente juvenil/estudiantil, detonante local identificable y cobertura internacional. Es una selección editorial, no aleatoria ni exhaustiva; el orden no implica continuidad temporal. <b>Nivel de fuente:</b> agencia/oficial &gt; medio &gt; agregador/wiki; las cifras sensibles sin agencia u oficial quedan como provisionales.</p>
+  <p class="meta"><b>Criterio de inclusión:</b> episodios con componente juvenil/estudiantil, detonante local identificable y cobertura internacional. Es una selección editorial, no aleatoria ni exhaustiva; el orden no implica continuidad temporal. <b>Nivel de fuente:</b> agencia/oficial &gt; medio &gt; agregador/wiki; las cifras sensibles sin agencia u oficial quedan como provisionales.</p>
   <p class="meta"><b>{_verif_summary(epis)}</b></p>
   <div class="filters">
     <label>Región <select id="f-pais"><option value="">Todas</option>{''.join(f'<option value="{esc(x)}">{esc(x)}</option>' for x in sorted({str(e.get('pais')) for e in epis}))}</select></label>
@@ -1045,7 +1045,7 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Youth wave: what is documented and what the radar does not see</title>
+<title>Youth protests: amplification in captured platforms (pilot)</title>
 <meta name="robots" content="noindex,follow">
 <meta name="description" content="What is documented about the youth protest wave, what repeats in the radar, and what cannot be concluded.">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
@@ -1055,7 +1055,7 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <main class="wrap">
 <section class="hero">
   <p class="kicker">Amplification pilot</p>
-  <h1>Youth wave: what is documented and what the radar does not see</h1>
+  <h1>Youth protests: amplification in captured platforms</h1>
   <p class="lead">From grievance to the street and from the street to the feed. What is documented, what is repeated, and what remains attribution. The radar measures amplification and reach; it does not identify authors or intent.</p>
   <p><span class="badge">Pilot</span><span class="badge">No attribution</span><span class="badge">Linked sources</span><a class="badge" href="./">Español</a></p>
   <div class="hero-stats">
@@ -1116,7 +1116,7 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <section>
   <h2>Curated episodes</h2>
   <p class="meta">No public list of demands is invented. The episode-to-cluster link is manual and revisable; it does not confirm the episode. Sources accessed 26 Oct 2026.</p>
-  <p class="meta"><b>Inclusion criterion:</b> five episodes with a youth/student component, an identifiable local trigger and international coverage. This is an editorial selection, neither random nor exhaustive; order does not imply continuity. <b>Source level:</b> agency/official &gt; media &gt; aggregator/wiki; sensitive figures without an agency or official source remain provisional.</p>
+  <p class="meta"><b>Inclusion criterion:</b> curated episodes with a youth/student component, an identifiable local trigger and international coverage. This is an editorial selection, neither random nor exhaustive; order does not imply continuity. <b>Source level:</b> agency/official &gt; media &gt; aggregator/wiki; sensitive figures without an agency or official source remain provisional.</p>
   <p class="meta"><b>{_verif_summary(epis, 'en')}</b></p>
   <div style="overflow:auto"><table>
     <thead><tr><th>Date</th><th>Place</th><th>Episode / status</th><th>Trigger</th><th>Declared demands</th><th>Call / radar</th></tr></thead>
@@ -1163,7 +1163,7 @@ def main() -> int:
     JSON_OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     schema = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "title": "Observatorio 29N · protestas juveniles",
+        "title": "Observatorio 29N · protestas juveniles (eco en plataformas capturadas)",
         "type": "object",
         "required": ["tema", "actualizado", "episodios", "senal"],
         "properties": {

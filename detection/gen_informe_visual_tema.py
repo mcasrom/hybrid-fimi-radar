@@ -521,6 +521,7 @@ def _anexo_protestas(con, tema):
         f"<td>{mil(r.get('eventos', 0))}</td><td>{esc(r.get('estado'))}</td></tr>"
         for r in ext.get("filas", []) if r.get("tipo") != "término genérico")
     return (f"<section><h2>Anexo curado — convocatorias, fuentes y extensión</h2>"
+            f"<p class='cs'><b>Contexto, no corpus.</b> Los episodios anteriores al 26/10 son cronología editorial y no forman parte del corpus ni del score. "
             f"<p class='cs'><b>Fuera del score y de las bandas.</b> Datos curados o léxicos; no son una muestra representativa del tema. "
             f"No se usa un eje izquierda-derecha.</p>"
             f"<h3 style='font-size:.88rem;color:{MUT}'>Convocatorias públicas ({len(convs)})</h3>"
@@ -530,8 +531,8 @@ def _anexo_protestas(con, tema):
             f"<p class='cs' style='color:#94a3b8'>La adscripción y el marco son del convocante, no de todos los participantes. "
             f"<a href='https://fimi.viajeinteligencia.com/casos/protestas/'>Ficha de caso</a> · "
             f"<a href='/datos/convocatorias.json'>JSON</a></p>"
-            f"<h3 style='font-size:.88rem;color:{MUT}'>Auditoría de fuentes (5 episodios curados)</h3>"
-            f"<p class='cs'>{oficial}/5 oficial · {agencia}/5 agencia · {secundaria}/5 secundaria · {primaria}/5 primaria. "
+            f"<h3 style='font-size:.88rem;color:{MUT}'>Auditoría de fuentes ({len(eps)} episodios curados)</h3>"
+            f"<p class='cs'>{oficial}/{len(eps)} oficial · {agencia}/{len(eps)} agencia · {secundaria}/{len(eps)} secundaria · {primaria}/{len(eps)} primaria. "
             f"La auditoría es de los episodios, no de los 2.000+ eventos del tema.</p>"
             f"<h3 style='font-size:.88rem;color:{MUT}'>Extensión entre países (exploratoria)</h3>"
             f"<div style='overflow:auto'><table style='width:100%;border-collapse:collapse;font-size:.76rem'>"
@@ -571,6 +572,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
     except Exception:
         _ver = "desarrollo"
     _sello = (f"datos congelados a {_tmax_s} · código {_ver} · generado {now}")
+    _h1 = ("Protestas juveniles: eco en plataformas capturadas" if tema == "protestas_juveniles" else nombre)
     _cc = load_clusters_counts().get(tema, {})
     _n_raw = _cc.get("raw") or n
     _n_dedup = _cc.get("dedup") or kpi.get("n_excl", n)
@@ -953,8 +955,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 """
     _sync_n = int((salud or {}).get("sync", 0) or 0)
     if tema == "protestas_juveniles":
-        _page_title = "Protestas juveniles: mucho eco, sin coordinación confirmada · Observatorio"
-        _og_title = "Protestas juveniles: mucho eco, sin coordinación confirmada"
+        _page_title = "Protestas juveniles: eco en plataformas capturadas · Observatorio"
+        _og_title = "Protestas juveniles: eco en plataformas capturadas"
         _og_desc = (f"{mil(kpi['n_ev'])} eventos observados · {_sync_n} sincronías entre cuentas · "
                     f"{len(ev_low_alta)} candidatos de evidencia baja. Señal ≠ atribución.")
         _robots = "noindex,follow"
@@ -994,7 +996,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     </svg>
     <div>
       <div class="eyebrow">FIMI · Inteligencia de fuentes abiertas</div>
-      <h1>{esc(nombre)}</h1>
+      <h1>{esc(_h1)}</h1>
       <div class="sub">Informe visual de observación · acumulado desde {esc(_ini_s)} (ventana {ventana} d) · {esc(_sello)}</div>
     </div>
   </div>

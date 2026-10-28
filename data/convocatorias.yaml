@@ -41,8 +41,8 @@ convocatorias:
     url_publica: https://www.eldebate.com/espana/20261027/red-blocus-desconvoca-manifestacion-violenta-sabado-madrid-poli-vuelto-enterar_474285.html
     estado: desconvocada
     fuente: El Debate
-    confianza: media
-    nota: "Desconvocatoria según el medio; no se accede al grupo privado. La adscripción es del convocante, no de los participantes."
+    confianza: baja
+    nota: "Desconvocatoria según El Debate; no verificada por el convocante ni por el grupo privado. El contraste posterior no localizó confirmación."
   - id: VAL-2026-10-31
     fecha_detectada: 2026-10-27
     fecha_evento: 2026-10-31
@@ -57,8 +57,8 @@ convocatorias:
     url_publica: https://www.abc.es/espana/comunidad-valenciana/policia-monitoriza-pasos-focus-valencia-sabado-halloween-20261027121307-nt.html
     estado: anunciada
     fuente: ABC
-    confianza: media
-    nota: "La Policía monitoriza la convocatoria; estado público, no confirmación de asistencia. Sin pliego público localizado; la adscripción es del convocante."
+    confianza: baja
+    nota: "La Policía monitoriza la convocatoria; estado público según ABC, no confirmación de asistencia. El contraste posterior no la localizó en otras fuentes. Sin pliego público; la adscripción es del convocante."
   - id: BCN-2026-10-31
     fecha_detectada: 2026-10-26
     fecha_evento: 2026-10-31

@@ -8,7 +8,7 @@
 # localizado. Si no, queda vacío y se usan fuentes periodísticas enlazadas.
 # No se atribuye autoría ni intención sin prueba independiente.
 #
-# Actualizado: 2026-10-26.
+# Actualizado: 2026-10-28.
 
 - id: ESP-BARCELONA-2026-10-24
   tipo_detonante: redes
@@ -28,7 +28,8 @@
   fuentes:
     - https://www.infobae.com/espana/2026/10/25/que-es-blocus-la-red-de-perfiles-anonimos-de-tiktok-que-movilizo-a-cientos-de-jovenes-antes-de-los-disturbios-de-barcelona/
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
-  nota: "Más de cien detenidos, una cuarta parte menores (Infobae). Los Mossos descartan que los detenidos vinieran de Francia. La mención a la red de cuentas es una cita de la fuente; el radar no observa sincronías ni confirma organización."
+    - https://cronicaglobal.elespanol.com/politica/20261027/jueza-vacios-contenido-disturbios-blocus-barcelona-saquear/1003742806755_0.html
+  nota: "Más de cien detenidos; 76 menores según EFE/Crónica Global (no una cuarta parte). El total exacto no está confirmado. Los Mossos descartan que los detenidos vinieran de Francia. La red de cuentas es una cita de la fuente; el radar no observa sincronías ni confirma organización."
   verificacion:
     estado: secundaria
     nivel: medio
@@ -54,11 +55,36 @@
   fuente_primaria: null
   fuentes:
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
-  nota: "Las dos cifras se muestran juntas porque no son comparables con recuentos de otros países."
+  nota: "Las cifras de 400.000 y 800.000 son declaraciones de Gobierno y sindicatos citadas por Tovima; no se han podido verificar. El episodio principal de detenciones fue el 17/10. No se comparan con recuentos de otros países."
   verificacion:
     estado: secundaria
     nivel: medio
     nota: "Cifras de Gobierno y sindicatos citadas por Tovima; no se localizó acta oficial comparable."
+
+- id: FRA-2026-10-17
+  tipo_detonante: educacion
+  lineage_refs: []
+  pais: Francia
+  ciudad: Varias ciudades
+  fecha: 2026-10-17
+  nombre: Disturbios y detenciones en la movilización francesa
+  estado: "Detenciones documentadas; autoría de la violencia no identificada"
+  detonante: "Protesta estudiantil y social; prohibiciones posteriores de manifestación"
+  convocantes: "Convocatorias juveniles y sindicatos; no hay un único titular identificado"
+  demandas:
+    - "Contra las prohibiciones de manifestación"
+    - "Educación y coste de vida"
+  llamada: "Jornada de movilizaciones y disturbios; unas 2.500 detenciones según prensa"
+  alcance: "Varias ciudades francesas; prohibiciones de manifestación después"
+  fuente_primaria: null
+  fuentes:
+    - https://www.elsaltodiario.com/francia/macron-prohibe-manifestarse-decenas-ciudades-frenar-revuelta-estudiantil
+    - https://www.sudradio.fr/politique/emeutes-du-17-octobre-les-syndicats-vont-ils-encore-manifester
+  nota: "Cifra de unas 2.500 detenciones según prensa; no confirmada con fuente primaria. Se separa del 24/10, que es otra jornada."
+  verificacion:
+    estado: secundaria
+    nivel: medio
+    nota: "Dos fuentes secundarias; no se localizó comunicado de la Prefectura."
 
 - id: ITA-MILAN-2026-10-17
   tipo_detonante: coste
@@ -83,13 +109,13 @@
     nivel: agencia
     nota: "Europa Press reproducido por Estrategia; no contrastado con el Ministerio del Interior italiano."
 
-- id: ALB-2026-10-24
+- id: ALB-2026-10-13
   tipo_detonante: corrupcion
   lineage_refs:
   - protestas_juveniles_cluster_030@1793020772
   pais: Albania
   ciudad: Tirana
-  fecha: 2026-10-24
+  fecha: 2026-10-13
   nombre: Protestas contra el complejo hotelero y el Gobierno de Rama
   estado: "Protestas documentadas; la atribución de «guerra híbrida» no tiene evidencia pública"
   detonante: "Complejo hotelero de lujo en una reserva natural; corrupción y coste educativo"
@@ -98,12 +124,14 @@
     - "Dimisión del primer ministro Edi Rama"
     - "Alto al complejo hotelero en la reserva"
     - "Universidades y educación pública"
-  llamada: "Protestas ante el Gobierno; cinco meses de movilización"
+  llamada: "Protestas ante el Gobierno; la escalada estudiantil fue del 13 al 16/10"
   alcance: "Tirana y otras ciudades albanesas"
   fuente_primaria: null
   fuentes:
     - https://tovima.com/world/gen-z-in-rebellion-for-an-uncertain-future
-  nota: "El Gobierno habla de «guerra híbrida»; expertos consultados por DW no ven evidencia pública de esas atribuciones."
+    - https://www.news4jax.com/news/2026/10/15/clashes-break-out-for-a-third-day-in-albania-as-anti-government-protests-swell/
+    - https://www.omanobserver.om/ampArticle/1191983
+  nota: "El 24/10 no debe presentarse como inicio: la escalada estudiantil fue del 13 al 16/10. El Gobierno habla de «guerra híbrida»; expertos consultados por DW no ven evidencia pública de esas atribuciones."
   verificacion:
     estado: secundaria
     nivel: medio
