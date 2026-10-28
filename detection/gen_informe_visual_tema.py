@@ -646,6 +646,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
             cnt[ct] += 1
     dom_h = cnt.most_common(1)[0][0] if cnt else "—"
     dom_h_n = cnt.most_common(1)[0][1] if cnt else 0
+    dom_codes = [k for k, v in cnt.items() if v == dom_h_n] if cnt else []
+    dom_txt = " / ".join(dom_codes) if dom_codes else "—"
+    dom_desc = " / ".join(HYP_ES.get(k, k) for k in dom_codes) if dom_codes else ""
+    dom_sub = (f"{dom_h_n}/{n} cada una" if len(dom_codes) > 1 else f"{dom_h_n} de {n} clusters")
     h3 = sum(1 for c in clusters if hyp_top(c)[0] == "H3")
     # medianas de componentes del tema
     med = {k: median([c[k] for c in clusters]) for k in ("coord", "sync", "infra", "dens", "amp", "anom")}
@@ -666,10 +670,10 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
                  if ev_low_alta else "≥60")
     kpi_tiles = [
         ("clusters", n, _sub_cl),
-        ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), "en clusters"),
+        ("cuentas", kpi.get("n_au_cl", kpi["n_au"]), f"en clusters · {mil(kpi.get('n_au', 0))} en el tema"),
         ("en banda alta", len(altos), _high_sub),
-        ("hipótesis más frecuente", dom_h, "%d de %d clusters" % (dom_h_n, n)),
-        ("H3 como máx", h3, "del tema"),
+        ("hipótesis más frecuente", dom_txt, dom_sub),
+        ("H3 como hipótesis principal", h3, f"de {n} clusters"),
         ("días operando", dias, f"desde {_ini_s}"),
     ]
     tiles = "".join(
@@ -755,11 +759,11 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=json'>JSON</a> "
                         f"<a href='https://fimi.viajeinteligencia.com/api/export?cluster={_mal}&fmt=gexf'>GEXF</a></span>")
     tot_ev = kpi["n_ev"]  # all-time (canónico)
-    _h3txt = (f"{h3} clusters muestran" if h3 != 1 else "1 cluster muestra")
+    _h3txt = (f"{h3} de {n} clusters tienen H3 como hipótesis principal" if n else "sin clusters con señal")
     if n:
-        lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. La hipótesis dominante del conjunto es "
-                   f"<b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters. "
-                   f"{_h3txt} señal compatible con influencia extranjera (H3). "
+        _dom_txt = (f"Las hipótesis más frecuentes son <b>{esc(dom_txt)}</b> ({esc(dom_desc)}), con {dom_h_n} de {n} clusters cada una" if len(dom_codes) > 1 else f"La hipótesis más frecuente es <b>{esc(dom_h)}</b> ({esc(HYP_ES.get(dom_h, ''))}) en {dom_h_n} de {n} clusters")
+        lectura = (f"El sistema observa <b>{n}</b> clusters con señal en el tema. {_dom_txt}. "
+                   f"{_h3txt}; el H3=55 del clúster top es una compatibilidad débil, no su hipótesis principal. "
                    f"La infraestructura y la densidad de red son altas, pero <b>esto no permite atribuir actor</b>: "
                    f"una banda alta es amplificación medida, no campaña confirmada.")
         concl = (f"Puntuación global máxima {top['ov']:.0f}/100 (banda: {esc(BAND_ES[bd])}) con {len(altos)} de {n} clusters en banda alta. "
@@ -1013,8 +1017,8 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <div><b>Resumen del tema</b><p class="cs" style="margin-top:6px">
       Score máximo del tema <span style='color:#94a3b8'>(14 d)</span>: <b>{esc(s.get('max', '—'))}</b>/100 (max) · {len(altos)} en banda alta · {s.get('sync', 0)} sincronías entre cuentas distintas ·
       fuente dominante <span style='color:#94a3b8'>(14 d)</span> {esc(_dsrc)} ({_dpct:.0f}%).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes (un evento = una pieza capturada).</p>
-      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventana de captura del sistema: 90 días · Actividad de ESTE tema: {dias} días (desde {_ini_s}). El panel del dashboard asigna por vista ({_n_raw} en esa vista); este informe analiza por tema_id ({n_raw_inf}). No son universos idénticos ni se suman. La banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Cifras del informe: <b>{n_raw_inf}</b> clusters cargados (tema_id) · <b>{n}</b> con señal (≥3 cuentas) · <b>{n_par_inf}</b> grupos pequeños agregados · <b>{mil(tot_ev)}</b> eventos · <b>{mil(kpi.get('n_au_cl', 0))}</b> cuentas en clusters · <b>{mil(kpi.get('n_au', 0))}</b> cuentas en el tema · <b>{mil(kpi.get('n_fuentes', 0))}</b> fuentes (un evento = una pieza capturada).</p>
+      <p class="cs" style="margin-top:2px;color:#94a3b8">Ventanas: <b>captura 90 d · análisis 14 d · {dias} d operando · contexto de 8 semanas</b>. El contexto de 8 semanas es histórico de captura, no una línea base del tema. El panel del dashboard asigna por vista ({_n_raw} en esa vista); este informe analiza por tema_id ({n_raw_inf}). No son universos idénticos ni se suman. La banda alta usa el mismo umbral (≥60) en ambas superficies. <i>Eventos, fuentes y cuentas: canónicos del panel.</i></p>
       <p class="cs" style="margin-top:2px;color:#94a3b8">«Sincronías entre cuentas distintas» no es lo mismo que la hipótesis H2b (sincronía sin operador): pueden coexistir 0 sincronías y una H2b frecuente.</p></div>
   </div>
   {tema_def}
@@ -1028,7 +1032,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div><h2>Cluster top (mayor score{', evidencia baja' if top_low else ''}) — {esc(top['label']) if top else 'sin clúster con señal'}</h2>
     <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}{" <span class='chip' style='background:#fef3c7;color:#92400e'>candidato, no conclusión</span>" if top_low else ""}</p>
     {"<p class='cs' style='color:#92400e'><b>Evidencia baja:</b> el score alto no compensa un n pequeño. Se muestra para seguimiento, no como hallazgo principal.</p>" if top_low else ""}
-    {"<p class='cs' style='color:#92400e'><b>Sin contenido suficiente:</b> no hay dominios asociados; el top por score no se presenta como hallazgo.</p>" if top and not top["doms"] else ""}
+    {"<p class='cs' style='color:#92400e'><b>Sin dominios editables:</b> no hay dominios asociados; puede haber solo agregadores, acortadores o plataformas excluidas (p. ej. briefly.co). El top por score no se presenta como hallazgo.</p>" if top and not top["doms"] else ""}
     <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (compatibilidad, no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
     <p class="cs" style="margin-top:4px;color:#92400e"><b>H2 no usa el componente «Coordinación (bruta)»:</b> usa <code>synchronization = min(100, coordinación bruta × 12)</code> y añade estructura. Por eso H2 puede ser alto aunque la coordinación bruta sea baja.</p>
@@ -1081,7 +1085,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <p class="cs" style="margin-top:0">Número de clusters cuya hipótesis de <b>mayor puntuación</b> es cada una.
     El tema puede tener una hipótesis más frecuente distinta de la del <b>cluster top</b> (arriba).</p>
     {_dist_dom}
-    <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_h)} · {esc(HYP_ES.get(dom_h,''))}</b> ({dom_h_n} de {n} clusters).</p>
+    <p class="cs" style="margin-top:8px">Más frecuente: <b>{esc(dom_txt)} · {esc(dom_desc)}</b> ({dom_sub}).</p>
     <p class="cs" style="margin-top:4px;color:#94a3b8">H2b = <b>sincronía temporal alta SIN evidencia de estructura organizada</b> (no atribuye operador). Por eso puede ser la más frecuente del tema y, a la vez, valer 0 en un cluster concreto con estructura —ese puntúa H2 (compatible con coordinación doméstica).</p>
     <p class="cs" style="margin-top:8px"><b>Cómo leer H2 (verificado en código):</b> H2 = estructura mutua (núcleo k≥2 de ≥3 cuentas con URLs/dominios compartidos) × (sincronía temporal×0,55 + resto). La «sincronía» de H2 es proximidad temporal continua, <b>no</b> el contador «sincronías entre cuentas distintas» (ese exige ≥5 cuentas sin dominante, mismo contenido y ventana ≤24 h). Por eso una H2 alta puede coexistir con 0 sincronías contadas; H2b vale 0 por construcción cuando hay estructura. Detalle en <a href="/metodo.html">Método</a>.</p></section>
 </div>

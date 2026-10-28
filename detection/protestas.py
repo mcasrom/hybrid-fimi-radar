@@ -762,6 +762,9 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     hi_accounts = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("cuentas", 0)
     hi_events = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("eventos", 0)
     hi_low = hi_events < 30 or hi_accounts < 8
+    _high_cases = [c for c in (s.get("top_signal") or s.get("top_clusters") or [])
+                   if c.get("banda") in ("HIGH", "CRITICAL")]
+    high_low_n = sum(1 for c in _high_cases if c.get("cuentas", 0) < 8 or c.get("eventos", 0) < 30)
     cuentas_cluster = int(s.get("cuentas_cluster") or 0)
     bandas_signal = s.get("bandas_signal") or {}
     small_bands = {b: max(0, int(s["bandas"].get(b, 0)) - int(bandas_signal.get(b, 0)))
@@ -821,18 +824,19 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
                 f"<th>Países en 72 h</th><th>Eventos</th><th>Cuentas</th><th>Estado</th></tr></thead>"
                 f"<tbody>{_ext_rows}</tbody></table></div>"
                 f"<p class='meta'>«Extensión observada» = ≥2 países y ≥10 eventos; no implica coordinación. "
-                f"Los términos genéricos se muestran para contexto, no como símbolos de campaña.</p></section>")
+                f"Los términos genéricos se muestran para contexto, no como símbolos de campaña.</p>"
+                f"<p class='meta'><b>Blocus</b> es también una palabra francesa («bloqueo»): la coincidencia en Francia e Italia puede ser léxica, no la misma consigna. No se interpreta como extensión coordinada.</p></section>")
     takeaways = [
         f"<b>{n(s.get('signal_clusters', 0))} de {n(s['clusters'])}</b> clústeres tienen señal (≥3 cuentas); {n(s.get('small_clusters', 0))} son grupos pequeños.",
         f"<b>{n(high)}</b> en banda alta y <b>0</b> sincronías entre cuentas distintas. "
-        f"El único caso tiene <b>{'evidencia baja' if hi_low else 'evidencia suficiente'}</b> "
-        f"({n(hi_events)} eventos, {n(hi_accounts)} cuentas).",
+        f"<b>{n(high_low_n)} de {n(high)}</b> tienen evidencia baja; el de mayor score "
+        f"({n(hi_events)} eventos, {n(hi_accounts)} cuentas) es un candidato, no una conclusión.",
         f"<b>{n(s.get('cuentas', 0))}</b> cuentas distintas en el tema; <b>{n(cuentas_cluster)}</b> dentro de clústeres.",
         f"Bandas: <b>{esc(bandas_sig_txt)}</b> sobre {n(s.get('signal_clusters', 0))} con señal. "
         f"Los {n(s.get('small_clusters', 0))} grupos pequeños aportan <b>{esc(bandas_small_txt)}</b>; total, {esc(bandas_all_txt)}.",
         f"La conversación viene sobre todo de <b>{esc(top_src or '—')}</b>.",
         f"Persistencia: hasta <b>{n(pers.get('max_ciclos', 0))} ciclos de pipeline</b> por linaje; "
-        f"no equivale a una línea base de ocho semanas.",
+        f"hasta cinco pueden caer en menos de 24 h. No equivale a una línea base de ocho semanas.",
     ]
     _base = s.get("base") or {}
     if _base:
@@ -840,7 +844,8 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
             f"<b>Base de comparación:</b> {n(_base.get('high', 0))} de {n(_base.get('clusters', 0))} "
             f"clusters en banda alta en otros {n(_base.get('temas', 0))} temas "
             f"({_base.get('rate', 0):.1f} %); este tema, {n(high)} de {n(s.get('signal_clusters', 0))} "
-            f"({_base.get('tema_rate', 0):.1f} %). Referencia operativa, no control neutral."
+            f"({_base.get('tema_rate', 0):.1f} %). Referencia operativa, no control neutral. "
+            f"Diferencia descriptiva, no tendencia: {n(high)} clústeres y {n(high_low_n)} de {n(high)} con evidencia baja."
         )
 
     return f"""<!doctype html>
@@ -882,7 +887,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <li><b>Fuentes primarias.</b> No se localizó fuente primaria en 5 de 5 episodios. Las cifras de víctimas y detenidos proceden de fuentes secundarias y no están verificadas por el radar; se muestran para contexto, no como dato propio.</li>
 <li><b>Representatividad.</b> Bluesky y Google News dominan la captura; no es una muestra representativa de la conversación juvenil.</li>
 <li><b>Personas.</b> No se identifican menores ni cuentas individuales. Los datos de detenciones son agregados y provisionales.</li>
-<li><b>Línea base.</b> El contexto de ocho semanas es histórico de captura del sistema, no una línea base del tema. El piloto acumula hasta cinco ciclos de pipeline en menos de 24 h; «anómalo» es relativo a esta ventana y un cambio de pesos movería el corte de 60.</li>
+<li><b>Línea base.</b> El contexto de ocho semanas es histórico de captura del sistema, no una línea base del tema. El piloto acumula hasta diez ciclos de pipeline por linaje; hasta cinco pueden caer en menos de 24 h. «Anómalo» es relativo a esta ventana y un cambio de pesos movería el corte de 60.</li>
 </ul></div>
 
 <section>
@@ -986,6 +991,9 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     hi_accounts = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("cuentas", 0)
     hi_events = (s.get("top_signal") or s.get("top_clusters") or [{}])[0].get("eventos", 0)
     hi_low = hi_events < 30 or hi_accounts < 8
+    _high_cases = [c for c in (s.get("top_signal") or s.get("top_clusters") or [])
+                   if c.get("banda") in ("HIGH", "CRITICAL")]
+    high_low_n = sum(1 for c in _high_cases if c.get("cuentas", 0) < 8 or c.get("eventos", 0) < 30)
     cuentas_cluster = int(s.get("cuentas_cluster") or 0)
     tie59 = int(s.get("tie59_signal") or 0)
     tie59_all = int(s.get("tie59_all") or 0)
@@ -1062,11 +1070,11 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 
 <div class="takeaways"><h2>Key takeaways</h2><ul>
 <li><b>{n(s.get('signal_clusters', 0))} of {n(s['clusters'])}</b> clusters have signal (≥3 accounts); {n(s.get('small_clusters', 0))} are small groups.</li>
-<li><b>{n(high)}</b> in high band and <b>0</b> cross-account synchronies. The only case has <b>{'low evidence' if hi_low else 'enough evidence'}</b> ({n(hi_events)} events, {n(hi_accounts)} accounts).</li>
+<li><b>{n(high)}</b> in high band and <b>0</b> cross-account synchronies. <b>{n(high_low_n)} of {n(high)}</b> have low evidence; the highest-scoring one ({n(hi_events)} events, {n(hi_accounts)} accounts) is a candidate, not a conclusion.</li>
 <li><b>{n(s.get('cuentas', 0))}</b> distinct topic accounts; <b>{n(cuentas_cluster)}</b> inside clusters.</li>
 <li>Bands: <b>{esc(bandas_sig_txt)}</b> across {n(s.get('signal_clusters', 0))} with signal. The {n(s.get('small_clusters', 0))} small groups add <b>{esc(bandas_small_txt)}</b>; total, {esc(bandas_all_txt)}.</li>
 <li>Coverage is dominated by <b>{esc(top_src or '—')}</b>.</li>
-<li>Persistence: up to <b>{n(pers.get('max_ciclos', 0))} pipeline cycles</b> per lineage; this is not an eight-week baseline.</li>
+<li>Persistence: up to <b>{n(pers.get('max_ciclos', 0))} pipeline cycles</b> per lineage; up to five may fall within 24 h. This is not an eight-week baseline.</li>
 {_base_en}
 </ul></div>
 
