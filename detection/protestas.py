@@ -703,6 +703,23 @@ def _verif_summary(epis: list, lang: str = "es") -> str:
             f"{c.get('secundaria', 0)}/{len(epis)} secundaria, 0/{len(epis)} primaria.")
 
 
+SHARE_JS = """<script>
+function fimiShareMin(btn){
+  var u = new URL(location.href);
+  u.searchParams.set("utm_source","compartir");
+  u.searchParams.set("utm_medium","web-share");
+  var h = document.querySelector("h1");
+  var data = {title: document.title, text: h ? h.textContent : document.title, url: u.toString()};
+  if (navigator.share) { navigator.share(data).catch(function(){}); return; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(data.url).then(function(){
+      var t=btn.textContent; btn.textContent="Enlace copiado";
+      setTimeout(function(){btn.textContent=t;},2000);
+    }).catch(function(){ prompt("Copia el enlace", data.url); });
+  } else { prompt("Copia el enlace", data.url); }
+}
+</script>"""
+
 def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     eps_html = []
     for i, e in enumerate(sorted(epis, key=lambda x: (fecha(x.get("fecha")), str(x.get("pais")))), 1):
@@ -853,6 +870,15 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <title>Protestas juveniles: eco en plataformas capturadas (piloto)</title>
 <meta name="robots" content="noindex,follow">
 <meta name="description" content="Piloto de amplificación: qué se observa en Bluesky y Google News sobre las protestas juveniles, qué es contexto y qué no puede concluirse.">
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/casos/protestas/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Protestas juveniles: eco en plataformas capturadas">
+<meta property="og:description" content="Piloto de amplificación: eco en Bluesky y Google News, contexto curado y límites. Sin atribución de actor.">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/protestas/">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-protestas_juveniles.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Protestas juveniles: eco en plataformas capturadas">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
@@ -869,6 +895,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     <div class="hero-stat"><b>{n(s['clusters'])}</b><span>clústeres</span></div>
     <div class="hero-stat"><b>{n(high)}</b><span>en banda alta</span></div>
   </div>
+  <p><button type="button" onclick="fimiShareMin(this)" style="border:1px solid #475569;background:#fff;color:#0b1220;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer">Compartir</button></p>
 </section>
 
 <div class="note"><b>Cómo leer esta página.</b> Los KPIs y los clústeres salen del etiquetado temático del piloto. Las demandas y llamadas son una selección curada de fuentes públicas, no una extracción automática. Una <span class="term" title="Banda de score que indica amplificación anómala; no confirma coordinación ni autoría.">banda alta</span> significa <b>amplificación anómala</b>, no coordinación confirmada. Actualizado: {esc(ahora)} UTC · última observación: {dt(s['hasta'])}.</div>
@@ -950,6 +977,7 @@ def render(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <footer>Elaborado con asistencia de IA y revisión humana. Fuentes enlazadas en el texto. — @pruebapublica<br>
 Piloto de amplificación · no indexado hasta revisión · {esc(ahora)} UTC</footer>
 </main>
+{SHARE_JS}
 {JS_FILTER}
 </body></html>"""
 
@@ -1048,6 +1076,15 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <title>Youth protests: amplification in captured platforms (pilot)</title>
 <meta name="robots" content="noindex,follow">
 <meta name="description" content="What is documented about the youth protest wave, what repeats in the radar, and what cannot be concluded.">
+<link rel="canonical" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Youth protests: amplification in captured platforms">
+<meta property="og:description" content="Pilot: echo in Bluesky and Google News, curated context and limits. No actor attribution.">
+<meta property="og:url" content="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
+<meta property="og:image" content="https://fimi.viajeinteligencia.com/informes/visual/og-protestas_juveniles.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Youth protests: amplification in captured platforms">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/casos/protestas/">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/casos/protestas/en.html">
 <style>{CSS}</style></head><body>
@@ -1064,6 +1101,7 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
     <div class="hero-stat"><b>{n(s['clusters'])}</b><span>clusters</span></div>
     <div class="hero-stat"><b>{n(high)}</b><span>in high band</span></div>
   </div>
+  <p><button type="button" onclick="fimiShareMin(this)" style="border:1px solid #475569;background:#fff;color:#0b1220;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer">Share</button></p>
 </section>
 
 <div class="note"><b>How to read this page.</b> KPIs and clusters come from the pilot's topic tagging. Demands and calls are curated citations, not automatic extraction. A <span class="term" title="A score band that indicates anomalous amplification; it does not confirm coordination or authorship.">high band</span> means <b>anomalous amplification</b>, not confirmed coordination. Updated: {esc(ahora)} UTC · last observation: {dt(s['hasta'])}.</div>
@@ -1139,7 +1177,9 @@ def render_en(epis: list, s: dict, ahora: str, conv: dict | None = None) -> str:
 <p><a href="/datos/protestas.json">Open data (JSON)</a> · <a href="/datos/protestas.schema.json">JSON schema</a> · <a href="/informes/visual/protestas_juveniles.html">Visual report</a> · <a href="./">Español</a> · <a href="/">Back to radar</a></p>
 <footer>Produced with AI assistance and human review. Linked sources. — @pruebapublica<br>
 Amplification pilot · noindex until review · {esc(ahora)} UTC</footer>
-</main></body></html>"""
+</main>
+{SHARE_JS}
+</body></html>"""
 
 
 def main() -> int:

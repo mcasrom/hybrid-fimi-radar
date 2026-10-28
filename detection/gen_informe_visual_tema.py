@@ -546,6 +546,23 @@ def _verif_state(e):
     return v.get("estado") if isinstance(v, dict) else None
 
 
+SHARE_JS = """<script>
+function fimiShareMin(btn){
+  var u = new URL(location.href);
+  u.searchParams.set("utm_source","compartir");
+  u.searchParams.set("utm_medium","web-share");
+  var h = document.querySelector("h1");
+  var data = {title: document.title, text: h ? h.textContent : document.title, url: u.toString()};
+  if (navigator.share) { navigator.share(data).catch(function(){}); return; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(data.url).then(function(){
+      var t=btn.textContent; btn.textContent="Enlace copiado";
+      setTimeout(function(){btn.textContent=t;},2000);
+    }).catch(function(){ prompt("Copia el enlace", data.url); });
+  } else { prompt("Copia el enlace", data.url); }
+}
+</script>"""
+
 def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_all=None, anexo=None):
     now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -1003,6 +1020,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
   <div class="btns">
     <a href="https://fimi.viajeinteligencia.com/#{esc(tema)}">&larr; Radar</a>
     <a href="/informes/{esc(tema)}/" target="_blank">Informe semanal</a>
+    <button type="button" onclick="fimiShareMin(this)">Compartir</button>
     <button onclick="window.print()">Imprimir / Guardar PDF</button>
   </div>
 </div></div>
@@ -1101,6 +1119,7 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
 </div>
 <div class="ft wrap">Informe visual generado con datos del sistema FIMI ({esc(gen)} · {esc(_sello)}) ·
 <a href="https://fimi.viajeinteligencia.com/metodo.html">método y límites</a></div>
+{SHARE_JS}
 </body></html>"""
 
 

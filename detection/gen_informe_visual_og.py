@@ -120,7 +120,7 @@ def render(con, tema, nombre):
     d.text((64, 60), "OBSERVATORIO DE AMPLIFICACIÓN · INFORME VISUAL", font=F(BOLD, 19), fill=ACCENT)
     if tema == "protestas_juveniles":
         ev, _h, low, sync = _protestas_kpis(con)
-        title = "Protestas juveniles: mucho eco, sin coordinación confirmada"
+        title = "Protestas juveniles: eco en plataformas capturadas"
         subtitle = f"{ev:,} eventos observados · {sync} sincronías · {low} candidatos de evidencia baja"
         tiles = [(ev, "eventos"), (sync, "sincronías"), (low, "candidatos de evidencia baja")]
     else:
