@@ -50,8 +50,10 @@ PLANTILLAS = [
 def _temas_activos():
     import yaml
     cfg = yaml.safe_load(open(ROOT / "config.yaml"))
+    # Solo temas sociales publicables. El piloto de protestas queda fuera
+    # mientras siga en noindex y con revisión editorial pendiente.
     return [(t, d.get("nombre", t)) for t, d in cfg.get("temas", {}).items()
-            if d.get("estado") in ("produccion", "piloto")]
+            if d.get("estado") in ("produccion", "piloto") and t != "protestas_juveniles"]
 
 
 def _senal(tema):

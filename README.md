@@ -153,9 +153,9 @@ de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
 Snapshot (10/Oct/2026, **v0.2.1**; las cifras crecen cada ciclo — el dashboard
 muestra el valor vivo):
 
-- **9 temas activos** (8 en producción + 1 en piloto: `defensa_espana`). **`elecciones` reabierto el 26-oct-2026 como núcleo FIMI**, con **ventana de 14 días** y sin consultas genéricas (`elecciones`, `electoral`, `urnas`, `papeletas`, `sondeos`, `votantes`, `medio mandato`, `wahlen`, `wähler`); `espana_elecciones` (29-N) está en producción.
+- **3 temas con captura** (2 en producción: `frontera_sur` y `espana_elecciones`; 1 piloto: `protestas_juveniles`, `noindex`) y **7 congelados**: `eeuu_politica`, `oriente_medio`, `sahel`, `energia`, `elecciones`, `inteligencia_artificial` y `defensa_espana`. Los congelados conservan datos, casos, informes y API read-only; no se borran URLs. `geopolitica_ue_marruecos` y `espana_amenazas_hibridas` son históricos cerrados.
   `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
-- **~233.000 eventos** y **~1.600 clusters** (9 temas activos, a 10/Oct/2026): la API
+- **~367.000 eventos** y **~423 clusters** (3 temas con captura, a 28/Oct/2026): la API
   (`/api/v1/temas`) cuenta **99 en banda alta** (HIGH/CRITICAL, score ≥60) y **0 CRITICAL**.
   **Estas cifras cambian en cada ciclo** (el corpus crece): el dashboard muestra siempre el valor vivo.
 - **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
@@ -250,7 +250,7 @@ muestra el valor vivo):
   y el resto se carga **bajo demanda** (`resto.html`); la portada baja de ~2,2 MB a **~1,6 MB**
   (brotli ~214 KB) sin perder barras.
 - **Informe visual por tema** (10-oct): una página editorial por tema en
-  `/informes/visual/<tema>.html` (9 temas + índice) con KPIs, **radar de componentes**,
+  `/informes/visual/<tema>.html` (3 temas activos + índice; los informes congelados se conservan) con KPIs, **radar de componentes**,
   cluster de mayor score con sus **hipótesis**, 3 clusters destacados, dominios que
   amplifican y **conclusión**; botones **Imprimir/Guardar PDF** y export **CSV/JSON/GEXF**.
   Botón **«Informe visual ↗»** en cada panel del dashboard y desplegable **«Informes ▾»**.
@@ -390,7 +390,7 @@ Documentación en [`docs/`](docs/): `TAXONOMIA.md`, `SCORING.md`, `ATRIBUCION-LI
 detallada de este README (histórico): [`docs/README-detallado.md`](docs/README-detallado.md).
 Mapa del sistema en una página (A4): [`docs/fimi-wallchart-A4.png`](docs/fimi-wallchart-A4.png) · [`docs/fimi-wallchart-A4.pdf`](docs/fimi-wallchart-A4.pdf) (para imprimir/adjuntar) ·
 demo en vídeo (69 s): https://fimi.viajeinteligencia.com/demo.html.
-Informes semanales por tema (`detection/informe_tema.py`; cron **lunes 09:00** vía `scripts/informes_semanales.sh` para los **9 temas** + tarjeta visual `gen_informe_visual.py`, que acepta `--semana`): https://fimi.viajeinteligencia.com/informes/`<tema>`/ (HTML+JSON+CSV de contrastes+PNG, con histórico). El **desplegable «Informes ▾»** del dashboard lista los **9 visuales** (una página) y los **9 semanales**. Coherencia verificada: la tarjeta se genera del **mismo JSON** que la ficha (el cron las produce seguidas); las semanas antiguas sin tarjeta se pueden regenerar desde su JSON con `--semana`. Las etiquetas narrativas se curan a mano en `data/narrativas.json` desde los títulos reales más repetidos; sin etiqueta, el informe usa términos automáticos marcados `(auto)`. Privacidad: las **@cuentas y los nombres de particulares se enmascaran en sitio** (`[cuenta]`/`[nombre]`, el resto del titular se conserva) y las **amenazas/insultos se anulan** (no se reproducen); todo se audita (`redactados_privacidad`). Marcos narrativos neutros; cada ficha enlaza su **linaje persistente `/c/`** (estable entre ciclos) y los snapshots se congelan en `historial/`. Las bandas de score viven en **una sola fuente** (`detection/bandas.py`).
+Informes semanales por tema (`detection/informe_tema.py`; cron **lunes 09:00** vía `scripts/informes_semanales.sh` para los **temas con captura** + tarjeta visual `gen_informe_visual.py`, que acepta `--semana`): https://fimi.viajeinteligencia.com/informes/`<tema>`/ (HTML+JSON+CSV de contrastes+PNG, con histórico). El **desplegable «Informes ▾»** del dashboard lista los **visuales activos**; los de temas congelados siguen accesibles por URL. Coherencia verificada: la tarjeta se genera del **mismo JSON** que la ficha (el cron las produce seguidas); las semanas antiguas sin tarjeta se pueden regenerar desde su JSON con `--semana`. Las etiquetas narrativas se curan a mano en `data/narrativas.json` desde los títulos reales más repetidos; sin etiqueta, el informe usa términos automáticos marcados `(auto)`. Privacidad: las **@cuentas y los nombres de particulares se enmascaran en sitio** (`[cuenta]`/`[nombre]`, el resto del titular se conserva) y las **amenazas/insultos se anulan** (no se reproducen); todo se audita (`redactados_privacidad`). Marcos narrativos neutros; cada ficha enlaza su **linaje persistente `/c/`** (estable entre ciclos) y los snapshots se congelan en `historial/`. Las bandas de score viven en **una sola fuente** (`detection/bandas.py`).
 La portada lo resume en una tarjeta («El sistema en una imagen», WebP 63 KB lazy) que enlaza al A4 y a la demo.
 
 ## 7. Licencia y contacto
