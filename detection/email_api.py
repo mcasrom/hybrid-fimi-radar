@@ -609,6 +609,24 @@ def _temas_catalogo():
     return out
 
 
+def _tema_catalogo_por_slug(slug: str):
+    """Metadatos de cualquier tema configurado, incluido congelado/cerrado.
+
+    Permite que la API read-only conserve el último snapshot de URLs ya
+    enlazadas desde el blog aunque el tema ya no se capture.
+    """
+    try:
+        import yaml
+        cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8")) or {}
+    except Exception:
+        cfg = {}
+    meta = (cfg.get("temas") or {}).get(slug)
+    if not meta:
+        return None
+    return {"tema": slug, "nombre": meta.get("nombre", slug),
+            "estado": meta.get("estado", "produccion")}
+
+
 def _api_meta():
     """Bloque meta autodescriptivo común a todas las respuestas v1."""
     r = _replay_meta()
@@ -929,8 +947,8 @@ def _api_tema(slug):
     """Clusters de un tema (snapshot actual) con componentes y atribución."""
     replay = _replay_meta()
     bands = replay["scoring"]["bands"]
-    cat = {t["tema"]: t for t in _temas_catalogo()}
-    if slug not in cat:
+    meta = _tema_catalogo_por_slug(slug)
+    if meta is None:
         return None
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -957,8 +975,8 @@ def _api_tema(slug):
     return {
         "meta": _api_meta(),
         "tema": slug,
-        "nombre": cat[slug]["nombre"],
-        "estado": cat[slug]["estado"],
+        "nombre": meta["nombre"],
+        "estado": meta["estado"],
         "snapshot_utc": snap,
         "n_clusters": len(clusters),
         "clusters": clusters,
@@ -970,8 +988,8 @@ def _api_serie_tema(slug, dias=30):
 
     Solo agregados (sin textos ni autores). dias en 1..90, por defecto 30.
     """
-    cat = {t["tema"]: t for t in _temas_catalogo()}
-    if slug not in cat:
+    meta = _tema_catalogo_por_slug(slug)
+    if meta is None:
         return None
     try:
         dias = max(1, min(90, int(dias)))
@@ -992,6 +1010,7 @@ def _api_serie_tema(slug, dias=30):
     return {
         "meta": _api_meta(),
         "tema": slug,
+        "estado": meta["estado"],
         "dias": dias,
         "serie": [{"fecha": r["d"], "eventos": r["eventos"],
                    "autores": r["autores"], "fuentes": r["fuentes"]} for r in rows],

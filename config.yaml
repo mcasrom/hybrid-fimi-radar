@@ -15,28 +15,15 @@ scoring:
     CRITICAL:
     - 80
     - 100
-  # Pesos (D, 24/Sep): se ELIMINA `network_density` (era una transformación del mismo
-  # coordination_score que `synchronization` → doble conteo) y se renormaliza a suma 1.
   weights:
     synchronization: 0.1667
     content_similarity: 0.1667
     amplification: 0.0556
     infrastructure: 0.1111
-    anomaly: 0.50
-  # Límite por escala (nº de cuentas): un cluster pequeño (2-3 cuentas) puede
-  # llegar a HIGH pero NO a CRITICAL — la señal de red orquestada a gran escala
-  # debe alarmar más que una pareja de cuentas sincronizadas. Configurable por
-  # tema en temas.<tema>.scoring.scale_min_accounts.
+    anomaly: 0.5
   scale_min_accounts:
     HIGH: 2
     CRITICAL: 10
-  # Gate de banda (S3, 20/Sep): una banda alta exige, además del score, un
-  # minimo de ANOMALIA, de CUENTAS y de NUCLEO MUTUO (k-core). Evita que el eco
-  # de medios (masa sin anomalia), las parejas (2 cuentas) o una cadena de
-  # enlaces sin ciclo griten HIGH/CRITICAL. min_kcore: 2 = las cuentas deben
-  # estar conectadas mutuamente (kcore), no solo encadenadas. Medido 29/Sep:
-  # 8 % de WATCH, 47 % de ANOMALOUS y 86 % de HIGH lo tienen -> discrimina de
-  # forma monotona. Poner 0 lo desactiva (no borra la clave, no redefine banda).
   band_gate:
     HIGH:
       min_accounts: 3
@@ -46,65 +33,29 @@ scoring:
       min_accounts: 10
       min_anomaly: 40
       min_kcore: 2
-  # Bonus por escala (05/Sep): a igualdad de componentes, más cuentas puntúan
-  # más. Corrige el orden invertido (cluster de 2 cuentas >= cluster de 49).
-  # bonus = min(cap, cuentas*per_account), acotado para no desbordar.
   scale_bonus:
     cap: 3.5
     per_account: 0.08
-  # Piso híbrido de masa (05/Sep): cluster < min_accounts cuentas => banda máx
-  # WATCH ("posible ruido de bajo volumen") SALVO evidencia adicional
-  # (>= except_events eventos sostenidos o infraestructura >= except_infra), en
-  # cuyo caso puede llegar a HIGH (79) pero NUNCA CRITICAL. Configurable por
-  # tema en temas.<tema>.scoring.scale_floor.
   scale_floor:
     min_accounts: 3
     except_events: 10
     except_infra: 80
-  # Tope por "origen único" (11/Sep): un cluster con <= max_urls URLs distintas
-  # (y >= min_events eventos) es un "eco de 1 pieza" (varias cuentas repitiendo
-  # el mismo artículo), no coordinación con producción propia. Se topa a la
-  # banda cap_band (ANOMALOUS=59) para que el eco de agencia no se lea como
-  # banda alta. Etiqueta "Eco de 1 pieza" en assessment/tarjetas. Configurable
-  # por tema en temas.<tema>.scoring.origen_unico.
   origen_unico:
     max_urls: 1
     min_events: 2
     cap_band: ANOMALOUS
-  # Tope por "eco de prensa" (21/Sep): si >= frac_min de los dominios amplificados
-  # del cluster son medios establecidos (ver detection/mainstream.py), se topa a
-  # la banda cap_band (ANOMALOUS=59). La coordinación observada es compatible con
-  # cobertura periodística normal, no con una campaña. Configurable por tema en
-  # temas.<tema>.scoring.mainstream_cap.
   mainstream_cap:
     frac_min: 0.8
     cap_band: ANOMALOUS
-  # Tope por "feed de una sola fuente" (2-Oct, auditoría externa): si el cluster
-  # es PEQUEÑO (<= max_accounts) y UNA cuenta o UN dominio concentra casi todo
-  # el contenido (>= min_account_frac o >= min_domain_frac), lo observado es la
-  # amplificación de una sola voz/feed (p. ej. una radio reposteando su web, un
-  # blog propio, un agregador), no coordinación entre actores distintos: se topa
-  # a cap_band (ANOMALOUS=59). Con masa (más cuentas) no aplica: la concentración
-  # de una fuente puede ser una campaña multicuenta que sí merece banda alta.
-  # Usa los MISMOS umbrales que detection/explicaciones.py marca
-  # `single_source_feed` como supported, para no divergir del propio detector.
-  # Configurable por tema en temas.<tema>.scoring.single_source_feed_cap.
   single_source_feed_cap:
     max_accounts: 5
     min_account_frac: 0.55
     min_domain_frac: 0.8
     cap_band: ANOMALOUS
-  # Tope por "cobertura SOBRE desinformación" (4-Oct, auditoría externa): si el
-  # rol narrativo dominante del cluster es `meta_analysis` (analiza/explica la
-  # desinformación, no la produce) es COBERTURA sobre el fenómeno, no narrativa
-  # FIMI -> máx cap_band. Coherente con detection/subtipo.py.
   meta_coverage_cap:
-    subtypes: [meta_analysis]
+    subtypes:
+    - meta_analysis
     cap_band: ANOMALOUS
-  # Tope por "eco de un solo dominio" (4-Oct): si >= min_domain_frac de los
-  # enlaces del cluster apuntan a UN mismo dominio, es amplificación de una
-  # fuente/agregador, no coordinación entre actores -> máx cap_band, también con
-  # masa (cambio de política deliberado; una campaña suele diversificar dominios).
   single_domain_cap:
     min_domain_frac: 0.9
     cap_band: ANOMALOUS
@@ -133,9 +84,6 @@ clustering:
   eps: 0.7
   min_samples: 2
   method: both
-  # Componentes conexas que superan este nº de cuentas se parten en comunidades
-  # (greedy modularity) para evitar "macro-clusters" por encadenamiento
-  # transitivo. 0 = desactivar el split. Los componentes pequeños no se tocan.
   max_component_size: 50
 weights:
   same_url: 3
@@ -151,9 +99,6 @@ features:
   - 2
   top_hashtags: 50
 coordination:
-  # Palancas de memoria del grafo de coordinación (escalar fuentes sin OOM).
-  # window_days: ventana del grafo en días (90 = alineada con la retención;
-  #   bajarla reduce memoria/cómputo). tfidf_max_features: tope de vocabulario.
   window_days: 90
   tfidf_max_features: 200000
 feeds:
@@ -201,8 +146,8 @@ feeds:
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/bbc-news/
-  note: 'BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en inglés
-    de BBC Europa por error).'
+  note: BBC Mundo en español (feed corregido 06/09 — antes apuntaba al RSS en 
+    inglés de BBC Europa por error).
   idioma: es
   analytical_relevance: media
 - nombre: Al Jazeera
@@ -232,7 +177,8 @@ feeds:
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/el-mundo/
-  note: 'Internacional (amenaza rusa/híbrida en Europa). Cobertura España-Francia-Italia.'
+  note: Internacional (amenaza rusa/híbrida en Europa). Cobertura 
+    España-Francia-Italia.
   idioma: es
   analytical_relevance: alta
   tema: defensa_espana
@@ -275,18 +221,6 @@ feeds:
   transparency: medium
   note: Independiente argelino. Línea opositora.
   idioma: fr
-  analytical_relevance: media
-# APARCADA 16-oct: feed FR muerto (fr.ami.mr/feed -> 000; solo vive la AR https://www.ami.mr/feed)
-# - nombre: AMI Mauritanie (FR)
-#   url: https://fr.ami.mr/feed
-#   tipo: oficial
-#   pais: MR
-#   bias: state
-#   reliability: mostly-factual
-#   transparency: medium
-#   note: Agencia oficial Mauritania.
-# === Fuentes añadidas 2026-09-02 ===
-#   idioma: fr   (pertenecia a AMI, aparcada)
   analytical_relevance: baja
 - nombre: Le Monde Diplomatique
   url: https://www.monde-diplomatique.fr/rss
@@ -318,16 +252,6 @@ feeds:
   factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
   note: 'Radio pública francesa. MBFC: Least Biased, Mostly Factual.'
   analytical_relevance: media
-# - nombre: France 24
-#   url: https://www.france24.com/fr/rss
-#   tipo: media
-#   idioma: fr
-#   bias: least-biased
-#   reliability: high
-#   transparency: high
-#   factcheck_url: https://mediabiasfactcheck.com/france24/
-#   note: 'TV pública francesa. Verificador IFCN. MBFC: Least Biased, High.'
-#   analytical_relevance: media
 - nombre: EUvsDisinfo
   url: https://euvsdisinfo.eu/feed/
   tipo: osint
@@ -387,15 +311,10 @@ feeds:
   bias: center
   reliability: mixed
   transparency: low
-  note: 'Versión árabe original de Hespress (matriz de fr.hespress.com), sustituye
-    a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 06/09). Medio marroquí
-    líder en audiencia; medios argelinos lo acusan de sesgo pro-Rabat. Cotejar con
-    Yabiladi/TSA Algerie.'
-# === Sondeo 2026-09-05: fuentes rusas/árabes ===
-# RT en Español: único medio estatal ruso accesible en español (TASS=EN,
-# RIA=RU, Sputnik ES DNS muerto, Telquel/Medias24/MWN 403 Cloudflare).
-# Se vigila como FUENTE DE NARRATIVAS FIMI, no como fuente fiable: su
-# contenido propio es material de análisis de desinformación.
+  note: Versión árabe original de Hespress (matriz de fr.hespress.com), 
+    sustituye a Le Desk Marruecos (403 permanente vía Cloudflare, confirmado 
+    06/09). Medio marroquí líder en audiencia; medios argelinos lo acusan de 
+    sesgo pro-Rabat. Cotejar con Yabiladi/TSA Algerie.
   analytical_relevance: baja
 - nombre: RT en Español
   url: https://actualidad.rt.com/feeds/all.rss
@@ -405,10 +324,8 @@ feeds:
   reliability: mixed
   transparency: low
   factcheck_url: https://mediabiasfactcheck.com/russia-today/
-  note: 'Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, cautela
-    máx.'
-# === Catálogo de temas activos ===
-# estado: produccion | piloto  (piloto => disclaimer visible en el dashboard)
+  note: Estatal ruso (sancionado UE desde 2022). Vigilar como narrativa FIMI, 
+    cautela máx.
   analytical_relevance: baja
 - nombre: Deutsche Welle (EN)
   url: https://rss.dw.com/rdf/rss-en-all
@@ -477,8 +394,9 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Narrativa pro-AES de línea soberanista. Contenidos vinculados al ecosistema
-    African Initiative (Rusia). Vigilar como fuente de narrativas FIMI, no fiable.'
+  note: Narrativa pro-AES de línea soberanista. Contenidos vinculados al 
+    ecosistema African Initiative (Rusia). Vigilar como fuente de narrativas 
+    FIMI, no fiable.
   analytical_relevance: alta
 - nombre: La Nouvelle Tribune
   url: https://lanouvelletribune.info/feed/
@@ -488,8 +406,6 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   note: Medio de África Occidental (Benín); cobertura regional del Sahel.
-
-
   analytical_relevance: media
 - nombre: RFI Afrique
   url: https://www.rfi.fr/fr/afrique/rss
@@ -499,7 +415,7 @@ feeds:
   reliability: mostly-factual
   transparency: high
   factcheck_url: https://mediabiasfactcheck.com/rfi-radio-france-internationale/
-  note: 'RFI África. Cobertura regional; fuente pública francesa.'
+  note: RFI África. Cobertura regional; fuente pública francesa.
   analytical_relevance: alta
 - nombre: Studio Tamani (ML)
   url: https://www.studiotamani.org/feed
@@ -509,7 +425,7 @@ feeds:
   bias: center
   reliability: mostly-factual
   transparency: medium
-  note: 'Radio local maliense (Studio Tamani). Cobertura de Mali y Sahel.'
+  note: Radio local maliense (Studio Tamani). Cobertura de Mali y Sahel.
   analytical_relevance: alta
 - nombre: Sahelien
   url: https://sahelien.com/feed/
@@ -519,7 +435,7 @@ feeds:
   bias: center
   reliability: mostly-factual
   transparency: medium
-  note: 'Medio independiente del Sahel; contexto local y verificación.'
+  note: Medio independiente del Sahel; contexto local y verificación.
   analytical_relevance: alta
 - nombre: OilPrice (EN)
   url: https://oilprice.com/rss/main
@@ -596,12 +512,6 @@ feeds:
   transparency: medium
   note: Defensa EE.UU. (industria y política).
   analytical_relevance: media
-# === Feeds capítulo electoral (14-sep-2026): Alemania + Suecia ===
-# Añadidos para la cobertura del capítulo "Election Threat Landscape" (elecciones de
-# Alemania -Länder sep-2026- y Suecia -Riksdag 13-sep-2026). Balance por país:
-# público (least-biased) / centro-izq / centro-der. Todos verificados HTTP 200 con UA
-# de navegador. EEUU NO añade feeds: se cubre con las keywords de `eeuu_politica` +
-# feeds existentes, para no engordar el sumidero por defecto `frontera_sur`.
 - nombre: Tagesschau (DE)
   url: https://www.tagesschau.de/index~rss2.xml
   tipo: media
@@ -663,7 +573,6 @@ feeds:
   transparency: medium
   note: Diario sueco (centro-der). Equilibrio en cobertura electoral SE.
   analytical_relevance: media
-# === Fuentes de esfera (O2): medios estatales para vigilar narrativas rusa/china ===
 - nombre: TASS (EN)
   url: https://tass.com/rss/v2.xml
   tipo: media
@@ -672,8 +581,8 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Agencia estatal rusa (sucesora de la TASS soviética). Narrativa oficial rusa;
-    vigilar como fuente de narrativas FIMI, no como verdad.'
+  note: Agencia estatal rusa (sucesora de la TASS soviética). Narrativa oficial 
+    rusa; vigilar como fuente de narrativas FIMI, no como verdad.
   analytical_relevance: alta
 - nombre: RIA Novosti (RU)
   url: https://ria.ru/export/rss2/archive/index.xml
@@ -683,8 +592,9 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Agencia estatal rusa (RIA Novosti, grupo Rossiya Segodnya). Narrativa oficial;
-    vigilar como fuente FIMI. Contenido en ruso (sin etiquetado temático ES/EN).'
+  note: Agencia estatal rusa (RIA Novosti, grupo Rossiya Segodnya). Narrativa 
+    oficial; vigilar como fuente FIMI. Contenido en ruso (sin etiquetado 
+    temático ES/EN).
   analytical_relevance: alta
 - nombre: CGTN (EN)
   url: https://www.cgtn.com/subscribe/rss/section/world.xml
@@ -694,22 +604,22 @@ feeds:
   bias: state
   reliability: mixed
   transparency: low
-  note: 'Cadena estatal china (grupo CCTV). Narrativa oficial china en inglés; vigilar
-    como fuente FIMI.'
+  note: Cadena estatal china (grupo CCTV). Narrativa oficial china en inglés; 
+    vigilar como fuente FIMI.
   analytical_relevance: alta
 - nombre: Global Times (EN)
-  url: "https://news.google.com/rss/search?q=site:globaltimes.cn&hl=en-US&gl=US&ceid=US:en"
+  url: 
+    https://news.google.com/rss/search?q=site:globaltimes.cn&hl=en-US&gl=US&ceid=US:en
   tipo: media
   pais: CN
   idioma: en
   bias: state
   reliability: mixed
   transparency: low
-  note: "Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad,
+  note: 'Portavoz oficial del PCCh; narrativas clave: anti-hegemonía occidental, multipolaridad,
     Taiwan como asunto interno. Vigilar como fuente FIMI. Vía Google News (site-scoped):
-    el feed nativo (outbrain.xml) está estancado desde ago-2026."
+    el feed nativo (outbrain.xml) está estancado desde ago-2026.'
   analytical_relevance: alta
-
 - nombre: TechCrunch AI
   url: https://techcrunch.com/category/artificial-intelligence/feed/
   tipo: media
@@ -718,10 +628,9 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Sección de IA de TechCrunch. Cobertura de industria, regulación y lanzamientos;
-    útil para detectar narrativas emergentes de IA."
+  note: Sección de IA de TechCrunch. Cobertura de industria, regulación y 
+    lanzamientos; útil para detectar narrativas emergentes de IA.
   analytical_relevance: alta
-
 - nombre: Ars Technica
   url: https://feeds.arstechnica.com/arstechnica/index
   tipo: media
@@ -730,10 +639,9 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; buena
-    fuente para deepfakes, modelos, regulación."
+  note: Feed general (incluye ciencia/tech/IA). Cobertura técnica profunda; 
+    buena fuente para deepfakes, modelos, regulación.
   analytical_relevance: alta
-
 - nombre: MIT Technology Review
   url: https://www.technologyreview.com/feed/
   tipo: media
@@ -742,22 +650,9 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con credibilidad
-    académica."
+  note: Publicación del MIT. Cobertura de IA, bio, clima; análisis técnico con 
+    credibilidad académica.
   analytical_relevance: alta
-
-# - nombre: AI News
-#   url: https://www.artificialintelligence-news.com/feed/
-#   tipo: media
-#   pais: GB
-#   idioma: en
-#   bias: center
-#   reliability: mixed
-#   transparency: medium
-#   note: "Portal especializado en IA. Noticias de industria, investigación y regulación;
-#     volumen medio, verificabilidad variable."
-#   analytical_relevance: media
-# 
 - nombre: Numerama
   url: https://www.numerama.com/feed/
   tipo: media
@@ -766,10 +661,9 @@ feeds:
   bias: center
   reliability: high
   transparency: medium
-  note: "Medio tech francés. Cobertura de IA, privacidad, regulación europea en francés;
-    contrapeso anglosajón."
+  note: Medio tech francés. Cobertura de IA, privacidad, regulación europea en 
+    francés; contrapeso anglosajón.
   analytical_relevance: media
-
 - nombre: ActuIA
   url: https://www.actuia.com/feed/
   tipo: media
@@ -778,10 +672,9 @@ feeds:
   bias: center
   reliability: mixed
   transparency: medium
-  note: "Portal francófono especializado en IA. Noticias de investigación, empresas
-    y aplicaciones; volumen bajo, útil para perspectiva FR."
+  note: Portal francófono especializado en IA. Noticias de investigación, 
+    empresas y aplicaciones; volumen bajo, útil para perspectiva FR.
   analytical_relevance: media
-
 - nombre: Xataka
   url: https://feeds.weblogssl.com/xataka2
   tipo: media
@@ -851,7 +744,6 @@ feeds:
     RSS; vigilar como narrativa FIMI (sesgo estatal documentado, UE la sancionó 
     en 2022). No usar como verdad absoluta; contrastar con otras fuentes.
   analytical_relevance: alta
-
 - nombre: Meduza EN
   url: https://meduza.io/rss/en/all
   tipo: rss
@@ -956,9 +848,6 @@ feeds:
   analytical_relevance: alta
   tema: eeuu_politica
   note: politica EEUU
-# Alta 5-oct-2026 (sonda staging): RSS españoles para espana_elecciones.
-# Medido: eldiario 28/110, abc_nacional 7/20, 20minutos 7/199, rtve-espana 6/180,
-# elpais-espana 4/19. Ratings bias/reliability provisionales: revisar con MBFC/Ad Fontes.
 - nombre: ElDiario.es
   url: https://www.eldiario.es/rss/
   tipo: media
@@ -968,7 +857,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   tema: espana_elecciones
-  note: 'Prensa digital española; alta cobertura 29-N en sonda 5-oct.'
+  note: Prensa digital española; alta cobertura 29-N en sonda 5-oct.
   analytical_relevance: alta
 - nombre: ABC Nacional
   url: https://www.abc.es/rss/feeds/abc_nacional.xml
@@ -979,7 +868,7 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   tema: espana_elecciones
-  note: 'Prensa española; alta densidad electoral en sonda 5-oct.'
+  note: Prensa española; alta densidad electoral en sonda 5-oct.
   analytical_relevance: alta
 - nombre: 20Minutos
   url: https://www.20minutos.es/rss/
@@ -990,21 +879,11 @@ feeds:
   reliability: mostly-factual
   transparency: medium
   tema: espana_elecciones
-  note: 'Prensa gratuita española, alto volumen; vigilar ruido.'
+  note: Prensa gratuita española, alto volumen; vigilar ruido.
   analytical_relevance: media
-# - nombre: RTVE España
-#   url: https://www.rtve.es/rss/temas_espana.xml
-#   tipo: media
-#   idioma: es
-#   pais: ES
-#   bias: center
-#   reliability: high
-#   transparency: high
-#   tema: espana_elecciones
-#   note: 'Ente público español, sección España.'
-#   analytical_relevance: media
 - nombre: El Pais Espana (seccion)
-  url: https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/espana/portada
+  url: 
+    https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/espana/portada
   tipo: media
   idioma: es
   pais: ES
@@ -1012,7 +891,7 @@ feeds:
   reliability: high
   transparency: high
   tema: espana_elecciones
-  note: 'Seccion Espana via MRSS (el /marcador/rss/ da 403 desde Hetzner).'
+  note: Seccion Espana via MRSS (el /marcador/rss/ da 403 desde Hetzner).
   analytical_relevance: media
 - nombre: Meneame Portada
   url: https://www.meneame.net/rss
@@ -1022,7 +901,9 @@ feeds:
   bias: left
   reliability: mixed
   transparency: medium
-  note: 'Agregador espanol con voto (meneos), karma y comentarios por historia. Titulares editorializados por usuarios; 22 % match electoral medido 7-oct-2026. Sin tema: decide el gate por contenido.'
+  note: 'Agregador espanol con voto (meneos), karma y comentarios por historia. Titulares
+    editorializados por usuarios; 22 % match electoral medido 7-oct-2026. Sin tema:
+    decide el gate por contenido.'
   analytical_relevance: alta
 - nombre: BOE (sumario diario)
   url: https://www.boe.es/rss/boe.php
@@ -1032,7 +913,8 @@ feeds:
   bias: center
   reliability: high
   transparency: high
-  note: 'Fuente PRIMARIA (Estado). Sumario diario del BOE; filtrar por seccion y keywords del tema. Medido 15-oct: 8 coincidencias/ciclo con el foco Marruecos.'
+  note: 'Fuente PRIMARIA (Estado). Sumario diario del BOE; filtrar por seccion y keywords
+    del tema. Medido 15-oct: 8 coincidencias/ciclo con el foco Marruecos.'
   analytical_relevance: alta
 - nombre: La Moncloa (notas de prensa)
   url: https://www.lamoncloa.gob.es/Paginas/rss.aspx
@@ -1042,7 +924,8 @@ feeds:
   bias: center
   reliability: high
   transparency: high
-  note: 'Fuente PRIMARIA (Gobierno). Bajo volumen; util para trazar comunicados oficiales. Medido 15-oct: 1 coincidencia/ciclo.'
+  note: 'Fuente PRIMARIA (Gobierno). Bajo volumen; util para trazar comunicados oficiales.
+    Medido 15-oct: 1 coincidencia/ciclo.'
   analytical_relevance: alta
 - nombre: El Debate (Espana)
   url: https://www.eldebate.com/rss/espana.xml
@@ -1052,7 +935,8 @@ feeds:
   bias: right
   reliability: mixed
   transparency: medium
-  note: 'Medio espanol. Medido 15-oct: 14 coincidencias/ciclo con el foco Marruecos. Sin tema: decide el gate.'
+  note: 'Medio espanol. Medido 15-oct: 14 coincidencias/ciclo con el foco Marruecos.
+    Sin tema: decide el gate.'
   analytical_relevance: media
 - nombre: NYT World
   url: https://rss.nytimes.com/services/xml/rss/nyt/World.xml
@@ -1068,18 +952,13 @@ temas:
   frontera_sur:
     estado: produccion
     nombre: Frontera Sur (España-Marruecos)
-    ventana_dias: 90  # conserva la historia del caso (Ceuta 30-jul); volumen bajo
+    ventana_dias: 90
   geopolitica_ue_marruecos:
     estado: cerrado
     nombre: Geopolítica UE-Marruecos
   eeuu_politica:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Política y desinformación EEUU
-    # Tuning por tema (igual que politica_nacional): la coordinación partidista/
-    # editorial legítima sobre política estadounidense tiene sync+contenido
-    # altos pero anomalía baja. Se sube el peso de la anomalía para que SOLO
-    # ella (o señales de infraestructura reales) eleve a ANOMALOUS+, evitando
-    # marcar el eco político ordinario como señal de campaña en el piloto.
     scoring:
       weights:
         synchronization: 0.1667
@@ -1088,12 +967,9 @@ temas:
         infrastructure: 0.1111
         anomaly: 0.4444
   oriente_medio:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Oriente Medio (Israel-Irán-Gaza)
-    ventana_dias: 30   # 15-oct: 45->30 d (recorta ~450 MB de pico, ver demo/crecimiento_corpus...)
-    # Tuning por tema (piloto): el ruido editorial/activista sobre el conflicto
-    # tiene sync+contenido altos con anomalía baja; subir la anomalía evita
-    # marcar coordinación legítima de difusión como campaña inorgánica.
+    ventana_dias: 30
     scoring:
       weights:
         synchronization: 0.1667
@@ -1108,31 +984,22 @@ temas:
     - Houthi
     - Hutíes
     - Cisjordania
-    # Términos nativos FR (17/09): el catálogo tiene feeds en francés (Le Monde,
-    # France24) cuya cobertura del conflicto no matcheaba el filtro ES/EN.
-    # Solo al filtro (no crea queries de captura). +~965 ev medidos.
     - Liban
     - Cisjordanie
     - Yémen
     - bande de Gaza
     - Beyrouth
-    # Términos ampliados (18/09): cubrir titulares ME (Israel/West Bank/Líbano/
-    # Gaza) que no matcheaban el filtro y caían en `frontera_sur`. Solo al filtro
-    # (no crea queries). Medir backfill + contaminación de Ceuta.
     - Gaza
     - West Bank
     - Líbano
     - Lebanon
-    # Ampliado 18/09 (gate sumidero): Iran/Hormuz ya eran keywords; añadidos
-    # SOLO al filtro para habilitar la reasignación en la vista (keywords∩filtro)
-    # y que el contenido Irán/Hormuz caiga en oriente_medio, no en el sumidero.
     - Iran
     - Hormuz
   sahel:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Sahel (África Occidental)
   energia:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Energía (petróleo/gas/precios)
     filtro:
     - petróleo
@@ -1166,12 +1033,6 @@ temas:
     - hidrógeno
     - carbón
     - precio de la luz
-    # Tuning por tema (piloto): en `energia` la señal discriminante es la anomalía
-    # (cuentas automatizadas repitiendo titulares de petróleo). El eco mainstream de
-    # una noticia real (p.ej. "Trump EPA elimina los límites de emisiones") tiene
-    # sync/infra/densidad altos con anomalía ~0 y NO debe encabezar el tema. Se sube
-    # el peso de la anomalía para que ese eco caiga a WATCH y solo la amplificación
-    # inauténtica quede arriba.
     scoring:
       weights:
         synchronization: 0.1667
@@ -1180,13 +1041,9 @@ temas:
         infrastructure: 0.1111
         anomaly: 0.4444
   elecciones:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Elecciones e interferencia electoral
-    ventana_dias: 14  # núcleo FIMI: ventana corta para no cargar el corpus histórico
-    # Ventanas de validación/cierre para un tema de CICLO LARGO (electoral): la
-    # promoción exige 30 días (no 72 h) y el cierre no se sugiere con elecciones
-    # registradas a ±120 días (evita cerrar el tema en un valle entre procesos).
-    # Si el bloque falta, se usan los defaults globales (env FIMI_*).
+    ventana_dias: 14
     ventanas:
       promocion_h: 720
       promocion_ciclos: 96
@@ -1195,33 +1052,21 @@ temas:
       cierre_min_dias: 30
       cierre_piloto_dias: 365
       cierre_calendario_dias: 120
-    # Scoring por FASE ELECTORAL (modelo EEAS): si alguna elección del registro
-    # (data/elecciones.yaml) está a <=30 días (o hasta 3 días después), se da
-    # más peso a la anomalía (coordinación inauténtica) durante el periodo
-    # electoral. Sin elecciones en ventana, se usan los pesos normales.
     fase_scoring:
       ventana_dias: 30
       weights:
         anomaly: 0.3261
         synchronization: 0.1957
         content_similarity: 0.1848
-        amplification: 0.1630
+        amplification: 0.163
         infrastructure: 0.1304
-    # Gate: un evento solo conserva el tema si su texto contiene >=1 término
-    # electoral real (evita que "afd" del boletín meteorológico "Area Forecast
-    # Discussion", o menciones tangenciales, lo etiqueten como electoral).
     filtro:
     - fraude electoral
     - afd
-    # Términos electorales DE/SE (idiomas de los feeds del capítulo electoral):
-    # sin ellos, el contenido electoral alemán/sueco no pasa el gate del tema.
     - landtagswahl
     - bundestagswahl
     - europawahl
     - wahlkampf
-    # Términos electorales NATIVOS de los procesos de alto valor registrados en
-    # data/elecciones.yaml (Rusia/LV/BS/SR/PT/BG, 17-sep-2026): sin ellos el
-    # discurso doméstico de esos países no pasa el gate del tema.
     - выборы
     - госдума
     - vēlēšanas
@@ -1235,10 +1080,6 @@ temas:
     - väljare
     - rösta
     - valrörelse
-    # Segundo nivel (CLASIFICACIÓN, no captura): un cluster del tema se marca
-    # como "interferencia" (señal) si su texto contiene >=1 término de esta
-    # lista; si no, "cobertura electoral" (ruido esperable). Separa señal de
-    # ruido sin recortar la captura del tema. Léxico ES/EN.
     senal:
     - desinformación
     - disinformation
@@ -1275,7 +1116,7 @@ temas:
     - election interference
     - foreign interference
   inteligencia_artificial:
-    estado: produccion
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: Inteligencia artificial
     filtro:
     - inteligencia artificial
@@ -1305,9 +1146,6 @@ temas:
     - desestabilización
     - subversión
     - inteligencia extranjera
-    # Plurales (20/09): el matcher usa límites de palabra y NO reconoce el
-    # plural en -s de estas formas (ciberataques != ciberataque). Se añaden
-    # explícitamente para no perder material real.
     - desinformaciones
     - propagandas
     - injerencias
@@ -1316,18 +1154,10 @@ temas:
     - sabotajes
     - guerras híbridas
     - amenazas híbridas
-    # Ángulo ruso (24/09): permitir la narrativa "ataque ruso" / "ataques híbridos"
-    # (p. ej. aviso CIA a España/Francia/Italia) sin abrir la mano a "drones" genérico.
     - ataque ruso
     - ataques rusos
     - ataque híbrido
     - ataques híbridos
-    # Contexto obligatorio (19/09): el tema es 'España'. Sin un término de
-    # contexto español, historias de injerencia/desinformación de OTROS países
-    # (Colombia, Argentina, Países Bajos...) no deben entrar en el tema.
-    # Ampliado (20/09): Ceuta/Melilla/Marruecos/Sánchez — el material español
-    # sobre la crisis de Ceuta y la guerra híbrida en el Estrecho no siempre
-    # menciona literalmente "España/UE/OTAN/Bruselas/Madrid" (~645 ev).
     contexto:
     - España
     - Spain
@@ -1415,17 +1245,13 @@ temas:
       - google-news
       - mastodon
   defensa_espana:
-    estado: piloto
+    estado: congelado  # 2026-10-28: congelado por A; datos y URLs se conservan
     nombre: España — defensa y amenazas híbridas
-    ventana_dias: 90  # tema pequeño; conserva su historia
+    ventana_dias: 90
   espana_elecciones:
     estado: produccion
     nombre: España — elecciones generales
-    ventana_dias: 90  # conserva la campaña completa 5-oct -> 29-N (elecciones)
-    # Tuning por tema: la coordinación humano/partidista legítima tiene
-    # sync+contenido altos pero anomalía ~0. Se sube mucho el peso de la anomalía
-    # para que SOLO ella (o señales de infraestructura reales) eleve a ANOMALOUS+,
-    # evitando marcar ruido político ordinario como amenaza.
+    ventana_dias: 90
     scoring:
       weights:
         synchronization: 0.1667
@@ -1498,12 +1324,10 @@ keywords:
 - palabra: frontière Maroc Espagne
   plataformas:
   - google-news
-# === Keyword FAS (desinformacion militar; plegada 17-sep-2026, SIN tema propio) ===
 - palabra: soldados fantasma
   plataformas:
   - bluesky
   - google-news
-# === Keywords geopolitica_ue_marruecos (tema nuevo, solapa con frontera_sur) ===
 - palabra: relaciones España Marruecos diplomacia
   tema: geopolitica_ue_marruecos
   plataformas:
@@ -1606,7 +1430,6 @@ keywords:
   tema: sahel
   plataformas:
   - google-news
-
 - palabra: petróleo
   tema: energia
   plataformas:
@@ -1860,7 +1683,6 @@ keywords:
 - palabra: gerbera
   plataformas: *id006
   tema: defensa_espana
-# === Keywords espana_elecciones (renombrado de politica_nacional; 29-N 2026) ===
 - palabra: elecciones generales españa
   plataformas:
   - bluesky
@@ -1906,7 +1728,6 @@ keywords:
   - bluesky
   - google-news
   tema: espana_elecciones
-# === Keywords protestas_juveniles (piloto 26-oct-2026) ===
 - palabra: blocus
   tema: protestas_juveniles
   plataformas:
@@ -1967,7 +1788,6 @@ keywords:
   plataformas:
   - bluesky
   - google-news
-# === Keywords multilingues protestas (27-oct-2026) ===
 - palabra: student protest
   tema: protestas_juveniles
   plataformas:
@@ -2015,9 +1835,6 @@ telegram_canales:
 - meduzalive
 - AlMayadeenEnglish
 - PressTV
-# === Canales públicos para protestas_juveniles (verificados 26-oct-2026) ===
-# APARCADOS 27-oct-2026: 6 canales sin actividad reciente (2015-2025) y 0 eventos útiles.
-# No se borran del registro histórico, pero no se leen en cada ciclo.
 - elpais
 - eldiarioes
 - publico_es
@@ -2025,41 +1842,26 @@ telegram_canales:
 - repubblica
 - guardian
 - UGT_es
-# APARCADOS 2-oct: `timesofisrael` e `i24NEWS_EN` se leen en cada ciclo y NO
-# matchean ninguna keyword de los 8 temas -> 0 eventos desde el alta (27-Sep),
-# verificado en `health_fuentes.py` (n90=0, last_ts=null). Mismo criterio que los
-# 9 canales RU/UK apartados el 27-Sep. Para revivir: añadir el canal y, antes,
-# medir cobertura de keywords en inglés con su muestra real.
-# - timesofisrael
-# - i24NEWS_EN
 subreddits: []
-# APARCADO 2-oct: Reddit devuelve HTTP 429 en cada llamada (log repetido) y da
-# 0 eventos desde el 12-Sep (162 en 90 d). No es que «el producto se haya
-# callado»: la fuente no responde. Para revivirlo: cliente HTTP con UA de
-# navegador y verificar el 429, y medir si r/spain y r/es aportan algo que no
-# entre ya por Bluesky o Google News.
-
-# Auditoría ligera y reproducible de clusters HIGH/CRITICAL
-# (detection/auditoria_high.py). Solo lectura; no toca scoring/bandas/atribución.
-# Límites de rendimiento: se auditan únicamente clusters >= min_score y sus eventos.
 auditoria:
   min_score: 60
-  max_clusters: 200          # máx. de clusters auditados por ejecución
-  max_events_per_cluster: 40 # máx. de eventos leídos por cluster (muestra)
-  max_text_len: 280          # máx. de caracteres por texto
-  max_urls_per_cluster: 200  # máx. de URLs para contar dominios distintos
-  max_seconds: 30            # timeout de la ejecución (corta y marca truncated)
-  sample_seed: 20260924      # semilla para muestreo determinista (validación ciega)
-  blind_default_muestra: 40  # filas por defecto en --formato blind (si no se pasa --muestra)
-
-# Vigilancia de narrativas (observación intensa). detection/vigilancia_narrativa.py
-# Cuenta eventos por narrativa y avisa por Telegram si hay escalada (cron cada 6 h).
+  max_clusters: 200
+  max_events_per_cluster: 40
+  max_text_len: 280
+  max_urls_per_cluster: 200
+  max_seconds: 30
+  sample_seed: 20260924
+  blind_default_muestra: 40
 vigilancia:
   ventana_horas: 48
-  factor_escalada: 1.5     # avisa si sube >= 50% respecto a la última ejecución
-  delta_escalada: 10       # ...y al menos +10 eventos
+  factor_escalada: 1.5
+  delta_escalada: 10
   narrativas:
   - id: drones_ceuta_melilla
-    nombre: "Drones (Marruecos) sobre Ceuta/Melilla"
-    requeridos: [dron]                            # dron/drones (subcadena normalizada)
-    contexto: [ceuta, melilla, marruecos]
+    nombre: Drones (Marruecos) sobre Ceuta/Melilla
+    requeridos:
+    - dron
+    contexto:
+    - ceuta
+    - melilla
+    - marruecos

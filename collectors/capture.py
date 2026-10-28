@@ -500,6 +500,9 @@ def main():
     # RSS feeds (todos los tipos)
     for s in feeds:
         name = s.get("nombre") or s.get("name") or "feed"
+        _ft = s.get("tema")
+        if _ft and _ft in _cerrados:
+            continue
         url = s.get("url", "")
         tema = s.get("tema")
         if url:
