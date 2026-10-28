@@ -16,6 +16,7 @@ Vocabulario:
 """
 import sqlite3
 import time
+from datetime import datetime, timezone
 
 UMBRAL_ALTA = 60
 
@@ -94,9 +95,14 @@ def inicio_ingesta(con, tema):
 
 
 def dias_operando(con, tema, ahora=None):
-    """Devuelve (dias, inicio_epoch) o (0.0, None) si no hay inicio."""
+    """Devuelve (días de calendario, inicio_epoch) o (0.0, None).
+
+    Se usan fechas UTC, no bloques de 24 h: 26/10 -> 28/10 son 2 días.
+    """
     ini = inicio_ingesta(con, tema)
     if not ini:
         return 0.0, None
     t = time.time() if ahora is None else ahora
-    return (t - ini) / 86400.0, ini
+    hoy = datetime.fromtimestamp(t, tz=timezone.utc).date()
+    inicio_d = datetime.fromtimestamp(ini, tz=timezone.utc).date()
+    return float((hoy - inicio_d).days), ini

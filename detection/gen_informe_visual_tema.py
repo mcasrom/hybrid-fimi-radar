@@ -353,18 +353,22 @@ def hyp_top(c):
 
 
 def dias_desde(ts):
+    """Días de calendario desde el inicio, no bloques de 24 h.
+
+    Así 26/10 -> 28/10 son 2 días, igual que en la tarjeta de salud; el cálculo
+    anterior con .days devolvía 1 si aún no habían pasado 48 h exactas.
+    """
     if not ts:
         return 0
-    # admite epoch (int/str numerico) o ISO/'YYYY-MM-DD HH:MM:SS'
+    hoy = datetime.now(timezone.utc).date()
     if str(ts).strip().isdigit():
         v = int(ts)
         if v > 10_000_000:
-            t = datetime.fromtimestamp(v, tz=timezone.utc)
-            return max(0, (datetime.now(timezone.utc) - t).days)
+            return max(0, (hoy - datetime.fromtimestamp(v, tz=timezone.utc).date()).days)
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
             t = datetime.strptime(str(ts)[:19], fmt).replace(tzinfo=timezone.utc)
-            return max(0, (datetime.now(timezone.utc) - t).days)
+            return max(0, (hoy - t.date()).days)
         except ValueError:
             continue
     return 0

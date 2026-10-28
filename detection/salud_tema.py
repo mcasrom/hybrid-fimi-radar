@@ -29,6 +29,7 @@ import os
 import re
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -152,7 +153,9 @@ def salud_por_tema(conn=None, cfg=None):
         else:
             s_senal = min(100.0, 100.0 * ucs / UMBRAL_SENAL)
         # 4) Calibración: muy joven no es "débil", solo está arrancando
-        dias_op = (time.time() - inicio) / 86400.0 if inicio else 0
+        dias_op = ((datetime.now(timezone.utc).date()
+                    - datetime.fromtimestamp(inicio, tz=timezone.utc).date()).days
+                   if inicio else 0)
         if estado == "cerrado" or estado == "candidato_a_cierre":
             s_cal = 0.0
         elif dias_op < MIN_DIAS_OPERACION:
