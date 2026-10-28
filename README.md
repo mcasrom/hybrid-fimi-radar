@@ -115,6 +115,14 @@ H6 sin evidencia concluyente.
 
 Las hipótesis **no cambian la puntuación**; son una lectura informativa.
 
+**Coordinación bruta ≠ H2.** El componente «Coordinación» del radar es el valor bruto
+(`coordination_score`): en el piloto de protestas juveniles, mediana 10 y clúster top 13.
+H2 **no usa ese 13 directamente**: usa `synchronization = min(100, coordinación bruta × 12)`
+y añade estructura (núcleo k≥2 de ≥3 cuentas con URLs/dominios compartidos). Por eso un H2 alto
+(77 en el clúster top) puede convivir con una coordinación bruta baja. H2 es una **compatibilidad
+interna**, no una probabilidad; H2b queda a 0 por construcción cuando hay estructura. El informe
+visual separa ahora ambas filas y lo explica junto al bloque de hipótesis.
+
 ### Auditoría de señales altas (HIGH/CRITICAL)
 
 Para que cada señal alta pueda revisarse **sin afirmar que sea FIMI**, `detection/auditoria_high.py`

@@ -307,7 +307,8 @@ def cargar_tema(con, tema):
             alt = []
         clusters.append({
             "id": cid, "label": label, "ov": float(ov or 0), "banda": band_for(ov),
-            "coord": float(coord or 0), "amp": float(amp or 0), "anom": float(anom or 0),
+            "coord": float(coord or 0), "sync": min(100.0, float(coord or 0) * 12),
+            "amp": float(amp or 0), "anom": float(anom or 0),
             "infra": float(infra or 0), "dens": float(dens or 0),
             "kc": kc or 0, "kcs": kcs or 0, "n_ev": n_ev, "n_au": n_au, "t0": t0,
             "doms": sorted(doms.items(), key=lambda x: -x[1]), "hyps": hyps, "alt": alt, "daily": daily, "txt": txt,
@@ -438,7 +439,7 @@ def _qual(sc):
 
 def spider(series):
     # series: list of (label, value 0-100, color). Hexagono con 5 ejes (components).
-    axes = [("Coordinación", "coord"), ("Infraestructura", "infra"), ("Densidad", "dens"),
+    axes = [("Coordinación (bruta)", "coord"), ("Infraestructura", "infra"), ("Densidad", "dens"),
             ("Amplificación", "amp"), ("Anomalía", "anom")]
     import math
     cx, cy, R = 150, 130, 95
@@ -647,7 +648,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
     dom_h_n = cnt.most_common(1)[0][1] if cnt else 0
     h3 = sum(1 for c in clusters if hyp_top(c)[0] == "H3")
     # medianas de componentes del tema
-    med = {k: median([c[k] for c in clusters]) for k in ("coord", "infra", "dens", "amp", "anom")}
+    med = {k: median([c[k] for c in clusters]) for k in ("coord", "sync", "infra", "dens", "amp", "anom")}
     # dominios top del tema (por apariciones agregadas en clusters destacados)
     dom_agg = Counter()
     for c in clusters[:20]:
@@ -728,7 +729,7 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
         f"<div class='dval'>{v}</div></div>" for d, v in top_doms)
     # senales clave (medianas)
     sen = ""
-    for lab, k in [("Amplificación", "amp"), ("Coordinación", "coord"), ("Anomalía", "anom"),
+    for lab, k in [("Amplificación", "amp"), ("Coordinación (bruta)", "coord"), ("Anomalía", "anom"),
                    ("Infraestructura", "infra"), ("Densidad de red", "dens")]:
         sen += (f"<div class='hrow'><div class='hname' style='width:auto;flex:1'>{lab}</div>"
                 f"<div class='hbar'>{bar(med[k], NAVY)}</div><div class='hval'>{med[k]:.0f}</div></div>")
@@ -858,10 +859,11 @@ def render(tema, nombre, clusters, kpi, salud, keywords=None, ventana=45, salud_
                     + "".join(f"<tr><td style='padding:3px 6px'>{lab}</td>"
                               f"<td style='text-align:right;padding:3px 6px'>{med[k]:.0f}</td>"
                               f"<td style='text-align:right;padding:3px 6px'>{float(_tp.get(k, 0) or 0):.0f}</td></tr>"
-                              for lab, k in [("Coordinación", "coord"), ("Infraestructura", "infra"),
+                              for lab, k in [("Coordinación (bruta)", "coord"), ("Sincronía (0–100)", "sync"),
+                                             ("Infraestructura", "infra"),
                                              ("Densidad de red", "dens"), ("Amplificación", "amp"),
                                              ("Anomalía", "anom")])
-                    + "</table></details>")
+                    + "</table><p class='cs' style='margin-top:6px'>La <b>coordinación bruta</b> no es la escala que usa H2: H2 parte de <b>sincronía = min(100, coordinación bruta × 12)</b> y añade estructura. Por eso un 13 bruto puede convivir con un H2 alto.</p></details>")
     # desglose por país (solo tema multinacional "elecciones")
     paises_html = ""
     if tema == "elecciones":
@@ -1027,8 +1029,9 @@ h2{{font-size:1.08rem;margin:0 0 14px;color:{NAVY};padding-left:12px;border-left
     <p class="cs">{f"""<span class="chip" style="background:{BAND_COL[bd]}">score {top['ov']:.0f}/100 · {esc(top['banda'])}</span> &nbsp; {top['n_au']} cuentas · {top['n_ev']} eventos · núcleo k={top['kc']}""" if top else """<span class="chip" style="background:#e2e8f0;color:#475569">Sin clúster con señal (≥3 cuentas)</span>"""}{" <span class='chip' style='background:#fef3c7;color:#92400e'>candidato, no conclusión</span>" if top_low else ""}</p>
     {"<p class='cs' style='color:#92400e'><b>Evidencia baja:</b> el score alto no compensa un n pequeño. Se muestra para seguimiento, no como hallazgo principal.</p>" if top_low else ""}
     {"<p class='cs' style='color:#92400e'><b>Sin contenido suficiente:</b> no hay dominios asociados; el top por score no se presenta como hallazgo.</p>" if top and not top["doms"] else ""}
-    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (evaluación interna; no probabilidad)</h3>
+    <h3 style="font-size:.85rem;color:{MUT};margin:12px 0 4px">Hipótesis de ESTE cluster (compatibilidad, no probabilidad)</h3>
     {hyp_bars or '<p class="cs">Sin hipótesis registradas.</p>'}
+    <p class="cs" style="margin-top:4px;color:#92400e"><b>H2 no usa el componente «Coordinación (bruta)»:</b> usa <code>synchronization = min(100, coordinación bruta × 12)</code> y añade estructura. Por eso H2 puede ser alto aunque la coordinación bruta sea baja.</p>
     <p class="cs" style="margin-top:4px;color:#94a3b8">A qué se parece: <b>compatible</b> ≥66 · <b>débil</b> 33–65 · <b>sin soporte</b> &lt;33. No son probabilidades. Las hipótesis se puntúan de forma independiente (pueden aparecer varias como compatibles); no son mutuamente excluyentes.</p>
     <p class="cs" style="margin-top:10px"><b>Atribución:</b> {esc(top['atr']) if top else '—'} · confianza {esc(top['conf']) if top else '—'}
     &middot; <i>las puntuaciones son evaluación interna del sistema; no son probabilidades.</i></p>
