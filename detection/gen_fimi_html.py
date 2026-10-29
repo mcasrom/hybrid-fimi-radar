@@ -2304,7 +2304,7 @@ def main():
         html = f"<html><body><h1>Sin datos aún</h1><p>El radar capturará en el próximo ciclo (6h).</p></body></html>"
         OUT.parent.mkdir(parents=True, exist_ok=True)
         _guard_public(html, "index.html")
-    OUT.write_text(html, encoding="utf-8")
+        OUT.write_text(html, encoding="utf-8")
         print("sin datos, pagina placeholder generada")
         return
 
