@@ -5315,15 +5315,15 @@ window.fimiDrawerClose=function(){
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Observatorio de amplificación (FIMI): desinformación y redes</title>
- <meta name="description" content="Observatorio OSINT de desinformación y amplificación (ámbito FIMI) en español. {_mil(_n_clusters)} clusters con señal (de {_mil(n_clusters)} en total) en el último ciclo. Mide propagación; no confirma coordinación ni atribuye.">
+<title>FIMI Radar — evidencia de patrones de difusión en Bluesky</title>
+ <meta name="description" content="FIMI Radar mide patrones de difusión de cuentas de Bluesky que publican contenido parecido o enlazan las mismas fuentes. No mide cobertura mediática, opinión pública ni movimientos sociales.">
 <meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  <link rel="alternate" type="application/rss+xml" title="Posibles bulos contrastados" href="/datos/bulos.xml">
  {_jsonld_html}
  <meta property="og:type" content="website">
- <meta property="og:title" content="Observatorio de amplificación (FIMI): desinformación y redes">
-<meta property="og:description" content="Observatorio OSINT de desinformación y amplificación en {tema_nombres_html}. Mide propagación; no confirma coordinación ni atribuye.">
+ <meta property="og:title" content="FIMI Radar — evidencia de patrones de difusión en Bluesky">
+<meta property="og:description" content="FIMI Radar: evidencia reproducible de patrones de difusión en Bluesky. No mide cobertura mediática, opinión pública ni movimientos sociales.">
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
@@ -5331,8 +5331,8 @@ window.fimiDrawerClose=function(){
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Observatorio de amplificación (FIMI) — desinformación y redes">
-<meta name="twitter:description" content="{_mil(_n_clusters)} clusters con señal (de {_mil(n_clusters)} en total), {_mil(n_events)} eventos de {n_sources} fuentes (último ciclo). Radar OSINT de desinformación y amplificación, agnóstico al actor.">
+<meta name="twitter:title" content="FIMI Radar — evidencia de patrones de difusión en Bluesky">
+<meta name="twitter:description" content="FIMI Radar: evidencia reproducible de patrones de difusión en Bluesky. No mide cobertura mediática, opinión pública ni movimientos sociales.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -5342,7 +5342,7 @@ window.fimiDrawerClose=function(){
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Observatorio">
+<meta name="apple-mobile-web-app-title" content="FIMI Radar">
 <style>
 :root{{color-scheme:light}}
 body{{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f8fafc;color:#0f172a}}
@@ -5447,11 +5447,11 @@ a{{color:#c2410c}}
 <body>
 <header>
 <div class="fimi-brandbar">
-  <a class="brand" href="/" title="Observatorio de amplificación (ámbito FIMI)">
-    <span class="logo">📡</span> Observatorio
+  <a class="brand" href="/" title="FIMI Radar — evidencia de patrones de difusión en Bluesky">
+    <span class="logo">📡</span> FIMI Radar
   </a>
   <a class="transp" href="/" title="Panel del radar (inicio)">Radar</a>
-  <a class="cta-consulta" href="/consulta.html" title="Pega una URL y te dice en llano si es eco de prensa, difusion de una fuente o amplificacion anomala">🔎 Consulta</a>
+  <a class="cta-consulta" href="/consulta.html" title="Pega una URL y te dice en llano qué patrón de difusión muestra">🔎 Consulta</a>
   <details class="navmenu">
     <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
     <div class="navmenu-panel">
@@ -5511,24 +5511,26 @@ a{{color:#c2410c}}
   {salud_card}
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
-    <span><span class="dot" style="background:#c2410c"></span>Observatorio · amplificación (ámbito FIMI)</span>
+    <span><span class="dot" style="background:#c2410c"></span>FIMI Radar · evidencia de patrones de difusión en Bluesky</span>
     <span class="live" id="fimiHeroLive">{_lt_icon}&nbsp;{_lt_estado} · última ingesta {_lt_rel}</span>
   </div>
-  <h1>Observatorio de amplificación</h1>
-  <div style="margin:12px 0 6px;padding:12px 16px;background:#fff7ed;border:1px solid #fdba74;border-left:5px solid #c2410c;border-radius:10px;font-size:.95rem;color:#334155;line-height:1.5">
-    <b>¿Qué es esto?</b> No dice si hay una campaña. Mide <b>cuándo varias cuentas publican lo mismo a la vez</b> —amplificación— y lo muestra con los límites a la vista. El «no» (no hay coordinación medible aquí) también es un resultado.
+  <h1>FIMI Radar</h1>
+  <p class="sub">Evidencia reproducible de patrones de difusión en Bluesky.</p>
+  <div style="margin:12px 0 16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;color:#334155;line-height:1.7">
+    <b>Qué mide.</b> Detecta grupos de cuentas de Bluesky que publican contenido parecido, en momentos cercanos o enlazando a las mismas fuentes, y deja la evidencia a la vista para que cualquiera pueda comprobarla.<br><br>
+    <b>Qué NO mide.</b> No mide cobertura de los medios, opinión pública ni movimientos sociales. No dice quién está detrás de una difusión ni si tiene intención política.<br><br>
+    <b>Qué no ve.</b> No incluye TikTok, WhatsApp ni X. Los datos de Bluesky representan solo una parte de la conversación en España. También se capturan feeds de medios y algunos canales de Telegram, pero hoy no entran en la detección de grupos.<br><br>
+    <b>Fiabilidad.</b> Validación ciega del 29-sep-2026: entre <b>8 % y 14 %</b> según revisor; <b>0 de 40</b> calificados como injerencia extranjera (FIMI). <a href="/limites.html">Límites y método</a>.
   </div>
-  <p class="sub">Monitorizamos <strong>{n_sources} fuentes</strong> y <strong>{n_events} eventos</strong> en {tema_nombres_html}
-  para medir <strong>patrones de amplificación</strong> (qué contenido repiten varias cuentas, cómo y cuándo),
-  en el ámbito FIMI. Observamos el comportamiento en red; <strong>una banda alta es amplificación,
-  no coordinación confirmada</strong> (8,3 % en la validación ciega del 29/Sep) y
-  <strong>no confirmamos atribución de actor ni campaña</strong> sin evidencia adicional.</p>
+  <div style="margin:12px 0 6px;padding:12px 16px;background:#fff7ed;border:1px solid #fdba74;border-left:5px solid #c2410c;border-radius:10px;font-size:.95rem;color:#334155;line-height:1.6">
+    <b>Aviso.</b> Un resultado alto no significa que algo grave esté ocurriendo: indica que unas cuentas han difundido contenido de forma parecida. Comprueba siempre la evidencia enlazada.
+  </div>
   <div class="chain">
-    <div class="step"><b><span class="ic">👁</span> OBSERVAR</b><span>captura de {n_sources} fuentes abiertas en {len(temas)} temas, sin prejuicio de actor.</span></div>
+    <div class="step"><b><span class="ic">👁</span> QUÉ SE VE</b><span>cuentas de Bluesky que publican contenido parecido o enlazan las mismas fuentes.</span></div>
     <div class="arrow">→</div>
-    <div class="step"><b><span class="ic">📡</span> MEDIR</b><span>amplificación y anomalías sobre {_n_clusters} clusters con señal (de {n_clusters} activos).</span></div>
+    <div class="step"><b><span class="ic">📡</span> QUÉ SE MIDE</b><span>repetición, enlaces compartidos y momentos de publicación.</span></div>
     <div class="arrow">→</div>
-    <div class="step"><b><span class="ic">⚖️</span> CONTRASTAR</b><span>las hipótesis se contrastan contra la evidencia. Una señal no es una atribución.</span></div>
+    <div class="step"><b><span class="ic">⚖️</span> QUÉ PUEDES COMPROBAR</b><span>la evidencia enlazada de cada grupo; el resultado no atribuye autoría.</span></div>
   </div>
   <div class="cta">
     <a href="/consulta.html" class="primary">🔎 Consulta de enlace — pega lo que viste</a>
