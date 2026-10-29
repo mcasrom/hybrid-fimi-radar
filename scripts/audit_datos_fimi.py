@@ -80,10 +80,15 @@ def audit(sample_urls=5):
         "orphan_event_temas": "SELECT COUNT(*) FROM event_temas et LEFT JOIN events e ON e.id=et.event_id WHERE e.id IS NULL",
         "orphan_cluster_events": "SELECT COUNT(*) FROM cluster_events ce LEFT JOIN clusters c ON c.id=ce.cluster_id WHERE c.id IS NULL",
         "future_events": "SELECT COUNT(*) FROM events WHERE timestamp > ?",
-        "empty_url_active": "SELECT COUNT(*) FROM events e JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id IN (%s) AND (e.url IS NULL OR TRIM(e.url)='')" % ",".join("?"*len(active)),
+        "empty_url_active": "SELECT COUNT(*) FROM events e JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id IN (%s) AND (e.url IS NULL OR TRIM(e.url)='') AND (e.bsky_uri IS NULL OR TRIM(e.bsky_uri)='')" % ",".join("?"*len(active)),
+        "empty_url_with_bsky": "SELECT COUNT(*) FROM events e JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id IN (%s) AND (e.url IS NULL OR TRIM(e.url)='') AND e.bsky_uri IS NOT NULL AND TRIM(e.bsky_uri)<>''" % ",".join("?"*len(active)),
+        "empty_url_by_source": "SELECT e.source, COUNT(*) n FROM events e JOIN event_temas et ON et.event_id=e.id WHERE et.tema_id IN (%s) AND (e.url IS NULL OR TRIM(e.url)='') AND (e.bsky_uri IS NULL OR TRIM(e.bsky_uri)='') GROUP BY e.source ORDER BY n DESC" % ",".join("?"*len(active)),
     }.items():
         try:
-            args = (now + 3600,) if name == "future_events" else (tuple(active) if name == "empty_url_active" else ())
+            if name == "empty_url_by_source":
+                result["db"][name] = [dict(r) for r in con.execute(sql, tuple(active)).fetchall()]
+                continue
+            args = (now + 3600,) if name == "future_events" else (tuple(active) if name in ("empty_url_active", "empty_url_with_bsky") else ())
             val = con.execute(sql, args).fetchone()[0]
             result["db"][name] = val
         except Exception as e:
@@ -91,6 +96,13 @@ def audit(sample_urls=5):
     # duplicados de URL (solo aviso; no toda repetición es error)
     dup = con.execute("SELECT COUNT(*) FROM (SELECT url FROM events WHERE url IS NOT NULL AND TRIM(url)<>'' GROUP BY url HAVING COUNT(*)>1)").fetchone()[0]
     result["db"]["duplicate_urls"] = dup
+    _total_active = sum(result["db"][t]["event_temas"] for t in active)
+    _sin = result["db"].get("empty_url_active", 0)
+    result["db"]["empty_url_ratio_pct"] = round(100 * _sin / max(1, _total_active), 1)
+    if result["db"]["empty_url_ratio_pct"] > 10:
+        CRIT.append("demasiados eventos sin URL ni URI (>10 %)")
+    elif result["db"]["empty_url_ratio_pct"] > 5:
+        WARN.append(f"eventos sin URL ni URI: {_sin} ({result['db']['empty_url_ratio_pct']} %)")
     # huérfanos/futuro son críticos
     if result["db"].get("orphan_event_temas"):
         CRIT.append("event_temas huérfanos")
@@ -112,7 +124,7 @@ def audit(sample_urls=5):
     STATE.write_text(json.dumps(cur_frozen, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     # API
     for t in active + frozen:
-        code, url = _get(f"{API}/api/v1/tema/{t}", timeout=12, attempts=1)
+        code, url = _get(f"{API}/api/v1/tema/{t}", timeout=20, attempts=1)
         result["api"][t] = {"status": code, "url": url}
         if code == 404:
             CRIT.append(f"API {t}: 404")
@@ -142,8 +154,12 @@ def render(res):
     lines += [f"**Activos:** {', '.join(res['active']) or '—'}", ""]
     lines += [f"**Congelados:** {', '.join(res['frozen']) or '—'}", ""]
     lines += ["## Integridad", "", "| Comprobación | Valor |", "|---|---:|"]
-    for k in ("orphan_event_temas", "orphan_cluster_events", "future_events", "empty_url_active", "duplicate_urls"):
+    for k in ("orphan_event_temas", "orphan_cluster_events", "future_events", "empty_url_active", "empty_url_with_bsky", "empty_url_ratio_pct", "duplicate_urls"):
         lines.append(f"| {k} | {res['db'].get(k, '—')} |")
+    src = res["db"].get("empty_url_by_source") or []
+    lines += ["", "### Eventos sin URL ni URI por fuente", "", "| Fuente | N |", "|---|---:|"]
+    for row in src:
+        lines.append(f"| {row['source']} | {row['n']} |")
     lines += ["", "## Temas", "", "| Tema | Eventos | Clusters | Cuentas |", "|---|---:|---:|---:|"]
     for t, v in res["db"].items():
         if isinstance(v, dict):

@@ -441,9 +441,12 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
             raise KeyError("cluster no encontrado en la vista activa")
         asm = conn.execute(
             "SELECT * FROM assessments WHERE cluster_id=? LIMIT 1", (row["id"],)).fetchone()
-        evs = conn.execute(
+        evs_all = conn.execute(
             "SELECT ts, source, author, title, text, url FROM cluster_events"
             " WHERE cluster_id=? ORDER BY ts", (row["id"],)).fetchall()
+        # La evidencia sin URL/URI no es comprobable: se omite del export.
+        evs = [e for e in evs_all if (e["url"] or "").strip()]
+        omitidos_sin_enlace = len(evs_all) - len(evs)
         tipos = _tipos_map(conn, cluster=cluster_label)
     finally:
         conn.close()
@@ -470,6 +473,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
             "snapshot_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(row["created_at"])),
             "snapshot_iso": fecha_snap,
             "n_eventos": len(lat),
+            "omitidos_sin_enlace": omitidos_sin_enlace,
             "fuentes": sorted({e["source"] for e in lat}),
             "n_autores": len(anon),
             "replay": replay,
@@ -552,6 +556,7 @@ def exportar_cluster(cluster_label: str, fmt: str = "csv"):
     w.writerow(["# replay", "programa", replay["programa"]])
     w.writerow(["# replay", "version", replay["version"]])
     w.writerow(["# replay", "window_days", replay["window_days"]])
+    w.writerow(["# evidencia", "omitidos_sin_enlace", omitidos_sin_enlace])
     w.writerow(["# replay", "capture_window_days", replay["capture_window_days"]])
     w.writerow(["# replay", "banda", banda])
     _expl = None
