@@ -106,6 +106,19 @@ BAND_ES = {
     "CRITICAL": "Amplificación muy alta",
 }
 
+# Etiquetas de la capa principal. BAND_ES se conserva para el detalle técnico.
+BAND_VISIBLE = {
+    "NORMAL": "Nivel de actividad: baja",
+    "WATCH": "Nivel de actividad: moderada",
+    "ANOMALOUS": "Nivel de actividad: moderada",
+    "HIGH": "Nivel de actividad: alta",
+    "CRITICAL": "Nivel de actividad: alta",
+}
+BAND_LEVEL = {
+    "NORMAL": "baja", "WATCH": "moderada", "ANOMALOUS": "moderada",
+    "HIGH": "alta", "CRITICAL": "alta",
+}
+
 # Traducción de hipótesis H1-H6 (attribution.py) a español natural, para que
 # quien no conoce el motor entienda la tarjeta sin códigos internos.
 HYPOTHESIS_ES = {
@@ -215,7 +228,7 @@ def render_bubble_chart(rows, temas, temas_cfg, width=1120):
                 f"<circle cx='{_x:.0f}' cy='{_y:.0f}' r='{_r:.1f}' fill='{col}' "
                 f"fill-opacity='0.62' stroke='#ffffff' stroke-width='1' style='cursor:pointer' "
                 f"data-cluster='{_cl}' data-tema='{r['tema']}' onclick='fimiCluster(this)'>"
-                f"<title>{r['label']} · {r['score']:.0f}/100 {BAND_ES.get(r['banda'], r['banda'])} · "
+                f"<title>{r['label']} · {r['score']:.0f}/100 {BAND_VISIBLE.get(r['banda'], r['banda'])} · "
                 f"{_pl(r['cuentas'],'cuenta','cuentas')}</title></circle>")
     # leyenda de tamaño (abajo-izquierda)
     ly = top + n * row_h + 40
@@ -256,11 +269,11 @@ def kpi_banda_alerta(clus):
     b = band_of(max_o)
     col = BAND_COLORS[b]
     if not clus:
-        return kpi("Banda de alerta", "—", "sin clusters", "#f8fafc")
+        return kpi("Nivel de actividad", "—", "sin grupos", "#f8fafc")
     return (f'<div style="flex:1 1 150px;background:#f8fafc;border-radius:12px;padding:14px 16px;'
             f'box-shadow:0 1px 3px rgba(0,0,0,.06)">'
-            f'<div style="font-size:.72rem;color:#475569;font-weight:600;text-transform:uppercase">Banda de alerta</div>'
-            f'<div style="font-size:1.6rem;font-weight:800;color:{col};line-height:1.2">{b}</div>'
+            f'<div style="font-size:.72rem;color:#475569;font-weight:600;text-transform:uppercase">Nivel de actividad</div>'
+            f'<div style="font-size:1.6rem;font-weight:800;color:{col};line-height:1.2">{BAND_LEVEL.get(b,b)}</div>'
             f'<div style="font-size:.78rem;color:#64748b">máx {max_o:.0f}/100</div></div>')
 
 
@@ -358,7 +371,7 @@ def render_sparkline(serie, color, ancho=180):
     area = (f"{coords[0][0]:.1f},{H - pad_b} {pts} {coords[-1][0]:.1f},{H - pad_b}")
     lx, ly = coords[-1]
     return (f'<svg viewBox="0 0 {W} {H}" width="{ancho}" height="{int(ancho * H / W)}" '
-            f'role="img" aria-label="Tendencia de hallazgos últimos {n} días">'
+            f'role="img" aria-label="Tendencia de detecciones últimos {n} días">'
             f'<polygon points="{area}" fill="{color}" opacity="0.12"/>'
             f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2" '
             f'stroke-linejoin="round" stroke-linecap="round"/>'
@@ -1811,12 +1824,11 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
                     f"{n_rss_ev} vienen de feeds (lectura ancilar de prensa) y {n_redes_ev} de redes/plataformas "
                     f"(cuentas sociales = el grafo de coordinación).")
     _evidencia_txt = (f"En el ciclo actual el radar mantiene <b>{n_clusters}</b> cluster(s) de amplificación: "
-                      f"{n_band.get('CRITICAL', 0)} muy alta (CRITICAL) · {n_band.get('HIGH', 0)} alta (HIGH) · "
-                      f"{n_band.get('ANOMALOUS', 0)} ANOMALOUS · {n_band.get('WATCH', 0)} WATCH · "
-                      f"{n_band.get('NORMAL', 0)} NORMAL. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
+                      f"{n_band.get('HIGH', 0)+n_band.get('CRITICAL',0)} de actividad alta · {n_band.get('ANOMALOUS', 0)+n_band.get('WATCH',0)} de actividad moderada · "
+                      f"{n_band.get('NORMAL', 0)} de actividad baja. De ellos, {n_ecos} son &quot;ecos de 1 pieza&quot; "
                       f"(varias cuentas compartiendo la misma URL) y {n_sost} muestran &quot;amplificación "
                       f"sostenida&quot; (la misma red vertiendo varias piezas a lo largo de &gt;1 día)."
-                      f" Se cuentan los clusters con señal (≥{MIN_CUENTAS_PUBLICADO} cuentas);"
+                      f" Se cuentan los grupos de cuentas con señal (≥{MIN_CUENTAS_PUBLICADO} cuentas);"
                       f" +{n_par_global} grupos pequeños agregados aparte.")
     _tabs_temas = " · ".join(f"<a href='/#{t}'>#{t}</a>" for t in temas) or "/"
     _dataset_link = (f"/api/export?cluster={_top_label}&fmt=csv" if _top_label
@@ -3022,7 +3034,7 @@ def main():
             f"margin:2px 0 6px'>{_desc}</p>{rows_t}</div></details>")
     hist_html = ""
     if hist_blocks:
-        hist_html = (f"<div class='card'><h3>Historial de hallazgos</h3>"
+        hist_html = (f"<div class='card'><h3><span title='Registros por ciclo de captura (cada 6 h); un mismo grupo puede generar varias detecciones.'>Historial de detecciones</span></h3>"
                      f"<p class='caption'>Resultados positivos persistidos: no se pierden cuando el tema "
                      f"deja de ser noticia. Registro acumulado del radar, agrupado por tipo. "
                      f"Cada bloque se abre al pulsarlo para no ocupar todo el scroll.</p>"
@@ -3598,12 +3610,12 @@ def main():
         else:
             _delta_txt, _delta_color = "—", "#94a3b8"
         _gauges_t = "".join([
-            _mini_dial("Score top", _max_score, _max_color,
-                       f"{BAND_ES.get(_max_banda, _max_banda)} · <span style='color:{_delta_color};font-weight:700'>{_delta_txt}</span> vs hace 48h"),
-            _mini_dial("En alerta", _n_alerta, "#dc2626" if _n_alerta else "#94a3b8",
-                       f"{_pct_alerta}% · {_n_alerta} de {_n_tot} clusters ≥60"),
+            _mini_dial("Intensidad máxima", _max_score, _max_color,
+                       f"{BAND_VISIBLE.get(_max_banda, _max_banda)} · <span style='color:{_delta_color};font-weight:700'>{_delta_txt}</span> vs hace 48h"),
+            _mini_dial("Con intensidad alta", _n_alerta, "#dc2626" if _n_alerta else "#94a3b8",
+                       f"{_pct_alerta}% · {_n_alerta} de {_n_tot} grupos"),
             _mini_dial("Anomalía máx", _anom_max, _anom_color,
-                       "desviación más alta de un cluster"),
+                       "desviación más alta de un grupo de cuentas"),
             _mini_dial("Amplificación", _amp_val, "#c2410c",
                        "señal global del tema"),
         ])
@@ -3644,7 +3656,7 @@ def main():
             elif len(_dup_aqui) == len(_tema_cl_raw):
                 _cl_txt = ("<p style='font-size:.82rem;color:#64748b;font-style:italic'>"
                            "Todo lo activo en este tema ya se muestra en otro tema "
-                           "(mismas cuentas coordinadas). Sin hallazgos exclusivos ahora.</p>")
+                           "(mismas cuentas coordinadas). Sin grupos exclusivos ahora.</p>")
             else:
                 _cl_txt = ("<p style='font-size:.82rem;color:#64748b;font-style:italic'>"
                            "Este tema solo tiene grupos pequeños "
@@ -4086,10 +4098,10 @@ def main():
         if _topc:
             _tt = re.sub(r"\s+", " ", str(_topc[0].get("text", ""))).strip()
             if _tt:
-                _top_txt = f' El cluster de mayor alerta habla de: "{_tt[:90]}{"…" if len(_tt) > 90 else ""}".'
-        _dims = f"{len(_cli_t)} clusters exclusivos"
+                _top_txt = f' El grupo de mayor intensidad habla de: "{_tt[:90]}{"…" if len(_tt) > 90 else ""}".'
+        _dims = f"{len(_cli_t)} grupos exclusivos"
         if _n_al:
-            _dims += f", {_n_al} en alerta alta (≥60)"
+            _dims += f", {_n_al} con intensidad alta"
         return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {_band_top}." + _top_txt
 
     dial_cards = ""
@@ -4258,7 +4270,7 @@ def main():
             f"<div style='margin:0 0 10px;padding:8px 10px 4px;background:#fff;border:1px dashed #e2e8f0;"
             f"border-radius:8px;text-align:left'>"
             f"<div style='font-size:.68rem;color:#94a3b8;letter-spacing:.03em;margin-bottom:2px'>"
-            f"Hallazgos por día · últimos {SPARK_DAYS} días</div>"
+            f"<span title='Registros por ciclo de captura (cada 6 h); un mismo grupo puede generar varias detecciones.'>Detecciones por día</span> · últimos {SPARK_DAYS} días</div>"
             f"{render_sparkline(spark_data.get(_t, []), _estilo['color'])}"
             f"</div>"
             f"<button type='button' onclick='abrirDetalle(\"{_t}\")' "
@@ -4525,15 +4537,15 @@ def main():
         f"<div style='display:flex;flex-wrap:wrap;gap:8px'>"
         f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
         f"background:#fff0e6;border:1px solid #fdba74;font-size:.78rem;font-weight:700;color:#7c2d12'>"
-        f"🚨 {_n_alerta} señales en alerta (≥60)</span>"
+        f"{_n_alerta} grupos con intensidad alta</span>"
         f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
         f"background:#fff;border:1px solid #fcd34d;font-size:.78rem;font-weight:700;color:#78350f'>"
-        f"📊 {_pl(_n_clusters,'cluster','clusters')} activos</span>"
+        f"📊 {_pl(_n_clusters,'grupo de cuentas','grupos de cuentas')} activos</span>"
         f"<span style='display:inline-block;padding:4px 12px;border-radius:999px;"
         f"background:#fff;border:1px solid #e2e8f0;font-size:.78rem;font-weight:700;color:#475569'>"
-        f"⚖️ {_n_atrib}/{_n_clusters} con atribución concluyente</span>"
+        f"⚖️ {_n_atrib}/{_n_clusters} con hipótesis dominante definida</span>"
         f"</div>"
-        + (f"<div style='font-size:.74rem;color:#7c2d12;margin-top:8px'>Se cuentan los clusters con señal "
+        + (f"<div style='font-size:.74rem;color:#7c2d12;margin-top:8px'>Se cuentan los grupos de cuentas con señal "
              f"(≥{MIN_CUENTAS_PUBLICADO} cuentas); +{_n_par_s1} grupos pequeños agregados aparte.</div>"
              if _n_par_s1 else "")
         + f"<div style='font-size:.74rem;color:#7c2d12;margin-top:10px;line-height:1.5'>"
@@ -4570,13 +4582,13 @@ def main():
         _bubble_html = (
             f"<div style='margin-top:16px;border-top:1px solid #fed7aa;padding-top:12px'>"
             f"<div style='font-size:.72rem;color:#9a3412;font-weight:700;margin-bottom:6px'>"
-            f"Clusters por tema · cada burbuja es un cluster "
-            f"(tamaño = nº de cuentas · color = banda) "
+            f"Grupos de cuentas por tema · cada burbuja es un grupo"
+            f" · tamaño = nº de cuentas · color = nivel de actividad "
             f"<span style='display:inline-block;background:#c2410c;color:#fff;font-size:.66rem;"
             f"border-radius:999px;padding:2px 10px;margin-left:4px;vertical-align:middle;"
             f"animation:pilotPulse 2s ease-in-out infinite'>👆 pulsa para el detalle</span></div>"
             f"{render_bubble_chart(_bubble_rows, temas, temas_cfg)}"
-            f"<div style='font-size:.68rem;color:#94a3b8;margin-top:6px'>Eje X = score. "
+            f"<div style='font-size:.68rem;color:#94a3b8;margin-top:6px'>Eje X = intensidad de difusión. "
             f"<b style='color:#c2410c'>Pulsa una burbuja</b> para abrir su detalle "
             f"(componentes, hipótesis, evidencia y acciones). Sin duplicados entre temas.</div></div>")
     _panel_html = (
@@ -4587,8 +4599,8 @@ def main():
         f"<div style='display:flex;flex-wrap:wrap;gap:10px'>"
         f"{kpi('Eventos', n_events, 'ventana 90 días', '#f8fafc')}"
         f"{kpi('Fuentes', n_sources, 'captura activa', '#f8fafc')}"
-        f"{kpi('Clusters', _n_clusters, 'con señal' + (f' · +{_n_par_s1} agregados' if _n_par_s1 else ''), '#f8fafc')}"
-        f"{kpi('En alerta', _n_alerta, 'score ≥60', '#fff7ed')}"
+        f"{kpi('Grupos de cuentas', _n_clusters, 'con señal' + (f' · +{_n_par_s1} agregados' if _n_par_s1 else ''), '#f8fafc')}"
+        f"{kpi('Con intensidad alta', _n_alerta, 'intensidad alta', '#fff7ed')}"
         f"{kpi('Temas', len(temas), 'monitorizados', '#f8fafc')}"
         f"</div>"
         f"{_band_dist}"
@@ -4614,7 +4626,7 @@ def main():
         f"{newsletter_form}"
         f"{sugerir_form}"
         f"<div style='font-size:.72rem;color:#94a3b8;text-align:center;margin-top:10px'>"
-        f"Tendencia: hallazgos de las últimas 24 h frente a las 24 h anteriores, por tema. Actualizado cada 6 h.</div>"
+        f"Tendencia: detecciones de las últimas 24 h frente a las 24 h anteriores, por tema. Actualizado cada 6 h.</div>"
         f"</div>")
     # el detalle completo queda oculto por defecto, detrás de "ver detalle"
     detalle_wrap_open = "<div id='vistaDetalle' hidden>"
@@ -5004,7 +5016,7 @@ def main():
                        f"de media, <b>{_rc['mediana_pct']:.0f}%</b> de los eventos de un cluster en "
                        f"alerta son de los últimos 7 días.</p>")
         _kpi_alerta_html = (
-            "<div class='card' id='kpi-alerta'><h3>Antigüedad de la alerta</h3>"
+            "<div class='card' id='kpi-alerta'><h3>Tiempo activo del grupo</h3>"
             + "".join(_pk)
             + "<p class='caption' style='font-size:.8rem;color:#94a3b8'>"
             "<b>Qué mide y qué NO:</b> mide cuánto tiempo lleva activa una alerta <b>dentro del "
@@ -5307,7 +5319,7 @@ window.fimiDrawerClose=function(){
         "font-size:.82rem;color:#334155;line-height:1.5'>"
         f"<b>Dato y versión.</b> Corte {_gen} · snapshot {_snap} · ventana 45–90 d · "
         f"{_mil(n_events)} eventos · {n_sources} fuentes · "
-        f"{_mil(n_clusters)} clusters ({_mil(_n_clusters)} con señal ≥3 cuentas + {_mil(_n_par_s1)} grupos pequeños) · "
+        f"{_mil(n_clusters)} grupos de cuentas ({_mil(_n_clusters)} con señal de al menos {MIN_CUENTAS_PUBLICADO} cuentas + {_mil(_n_par_s1)} grupos pequeños) · "
         f"versión <code>{_ver}</code> · "
         "<a href='/metodo.html#validacion'>validación y denominadores</a> · "
         "<a href='/dominios.html'>dominios y líneas base</a></div>"
