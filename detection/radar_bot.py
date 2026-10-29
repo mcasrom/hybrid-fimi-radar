@@ -344,7 +344,7 @@ def main():
                 continue
             txt = (msg.get("text") or "").strip()
             if txt.startswith("/start") or txt.startswith("/help"):
-                send(chat, "📡 <b>Radar FIMI</b> — alertas de los diales por tema.\n\n"
+                send(chat, "📡 <b>Radar FIMI</b> — grupos con intensidad alta por tema.\n\n"
                            "/radar — elegir temas\n/mis — tus temas\n/baja — darte de baja\n"
                            "/sugerir — proponer un tema nuevo\n/validar — etiquetar la validación (solo admin)\n\n"
                            "Te aviso SOLO cuando un tema cambia de estado (Subiendo/Bajando/Estable).")

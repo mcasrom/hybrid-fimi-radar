@@ -90,9 +90,9 @@ def main(dry_run: bool = False):
             line = (f"📡 <b>Radar FIMI</b> — {t}\n"
                     f"Ahora: <b>{txt}</b>.\n")
             if estado == "subiendo":
-                line += f"({st['hoy']} hallazgos hoy, {st['high_hoy']} en alerta alta)\n"
+                line += f"({st['hoy']} detecciones hoy, {st['high_hoy']} con intensidad alta)\n"
             elif estado == "bajando":
-                line += f"({st['hoy']} hallazgos hoy frente a {st['hace48']} hace 48h)\n"
+                line += f"({st['hoy']} detecciones hoy frente a {st['hace48']} hace 48h)\n"
             line += f"Ver: {URL_DASH}"
             if not dry_run:
                 try:

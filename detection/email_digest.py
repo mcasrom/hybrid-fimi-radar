@@ -123,7 +123,7 @@ def main(dry_run: bool = False):
                     except Exception as _e:
                         print(f"[digest] titulo {t}: {_e}", file=sys.stderr)
                     url_link = f' · <a href="{url}" style="color:#c2410c">"{tit}"</a>' if tit and url else (f' · "{tit}"' if tit else "")
-                    top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Top: {lab} {sc}/100 {banda} · {nc} cuentas{url_link}</span>"
+                    top_txt = f"<br><span style=\"color:#475569;font-size:.82rem\">Grupo principal: {lab} · {sc}/100 · {nc} cuentas{url_link}</span>"
                     banda_txt = f" · {banda}"
             except Exception as e:
                 print(f"[digest] top err {t}: {e}")
@@ -155,20 +155,20 @@ def main(dry_run: bool = False):
             except Exception as _e:
                 print(f"[digest] narrativas {t}: {_e}", file=sys.stderr)
             link = f"{BASE_URL}/#{t}"
-            lines.append(f"<li style=\"margin:12px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt}{banda_txt} · <b>{hoy}/100</b> · {high_hoy} HIGH hoy vs {high_48} hace 48h<span style=\"color:#64748b;font-size:.82rem\">{extra}</span>{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
+            lines.append(f"<li style=\"margin:12px 0\"><b>{NOMBRE_TEMA.get(t, t)}</b>: {txt}{banda_txt} · <b>{hoy}/100</b> · {high_hoy} nivel alto hoy vs {high_48} hace 48h<span style=\"color:#64748b;font-size:.82rem\">{extra}</span>{top_txt}<br><a href=\"{link}\" style=\"color:#c2410c;font-size:.82rem\">Ver detalle en el radar →</a></li>")
         lines.append("</ul>")
         sid = row["id"]
         baja = f"{BASE_URL}/api/baja?id={sid}"
         html = ('<div style="font-family:system-ui;max-width:600px;margin:0 auto">'
-                '<h2>📡 Observatorio · Resumen semanal</h2>'
-                '<p>Estado actual de tus temas (score, HIGH y top cluster):</p>'
+                '<h2>📡 FIMI Radar · Resumen semanal</h2>'
+                '<p>Estado actual de tus temas (intensidad, nivel alto y grupo principal):</p>'
                 + "".join(lines) +
                 f'<p><a href="{BASE_URL}" style="background:#c2410c;color:#fff;padding:9px 16px;'
                 f'border-radius:6px;text-decoration:none;font-weight:700">Abrir el radar</a></p>'
                 f'<p style="font-size:.82rem;color:#64748b">Recibes esto porque te suscribiste en fimi.viajeinteligencia.com · 1 email/semana · <a href="{baja}">Darme de baja</a></p>'
                 '<p style="font-size:.8rem;color:#888">Radar FIMI · fimi.viajeinteligencia.com · semilla única</p></div>')
         if not dry_run:
-            ok = send_email(row["destino"], "Observatorio · Resumen semanal", html)
+            ok = send_email(row["destino"], "FIMI Radar · Resumen semanal", html)
             print(f"[digest] {'ok' if ok else 'FAIL'} -> {row['destino']}")
         else:
             print(f"[digest][dry] -> {row['destino']}")
