@@ -1661,7 +1661,7 @@ RESEARCH_OUT = Path("/var/www/fimi/research.html")
 
 
 def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
-    """Página /research: Observatorio Research (pregunta, datos, método,
+    """Página /research: FIMI Radar Research (pregunta, datos, método,
     evidencia, incertidumbre, limitaciones, reproducción, dataset).
 
     Todo el contenido está anclado a artefactos reales del repo (docs/*.md,
@@ -1840,14 +1840,14 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Observatorio · Research — pregunta, datos, método, evidencia e incertidumbre</title>
+<title>FIMI Radar · Research — pregunta, datos, método, evidencia e incertidumbre</title>
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/research.html">
 <meta name="description" content="Nota de investigación del observatorio: qué mide, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta property="og:title" content="Observatorio · Research">
+<meta property="og:title" content="FIMI Radar · Research">
 <meta property="og:description" content="De la pregunta a la incertidumbre: cómo mide el observatorio amplificación, qué puede equivocarse y cómo repetirlo.">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/research.html">
@@ -1899,7 +1899,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 <body>
 <header>
   <div class="fimi-brandbar">
-    <a class="brand" href="/"><span class="logo">📡</span> Observatorio</a>
+    <a class="brand" href="/"><span class="logo">📡</span> FIMI Radar</a>
     <div class="nav">
       <a class="nlink" href="/">Radar</a>
       <a class="nlink" href="/#transparencia">Transparencia</a>
@@ -1922,7 +1922,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 </header>
 <main>
   <div class="hero">
-    <h1>Observatorio · Research</h1>
+    <h1>FIMI Radar · Research</h1>
     <p class="sub">Notas de investigación del observatorio de amplificación:
       lo que queremos medir, los datos que observamos, cómo lo medimos, qué hemos
       encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
@@ -2100,13 +2100,13 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
         el <b>motor y la metodología</b> y puede ingerir datos agregados que aporte el grupo.
         Contacto: <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a>.</li>
     </ul>
-    <p class="caption">Cómo citar: Observatorio de amplificación (ámbito FIMI), M. Castillo, 2026,
+    <p class="caption">Cómo citar: FIMI Radar (ámbito FIMI), M. Castillo, 2026,
       https://fimi.viajeinteligencia.com · DOI <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a>
       (AGPL-3.0; datos CC BY 4.0). Una banda alta es amplificación medida, no coordinación confirmada.</p>
   </div>
 
   <div class="footer">
-    Observatorio · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
+    FIMI Radar · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
     <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
     <a href="https://viajeinteligencia.com">viajeinteligencia.com</a>
   </div>
@@ -2175,7 +2175,7 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "  <channel>\n"
-        "    <title>Observatorio — Alertas de amplificación</title>\n"
+        "    <title>FIMI Radar — Detecciones</title>\n"
         f"    <link>{base_url}/</link>\n"
         f'    <atom:link href="{base_url}/alerts.xml" rel="self" type="application/rss+xml"/>\n'
         "    <description>Amplificación en banda alta (HIGH o CRITICAL, score ≥ 60). "
@@ -3913,7 +3913,7 @@ def main():
         cl = st.get("clusters", 0)
         hi = st.get("high", 0)
         piloto = st.get("estado") == "piloto"
-        base = (f"Observatorio — {nm.title()} ({now[:5]}): {cl} cluster{'s' if cl != 1 else ''}"
+        base = (f"FIMI Radar — {nm.title()} ({now[:5]}): {cl} cluster{'s' if cl != 1 else ''}"
                 f"{', ' + str(hi) + ' HIGH' if hi else ', 0 HIGH'}. "
                 f"{'(piloto, en calibración) ' if piloto else ''}Agnóstico al actor, "
                 f"sin atribución sin evidencia. https://fimi.viajeinteligencia.com")
@@ -4008,7 +4008,7 @@ def main():
         <p style="color:#64748b;font-size:.86rem;margin:.5rem 0 0;line-height:1.5">Cada nivel filtra la información y se acerca al fondo.
            Solo el último escalón responde "¿quién?". Ninguno atribuye sin evidencia.</p>
       </div>
-      <img src="/fimi-overview.webp" alt="Vista general del Observatorio: del ruido a la señal"
+      <img src="/fimi-overview.webp" alt="Vista general del FIMI Radar: del ruido a la señal"
            width="1200" height="800" loading="lazy"
            style="display:block;width:100%;height:auto;border-radius:10px;border:1px solid #e2e8f0;margin:2px 0 14px">
       {funnel_cards}
@@ -4309,7 +4309,7 @@ def main():
         if _cfg_est == "piloto":
             _est_txt += " (piloto)"
         _partes_compartir.append(f"{_nom}: {_est_txt}")
-    _txt_agregado = ("Observatorio (" + now[:5] + ") — " +
+    _txt_agregado = ("FIMI Radar (" + now[:5] + ") — " +
                      " · ".join(_partes_compartir) +
                      ". Agnóstico al actor, sin atribución sin evidencia. https://fimi.viajeinteligencia.com")
     _tw_agregado = "https://twitter.com/intent/tweet?text=" + _up.quote(_txt_agregado)
@@ -5143,16 +5143,16 @@ def main():
         '<script type="application/ld+json">'
         '{"@context": "https://schema.org", "@graph": ['
         '{"@type": "WebSite", "@id": "https://fimi.viajeinteligencia.com/#website", '
-        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de amplificación (ámbito FIMI)", "inLanguage": "es", '
-        '"description": "Observatorio OSINT agnóstico al actor que mide '
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "FIMI Radar (ámbito FIMI)", "inLanguage": "es", '
+        '"description": "FIMI Radar OSINT agnóstico al actor que mide '
         'amplificación y anomalías en temas en español (ámbito FIMI). Mide propagación; no confirma coordinación ni atribuye."},'
         '{"@type": "Dataset", "@id": "https://fimi.viajeinteligencia.com/#dataset", '
-        '"url": "https://fimi.viajeinteligencia.com/", "name": "Observatorio de amplificación (ámbito FIMI) — eventos y clusters", '
+        '"url": "https://fimi.viajeinteligencia.com/", "name": "FIMI Radar (ámbito FIMI) — eventos y clusters", '
         f'"description": "Eventos y clusters de amplificación con señal del ciclo actual (6h) del observatorio.", '
         '"isAccessibleForFree": true, "inLanguage": "es", '
         '"license": "https://creativecommons.org/licenses/by/4.0/", '
         f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
-        '"creator": {"@type": "Organization", "name": "ViajeInteligencia / Observatorio", "url": "https://fimi.viajeinteligencia.com/"}}'
+        '"creator": {"@type": "Organization", "name": "ViajeInteligencia / FIMI Radar", "url": "https://fimi.viajeinteligencia.com/"}}'
         "]}</script>"
     )
 
@@ -5329,7 +5329,7 @@ window.fimiDrawerClose=function(){
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FIMI Radar — evidencia de patrones de difusión en Bluesky</title>
  <meta name="description" content="FIMI Radar mide patrones de difusión de cuentas de Bluesky que publican contenido parecido o enlazan las mismas fuentes. No mide cobertura mediática, opinión pública ni movimientos sociales.">
-<meta name="keywords" content="FIMI, hybrid threats, radar OSINT, desinformación, España, Marruecos, Ceuta, Melilla, UE-Marruecos, geopolítica, política nacional, amplificación de narrativas, propagación de contenido">
+<meta name="keywords" content="FIMI Radar, Bluesky, patrones de difusión, amplificación, evidencia, OSINT, datos abiertos">
  <link rel="canonical" href="https://fimi.viajeinteligencia.com/">
  <link rel="alternate" type="application/rss+xml" title="Posibles bulos contrastados" href="/datos/bulos.xml">
  {_jsonld_html}
@@ -5348,7 +5348,7 @@ window.fimiDrawerClose=function(){
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="alternate" type="application/rss+xml" title="Observatorio — Alertas" href="/alerts.xml">
+<link rel="alternate" type="application/rss+xml" title="FIMI Radar — Alertas" href="/alerts.xml">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -5465,7 +5465,7 @@ a{{color:#c2410c}}
   <a class="transp" href="/" title="Panel del radar (inicio)">Radar</a>
   <a class="cta-consulta" href="/consulta.html" title="Pega una URL y te dice en llano qué patrón de difusión muestra">🔎 Consulta</a>
   <details class="navmenu">
-    <summary class="transp cta-ceuta" title="Expedientes del observatorio">Casos ▾</summary>
+    <summary class="transp cta-ceuta" title="Expedientes de FIMI Radar">Casos ▾</summary>
     <div class="navmenu-panel">
       <a href="/casos/ceuta/">Ceuta / Frontera Sur</a>
       <a href="/casos/frontera_sur_hibridos/">Marruecos · presión híbrida (Frontera Sur)</a>
@@ -5508,7 +5508,7 @@ a{{color:#c2410c}}
   <details class="navmenu">
     <summary class="transp" title="El proyecto y la transparencia">Acerca ▾</summary>
     <div class="navmenu-panel">
-      <a href="/sobre.html" title="Qué es el Observatorio">Sobre</a>
+      <a href="/sobre.html" title="Qué es el FIMI Radar">Sobre</a>
       <a href="/apoyo.html" title="Apoyar el proyecto (Ko-fi)">Apoyo</a>
       <a href="#transparencia" data-panel="tabTransparencia" onclick="fimiPanel('tabTransparencia');return false">Transparencia</a>
       <a href="/privacidad.html" title="Privacidad y datos">Privacidad</a>
@@ -5554,7 +5554,7 @@ a{{color:#c2410c}}
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
     <a href="/fimi-wallchart-A4.png">ver a tamaño completo</a> · <a href="/demo.html">ver la demo de 69 s</a>.
-    <img src='/fimi-wallchart-web.webp' alt='Diagrama del Observatorio de amplificación: captura de fuentes abiertas, medición de amplificación y anomalías por clúster, y contraste de hipótesis sin atribuir actor' loading='lazy' style='width:100%;max-width:680px;display:block;margin:10px auto 0;border:1px solid #e2e8f0;border-radius:10px'>
+    <img src='/fimi-wallchart-web.webp' alt='Diagrama del FIMI Radar: captura de fuentes abiertas, medición de amplificación y anomalías por clúster, y contraste de hipótesis sin atribuir actor' loading='lazy' style='width:100%;max-width:680px;display:block;margin:10px auto 0;border:1px solid #e2e8f0;border-radius:10px'>
   </div>
 
   <div style="margin:10px 0 4px;padding:11px 16px;background:#f8fafc;border:1px solid #cbd5e1;border-left:5px solid #64748b;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
@@ -5606,7 +5606,7 @@ de arriba para ver solo un tema; estas secciones son la vista de conjunto.
 <div id="tabTransparencia" class="tab-panel">
 
 <div class="card" id="que-es-fimi">
-<h3 style="margin-bottom:6px">Qué es Observatorio</h3>
+<h3 style="margin-bottom:6px">Qué es FIMI Radar</h3>
 <p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
 <b>FIMI</b> — <i>Foreign Information Manipulation and Interference</i> (Manipulación e
 Interferencia de Información Extranjera) — es el término que usan la UE y sus servicios de
@@ -5874,7 +5874,7 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:center;text-align:left;font-size:.85rem;color:#666;line-height:2;max-width:920px;margin:0 auto">
-    <div><b>Observatorio</b><br><a href="/research.html" style="color:#c2410c">Research</a><br><a href="/consulta.html" style="color:#c2410c">Consulta de enlace</a><br><a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a><br><a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a><br><a href="/casos/frontera_sur_hibridos/" style="color:#c2410c">Frontera Sur (híbrido)</a><br><a href="/casos/protestas/" style="color:#c2410c">Protestas juveniles (piloto)</a><br><a href="/api.html" style="color:#c2410c">API</a><br><a href="/demo.html" style="color:#c2410c">Demo (69 s)</a></div>
+    <div><b>FIMI Radar</b><br><a href="/research.html" style="color:#c2410c">Research</a><br><a href="/consulta.html" style="color:#c2410c">Consulta de enlace</a><br><a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a><br><a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a><br><a href="/casos/frontera_sur_hibridos/" style="color:#c2410c">Frontera Sur (híbrido)</a><br><a href="/casos/protestas/" style="color:#c2410c">Protestas juveniles (piloto)</a><br><a href="/api.html" style="color:#c2410c">API</a><br><a href="/demo.html" style="color:#c2410c">Demo (69 s)</a></div>
     <div><b>Documentos</b><br><a href="/metodo.html" style="color:#c2410c">Método</a><br><a href="/dominios.html" style="color:#c2410c">Dominios y líneas base</a><br><a href="/glosario.html" style="color:#c2410c">Glosario</a><br><a href="/manual.pdf" style="color:#c2410c">Manual (PDF)</a><br><a href="/datos/bulos.xml" style="color:#c2410c">Feed de bulos (RSS)</a><br><a href="/operativa.html" style="color:#c2410c">Operativa</a><br><a href="/docs.html" style="color:#c2410c">Documentos</a><br><a href="/costes.html" style="color:#c2410c">Costes</a><br><a href="/apoyo.html" style="color:#c2410c">Apoyo al proyecto</a></div>
     <div><b>En esta página</b><br><a href="#que-es-fimi" style="color:#c2410c">Qué es FIMI</a> · <a href="#como-leerlo" style="color:#c2410c">Cómo leer</a><br><a href="#cobertura" style="color:#c2410c">Cobertura</a> · <a href="#metodologia" style="color:#c2410c">Metodología</a><br><a href="#fuentes" style="color:#c2410c">Fuentes y búsquedas</a><br><a href="#salud-keywords" style="color:#c2410c">Salud de keywords</a> · <a href="#sistema" style="color:#c2410c">Salud del sistema</a><br><a href="#salud-temas" style="color:#c2410c">Salud de los temas</a> · <a href="#posibles-bulos" style="color:#c2410c">Posibles bulos</a><br><a href="#seguridad" style="color:#c2410c">Seguridad</a> · <a href="#gobernanza" style="color:#c2410c">Gobernanza</a><br><a href="#ciclo-vida" style="color:#c2410c">Ciclo de vida</a> · <a href="#bitacora" style="color:#c2410c">Bitácora</a><br><a href="#elecciones" onclick="fimiPanel('tabRadar');abrirDetalle('elecciones');return false;" style="color:#c2410c">Elecciones</a> · <a href="#licencia" style="color:#c2410c">Licencia</a></div>
     <div><b>Proyecto</b><br><a href="https://github.com/mcasrom/hybrid-fimi-radar" target="_blank" rel="noopener noreferrer" style="color:#c2410c">GitHub</a><br><a href="https://www.viajeinteligencia.com" style="color:#c2410c">ViajeInteligencia</a><br><a href="/privacidad.html" style="color:#c2410c">Privacidad</a><br><a href="mailto:info-fimi@viajeinteligencia.com" style="color:#c2410c">Contacto</a><br><a href="/admin.html" style="color:#94a3b8">🔒 Panel de administración</a></div>
