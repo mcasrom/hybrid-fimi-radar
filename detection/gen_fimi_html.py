@@ -1660,6 +1660,12 @@ def render_cluster_cards(clus, asm, titulo_vacio="Sin clusters activos", conteni
 RESEARCH_OUT = Path("/var/www/fimi/research.html")
 
 
+def _guard_public(s, nombre):
+    for _m in ("[PENDIENTE", "__VERSION_GENERADA__"):
+        if _m in s:
+            raise SystemExit(f"ERROR: {nombre} contiene {_m!r}; no se publica.")
+
+
 def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
     """Página /research: FIMI Radar Research (pregunta, datos, método,
     evidencia, incertidumbre, limitaciones, reproducción, dataset).
@@ -2106,13 +2112,14 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
   </div>
 
   <div class="footer">
-    FIMI Radar · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
+    FIMI Radar · <a href="/research.html">Research</a> · <a href="/metodo.html">Método</a> · <a href="/limites.html">Límites y método</a> · <a href="/casos/ceuta/">Caso Ceuta</a> · <a href="/demo.html">Demo</a> · <a href="/glosario.html">Glosario</a> · <a href="/apoyo.html">Apoyo</a> · <a href="/#transparencia">Transparencia</a> ·
     <a href="https://github.com/mcasrom/hybrid-fimi-radar">GitHub ↗</a> ·
     <a href="https://viajeinteligencia.com">viajeinteligencia.com</a>
   </div>
 </main>
 </body></html>"""
     RESEARCH_OUT.parent.mkdir(parents=True, exist_ok=True)
+    _guard_public(page, "research.html")
     RESEARCH_OUT.write_text(page, encoding="utf-8")
     print(f"OK: {RESEARCH_OUT} — {n_events} eventos, {n_clusters} clusters, ecos {n_ecos}, sostenidas {n_sost}")
 
@@ -2186,6 +2193,7 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
         "  </channel>\n"
         "</rss>\n")
     ALERTS_OUT.parent.mkdir(parents=True, exist_ok=True)
+    _guard_public(rss, "alerts.xml")
     ALERTS_OUT.write_text(rss, encoding="utf-8")
     print(f"OK: {ALERTS_OUT} — {len(items)} alertas")
 
@@ -2295,7 +2303,8 @@ def main():
     if not DB.exists():
         html = f"<html><body><h1>Sin datos aún</h1><p>El radar capturará en el próximo ciclo (6h).</p></body></html>"
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(html, encoding="utf-8")
+        _guard_public(html, "index.html")
+    OUT.write_text(html, encoding="utf-8")
         print("sin datos, pagina placeholder generada")
         return
 
@@ -6223,12 +6232,14 @@ if ('serviceWorker' in navigator) {{
         (ROOT / "data" / "temas_clusters.json").write_text(json.dumps(_tcj, ensure_ascii=False), encoding="utf-8")
     except Exception as _e_tcj:
         print(f"temas_clusters.json fallo (no bloquea): {_e_tcj}")
+    _guard_public(html, "index.html")
     OUT.write_text(html, encoding="utf-8")
     print(f"OK: {OUT} — {n_events} eventos, {n_sources} fuentes, {len(clusters)} clusters")
     # Detalle de los clusters del "resto" EN UN FICHERO APARTE (no inline): el
     # dashboard lo carga solo al pulsar una barra. Mantiene index.html ligero.
     try:
         _pool_html = "".join(POOL_ACC)
+        _guard_public(_pool_html, "resto.html")
         RESTO_OUT.write_text(_pool_html, encoding="utf-8")
         print(f"OK: {RESTO_OUT} — {len(_pool_html):,} bytes")
     except Exception as _e_pool:
