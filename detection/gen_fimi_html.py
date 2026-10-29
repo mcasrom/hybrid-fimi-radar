@@ -5585,9 +5585,9 @@ a{{color:#c2410c}}
 
  {resumen_html}
 
- {funnel_html}
-
  {detalle_wrap_open}
+ {funnel_html}
+ {_GUIA_HTML}
 
 <script>window.FIMI_SHARE = {share_by_tema_js};</script>
 
@@ -5699,7 +5699,6 @@ Las conclusiones deben leerse siempre con esta limitación presente.
 
 </div>
 
-{_GUIA_HTML}
 {_COBERTURA_HTML}
 
 <div class="card">
