@@ -56,6 +56,7 @@ for x in e['episodios']:
 src_html=''.join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t or u)}</a></li>' for u,t in srcs)
 cov=v1.get('cobertura_plataforma',{})
 html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Ceuta y Marruecos — observatorio de controversia</title>
 <meta name="description" content="Seguimiento documentado de la controversia entre Ceuta, España y Marruecos: afirmaciones, actores, fuentes, estado de verificación y cuestiones abiertas.">
 <style>
