@@ -4238,12 +4238,17 @@ def main():
         _trend_glyph = {"subiendo": "▲", "bajando": "▼", "estable": "▬", "recopilando": "…"}
         _trend_col = {"subiendo": "#d97706", "bajando": "#16a34a",
                       "estable": "#64748b", "recopilando": "#94a3b8"}
+        _card_cl = [c for c in clusters if _vt(c) == _t and c["cluster_label"] not in _duplicados]
+        _card_cl, _ = partir_publicados(_card_cl, _CuentasPorCluster, MIN_CUENTAS_PUBLICADO)
+        _card_accounts = set()
+        for _c in _card_cl:
+            _card_accounts |= set(firma_cluster.get(_c["id"], ()))
         main_cards += (
             f"<article style='flex:1 1 280px;max-width:360px;background:#fff;border:1px solid #e2e8f0;"
             f"border-left:5px solid {_card_border};border-radius:14px;padding:16px;text-align:left'>"
             f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.04em'>{_nombre}</div>"
             f"{_badge_tema}<p style='font-size:.88rem;color:#334155;margin:8px 0 4px'>{_frase}</p>"
-            f"<p style='font-size:.8rem;color:#64748b;margin:0'>{len(_tema_cl)} grupos de cuentas · {_tot_cuentas} cuentas</p></article>")
+            f"<p style='font-size:.8rem;color:#64748b;margin:0'>{len(_card_cl)} grupos de cuentas · {len(_card_accounts)} cuentas</p></article>")
         _board_rows += (
             f"<div class='sit-row'>"
             f"<span class='sit-dot' style='background:{_dial_color}'></span>"
