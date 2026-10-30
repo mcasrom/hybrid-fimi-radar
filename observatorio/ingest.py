@@ -14,7 +14,7 @@ UA='Mozilla/5.0 (compatible; ObservatorioPublicado/1.0; +https://fimi.viajeintel
 DAYS=45
 TOPICS={
  'frontera_sur':{'label':'Frontera Sur','queries':['Ceuta Marruecos','Melilla Marruecos','frontera sur España Marruecos'],'terms':['ceuta','melilla','marruecos','maroc','morocco','frontera','frontière','frontiere','migracion','migración','migration','migratoire','gibraltar','سبتة','مليلية','المغرب']},
- 'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestation','manifestation','joven','jeune','jeunesse','juvenil','estudiant','étudiant','disturbio','emeute','émeute','riot','blocus','moviliz']},
+ 'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestas','protestation','manifestation','joven','jovenes','jeune','jeunes','jeunesse','juvenil','juveniles','estudiant','estudiante','estudiantes','étudiant','disturbio','disturbios','emeute','émeute','riot','riots','blocus','movilizacion','movilizaciones','proteste','protesten','jugend','jugendprotest','studenten']},
  'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','election','élection','electoral','campaña','campagne','29n','voto','vote','candidat','candidate','wahl','wahlen','wahlkampf','kandidat','kandidaten','abstimmung','stimme','elezioni','elezione','campagna','candidato','candidati','scrutin','выборы','кампания','выборах','انتخابات','الحملة']},
  'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren'],'terms':['infraestructura','transportes','transporte','adif','renfe','autovia','autovía','alta velocidad','tren','cercanias','cercanías','accidente','incidencia','obra','carretera','aeropuerto','puerto','conservacion','conservación','mitms']},
 }
@@ -29,6 +29,7 @@ def relevant(topic,title):
  t=norm(title)
  if topic=='elecciones_generales':
   return any(c.lower() in t for c in SPAIN_CONTEXT) and any(term.lower() in t for term in TOPICS[topic]['terms'])
+ if topic=='protestas_juveniles' and any(x in t for x in ['patriot','ukrainekrieg','ukraine-krieg','ucrania','misiles','missiles']): return False
  if topic=='frontera_sur':
   if any(x in t for x in FRONTERA_EXCLUDE): return False
   return any(x in t for x in FRONTERA_GEO) and any(x in t for x in FRONTERA_CONTEXT)
@@ -106,13 +107,20 @@ def run():
     stamp=now().isoformat(timespec='seconds')
     latest={'updated_at':stamp,'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
     for topic,meta in TOPICS.items():
-        rows=[]
-        for lang,lim in [('es',20),('!=es',20)]:
-            cond="source_lang='es'" if lang=='es' else "source_lang!='es'"
-            rows += c.execute(f'SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND {cond} ORDER BY published DESC LIMIT ?',(topic,lim)).fetchall()
+        es=c.execute("SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND source_lang='es' ORDER BY published DESC LIMIT 20",(topic,)).fetchall()
+        intl_all=c.execute("SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND source_lang!='es' ORDER BY published DESC LIMIT 100",(topic,)).fetchall()
+        bylang={}
+        for r in intl_all: bylang.setdefault(r['source_lang'] or '?',[]).append(r)
+        intl=[]; seen_intl=set()
+        for lang in sorted(bylang):
+            for r in bylang[lang][:2]: intl.append(r); seen_intl.add(r['id'])
+        for r in intl_all:
+            if len(intl)>=20: break
+            if r['id'] not in seen_intl: intl.append(r); seen_intl.add(r['id'])
+        rows=list(es)+intl
         if len(rows)<40:
             seen={r['id'] for r in rows}
-            extra=c.execute('SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 80',(topic,)).fetchall()
+            extra=c.execute('SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 100',(topic,)).fetchall()
             rows += [r for r in extra if r['id'] not in seen][:40-len(rows)]
         rows=sorted(rows,key=lambda r:r['published'],reverse=True)[:40]
         trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]

@@ -26,7 +26,7 @@ Registro de lo publicado sobre cuatro temas:
 - Elecciones generales
 - Infraestructuras España
 
-La captura automática usa Google News RSS y **89 feeds directos** heredados del FIMI anterior (España, Marruecos, Argelia, Francia, Reino Unido, Rusia y China), entre ellos medios locales de Ceuta y Melilla.
+La captura automática usa Google News RSS y **92 feeds directos** heredados del FIMI anterior (España, Marruecos, Argelia, Francia, Reino Unido, Rusia y China), entre ellos medios locales de Ceuta y Melilla.
 
 ## Qué no es
 
@@ -61,7 +61,7 @@ En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https
 ## Estructura
 
 - `observatorio/ingest.py`: captura automática.
-- `observatorio/feeds.json`: registro de 89 feeds.
+- `observatorio/feeds.json`: registro de 92 feeds.
 - `observatorio/live.js`: pintado de publicaciones.
 - `observatorio/*/index.html`: páginas públicas.
 - `observatorio/admin/`: panel privado de estado.

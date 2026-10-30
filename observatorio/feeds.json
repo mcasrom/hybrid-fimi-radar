@@ -948,5 +948,32 @@
     ],
     "idioma": "ar",
     "tipo": "media"
+  },
+  {
+    "name": "Google News EN · youth protests Spain",
+    "url": "https://news.google.com/rss/search?q=youth+protests+Spain&hl=en-GB&gl=GB&ceid=GB:en",
+    "topics": [
+      "protestas_juveniles"
+    ],
+    "idioma": "en",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News DE · Jugendproteste Spanien",
+    "url": "https://news.google.com/rss/search?q=Jugendproteste+Spanien&hl=de&gl=DE&ceid=DE:de",
+    "topics": [
+      "protestas_juveniles"
+    ],
+    "idioma": "de",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News FR · manifestations jeunes Espagne",
+    "url": "https://news.google.com/rss/search?q=manifestations+jeunes+Espagne&hl=fr&gl=FR&ceid=FR:fr",
+    "topics": [
+      "protestas_juveniles"
+    ],
+    "idioma": "fr",
+    "tipo": "media"
   }
 ]
