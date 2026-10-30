@@ -29,7 +29,12 @@ def parse_date(s):
  except Exception: return None
 def get(url):
  req=urllib.request.Request(url,headers={'User-Agent':UA})
- with urllib.request.urlopen(req,timeout=12) as r: return r.read()
+ for attempt in range(2):
+  try:
+   with urllib.request.urlopen(req,timeout=12) as r: return r.read()
+  except Exception:
+   if attempt==1: raise
+   time.sleep(1)
 def db():
  DB.parent.mkdir(parents=True,exist_ok=True); c=sqlite3.connect(DB,timeout=20); c.row_factory=sqlite3.Row
  c.execute('PRAGMA journal_mode=WAL')
@@ -85,11 +90,13 @@ def run():
     latest={'updated_at':stamp,'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
     for topic,meta in TOPICS.items():
         rows=c.execute('SELECT id,title,url,source,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 40',(topic,)).fetchall()
-        latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'items':[dict(r) for r in rows]}
+        trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]
+        latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'trend':trend,'items':[dict(r) for r in rows]}
     latest['feed_errors']=errors[:15]
     OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.tmp'); tmp.write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(OUT)
     fh={'updated_at':stamp,'total':len(health),'ok':sum(1 for x in health.values() if x['status']=='ok'),'error':sum(1 for x in health.values() if x['status']=='error'),'pending':sum(1 for x in health.values() if x['status']=='pending'),'feeds':sorted(health.values(),key=lambda x:x['name'])}
     hp=Path(os.environ.get('OBS_HEALTH',OUT.parent/'feed_health.json')); hp.write_text(json.dumps(fh,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps({'ok':added>0,'feeds':len(feeds),'feed_health':{'ok':fh['ok'],'error':fh['error'],'pending':fh['pending']},'added':added,'topics':{k:v['count'] for k,v in latest['topics'].items()},'errors':errors[:8]},ensure_ascii=False))
-    return 0 if added else 1
+    ok=fh['ok']>0
+    print(json.dumps({'ok':ok,'feeds':len(feeds),'feed_health':{'ok':fh['ok'],'error':fh['error'],'pending':fh['pending']},'added':added,'topics':{k:v['count'] for k,v in latest['topics'].items()},'errors':errors[:8]},ensure_ascii=False))
+    return 0 if ok else 1
 if __name__=='__main__': raise SystemExit(run())
