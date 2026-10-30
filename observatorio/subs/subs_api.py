@@ -455,7 +455,7 @@ def _event_recalc(c,eid):
 def split_event(eid,item_ids):
     ids=[x for x in item_ids if isinstance(x,str)]
     if not ids: raise ValueError('items')
-    c=sqlite3.connect(DATA_DB,timeout=15); row=c.execute('SELECT topic,source_kind FROM events WHERE id=?',(eid,)).fetchone()
+    c=sqlite3.connect(DATA_DB,timeout=30); c.row_factory=sqlite3.Row; c.execute('PRAGMA busy_timeout=30000'); row=c.execute('SELECT topic,source_kind FROM events WHERE id=?',(eid,)).fetchone()
     if not row: c.close(); raise ValueError('event')
     valid={r['item_id'] for r in c.execute('SELECT item_id FROM event_items WHERE event_id=?',(eid,)).fetchall()}
     ids=[x for x in ids if x in valid]
@@ -472,7 +472,7 @@ def split_event(eid,item_ids):
 def merge_events(ids):
     ids=[x for x in ids if isinstance(x,str)]
     if len(ids)<2: raise ValueError('events')
-    c=sqlite3.connect(DATA_DB,timeout=15); target=ids[0]
+    c=sqlite3.connect(DATA_DB,timeout=30); c.row_factory=sqlite3.Row; c.execute('PRAGMA busy_timeout=30000'); target=ids[0]
     if not c.execute('SELECT 1 FROM events WHERE id=?',(target,)).fetchone(): c.close(); raise ValueError('target')
     for other in ids[1:]:
         c.execute('UPDATE OR IGNORE event_items SET event_id=? WHERE event_id=?',(target,other)); c.execute('DELETE FROM event_items WHERE event_id=?',(other,)); c.execute('DELETE FROM events WHERE id=?',(other,))
