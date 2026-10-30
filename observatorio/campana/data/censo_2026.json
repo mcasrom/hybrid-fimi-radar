@@ -1,0 +1,1024 @@
+{
+  "meta": {
+    "fuente": "INE · Oficina del Censo Electoral",
+    "descargado": "2026-10-18T06:49:23.436392+00:00"
+  },
+  "ficheros": {
+    "provincias": {
+      "url": "https://www.ine.es/oficina_censo/elecgen2026/Elecgral_2026_cc_tab3.xlsx",
+      "sha256": "9fd6da00a3ae74946e3f3d256ce3074f8e3f44665c87eabcb1d7b33c7c58ee01"
+    },
+    "ccaa": {
+      "url": "https://www.ine.es/oficina_censo/elecgen2026/Elecgral_2026_cc_tab2.xlsx",
+      "sha256": "f9f32572a61d46f164148b7869e0112e0a8d5472ce05056bcabbace1b3913788"
+    },
+    "edad_sexo": {
+      "url": "https://www.ine.es/oficina_censo/elecgen2026/Elecgral_2026_cc_tab9.xlsx",
+      "sha256": "c92faa7593cd88eba8ec181aeb14fa5c5733d481b11ab6e25a41cac04c7721fa"
+    },
+    "nuevos": {
+      "url": "https://www.ine.es/oficina_censo/elecgen2026/Elecgral_2026_cc_tab12.xlsx",
+      "sha256": "1fd58a128c0179124cc7ef16e0422adbe1f1c36a1bccb1fd965d27407e72cef7"
+    },
+    "cera_paises": {
+      "url": "https://www.ine.es/oficina_censo/elecgen2026/Elecgral_2026_cc_tab6.xlsx",
+      "sha256": "05b6b0a9d1b49a0e980db41c25e9a33afdc8529325c606413c22a394c59e475a"
+    }
+  },
+  "total": 38728356,
+  "cer": 35958711,
+  "cera": 2769645,
+  "nuevos_desde_2023": 1615127,
+  "nuevos_desde_2024": 1199338,
+  "provincias": [
+    {
+      "codigo": "28",
+      "nombre": "Madrid",
+      "cer": 5038039,
+      "cera": 498874,
+      "total": 5536913
+    },
+    {
+      "codigo": "08",
+      "nombre": "Barcelona",
+      "cer": 4133070,
+      "cera": 265687,
+      "total": 4398757
+    },
+    {
+      "codigo": "46",
+      "nombre": "Valencia / València",
+      "cer": 1984563,
+      "cera": 83234,
+      "total": 2067797
+    },
+    {
+      "codigo": "41",
+      "nombre": "Sevilla",
+      "cer": 1563407,
+      "cera": 43565,
+      "total": 1606972
+    },
+    {
+      "codigo": "03",
+      "nombre": "Alicante / Alacant",
+      "cer": 1303765,
+      "cera": 55464,
+      "total": 1359229
+    },
+    {
+      "codigo": "29",
+      "nombre": "Málaga",
+      "cer": 1218939,
+      "cera": 74033,
+      "total": 1292972
+    },
+    {
+      "codigo": "30",
+      "nombre": "Murcia",
+      "cer": 1099682,
+      "cera": 44626,
+      "total": 1144308
+    },
+    {
+      "codigo": "15",
+      "nombre": "Coruña, A",
+      "cer": 928212,
+      "cera": 178478,
+      "total": 1106690
+    },
+    {
+      "codigo": "11",
+      "nombre": "Cádiz",
+      "cer": 1007105,
+      "cera": 35052,
+      "total": 1042157
+    },
+    {
+      "codigo": "33",
+      "nombre": "Asturias",
+      "cer": 835489,
+      "cera": 143588,
+      "total": 979077
+    },
+    {
+      "codigo": "48",
+      "nombre": "Bizkaia",
+      "cer": 909301,
+      "cera": 50401,
+      "total": 959702
+    },
+    {
+      "codigo": "35",
+      "nombre": "Palmas, Las",
+      "cer": 872976,
+      "cera": 66235,
+      "total": 939211
+    },
+    {
+      "codigo": "38",
+      "nombre": "Santa Cruz de Tenerife",
+      "cer": 802038,
+      "cera": 125100,
+      "total": 927138
+    },
+    {
+      "codigo": "36",
+      "nombre": "Pontevedra",
+      "cer": 776260,
+      "cera": 150148,
+      "total": 926408
+    },
+    {
+      "codigo": "07",
+      "nombre": "Balears, Illes",
+      "cer": 828603,
+      "cera": 42115,
+      "total": 870718
+    },
+    {
+      "codigo": "18",
+      "nombre": "Granada",
+      "cer": 728641,
+      "cera": 62425,
+      "total": 791066
+    },
+    {
+      "codigo": "50",
+      "nombre": "Zaragoza",
+      "cer": 730065,
+      "cera": 30903,
+      "total": 760968
+    },
+    {
+      "codigo": "14",
+      "nombre": "Córdoba",
+      "cer": 627881,
+      "cera": 20911,
+      "total": 648792
+    },
+    {
+      "codigo": "43",
+      "nombre": "Tarragona",
+      "cer": 599563,
+      "cera": 26598,
+      "total": 626161
+    },
+    {
+      "codigo": "20",
+      "nombre": "Gipuzkoa",
+      "cer": 561932,
+      "cera": 35927,
+      "total": 597859
+    },
+    {
+      "codigo": "17",
+      "nombre": "Girona",
+      "cer": 545107,
+      "cera": 30162,
+      "total": 575269
+    },
+    {
+      "codigo": "45",
+      "nombre": "Toledo",
+      "cer": 553863,
+      "cera": 15686,
+      "total": 569549
+    },
+    {
+      "codigo": "06",
+      "nombre": "Badajoz",
+      "cer": 538991,
+      "cera": 13090,
+      "total": 552081
+    },
+    {
+      "codigo": "04",
+      "nombre": "Almería",
+      "cer": 487815,
+      "cera": 53278,
+      "total": 541093
+    },
+    {
+      "codigo": "31",
+      "nombre": "Navarra",
+      "cer": 500413,
+      "cera": 36781,
+      "total": 537194
+    },
+    {
+      "codigo": "39",
+      "nombre": "Cantabria",
+      "cer": 473210,
+      "cera": 49873,
+      "total": 523083
+    },
+    {
+      "codigo": "23",
+      "nombre": "Jaén",
+      "cer": 500560,
+      "cera": 14964,
+      "total": 515524
+    },
+    {
+      "codigo": "12",
+      "nombre": "Castellón / Castelló",
+      "cer": 435080,
+      "cera": 13116,
+      "total": 448196
+    },
+    {
+      "codigo": "47",
+      "nombre": "Valladolid",
+      "cer": 422478,
+      "cera": 17741,
+      "total": 440219
+    },
+    {
+      "codigo": "24",
+      "nombre": "León",
+      "cer": 370903,
+      "cera": 55080,
+      "total": 425983
+    },
+    {
+      "codigo": "21",
+      "nombre": "Huelva",
+      "cer": 399666,
+      "cera": 9245,
+      "total": 408911
+    },
+    {
+      "codigo": "13",
+      "nombre": "Ciudad Real",
+      "cer": 385613,
+      "cera": 7808,
+      "total": 393421
+    },
+    {
+      "codigo": "32",
+      "nombre": "Ourense",
+      "cer": 249128,
+      "cera": 111124,
+      "total": 360252
+    },
+    {
+      "codigo": "27",
+      "nombre": "Lugo",
+      "cer": 264112,
+      "cera": 76919,
+      "total": 341031
+    },
+    {
+      "codigo": "10",
+      "nombre": "Cáceres",
+      "cer": 320973,
+      "cera": 18535,
+      "total": 339508
+    },
+    {
+      "codigo": "25",
+      "nombre": "Lleida",
+      "cer": 304391,
+      "cera": 21909,
+      "total": 326300
+    },
+    {
+      "codigo": "02",
+      "nombre": "Albacete",
+      "cer": 299580,
+      "cera": 8961,
+      "total": 308541
+    },
+    {
+      "codigo": "37",
+      "nombre": "Salamanca",
+      "cer": 268176,
+      "cera": 36586,
+      "total": 304762
+    },
+    {
+      "codigo": "09",
+      "nombre": "Burgos",
+      "cer": 278257,
+      "cera": 22373,
+      "total": 300630
+    },
+    {
+      "codigo": "01",
+      "nombre": "Araba/Álava",
+      "cer": 256995,
+      "cera": 10330,
+      "total": 267325
+    },
+    {
+      "codigo": "26",
+      "nombre": "Rioja, La",
+      "cer": 238491,
+      "cera": 21307,
+      "total": 259798
+    },
+    {
+      "codigo": "19",
+      "nombre": "Guadalajara",
+      "cer": 202546,
+      "cera": 6227,
+      "total": 208773
+    },
+    {
+      "codigo": "22",
+      "nombre": "Huesca",
+      "cer": 166279,
+      "cera": 9675,
+      "total": 175954
+    },
+    {
+      "codigo": "49",
+      "nombre": "Zamora",
+      "cer": 138147,
+      "cera": 24104,
+      "total": 162251
+    },
+    {
+      "codigo": "16",
+      "nombre": "Cuenca",
+      "cer": 147707,
+      "cera": 3703,
+      "total": 151410
+    },
+    {
+      "codigo": "34",
+      "nombre": "Palencia",
+      "cer": 128729,
+      "cera": 8737,
+      "total": 137466
+    },
+    {
+      "codigo": "05",
+      "nombre": "Ávila",
+      "cer": 126996,
+      "cera": 9602,
+      "total": 136598
+    },
+    {
+      "codigo": "40",
+      "nombre": "Segovia",
+      "cer": 117282,
+      "cera": 4178,
+      "total": 121460
+    },
+    {
+      "codigo": "44",
+      "nombre": "Teruel",
+      "cer": 100360,
+      "cera": 5891,
+      "total": 106251
+    },
+    {
+      "codigo": "42",
+      "nombre": "Soria",
+      "cer": 68009,
+      "cera": 9060,
+      "total": 77069
+    },
+    {
+      "codigo": "51",
+      "nombre": "Ceuta",
+      "cer": 62234,
+      "cera": 3357,
+      "total": 65591
+    },
+    {
+      "codigo": "52",
+      "nombre": "Melilla",
+      "cer": 57089,
+      "cera": 6879,
+      "total": 63968
+    }
+  ],
+  "ccaa": [
+    {
+      "nombre": "ANDALUCÍA",
+      "cer": 6534014,
+      "cera": 313473,
+      "total": 6847487
+    },
+    {
+      "nombre": "CATALUÑA",
+      "cer": 5582131,
+      "cera": 344356,
+      "total": 5926487
+    },
+    {
+      "nombre": "MADRID, COMUNIDAD DE",
+      "cer": 5038039,
+      "cera": 498874,
+      "total": 5536913
+    },
+    {
+      "nombre": "COMUNITAT VALENCIANA",
+      "cer": 3723408,
+      "cera": 151814,
+      "total": 3875222
+    },
+    {
+      "nombre": "GALICIA",
+      "cer": 2217712,
+      "cera": 516669,
+      "total": 2734381
+    },
+    {
+      "nombre": "CASTILLA Y LEÓN",
+      "cer": 1918977,
+      "cera": 187461,
+      "total": 2106438
+    },
+    {
+      "nombre": "CANARIAS",
+      "cer": 1675014,
+      "cera": 191335,
+      "total": 1866349
+    },
+    {
+      "nombre": "PAÍS VASCO",
+      "cer": 1728228,
+      "cera": 96658,
+      "total": 1824886
+    },
+    {
+      "nombre": "CASTILLA - LA MANCHA",
+      "cer": 1589309,
+      "cera": 42385,
+      "total": 1631694
+    },
+    {
+      "nombre": "MURCIA, REGIÓN DE",
+      "cer": 1099682,
+      "cera": 44626,
+      "total": 1144308
+    },
+    {
+      "nombre": "ARAGÓN",
+      "cer": 996704,
+      "cera": 46469,
+      "total": 1043173
+    },
+    {
+      "nombre": "ASTURIAS, PRINCIPADO DE",
+      "cer": 835489,
+      "cera": 143588,
+      "total": 979077
+    },
+    {
+      "nombre": "EXTREMADURA",
+      "cer": 859964,
+      "cera": 31625,
+      "total": 891589
+    },
+    {
+      "nombre": "BALEARS, ILLES",
+      "cer": 828603,
+      "cera": 42115,
+      "total": 870718
+    },
+    {
+      "nombre": "NAVARRA, COMUNIDAD FORAL DE",
+      "cer": 500413,
+      "cera": 36781,
+      "total": 537194
+    },
+    {
+      "nombre": "CANTABRIA",
+      "cer": 473210,
+      "cera": 49873,
+      "total": 523083
+    },
+    {
+      "nombre": "RIOJA, LA",
+      "cer": 238491,
+      "cera": 21307,
+      "total": 259798
+    },
+    {
+      "nombre": "CIUDAD DE CEUTA",
+      "cer": 62234,
+      "cera": 3357,
+      "total": 65591
+    },
+    {
+      "nombre": "CIUDAD DE MELILLA",
+      "cer": 57089,
+      "cera": 6879,
+      "total": 63968
+    }
+  ],
+  "edad_sexo": [
+    {
+      "grupo": "18 a 19",
+      "mujeres": 469148,
+      "hombres": 500099,
+      "total": 969247
+    },
+    {
+      "grupo": "20 a 24",
+      "mujeres": 1120342,
+      "hombres": 1177570,
+      "total": 2297912
+    },
+    {
+      "grupo": "25 a 29",
+      "mujeres": 1035944,
+      "hombres": 1077187,
+      "total": 2113131
+    },
+    {
+      "grupo": "30 a 34",
+      "mujeres": 1044301,
+      "hombres": 1067205,
+      "total": 2111506
+    },
+    {
+      "grupo": "35 a 39",
+      "mujeres": 1132789,
+      "hombres": 1142165,
+      "total": 2274954
+    },
+    {
+      "grupo": "40 a 44",
+      "mujeres": 1319009,
+      "hombres": 1307936,
+      "total": 2626945
+    },
+    {
+      "grupo": "45 a 49",
+      "mujeres": 1654932,
+      "hombres": 1648799,
+      "total": 3303731
+    },
+    {
+      "grupo": "50 a 54",
+      "mujeres": 1776325,
+      "hombres": 1772155,
+      "total": 3548480
+    },
+    {
+      "grupo": "55 a 59",
+      "mujeres": 1697337,
+      "hombres": 1660325,
+      "total": 3357662
+    },
+    {
+      "grupo": "60 a 64",
+      "mujeres": 1628793,
+      "hombres": 1544196,
+      "total": 3172989
+    },
+    {
+      "grupo": "65 a 69",
+      "mujeres": 1459257,
+      "hombres": 1335181,
+      "total": 2794438
+    },
+    {
+      "grupo": "70 a 74",
+      "mujeres": 1212253,
+      "hombres": 1055707,
+      "total": 2267960
+    },
+    {
+      "grupo": "75 a 79",
+      "mujeres": 1072385,
+      "hombres": 862987,
+      "total": 1935372
+    },
+    {
+      "grupo": "80 a 84",
+      "mujeres": 880459,
+      "hombres": 633626,
+      "total": 1514085
+    },
+    {
+      "grupo": "85 y más",
+      "mujeres": 1094979,
+      "hombres": 575320,
+      "total": 1670299
+    }
+  ],
+  "nuevos_provincia": [
+    {
+      "codigo": "28",
+      "nombre": "Madrid",
+      "desde_2023": 227433,
+      "desde_2024": 168915
+    },
+    {
+      "codigo": "08",
+      "nombre": "Barcelona",
+      "desde_2023": 195095,
+      "desde_2024": 144521
+    },
+    {
+      "codigo": "46",
+      "nombre": "Valencia / València",
+      "desde_2023": 91635,
+      "desde_2024": 68194
+    },
+    {
+      "codigo": "41",
+      "nombre": "Sevilla",
+      "desde_2023": 80589,
+      "desde_2024": 59867
+    },
+    {
+      "codigo": "03",
+      "nombre": "Alicante / Alacant",
+      "desde_2023": 62327,
+      "desde_2024": 46451
+    },
+    {
+      "codigo": "29",
+      "nombre": "Málaga",
+      "desde_2023": 60532,
+      "desde_2024": 44917
+    },
+    {
+      "codigo": "30",
+      "nombre": "Murcia",
+      "desde_2023": 59662,
+      "desde_2024": 44296
+    },
+    {
+      "codigo": "11",
+      "nombre": "Cádiz",
+      "desde_2023": 50610,
+      "desde_2024": 37448
+    },
+    {
+      "codigo": "07",
+      "nombre": "Balears, Illes",
+      "desde_2023": 38263,
+      "desde_2024": 28508
+    },
+    {
+      "codigo": "35",
+      "nombre": "Palmas, Las",
+      "desde_2023": 37879,
+      "desde_2024": 27568
+    },
+    {
+      "codigo": "48",
+      "nombre": "Bizkaia",
+      "desde_2023": 35505,
+      "desde_2024": 26335
+    },
+    {
+      "codigo": "18",
+      "nombre": "Granada",
+      "desde_2023": 34688,
+      "desde_2024": 25738
+    },
+    {
+      "codigo": "38",
+      "nombre": "Santa Cruz de Tenerife",
+      "desde_2023": 33963,
+      "desde_2024": 24901
+    },
+    {
+      "codigo": "15",
+      "nombre": "Coruña, A",
+      "desde_2023": 32771,
+      "desde_2024": 24255
+    },
+    {
+      "codigo": "50",
+      "nombre": "Zaragoza",
+      "desde_2023": 31268,
+      "desde_2024": 23359
+    },
+    {
+      "codigo": "36",
+      "nombre": "Pontevedra",
+      "desde_2023": 29925,
+      "desde_2024": 22267
+    },
+    {
+      "codigo": "43",
+      "nombre": "Tarragona",
+      "desde_2023": 29542,
+      "desde_2024": 21994
+    },
+    {
+      "codigo": "14",
+      "nombre": "Córdoba",
+      "desde_2023": 28349,
+      "desde_2024": 21007
+    },
+    {
+      "codigo": "33",
+      "nombre": "Asturias",
+      "desde_2023": 27677,
+      "desde_2024": 20551
+    },
+    {
+      "codigo": "17",
+      "nombre": "Girona",
+      "desde_2023": 27426,
+      "desde_2024": 20430
+    },
+    {
+      "codigo": "45",
+      "nombre": "Toledo",
+      "desde_2023": 27150,
+      "desde_2024": 20429
+    },
+    {
+      "codigo": "04",
+      "nombre": "Almería",
+      "desde_2023": 26028,
+      "desde_2024": 19270
+    },
+    {
+      "codigo": "20",
+      "nombre": "Gipuzkoa",
+      "desde_2023": 24516,
+      "desde_2024": 18274
+    },
+    {
+      "codigo": "31",
+      "nombre": "Navarra",
+      "desde_2023": 23228,
+      "desde_2024": 17385
+    },
+    {
+      "codigo": "06",
+      "nombre": "Badajoz",
+      "desde_2023": 23225,
+      "desde_2024": 17186
+    },
+    {
+      "codigo": "23",
+      "nombre": "Jaén",
+      "desde_2023": 22201,
+      "desde_2024": 16532
+    },
+    {
+      "codigo": "12",
+      "nombre": "Castellón / Castelló",
+      "desde_2023": 20271,
+      "desde_2024": 15211
+    },
+    {
+      "codigo": "21",
+      "nombre": "Huelva",
+      "desde_2023": 19672,
+      "desde_2024": 14666
+    },
+    {
+      "codigo": "39",
+      "nombre": "Cantabria",
+      "desde_2023": 18961,
+      "desde_2024": 14006
+    },
+    {
+      "codigo": "13",
+      "nombre": "Ciudad Real",
+      "desde_2023": 16705,
+      "desde_2024": 12448
+    },
+    {
+      "codigo": "47",
+      "nombre": "Valladolid",
+      "desde_2023": 16694,
+      "desde_2024": 12360
+    },
+    {
+      "codigo": "25",
+      "nombre": "Lleida",
+      "desde_2023": 14277,
+      "desde_2024": 10662
+    },
+    {
+      "codigo": "02",
+      "nombre": "Albacete",
+      "desde_2023": 13002,
+      "desde_2024": 9716
+    },
+    {
+      "codigo": "10",
+      "nombre": "Cáceres",
+      "desde_2023": 12113,
+      "desde_2024": 8887
+    },
+    {
+      "codigo": "24",
+      "nombre": "León",
+      "desde_2023": 11817,
+      "desde_2024": 8796
+    },
+    {
+      "codigo": "09",
+      "nombre": "Burgos",
+      "desde_2023": 10633,
+      "desde_2024": 7993
+    },
+    {
+      "codigo": "01",
+      "nombre": "Araba/Álava",
+      "desde_2023": 10550,
+      "desde_2024": 7935
+    },
+    {
+      "codigo": "26",
+      "nombre": "Rioja, La",
+      "desde_2023": 10274,
+      "desde_2024": 7667
+    },
+    {
+      "codigo": "19",
+      "nombre": "Guadalajara",
+      "desde_2023": 9890,
+      "desde_2024": 7332
+    },
+    {
+      "codigo": "37",
+      "nombre": "Salamanca",
+      "desde_2023": 9493,
+      "desde_2024": 7050
+    },
+    {
+      "codigo": "27",
+      "nombre": "Lugo",
+      "desde_2023": 7625,
+      "desde_2024": 5689
+    },
+    {
+      "codigo": "32",
+      "nombre": "Ourense",
+      "desde_2023": 7606,
+      "desde_2024": 5670
+    },
+    {
+      "codigo": "22",
+      "nombre": "Huesca",
+      "desde_2023": 6732,
+      "desde_2024": 5114
+    },
+    {
+      "codigo": "16",
+      "nombre": "Cuenca",
+      "desde_2023": 5550,
+      "desde_2024": 4106
+    },
+    {
+      "codigo": "40",
+      "nombre": "Segovia",
+      "desde_2023": 4623,
+      "desde_2024": 3351
+    },
+    {
+      "codigo": "05",
+      "nombre": "Ávila",
+      "desde_2023": 4546,
+      "desde_2024": 3351
+    },
+    {
+      "codigo": "34",
+      "nombre": "Palencia",
+      "desde_2023": 4213,
+      "desde_2024": 3113
+    },
+    {
+      "codigo": "51",
+      "nombre": "Ceuta",
+      "desde_2023": 4096,
+      "desde_2024": 3011
+    },
+    {
+      "codigo": "52",
+      "nombre": "Melilla",
+      "desde_2023": 4030,
+      "desde_2024": 2984
+    },
+    {
+      "codigo": "49",
+      "nombre": "Zamora",
+      "desde_2023": 3954,
+      "desde_2024": 2912
+    },
+    {
+      "codigo": "44",
+      "nombre": "Teruel",
+      "desde_2023": 3892,
+      "desde_2024": 2913
+    },
+    {
+      "codigo": "42",
+      "nombre": "Soria",
+      "desde_2023": 2421,
+      "desde_2024": 1797
+    }
+  ],
+  "cera_paises": [
+    {
+      "codigo": "340",
+      "pais": "ARGENTINA",
+      "electores": 524852
+    },
+    {
+      "codigo": "110",
+      "pais": "FRANCIA",
+      "electores": 267387
+    },
+    {
+      "codigo": "302",
+      "pais": "ESTADOS UNIDOS DE AMÉRICA",
+      "electores": 213007
+    },
+    {
+      "codigo": "303",
+      "pais": "MÉXICO",
+      "electores": 192177
+    },
+    {
+      "codigo": "315",
+      "pais": "CUBA",
+      "electores": 169290
+    },
+    {
+      "codigo": "126",
+      "pais": "ALEMANIA",
+      "electores": 157637
+    },
+    {
+      "codigo": "125",
+      "pais": "REINO UNIDO",
+      "electores": 154907
+    },
+    {
+      "codigo": "342",
+      "pais": "BRASIL",
+      "electores": 135670
+    },
+    {
+      "codigo": "351",
+      "pais": "VENEZUELA",
+      "electores": 130988
+    },
+    {
+      "codigo": "132",
+      "pais": "SUIZA",
+      "electores": 120014
+    },
+    {
+      "codigo": "350",
+      "pais": "URUGUAY",
+      "electores": 73390
+    },
+    {
+      "codigo": "344",
+      "pais": "CHILE",
+      "electores": 70018
+    },
+    {
+      "codigo": "103",
+      "pais": "BÉLGICA",
+      "electores": 64312
+    },
+    {
+      "codigo": "343",
+      "pais": "COLOMBIA",
+      "electores": 50703
+    },
+    {
+      "codigo": "345",
+      "pais": "ECUADOR",
+      "electores": 45629
+    },
+    {
+      "codigo": "121",
+      "pais": "PAÍSES BAJOS",
+      "electores": 30505
+    },
+    {
+      "codigo": "348",
+      "pais": "PERÚ",
+      "electores": 29368
+    },
+    {
+      "codigo": "326",
+      "pais": "REPÚBLICA DOMINICANA",
+      "electores": 27575
+    },
+    {
+      "codigo": "124",
+      "pais": "ANDORRA",
+      "electores": 25811
+    },
+    {
+      "codigo": "115",
+      "pais": "ITALIA",
+      "electores": 25128
+    }
+  ],
+  "nota": "Edad y sexo corresponden a electores residentes en España (CER); no incluyen a los residentes en el extranjero (CERA)."
+}

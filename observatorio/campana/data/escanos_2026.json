@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "fuente": "BOE · Real Decreto 806/2026, de 5 de octubre (anexo)",
+    "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-20742",
+    "descargado": "2026-10-18T07:03:43.040423+00:00"
+  },
+  "total_escanos": 350,
+  "provincias": [
+    {
+      "nombre": "Madrid",
+      "escanos": 38,
+      "electores": 5536913,
+      "electores_por_escanos": 145708.0
+    },
+    {
+      "nombre": "Barcelona",
+      "escanos": 32,
+      "electores": 4398757,
+      "electores_por_escanos": 137461.0
+    },
+    {
+      "nombre": "Valencia / València",
+      "escanos": 16,
+      "electores": 2067797,
+      "electores_por_escanos": 129237.0
+    },
+    {
+      "nombre": "Alicante / Alacant",
+      "escanos": 12,
+      "electores": 1359229,
+      "electores_por_escanos": 113269.0
+    },
+    {
+      "nombre": "Sevilla",
+      "escanos": 12,
+      "electores": 1606972,
+      "electores_por_escanos": 133914.0
+    },
+    {
+      "nombre": "Málaga",
+      "escanos": 11,
+      "electores": 1292972,
+      "electores_por_escanos": 117543.0
+    },
+    {
+      "nombre": "Murcia",
+      "escanos": 10,
+      "electores": 1144308,
+      "electores_por_escanos": 114431.0
+    },
+    {
+      "nombre": "Balears, Illes",
+      "escanos": 8,
+      "electores": 870718,
+      "electores_por_escanos": 108840.0
+    },
+    {
+      "nombre": "Bizkaia",
+      "escanos": 8,
+      "electores": 959702,
+      "electores_por_escanos": 119963.0
+    },
+    {
+      "nombre": "Cádiz",
+      "escanos": 8,
+      "electores": 1042157,
+      "electores_por_escanos": 130270.0
+    },
+    {
+      "nombre": "Coruña, A",
+      "escanos": 8,
+      "electores": 1106690,
+      "electores_por_escanos": 138336.0
+    },
+    {
+      "nombre": "Palmas, Las",
+      "escanos": 8,
+      "electores": 939211,
+      "electores_por_escanos": 117401.0
+    },
+    {
+      "nombre": "Asturias",
+      "escanos": 7,
+      "electores": 979077,
+      "electores_por_escanos": 139868.0
+    },
+    {
+      "nombre": "Granada",
+      "escanos": 7,
+      "electores": 791066,
+      "electores_por_escanos": 113009.0
+    },
+    {
+      "nombre": "Pontevedra",
+      "escanos": 7,
+      "electores": 926408,
+      "electores_por_escanos": 132344.0
+    },
+    {
+      "nombre": "Santa Cruz de Tenerife",
+      "escanos": 7,
+      "electores": 927138,
+      "electores_por_escanos": 132448.0
+    },
+    {
+      "nombre": "Zaragoza",
+      "escanos": 7,
+      "electores": 760968,
+      "electores_por_escanos": 108710.0
+    },
+    {
+      "nombre": "Almería",
+      "escanos": 6,
+      "electores": 541093,
+      "electores_por_escanos": 90182.0
+    },
+    {
+      "nombre": "Córdoba",
+      "escanos": 6,
+      "electores": 648792,
+      "electores_por_escanos": 108132.0
+    },
+    {
+      "nombre": "Gipuzkoa",
+      "escanos": 6,
+      "electores": 597859,
+      "electores_por_escanos": 99643.0
+    },
+    {
+      "nombre": "Girona",
+      "escanos": 6,
+      "electores": 575269,
+      "electores_por_escanos": 95878.0
+    },
+    {
+      "nombre": "Tarragona",
+      "escanos": 6,
+      "electores": 626161,
+      "electores_por_escanos": 104360.0
+    },
+    {
+      "nombre": "Toledo",
+      "escanos": 6,
+      "electores": 569549,
+      "electores_por_escanos": 94925.0
+    },
+    {
+      "nombre": "Badajoz",
+      "escanos": 5,
+      "electores": 552081,
+      "electores_por_escanos": 110416.0
+    },
+    {
+      "nombre": "Cantabria",
+      "escanos": 5,
+      "electores": 523083,
+      "electores_por_escanos": 104617.0
+    },
+    {
+      "nombre": "Castellón / Castelló",
+      "escanos": 5,
+      "electores": 448196,
+      "electores_por_escanos": 89639.0
+    },
+    {
+      "nombre": "Ciudad Real",
+      "escanos": 5,
+      "electores": 393421,
+      "electores_por_escanos": 78684.0
+    },
+    {
+      "nombre": "Huelva",
+      "escanos": 5,
+      "electores": 408911,
+      "electores_por_escanos": 81782.0
+    },
+    {
+      "nombre": "Jaén",
+      "escanos": 5,
+      "electores": 515524,
+      "electores_por_escanos": 103105.0
+    },
+    {
+      "nombre": "Navarra",
+      "escanos": 5,
+      "electores": 537194,
+      "electores_por_escanos": 107439.0
+    },
+    {
+      "nombre": "Valladolid",
+      "escanos": 5,
+      "electores": 440219,
+      "electores_por_escanos": 88044.0
+    },
+    {
+      "nombre": "Albacete",
+      "escanos": 4,
+      "electores": 308541,
+      "electores_por_escanos": 77135.0
+    },
+    {
+      "nombre": "Araba/Álava",
+      "escanos": 4,
+      "electores": 267325,
+      "electores_por_escanos": 66831.0
+    },
+    {
+      "nombre": "Burgos",
+      "escanos": 4,
+      "electores": 300630,
+      "electores_por_escanos": 75158.0
+    },
+    {
+      "nombre": "Cáceres",
+      "escanos": 4,
+      "electores": 339508,
+      "electores_por_escanos": 84877.0
+    },
+    {
+      "nombre": "León",
+      "escanos": 4,
+      "electores": 425983,
+      "electores_por_escanos": 106496.0
+    },
+    {
+      "nombre": "Lleida",
+      "escanos": 4,
+      "electores": 326300,
+      "electores_por_escanos": 81575.0
+    },
+    {
+      "nombre": "Lugo",
+      "escanos": 4,
+      "electores": 341031,
+      "electores_por_escanos": 85258.0
+    },
+    {
+      "nombre": "Ourense",
+      "escanos": 4,
+      "electores": 360252,
+      "electores_por_escanos": 90063.0
+    },
+    {
+      "nombre": "Rioja, La",
+      "escanos": 4,
+      "electores": 259798,
+      "electores_por_escanos": 64950.0
+    },
+    {
+      "nombre": "Salamanca",
+      "escanos": 4,
+      "electores": 304762,
+      "electores_por_escanos": 76190.0
+    },
+    {
+      "nombre": "Ávila",
+      "escanos": 3,
+      "electores": 136598,
+      "electores_por_escanos": 45533.0
+    },
+    {
+      "nombre": "Cuenca",
+      "escanos": 3,
+      "electores": 151410,
+      "electores_por_escanos": 50470.0
+    },
+    {
+      "nombre": "Guadalajara",
+      "escanos": 3,
+      "electores": 208773,
+      "electores_por_escanos": 69591.0
+    },
+    {
+      "nombre": "Huesca",
+      "escanos": 3,
+      "electores": 175954,
+      "electores_por_escanos": 58651.0
+    },
+    {
+      "nombre": "Palencia",
+      "escanos": 3,
+      "electores": 137466,
+      "electores_por_escanos": 45822.0
+    },
+    {
+      "nombre": "Segovia",
+      "escanos": 3,
+      "electores": 121460,
+      "electores_por_escanos": 40487.0
+    },
+    {
+      "nombre": "Teruel",
+      "escanos": 3,
+      "electores": 106251,
+      "electores_por_escanos": 35417.0
+    },
+    {
+      "nombre": "Zamora",
+      "escanos": 3,
+      "electores": 162251,
+      "electores_por_escanos": 54084.0
+    },
+    {
+      "nombre": "Soria",
+      "escanos": 2,
+      "electores": 77069,
+      "electores_por_escanos": 38534.0
+    },
+    {
+      "nombre": "Ceuta",
+      "escanos": 1,
+      "electores": 65591,
+      "electores_por_escanos": 65591.0
+    },
+    {
+      "nombre": "Melilla",
+      "escanos": 1,
+      "electores": 63968,
+      "electores_por_escanos": 63968.0
+    }
+  ]
+}
