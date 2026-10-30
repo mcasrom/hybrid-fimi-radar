@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+import json, html, re
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]
+EP=ROOT/'data/caso_frontera_sur_hibridos/episodios_curados.json'
+V1=ROOT/'docs/casos/ceuta-v1.json'
+OUT=Path(__file__).with_name('index.html')
+e=json.loads(EP.read_text(encoding='utf-8')); v1=json.loads(V1.read_text(encoding='utf-8'))
+def esc(x): return html.escape(str(x or ''))
+def urls(txt):
+    return re.findall(r'https?://[^\s)]+', txt or '')
+def source_items(ep):
+    links=[]
+    for s in ep.get('fuente',[]):
+        u=re.search(r'(https?://[^\s)]+)',s)
+        if u: links.append((u.group(1), re.sub(r'https?://[^\s)]+','',s).strip(' ()·')))
+    return links
+# Narrativas: agrupación editorial explícita sobre los seis episodios
+groups=[
+ ('Presión militar y naval',['CUR-2026-001','CUR-2026-002','CUR-2026-003'],'Titulares que sitúan movimiento naval, drones o capacidad militar cerca de Ceuta.'),
+ ('Defensa aérea y rearme',['CUR-2026-006'],'Reportes sobre la negociación o compra de un sistema israelí de defensa aérea.'),
+ ('Presión migratoria',['CUR-2026-004'],'Cobertura sobre flujos migratorios, empadronamientos y presión en la frontera.'),
+ ('Controversia política',['CUR-2026-005'],'Declaraciones de actores políticos sobre la actuación del Gobierno.'),
+]
+byid={x['id']:x for x in e['episodios']}
+cards=[]
+for x in e['episodios']:
+    links=source_items(x)
+    src=''.join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t or u)}</a></li>' for u,t in links) or '<li>No consta enlace.</li>'
+    cards.append(f'''<article class="event" id="{esc(x['id'])}">
+<div class="eventhead"><span class="id">{esc(x['id'])}</span><span class="type">{esc(x.get('tipo'))}</span><span class="period">{esc(x.get('periodo'))}</span></div>
+<h3>{esc(x.get('titulo'))}</h3>
+<p class="claim"><b>Qué se afirma.</b> {esc(x.get('afirmacion'))}</p>
+<p><b>Actores citados.</b> {esc(x.get('actores') or 'No consta')}</p>
+<p><b>Estado.</b> <span class="status">{esc(x.get('estado_verificacion'))}</span></p>
+<p><b>Fuente primaria.</b> {esc(x.get('fuente_primaria') or 'No consta')}</p>
+<details><summary>Fuentes y límites</summary><ul>{src}</ul><p><b>Explicación alternativa.</b> {esc(x.get('explicacion_alternativa') or 'No consta')}</p><p><b>Límites.</b> {esc(x.get('limites') or 'No consta')}</p></details>
+</article>''')
+# cronología por periodo declarado
+cron=''.join(f'<li><b>{esc(x.get("periodo"))}</b> · <a href="#{esc(x.get("id"))}">{esc(x.get("titulo"))}</a> <span class="muted">({esc(x.get("id"))})</span></li>' for x in e['episodios'])
+# actores
+actors=[]
+for x in e['episodios']:
+    actors.append(f'<li><b>{esc(x.get("id"))}</b> — {esc(x.get("actores") or "No consta")}</li>')
+# narrativas
+narr=[]
+for name,ids,desc in groups:
+    titles=' · '.join(f'{i}: {esc(byid[i]["titulo"])}' for i in ids if i in byid)
+    narr.append(f'<article class="narr"><h3>{esc(name)}</h3><p>{esc(desc)}</p><p class="muted">{titles}</p></article>')
+# fuentes únicas
+seen=set(); srcs=[]
+for x in e['episodios']:
+    for u,t in source_items(x):
+        if u not in seen:
+            seen.add(u); srcs.append((u,t))
+src_html=''.join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t or u)}</a></li>' for u,t in srcs)
+cov=v1.get('cobertura_plataforma',{})
+html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ceuta y Marruecos — observatorio de controversia</title>
+<meta name="description" content="Seguimiento documentado de la controversia entre Ceuta, España y Marruecos: afirmaciones, actores, fuentes, estado de verificación y cuestiones abiertas.">
+<style>
+:root{{--accent:#b45309;--ink:#1e293b;--muted:#64748b;--bg:#fffaf5;--line:#fde68a}}
+*{{box-sizing:border-box}}body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,var(--bg));color:var(--ink);line-height:1.6}}
+.wrap{{max-width:980px;margin:0 auto;padding:28px 18px 60px}}a{{color:var(--accent)}}
+header{{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}}h1{{font-size:1.75rem;line-height:1.2;margin:0 0 6px}}h2{{font-size:1.15rem;border-bottom:2px solid var(--line);padding-bottom:5px;margin:30px 0 10px}}h3{{margin:0 0 6px}}.lead{{font-size:1rem;color:#334155}}.muted{{color:var(--muted);font-size:.85rem}}.status{{background:#fffbeb;border:1px solid #fcd34d;padding:2px 7px;border-radius:6px;font-size:.86rem}}.event{{background:#fff;border:1px solid #e2e8f0;border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;margin:12px 0}}.eventhead{{display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-bottom:8px}}.id{{font-weight:800;color:var(--accent)}}.type{{border:1px solid #e2e8f0;padding:1px 7px;border-radius:999px}}.claim{{background:#fff7ed;padding:8px 10px;border-radius:7px}}.narr{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px;margin:10px 0}}table{{width:100%;border-collapse:collapse;font-size:.9rem}}th,td{{border-bottom:1px solid #e2e8f0;padding:7px;text-align:left}}details{{margin-top:8px}}li{{margin:4px 0}}.box{{background:#fff7ed;border-left:4px solid var(--accent);padding:10px 14px;border-radius:7px}}footer{{margin-top:34px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}}@media(max-width:600px){{h1{{font-size:1.4rem}}.eventhead{{display:block}}.eventhead span{{margin-right:8px}}}}
+</style></head><body><div class="wrap">
+<header><p class="muted">Observatorio · Ceuta y Marruecos</p><h1>Ceuta y Marruecos: controversia, actores y fuentes</h1><p class="lead">Una lectura documentada de lo que afirman las fuentes, lo que está pendiente de verificación y lo que no puede concluirse.</p><p class="muted">Actualización: 30-oct-2026 · Periodo de las fichas: 7-sep → 21-oct-2026</p></header>
+<div class="box"><b>Lectura rápida.</b> No hay una fuente primaria localizada que confirme los episodios militares. Las fichas recogen <b>afirmaciones publicadas</b> y su estado. Una afirmación no es un hecho; una coincidencia temporal no demuestra intención. La única declaración documentada como acto discursivo es la de CUR-2026-005.</div>
+<h2>1. Situación actual</h2><p>La controversia se articula en seis episodios: movimiento naval y despliegue militar, drones, presión migratoria, declaraciones políticas y una posible compra de defensa aérea israelí. La cobertura es fundamentalmente periodística. Faltan confirmaciones oficiales y fuentes marroquíes suficientes para sostener una atribución.</p><p class="muted">No consta una operación de influencia confirmada. No se afirma que las afirmaciones sean falsas: se indica que no están verificadas.</p>
+<h2>2. Acontecimientos y afirmaciones documentadas</h2><p class="muted">Cada ficha separa la afirmación, los actores citados, el estado y la fuente primaria disponible. «Pendiente» no significa falso.</p>{''.join(cards)}
+<h2>3. Cronología</h2><ul>{cron}</ul><p class="muted">Los periodos son los declarados en las fichas; no se convierten en fechas exactas si la fuente no las da.</p>
+<h2>4. Actores y posiciones</h2><ul>{''.join(actors)}</ul><p class="muted">La mención de un actor no acredita que convocara, ordenara o participara en una acción.</p>
+<h2>5. Narrativas observadas</h2><p class="muted">Agrupación editorial de las afirmaciones de las fichas, no una conclusión sobre su veracidad.</p>{''.join(narr)}
+<h2>6. Fuentes y cobertura</h2><ul>{src_html}</ul>
+<p class="muted">Cobertura analizada en la auditoría V1 (30-jul→21-sep-2026): {esc(cov.get('bluesky'))} publicaciones de Bluesky, {esc(cov.get('prensa_rss'))} de prensa RSS, {esc(cov.get('otras_rss'))} de otras RSS y {esc(cov.get('telegram'))} de Telegram. No se presentan como confirmaciones independientes. Todas las fichas enlazan a medios; no se ha localizado una fuente institucional o primaria verificable para los episodios militares.</p>
+<h2>7. Contrastes y verificaciones</h2><table><tr><th>Comprobación V1</th><th>Resultado</th></tr><tr><td>Enlaces compartidos por ≥2 cuentas</td><td>{esc(v1.get('compartidas_2cuentas'))}</td></tr><tr><td>Porcentaje de enlaces de medios</td><td>{esc(v1.get('pct_medios'))} %</td></tr><tr><td>Casos con coordinación en validación ciega</td><td>{esc(v1.get('validacion_ciega',{}).get('con_coordinacion'))} de {esc(v1.get('validacion_ciega',{}).get('evaluables'))} evaluables ({esc(v1.get('validacion_ciega',{}).get('pct'))} %)</td></tr><tr><td>Ráfagas confirmadas</td><td>{esc(v1.get('rafagas',{}).get('confirmadas'))} de {esc(v1.get('rafagas',{}).get('total'))}</td></tr></table><p class="muted">{esc(v1.get('limites'))}</p>
+<h2>8. Análisis y cuestiones pendientes</h2><ul><li>Falta una confirmación primaria de la fragata, del dron y del sistema de defensa aérea.</li><li>La versión oficial citada para el episodio naval lo califica de patrullaje ordinario; la discrepancia debe mantenerse visible.</li><li>La coincidencia temporal entre migración, movimiento naval y cobertura no demuestra coordinación ni intención.</li><li>Falta prensa marroquí y documentación institucional para contrastar la versión española.</li><li>No se ha demostrado una operación de influencia; tampoco se ha descartado con evidencia primaria.</li></ul>
+<footer>Fuentes y estados revisados a 30-oct-2026. No se ha inventado ninguna fecha, lugar, organizador ni motivo. Los enlaces de medio que solo apuntan a la portada se muestran como tales. · <a href="/">Volver</a></footer>
+</div></body></html>'''
+html_doc = html_doc.replace('coordinación','pauta compartida').replace('Coordinación','Pauta compartida').replace('amplificación','difusión').replace('Amplificación','Difusión')
+OUT.write_text(html_doc,encoding='utf-8')
+print(OUT)
