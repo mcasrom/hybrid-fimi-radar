@@ -428,6 +428,7 @@ def events_payload(params):
         d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]
         d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(r['id'],)).fetchall()]
         d['official_publications']=[dict(x) for x in c.execute("SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? AND i.source_type='official' ORDER BY i.published DESC LIMIT 5",(r['id'],)).fetchall()]
+        d['contrastes']=[dict(x) for x in c.execute('SELECT f.source,f.title,f.url,f.published,ef.overlap FROM event_factchecks ef JOIN factchecks f ON f.url=ef.factcheck_url WHERE ef.event_id=? ORDER BY f.published DESC LIMIT 3',(r['id'],)).fetchall()]
         out.append(d)
     c.close(); return {'ok':True,'count':total,'limit':limit,'offset':offset,'events':out}
 
@@ -437,6 +438,7 @@ def event_detail(eid):
     d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
     d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(eid,)).fetchall()]
     d['official_publications']=[dict(x) for x in c.execute("SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? AND i.source_type='official' ORDER BY i.published DESC",(eid,)).fetchall()]
+    d['contrastes']=[dict(x) for x in c.execute('SELECT f.source,f.title,f.url,f.published,ef.overlap FROM event_factchecks ef JOIN factchecks f ON f.url=ef.factcheck_url WHERE ef.event_id=? ORDER BY f.published DESC',(eid,)).fetchall()]
     d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
     c.close(); return d
 
@@ -510,6 +512,8 @@ class Handler(BaseHTTPRequestHandler):
                 p=parsed.path[len(API_PREFIX)+4:]
                 if p in ("health","health.json"):
                     self.send_json(200,{"ok":True,"service":"observatorio-data","items":topics_payload(),"sources":sources_payload()})
+                elif p in ("contrastes","contrastes.json"):
+                    c=data_conn(); rows=c.execute('SELECT source,title,url,published FROM factchecks ORDER BY published DESC LIMIT 100').fetchall(); c.close(); self.send_json(200,{"ok":True,"factchecks":[dict(r) for r in rows]})
                 elif p in ("events","events.json"):
                     self.send_json(200,events_payload(parsed.query))
                 elif p.startswith("events/"):

@@ -35,6 +35,10 @@ En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https
 
 `events.py` agrupa publicaciones de Frontera Sur que parecen referirse al mismo episodio. No confirma hechos ni sustituye las fichas. Los candidatos se publican en `/observatorio/eventos/` y en la API `/api/observatorio/v1/events`.
 
+## Contraste
+
+`contraste.py` ingiere verificaciones publicadas de Maldita y Newtral y las enlaza a acontecimientos por coincidencia de titulares. Es una capa candidata: no confirma bulos ni sustituye la revisión humana.
+
 ## Retención
 
 - Titulares: **90 días en caliente** y paso automático a histórico.
