@@ -812,5 +812,96 @@
     ],
     "idioma": "en",
     "tipo": "media"
+  },
+  {
+    "name": "Le Monde",
+    "url": "https://www.lemonde.fr/rss/une.xml",
+    "topics": [
+      "frontera_sur",
+      "protestas_juveniles",
+      "elecciones_generales"
+    ],
+    "idioma": "fr",
+    "tipo": "media"
+  },
+  {
+    "name": "France 24",
+    "url": "https://www.france24.com/fr/rss",
+    "topics": [
+      "frontera_sur",
+      "protestas_juveniles",
+      "elecciones_generales"
+    ],
+    "idioma": "fr",
+    "tipo": "media"
+  },
+  {
+    "name": "La Repubblica",
+    "url": "https://www.repubblica.it/rss/homepage/rss2.0.xml",
+    "topics": [
+      "frontera_sur",
+      "protestas_juveniles",
+      "elecciones_generales"
+    ],
+    "idioma": "it",
+    "tipo": "media"
+  },
+  {
+    "name": "Corriere della Sera",
+    "url": "https://www.corriere.it/rss/homepage.xml",
+    "topics": [
+      "frontera_sur",
+      "protestas_juveniles",
+      "elecciones_generales"
+    ],
+    "idioma": "it",
+    "tipo": "media"
+  },
+  {
+    "name": "ANSA",
+    "url": "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml",
+    "topics": [
+      "frontera_sur",
+      "protestas_juveniles",
+      "elecciones_generales"
+    ],
+    "idioma": "it",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News DE · Spanien Wahl",
+    "url": "https://news.google.com/rss/search?q=Spanien+Wahl+29N&hl=de&gl=DE&ceid=DE:de",
+    "topics": [
+      "elecciones_generales"
+    ],
+    "idioma": "de",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News FR · élections Espagne",
+    "url": "https://news.google.com/rss/search?q=elections+Espagne+29+novembre&hl=fr&gl=FR&ceid=FR:fr",
+    "topics": [
+      "elecciones_generales"
+    ],
+    "idioma": "fr",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News IT · elezioni Spagna",
+    "url": "https://news.google.com/rss/search?q=elezioni+Spagna+29+novembre&hl=it&gl=IT&ceid=IT:it",
+    "topics": [
+      "elecciones_generales"
+    ],
+    "idioma": "it",
+    "tipo": "media"
+  },
+  {
+    "name": "Google News UK · Spain election",
+    "url": "https://news.google.com/rss/search?q=Spain+general+election+29+November&hl=en-GB&gl=GB&ceid=GB:en",
+    "topics": [
+      "elecciones_generales"
+    ],
+    "idioma": "en",
+    "tipo": "media"
   }
 ]

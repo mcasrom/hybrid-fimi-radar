@@ -2,7 +2,7 @@
 """Captura automática de titulares para el Observatorio de lo publicado.
 Fuentes: Google News RSS + feeds directos (ES/MA/DZ/FR/UK). Solo titulares y enlaces.
 """
-import hashlib,json,os,re,sqlite3,sys,urllib.request,xml.etree.ElementTree as ET
+import hashlib,json,os,re,sqlite3,sys,time,urllib.request,xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from datetime import datetime,timezone,timedelta
 from email.utils import parsedate_to_datetime
@@ -15,14 +15,24 @@ DAYS=45
 TOPICS={
  'frontera_sur':{'label':'Frontera Sur','queries':['Ceuta Marruecos','Melilla Marruecos','frontera sur España Marruecos'],'terms':['ceuta','melilla','marruecos','maroc','morocco','frontera','frontière','frontiere','migracion','migración','migration','migratoire','gibraltar','سبتة','مليلية','المغرب']},
  'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestation','manifestation','joven','jeune','jeunesse','juvenil','estudiant','étudiant','disturbio','emeute','émeute','riot','blocus','moviliz']},
- 'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','election','élection','electoral','campaña','campagne','29n','voto','vote','candidat','candidate','espana','españa','spain','espagne']},
+ 'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','election','élection','electoral','campaña','campagne','29n','voto','vote','candidat','candidate','wahl','wahlen','wahlkampf','kandidat','kandidaten','abstimmung','stimme','elezioni','elezione','campagna','candidato','candidati','scrutin']},
  'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren'],'terms':['infraestructura','transportes','transporte','adif','renfe','autovia','autovía','alta velocidad','tren','cercanias','cercanías','accidente','incidencia','obra','carretera','aeropuerto','puerto','conservacion','conservación','mitms']},
 }
 def now(): return datetime.now(timezone.utc)
 def clean(x): return ' '.join(re.sub(r'<[^>]+>',' ',str(x or '')).split())
 def norm(s): return re.sub(r'[^a-z0-9áéíóúüñçàèìòùâêîôûëïü ]',' ',s.lower()).strip()
+FRONTERA_GEO=['ceuta','melilla','marruecos','morocco','maroc']
+FRONTERA_CONTEXT=['frontera','fronteriza','migracion','migrante','inmigrante','patera','salto','valla','naval','militar','dron','armada','guardia civil','estrecho','gibraltar','repatri','empadronamiento','menores','diplomatic','rey','reyes','felipe','visita','gobierno','delegacion','policia','interior','crisis migratoria','mena']
+FRONTERA_EXCLUDE=['futbol','fútbol','baloncesto','balonmano','judo','liga','club','deportivo','campeonato','deporte','atletismo','voleibol','u.d.','ud melilla','bm ','bm.','atletico','atlético','filial','preparacion','preparación','u d','c.f.']
+SPAIN_CONTEXT=['espana','españa','spain','espagne','spanien','spagna','espanha','29n','29 de noviembre','elecciones generales','campana electoral','campaña electoral','mesas electorales','junta electoral','congreso','senado','moncloa','pedro sanchez','sanchez','feijoo','feijóo','psoe','vox','sumar','podemos','elecciones 2026','sorteo','supremo','tribunal constitucional','audiencia nacional']
 def relevant(topic,title):
- t=norm(title); return any(term.lower() in t for term in TOPICS[topic]['terms'])
+ t=norm(title)
+ if topic=='elecciones_generales':
+  return any(c.lower() in t for c in SPAIN_CONTEXT) and any(term.lower() in t for term in TOPICS[topic]['terms'])
+ if topic=='frontera_sur':
+  if any(x in t for x in FRONTERA_EXCLUDE): return False
+  return any(x in t for x in FRONTERA_GEO) and any(x in t for x in FRONTERA_CONTEXT)
+ return any(term.lower() in t for term in TOPICS[topic]['terms'])
 def parse_date(s):
  try:
   d=parsedate_to_datetime(s); return d.astimezone(timezone.utc) if d.tzinfo else d.replace(tzinfo=timezone.utc)
@@ -46,6 +56,13 @@ def load_feeds():
 def gurl(q): return 'https://news.google.com/rss/search?'+urllib.parse.urlencode({'q':q,'hl':'es','gl':'ES','ceid':'ES:es'})
 def run():
     c=db(); added=0; errors=[]; cutoff=now()-timedelta(days=DAYS); feeds=load_feeds(); fm={f['name']:f for f in feeds}
+    for col,typ in [('source_type',"TEXT NOT NULL DEFAULT 'media'"),('source_lang',"TEXT NOT NULL DEFAULT 'es'")]:
+        try: c.execute(f'ALTER TABLE items ADD COLUMN {col} {typ}')
+        except sqlite3.OperationalError: pass
+    # backfill de idioma para fuentes directas ya existentes
+    for f in feeds:
+        try: c.execute('UPDATE items SET source_lang=? WHERE source=?',(f.get('idioma') or 'es',f['name']))
+        except sqlite3.Error: pass
     health={f['name']:{'name':f['name'],'url':f['url'],'topics':f.get('topics',[]),'status':'pending','items':0,'error':None,'last_attempt':None} for f in feeds}
     jobs=[]
     for topic,meta in TOPICS.items():
@@ -81,7 +98,7 @@ def run():
                 source=clean(it.findtext('source') or '') if kind=='google' else name
                 iid=hashlib.sha256((tpc+'|'+link).encode()).hexdigest()[:24]
                 try:
-                    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched) VALUES(?,?,?,?,?,?,?,?)',(iid,tpc,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds')))
+                    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched,source_type,source_lang) VALUES(?,?,?,?,?,?,?,?,?,?)',(iid,tpc,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds'),('official' if (kind=='direct' and fm.get(name,{}).get('tipo')=='official') else 'media'),('es' if kind=='google' else (fm.get(name,{}).get('idioma') or 'es'))))
                     added+=cur.rowcount
                     if kind=='direct' and name in health: health[name]['items']+=1
                 except sqlite3.Error as e: errors.append(f'{name}:db: {e}')
@@ -89,7 +106,15 @@ def run():
     stamp=now().isoformat(timespec='seconds')
     latest={'updated_at':stamp,'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
     for topic,meta in TOPICS.items():
-        rows=c.execute('SELECT id,title,url,source,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 40',(topic,)).fetchall()
+        rows=[]
+        for lang,lim in [('es',20),('!=es',20)]:
+            cond="source_lang='es'" if lang=='es' else "source_lang!='es'"
+            rows += c.execute(f'SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND {cond} ORDER BY published DESC LIMIT ?',(topic,lim)).fetchall()
+        if len(rows)<40:
+            seen={r['id'] for r in rows}
+            extra=c.execute('SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 80',(topic,)).fetchall()
+            rows += [r for r in extra if r['id'] not in seen][:40-len(rows)]
+        rows=sorted(rows,key=lambda r:r['published'],reverse=True)[:40]
         trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]
         latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'trend':trend,'items':[dict(r) for r in rows]}
     latest['feed_errors']=errors[:15]
