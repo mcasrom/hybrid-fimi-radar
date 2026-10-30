@@ -3,7 +3,8 @@
 **Versión del software:** 0.1.0  
 **Última actualización:** 30-oct-2026  
 **Cadencia de captura:** cada 30 minutos  
-**Dependencia manual diaria:** ninguna
+**Dependencia manual diaria:** ninguna  
+**Programación real:** `/etc/cron.d/observatorio-ingest` (`*/30 * * * *`)
 
 ## Qué es
 

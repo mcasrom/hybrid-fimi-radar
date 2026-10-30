@@ -4,7 +4,8 @@ Cuarto tema del Observatorio de lo publicado.
 
 **Última actualización:** 30-oct-2026.
 **Cadencia:** captura automática cada 30 minutos.
-**Dependencia manual:** ninguna para el listado diario.
+**Dependencia manual:** ninguna para el listado diario.  
+**Programación real:** `/etc/cron.d/observatorio-ingest` (`*/30 * * * *`).
 
 ## Qué es
 
