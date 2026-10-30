@@ -40,39 +40,56 @@ def load_feeds():
  except Exception as e: print('feeds.json:',e,file=sys.stderr); return []
 def gurl(q): return 'https://news.google.com/rss/search?'+urllib.parse.urlencode({'q':q,'hl':'es','gl':'ES','ceid':'ES:es'})
 def run():
- c=db(); added=0; errors=[]; cutoff=now()-timedelta(days=DAYS); jobs=[]
- for topic,meta in TOPICS.items():
-  for q in meta['queries']: jobs.append(('google',topic,q,gurl(q)))
- for f in load_feeds():
-  for topic in f.get('topics',[]): jobs.append(('direct',topic,f.get('name') or 'feed',f['url']))
- raw={}
- with ThreadPoolExecutor(max_workers=8) as ex:
-  fut={ex.submit(get,j[3]):j for j in jobs}
-  for f in as_completed(fut):
-   j=fut[f]
-   try: raw[(j[0],j[1],j[2],j[3])]=f.result()
-   except Exception as e: errors.append(f'{j[0]}:{j[2]}: {str(e)[:120]}')
- for (kind,topic,name,url),body in raw.items():
-  try: root=ET.fromstring(body)
-  except Exception as e: errors.append(f'{name}:xml: {str(e)[:80]}'); continue
-  for it in root.findall('./channel/item'):
-   title=clean(it.findtext('title')); link=(it.findtext('link') or '').strip()
-   pub=parse_date(it.findtext('pubDate'))
-   if not title or not link or not pub or pub<cutoff or pub>now()+timedelta(hours=6): continue
-   if not relevant(topic,title): continue
-   source=clean(it.findtext('source') or '') if kind=='google' else name
-   iid=hashlib.sha256((topic+'|'+link).encode()).hexdigest()[:24]
-   try:
-    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched) VALUES(?,?,?,?,?,?,?,?)',(iid,topic,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds')))
-    added+=cur.rowcount
-   except sqlite3.Error as e: errors.append(f'{name}:db: {e}')
- c.commit()
- latest={'updated_at':now().isoformat(timespec='seconds'),'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
- for topic,meta in TOPICS.items():
-  rows=c.execute('SELECT id,title,url,source,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 40',(topic,)).fetchall()
-  latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'items':[dict(r) for r in rows]}
- latest['feed_errors']=errors[:15]
- OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.tmp'); tmp.write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(OUT)
- print(json.dumps({'ok':added>0,'feeds':len(load_feeds()),'added':added,'topics':{k:v['count'] for k,v in latest['topics'].items()},'errors':errors[:8]},ensure_ascii=False))
- return 0 if added else 1
+    c=db(); added=0; errors=[]; cutoff=now()-timedelta(days=DAYS); feeds=load_feeds(); fm={f['name']:f for f in feeds}
+    health={f['name']:{'name':f['name'],'url':f['url'],'topics':f.get('topics',[]),'status':'pending','items':0,'error':None,'last_attempt':None} for f in feeds}
+    jobs=[]
+    for topic,meta in TOPICS.items():
+        for q in meta['queries']: jobs.append(('google',topic,q,gurl(q)))
+    for f in feeds: jobs.append(('direct','__all__',f['name'],f['url']))
+    raw={}
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        fut={ex.submit(get,j[3]):j for j in jobs}
+        for f in as_completed(fut):
+            j=fut[f]
+            try: raw[(j[0],j[1],j[2],j[3])]=f.result()
+            except Exception as e:
+                msg=str(e)[:160]
+                if j[0]=='direct' and j[2] in health:
+                    health[j[2]]['status']='error'; health[j[2]]['error']=msg; health[j[2]]['last_attempt']=now().isoformat(timespec='seconds')
+                errors.append(f'{j[0]}:{j[2]}: {msg}')
+    for (kind,topic,name,url),body in raw.items():
+        try: root=ET.fromstring(body)
+        except Exception as e:
+            msg=f'{name}:xml: {str(e)[:100]}'; errors.append(msg)
+            if kind=='direct' and name in health:
+                health[name]['status']='error'; health[name]['error']=msg; health[name]['last_attempt']=now().isoformat(timespec='seconds')
+            continue
+        feed_topics=fm.get(name,{}).get('topics',[]) if kind=='direct' else [topic]
+        if kind=='direct' and name in health:
+            health[name]['status']='ok'; health[name]['error']=None; health[name]['last_attempt']=now().isoformat(timespec='seconds')
+        for it in root.findall('./channel/item'):
+            title=clean(it.findtext('title')); link=(it.findtext('link') or '').strip()
+            pub=parse_date(it.findtext('pubDate'))
+            if not title or not link or not pub or pub<cutoff or pub>now()+timedelta(hours=6): continue
+            for tpc in feed_topics:
+                if not relevant(tpc,title): continue
+                source=clean(it.findtext('source') or '') if kind=='google' else name
+                iid=hashlib.sha256((tpc+'|'+link).encode()).hexdigest()[:24]
+                try:
+                    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched) VALUES(?,?,?,?,?,?,?,?)',(iid,tpc,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds')))
+                    added+=cur.rowcount
+                    if kind=='direct' and name in health: health[name]['items']+=1
+                except sqlite3.Error as e: errors.append(f'{name}:db: {e}')
+    c.commit()
+    stamp=now().isoformat(timespec='seconds')
+    latest={'updated_at':stamp,'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
+    for topic,meta in TOPICS.items():
+        rows=c.execute('SELECT id,title,url,source,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 40',(topic,)).fetchall()
+        latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'items':[dict(r) for r in rows]}
+    latest['feed_errors']=errors[:15]
+    OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.tmp'); tmp.write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(OUT)
+    fh={'updated_at':stamp,'total':len(health),'ok':sum(1 for x in health.values() if x['status']=='ok'),'error':sum(1 for x in health.values() if x['status']=='error'),'pending':sum(1 for x in health.values() if x['status']=='pending'),'feeds':sorted(health.values(),key=lambda x:x['name'])}
+    hp=Path(os.environ.get('OBS_HEALTH',OUT.parent/'feed_health.json')); hp.write_text(json.dumps(fh,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps({'ok':added>0,'feeds':len(feeds),'feed_health':{'ok':fh['ok'],'error':fh['error'],'pending':fh['pending']},'added':added,'topics':{k:v['count'] for k,v in latest['topics'].items()},'errors':errors[:8]},ensure_ascii=False))
+    return 0 if added else 1
 if __name__=='__main__': raise SystemExit(run())
