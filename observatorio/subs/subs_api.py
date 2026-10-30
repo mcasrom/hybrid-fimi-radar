@@ -408,7 +408,7 @@ def item_query(params):
     w=(' WHERE '+' AND '.join(where)) if where else ''
     c=data_conn()
     total=c.execute('SELECT COUNT(*) n FROM items'+w,args).fetchone()['n']
-    rows=c.execute('SELECT id,topic,title,url,source,published,fetched FROM items'+w+' ORDER BY published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
+    rows=c.execute('SELECT id,topic,title,url,source,source_type,published,fetched FROM items'+w+' ORDER BY published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
     c.close()
     return {'ok':True,'count':total,'limit':limit,'offset':offset,'items':[dict(r) for r in rows]}
 
@@ -422,10 +422,10 @@ def events_payload(params):
     if status: where.append('e.status=?'); args.append(status)
     w=' AND '.join(where)
     total=c.execute('SELECT COUNT(*) n FROM events e WHERE '+w,args).fetchone()['n']
-    rows=c.execute('SELECT e.* FROM events e WHERE '+w+' ORDER BY e.last_published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
+    rows=c.execute('SELECT e.*,(SELECT COUNT(*) FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=e.id AND i.source_type=\'official\') official_count FROM events e WHERE '+w+' ORDER BY e.last_published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
     out=[]
     for r in rows:
-        d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]
+        d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]
         d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(r['id'],)).fetchall()]
         out.append(d)
     c.close(); return {'ok':True,'count':total,'limit':limit,'offset':offset,'events':out}
@@ -433,7 +433,7 @@ def events_payload(params):
 def event_detail(eid):
     c=data_conn(); r=c.execute('SELECT * FROM events WHERE id=?',(eid,)).fetchone()
     if not r: c.close(); return None
-    d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
+    d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
     d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(eid,)).fetchall()]
     d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
     c.close(); return d
@@ -443,7 +443,7 @@ def admin_events_payload(params):
     c=data_conn(); rows=c.execute("SELECT * FROM events WHERE topic=? AND needs_review=1 AND COALESCE(review_status,'auto')='auto' ORDER BY last_published DESC LIMIT 100",(topic,)).fetchall()
     out=[]
     for r in rows:
-        d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 6',(r['id'],)).fetchall()]; out.append(d)
+        d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 6',(r['id'],)).fetchall()]; out.append(d)
     c.close(); return {'ok':True,'count':len(out),'events':out}
 
 def review_event(eid,action):
