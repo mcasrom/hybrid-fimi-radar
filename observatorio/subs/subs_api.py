@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import os
@@ -442,12 +443,48 @@ def event_detail(eid):
     d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
     c.close(); return d
 
+def _event_recalc(c,eid):
+    rows=c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published',(eid,)).fetchall()
+    if not rows:
+        c.execute('DELETE FROM event_items WHERE event_id=?',(eid,)); c.execute('DELETE FROM events WHERE id=?',(eid,)); return False
+    title=min((r['title'] for r in rows),key=len)
+    src=len({r['source'] for r in rows if r['source']})
+    c.execute('UPDATE events SET title=?,summary=?,first_published=?,last_published=?,n_publications=?,n_sources=?,updated_at=? WHERE id=?',(title,f'{len(rows)} publicaciones de {src} fuentes.',rows[0]['published'],rows[-1]['published'],len(rows),src,now_iso(),eid))
+    return True
+
+def split_event(eid,item_ids):
+    ids=[x for x in item_ids if isinstance(x,str)]
+    if not ids: raise ValueError('items')
+    c=sqlite3.connect(DATA_DB,timeout=15); row=c.execute('SELECT topic,source_kind FROM events WHERE id=?',(eid,)).fetchone()
+    if not row: c.close(); raise ValueError('event')
+    valid={r['item_id'] for r in c.execute('SELECT item_id FROM event_items WHERE event_id=?',(eid,)).fetchall()}
+    ids=[x for x in ids if x in valid]
+    if not ids or len(ids)>=len(valid): c.close(); raise ValueError('items')
+    new_id='man_'+hashlib.sha256((eid+'|'+'|'.join(sorted(ids))).encode()).hexdigest()[:16]
+    topic=row['topic']; now=now_iso()
+    c.execute("INSERT OR REPLACE INTO events(id,topic,title,summary,status,review_status,needs_review,review_reason,signature,reviewed_at,first_published,last_published,n_publications,n_sources,source_kind,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",(new_id,topic,'Acontecimiento separado','Separación manual.','publicado_sin_confirmar','approved',0,'separación manual',min(ids),now,now,now,0,0,'manual',now,now))
+    c.executemany('UPDATE event_items SET event_id=? WHERE event_id=? AND item_id=?',[(new_id,eid,x) for x in ids])
+    _event_recalc(c,new_id)
+    c.execute("UPDATE events SET source_kind='manual',review_status='approved',needs_review=0,review_reason='separación manual',reviewed_at=? WHERE id=?",(now,new_id))
+    _event_recalc(c,eid); c.execute("UPDATE events SET source_kind='manual',review_status='approved',needs_review=0,reviewed_at=? WHERE id=?",(now,eid))
+    c.commit(); c.close(); return new_id
+
+def merge_events(ids):
+    ids=[x for x in ids if isinstance(x,str)]
+    if len(ids)<2: raise ValueError('events')
+    c=sqlite3.connect(DATA_DB,timeout=15); target=ids[0]
+    if not c.execute('SELECT 1 FROM events WHERE id=?',(target,)).fetchone(): c.close(); raise ValueError('target')
+    for other in ids[1:]:
+        c.execute('UPDATE OR IGNORE event_items SET event_id=? WHERE event_id=?',(target,other)); c.execute('DELETE FROM event_items WHERE event_id=?',(other,)); c.execute('DELETE FROM events WHERE id=?',(other,))
+    _event_recalc(c,target); c.execute("UPDATE events SET source_kind='manual',review_status='approved',needs_review=0,review_reason='fusión manual',reviewed_at=? WHERE id=?",(now_iso(),target))
+    c.commit(); c.close(); return target
+
 def admin_events_payload(params):
     q=parse_qs(params); topic=(q.get('topic') or ['frontera_sur'])[0].strip()
     c=data_conn(); rows=c.execute("SELECT * FROM events WHERE topic=? AND needs_review=1 AND COALESCE(review_status,'auto')='auto' ORDER BY last_published DESC LIMIT 100",(topic,)).fetchall()
     out=[]
     for r in rows:
-        d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 6',(r['id'],)).fetchall()]; out.append(d)
+        d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(r['id'],)).fetchall()]; out.append(d)
     c.close(); return {'ok':True,'count':len(out),'events':out}
 
 def review_event(eid,action):
@@ -579,10 +616,18 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(400,{"ok":False,"error":"json"}); return
             eid=path[len(API_PREFIX)+len("/admin/events/"):].strip("/")
             try:
-                ok=review_event(eid,data.get("action"))
-                self.send_json(200,{"ok":ok})
-            except ValueError:
-                self.send_json(400,{"ok":False,"error":"action"})
+                action=data.get("action")
+                if eid=="merge" or action=="merge":
+                    target=merge_events(data.get("ids") or [])
+                    self.send_json(200,{"ok":True,"id":target})
+                elif action=="split":
+                    nid=split_event(eid,data.get("item_ids") or [])
+                    self.send_json(200,{"ok":True,"id":nid})
+                else:
+                    ok=review_event(eid,action)
+                    self.send_json(200,{"ok":ok})
+            except ValueError as e:
+                self.send_json(400,{"ok":False,"error":str(e)})
             except Exception as e:
                 self.send_json(500,{"ok":False,"error":str(e)[:160]})
             return

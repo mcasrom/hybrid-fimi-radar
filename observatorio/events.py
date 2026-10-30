@@ -35,7 +35,7 @@ def run(apply):
  if not DB.exists(): print('no db',DB,file=sys.stderr); return 2
  c=db(); init(c)
  since=(datetime.now(timezone.utc)-timedelta(days=LOOKBACK)).isoformat()
- rows=c.execute("SELECT id,title,url,source,published FROM items WHERE topic=? AND published>=? ORDER BY published",(TOPIC,since)).fetchall()
+ rows=c.execute("SELECT id,title,url,source,published FROM items WHERE topic=? AND published>=? AND id NOT IN (SELECT ei.item_id FROM event_items ei JOIN events e ON e.id=ei.event_id WHERE e.source_kind='manual') ORDER BY published",(TOPIC,since)).fetchall()
  groups=[]
  for r in rows:
   t=toks(r['title'])
