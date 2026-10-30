@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 import re
@@ -22,6 +24,8 @@ DB_PATH = Path(os.environ.get("SUBS_DB", ROOT / "data" / "subs.db"))
 ENV_PATH = Path(os.environ.get("SUBS_ENV", "/home/deploy/newsletter/.env"))
 BASE_URL = os.environ.get("SUBS_BASE_URL", "https://fimi.viajeinteligencia.com").rstrip("/")
 API_PREFIX = "/api/observatorio"
+DATA_DB = Path(os.environ.get("OBS_DATA_DB", "/home/deploy/observatorio/data/observatorio.db"))
+DATA_LATEST = Path(os.environ.get("OBS_DATA_LATEST", "/var/www/fimi/observatorio/data/latest.json"))
 REPLY_TO = os.environ.get("SUBS_REPLY_TO", "info-fimi@viajeinteligencia.com")
 HOST = os.environ.get("SUBS_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SUBS_PORT", "3032"))
@@ -381,6 +385,53 @@ def page(status: str) -> str:
 <body><main><p class="eyebrow">Observatorio de lo publicado</p><h1>{title}</h1><p>{body}</p><p><b>Puedes cerrar esta pestaña.</b></p><p><a href="/observatorio/">Volver al observatorio</a></p></main></body></html>"""
 
 
+def data_conn():
+    if not DATA_DB.exists(): raise FileNotFoundError(str(DATA_DB))
+    c=sqlite3.connect(f"file:{DATA_DB}?mode=ro",uri=True,timeout=10); c.row_factory=sqlite3.Row; return c
+
+def item_query(params):
+    topic=(parse_qs(params).get('topic') or [''])[0].strip()
+    source=(parse_qs(params).get('source') or [''])[0].strip()
+    since=(parse_qs(params).get('since') or [''])[0].strip()
+    until=(parse_qs(params).get('until') or [''])[0].strip()
+    q=(parse_qs(params).get('q') or [''])[0].strip()
+    try: limit=max(1,min(200,int((parse_qs(params).get('limit') or ['50'])[0])))
+    except ValueError: limit=50
+    try: offset=max(0,int((parse_qs(params).get('offset') or ['0'])[0]))
+    except ValueError: offset=0
+    where=[]; args=[]
+    if topic: where.append('topic=?'); args.append(topic)
+    if source: where.append('source=?'); args.append(source)
+    if since: where.append('published>=?'); args.append(since)
+    if until: where.append('published<=?'); args.append(until)
+    if q: where.append('(title LIKE ? OR source LIKE ?)'); args += ['%'+q+'%','%'+q+'%']
+    w=(' WHERE '+' AND '.join(where)) if where else ''
+    c=data_conn()
+    total=c.execute('SELECT COUNT(*) n FROM items'+w,args).fetchone()['n']
+    rows=c.execute('SELECT id,topic,title,url,source,published,fetched FROM items'+w+' ORDER BY published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
+    c.close()
+    return {'ok':True,'count':total,'limit':limit,'offset':offset,'items':[dict(r) for r in rows]}
+
+def sources_payload():
+    p=DATA_LATEST.parent/'feed_health.json'
+    try: return json.loads(p.read_text(encoding='utf-8'))
+    except Exception: return {'total':0,'ok':0,'error':0,'feeds':[]}
+
+def topics_payload():
+    c=data_conn(); rows=c.execute('SELECT topic,COUNT(*) n FROM items GROUP BY topic').fetchall(); c.close()
+    return {'ok':True,'topics':[dict(r) for r in rows]}
+
+def export_rows(params,fmt):
+    d=item_query(params)
+    if fmt=='csv':
+        b=io.StringIO(); w=csv.writer(b); w.writerow(['id','topic','title','url','source','published','fetched'])
+        for x in d['items']: w.writerow([x['id'],x['topic'],x['title'],x['url'],x['source'],x['published'],x['fetched']])
+        return b.getvalue(),'text/csv; charset=utf-8'
+    return '\n'.join(json.dumps(x,ensure_ascii=False) for x in d['items'])+'\n','application/x-ndjson; charset=utf-8'
+
+def openapi_payload():
+    return {'openapi':'3.0.3','info':{'title':'Observatorio de lo publicado API','version':'0.1.0'},'paths':{'/api/observatorio/v1/items':{'get':{'summary':'Titulares capturados'}},'/api/observatorio/v1/topics':{'get':{'summary':'Temas y recuentos'}},'/api/observatorio/v1/sources':{'get':{'summary':'Salud de fuentes'}},'/api/observatorio/v1/export.csv':{'get':{'summary':'Exportación CSV'}},'/api/observatorio/v1/export.ndjson':{'get':{'summary':'Exportación NDJSON'}}}}
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "ObservatorioPublicado/1.0"
     sys_version = ""
@@ -398,6 +449,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-Robots-Tag", "noindex, nofollow")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
         self.end_headers()
         self.wfile.write(raw)
@@ -407,6 +459,29 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlsplit(self.path)
+        if parsed.path.startswith(API_PREFIX + "/v1/"):
+            try:
+                p=parsed.path[len(API_PREFIX)+4:]
+                if p in ("health","health.json"):
+                    self.send_json(200,{"ok":True,"service":"observatorio-data","items":topics_payload(),"sources":sources_payload()})
+                elif p in ("items","items.json"):
+                    self.send_json(200,item_query(parsed.query))
+                elif p in ("topics","topics.json"):
+                    self.send_json(200,topics_payload())
+                elif p in ("sources","sources.json"):
+                    self.send_json(200,sources_payload())
+                elif p in ("openapi.json","openapi"):
+                    self.send_json(200,openapi_payload())
+                elif p in ("export.csv","export.ndjson"):
+                    body,ctype=export_rows(parsed.query,'csv' if p.endswith('.csv') else 'ndjson')
+                    self.send_body(200,body,ctype)
+                else:
+                    self.send_json(404,{"ok":False,"error":"not_found"})
+            except FileNotFoundError as e:
+                self.send_json(503,{"ok":False,"error":"data_db_missing","detail":str(e)})
+            except Exception as e:
+                self.send_json(500,{"ok":False,"error":"data_error","detail":str(e)[:160]})
+            return
         if parsed.path == API_PREFIX + "/health":
             env = load_env(ENV_PATH)
             self.send_json(200, {"ok": True, "service": "observatorio-subs", "email_configured": bool(env.get("RESEND_API_KEY"))})
