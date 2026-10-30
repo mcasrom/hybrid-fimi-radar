@@ -393,6 +393,8 @@ def data_conn():
 def item_query(params):
     topic=(parse_qs(params).get('topic') or [''])[0].strip()
     source=(parse_qs(params).get('source') or [''])[0].strip()
+    lang=(parse_qs(params).get('lang') or [''])[0].strip()
+    stype=(parse_qs(params).get('type') or [''])[0].strip()
     since=(parse_qs(params).get('since') or [''])[0].strip()
     until=(parse_qs(params).get('until') or [''])[0].strip()
     q=(parse_qs(params).get('q') or [''])[0].strip()
@@ -403,13 +405,15 @@ def item_query(params):
     where=[]; args=[]
     if topic: where.append('topic=?'); args.append(topic)
     if source: where.append('source=?'); args.append(source)
+    if lang: where.append('source_lang=?'); args.append(lang)
+    if stype: where.append('source_type=?'); args.append(stype)
     if since: where.append('published>=?'); args.append(since)
     if until: where.append('published<=?'); args.append(until)
     if q: where.append('(title LIKE ? OR source LIKE ?)'); args += ['%'+q+'%','%'+q+'%']
     w=(' WHERE '+' AND '.join(where)) if where else ''
     c=data_conn()
     total=c.execute('SELECT COUNT(*) n FROM items'+w,args).fetchone()['n']
-    rows=c.execute('SELECT id,topic,title,url,source,source_type,published,fetched FROM items'+w+' ORDER BY published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
+    rows=c.execute('SELECT id,topic,title,url,source,source_type,source_lang,published,fetched FROM items'+w+' ORDER BY published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
     c.close()
     return {'ok':True,'count':total,'limit':limit,'offset':offset,'items':[dict(r) for r in rows]}
 
