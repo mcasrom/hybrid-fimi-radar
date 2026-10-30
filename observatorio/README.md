@@ -31,6 +31,14 @@ En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https
 - DOI del conjunto FIMI anterior: [10.5281/zenodo.23282710](https://doi.org/10.5281/zenodo.23282710). Sigue resolviendo; **no es el DOI del observatorio nuevo**.
 - Los DOI `10.5281/zenodo.23282711` y `10.5281/zenodo.23413725` también resuelven.
 
+## Retención
+
+- Titulares: **90 días en caliente** y paso automático a histórico.
+- Histórico: **2 años**.
+- Fichas curadas: permanentes.
+- Suscripciones: pendientes 30 días; confirmadas hasta baja.
+- Política completa: `observatorio/RETENCION.md`.
+
 ## Estructura
 
 - `observatorio/ingest.py`: captura automática.
