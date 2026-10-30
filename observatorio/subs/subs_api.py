@@ -425,13 +425,16 @@ def events_payload(params):
     rows=c.execute('SELECT e.* FROM events e WHERE '+w+' ORDER BY e.last_published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
     out=[]
     for r in rows:
-        d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]; out.append(d)
+        d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]
+        d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(r['id'],)).fetchall()]
+        out.append(d)
     c.close(); return {'ok':True,'count':total,'limit':limit,'offset':offset,'events':out}
 
 def event_detail(eid):
     c=data_conn(); r=c.execute('SELECT * FROM events WHERE id=?',(eid,)).fetchone()
     if not r: c.close(); return None
     d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
+    d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(eid,)).fetchall()]
     d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
     c.close(); return d
 

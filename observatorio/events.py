@@ -28,6 +28,9 @@ def init(c):
  CREATE INDEX IF NOT EXISTS idx_events_topic_date ON events(topic,first_published DESC);
  CREATE INDEX IF NOT EXISTS idx_event_items_item ON event_items(item_id);
  ''')
+ for col,typ in [('review_status',"TEXT NOT NULL DEFAULT 'auto'"),('needs_review','INTEGER NOT NULL DEFAULT 0'),('review_reason','TEXT'),('reviewed_at','TEXT')]:
+  try: c.execute(f'ALTER TABLE events ADD COLUMN {col} {typ}')
+  except sqlite3.OperationalError: pass
 def run(apply):
  if not DB.exists(): print('no db',DB,file=sys.stderr); return 2
  c=db(); init(c)
@@ -57,7 +60,12 @@ def run(apply):
    its=sorted(g['items'],key=lambda x:x['published']); title=min((x['title'] for x in its),key=len)
    src=len({x['source'] for x in its if x['source']})
    summary=f'{len(its)} publicaciones de {src} fuentes entre {its[0]["published"][:10]} y {its[-1]["published"][:10]}.'
-   c.execute('INSERT INTO events(id,topic,title,summary,status,first_published,last_published,n_publications,n_sources,source_kind,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(eid,TOPIC,title,summary,'publicado_sin_confirmar',its[0]['published'],its[-1]['published'],len(its),src,'auto',now,now))
+   ts=[toks(x['title']) for x in its]; pairs=[jac(ts[i],ts[j]) for i in range(len(ts)) for j in range(i+1,len(ts))]; coh=sum(pairs)/len(pairs) if pairs else 0
+   reasons=[]
+   if src<=1: reasons.append('una sola fuente')
+   if coh<0.30: reasons.append('cohesión baja')
+   needs=1 if reasons else 0; reason=', '.join(reasons) if reasons else None
+   c.execute('INSERT INTO events(id,topic,title,summary,status,review_status,needs_review,review_reason,first_published,last_published,n_publications,n_sources,source_kind,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',(eid,TOPIC,title,summary,'publicado_sin_confirmar','auto',needs,reason,its[0]['published'],its[-1]['published'],len(its),src,'auto',now,now))
    c.executemany('INSERT OR IGNORE INTO event_items(event_id,item_id) VALUES(?,?)',[(eid,x['id']) for x in its])
   c.commit(); print('written',len(candidates))
  except Exception as e:
