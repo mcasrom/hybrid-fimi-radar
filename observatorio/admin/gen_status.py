@@ -23,11 +23,13 @@ pages={}
 for name,path in [('home','/'),('ceuta','/observatorio/ceuta/'),('juventud','/observatorio/juventud/'),('campana','/observatorio/campana/'),('infraestructuras','/observatorio/infraestructuras/'),('metodo','/observatorio/metodo/'),('fuentes','/observatorio/fuentes/'),('datos','/observatorio/datos/'),('ayuda','/observatorio/ayuda/'),('suscribirse','/observatorio/suscribirse/')]:
     pages[name]=200 if (Path('/var/www/fimi')/(path.strip('/') or 'index.html')).exists() or path=='/' else 404
 fh=read_json(WEB/'data'/'feed_health.json')
+sh=read_json(WEB/'data'/'social_health.json')
 status={
  'generated_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),
  'content':{'temas':4,'fichas':12,'fuentes':res.get('fuentes_unicas',0),'primarias':0,'fichas_ceuta':res.get('ceuta',{}).get('fichas',0),'episodios_juventud':res.get('juventud',{}).get('episodios',0),'hitos_campana':res.get('campana',{}).get('hitos',0)},
  'subscriptions':subs,
  'feed_health':{'total':fh.get('total',0),'ok':fh.get('ok',0),'error':fh.get('error',0),'errors':[x for x in fh.get('feeds',[]) if x.get('status')=='error'][:10]},
+ 'social_health':{'total':len(sh.get('sources',[])),'ok':sum(1 for x in sh.get('sources',[]) if x.get('status')=='ok'),'error':sum(1 for x in sh.get('sources',[]) if x.get('status')=='error'),'items':sum(int(x.get('items',0) or 0) for x in sh.get('sources',[])),'sources':sh.get('sources',[])[:12]},
  'pages':pages,
  'notes':['Sin propuestas ni comentarios públicos: no hay formulario abierto.','La lista antigua de FIMI no se ha migrado.'],
 }
