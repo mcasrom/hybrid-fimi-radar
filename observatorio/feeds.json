@@ -185,17 +185,6 @@
     "tipo": "osint"
   },
   {
-    "name": "Middle East Eye",
-    "url": "https://www.middleeasteye.net/rss",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
-    "idioma": "en",
-    "tipo": "media"
-  },
-  {
     "name": "EUobserver",
     "url": "https://euobserver.com/rss",
     "topics": [
@@ -813,5 +802,15 @@
     ],
     "idioma": "en",
     "tipo": "rss"
+  },
+  {
+    "name": "The Guardian World",
+    "url": "https://www.theguardian.com/world/rss",
+    "topics": [
+      "frontera_sur",
+      "elecciones_generales"
+    ],
+    "idioma": "en",
+    "tipo": "media"
   }
 ]
