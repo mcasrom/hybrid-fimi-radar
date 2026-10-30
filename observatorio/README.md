@@ -6,6 +6,17 @@
 **Dependencia manual diaria:** ninguna  
 **Programación real:** `/etc/cron.d/observatorio-ingest` (`*/30 * * * *`)
 
+## Nombres de temas
+
+Usar siempre estos nombres:
+
+- **Frontera Sur** — 6 fichas curadas.
+- **Protestas juveniles** — 6 episodios curados.
+- **Elecciones generales** — 5 hitos oficiales.
+- **Infraestructuras España** — publicaciones automáticas.
+
+No usar “Ceuta”, “Juventud” o “Campaña” como nombres de tema en la interfaz.
+
 ## Qué es
 
 Registro de lo publicado sobre cuatro temas:
