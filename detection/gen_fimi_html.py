@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gen_fimi_html.py — Genera el dashboard HTML estático del observatorio.
+"""gen_fimi_html.py — Genera el dashboard HTML estático del FIMI Radar.
 
 Replica el patrón de nivel-embalses.html (HTML estático + SVG inline), leyendo
 data/radar.db. Salida: /var/www/fimi/index.html (servido por nginx).
@@ -816,7 +816,7 @@ _GUIA_HTML = """
 <h3 style="margin-bottom:6px">Cómo leer este radar (guía rápida)</h3>
 <div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid #0ea5e9;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.82rem;color:#334155;line-height:1.55">
   <b>Amplificación observada.</b> El radar mide <b>qué contenido repiten varias cuentas y en cuánto
-  tiempo</b>. Una banda alta indica <b>amplificación</b>, <b>no</b> coordinación confirmada: en la
+  tiempo</b>. Un nivel de actividad alto indica <b>amplificación</b>, <b>no</b> coordinación confirmada: en la
   validación ciega del 29/Sep solo <b>3 de 36</b> evaluables mostraban coordinación (8,3 %; 7,5 % si los dudosos cuentan como «no»).
   No confirma atribución de actor, inautenticidad ni influencia extranjera.
 </div>
@@ -981,7 +981,7 @@ def _lectura_tema(mean, n=0, n_cuentas=0, n_ev=0, n_sost=0):
         _p = "<b>solapamiento moderado</b>"
     _sost = (str(int(n_sost)) + " narrativa" + ("" if int(n_sost) == 1 else "s") + " sostenida" + ("" if int(n_sost) == 1 else "s")) \
         if n_sost else "sin narrativas sostenidas"
-    _ctx = (str(int(n)) + " clusters · " + str(int(n_cuentas)) + " cuentas"
+    _ctx = (str(int(n)) + " grupos de cuentas · " + str(int(n_cuentas)) + " cuentas"
             + (" · " + str(int(n_ev)) + " eventos en clusters" if n_ev else "")
             + " · " + _sost)
     return ("🔎 <b>Lectura del tema:</b> " + _p + ". <span style='color:#94a3b8'>(" + _ctx + ")</span>")
@@ -1775,7 +1775,7 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
     _b_html += ("<div style='font-size:.74rem;color:#92400e;margin-top:6px;line-height:1.35'>"
                 "Banda <b>HIGH</b>: en la validación ciega del 29-Sep, solo <b>3 de 36</b> evaluables "
                 "(<b>8,3 %</b>) mostraron coordinación; el resto es <b>amplificación sin "
-                "coordinación confirmada</b>. Una banda alta no implica campaña ni actor.</div>")
+                "coordinación confirmada</b>. Un nivel de actividad alto no implica campaña ni actor.</div>")
     _sma = _scr.get("scale_min_accounts", {}) or {}
     _s_f = _scr.get("scale_floor", {}) or {}
     _s_b = _scr.get("scale_bonus", {}) or {}
@@ -1848,13 +1848,13 @@ def render_research_html(cfg, feeds, keywords, temas_cfg, temas):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FIMI Radar · Research — pregunta, datos, método, evidencia e incertidumbre</title>
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/research.html">
-<meta name="description" content="Nota de investigación del observatorio: qué mide, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
+<meta name="description" content="Nota de investigación del FIMI Radar: qué mide, qué datos observa, cómo lo mide, qué ha encontrado, qué no se sabe, qué puede fallar, cómo reproducirlo y qué se puede descargar.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#c2410c">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:title" content="FIMI Radar · Research">
-<meta property="og:description" content="De la pregunta a la incertidumbre: cómo mide el observatorio amplificación, qué puede equivocarse y cómo repetirlo.">
+<meta property="og:description" content="De la pregunta a la incertidumbre: cómo mide el FIMI Radar amplificación, qué puede equivocarse y cómo repetirlo.">
 <meta property="og:image" content="https://fimi.viajeinteligencia.com/og-preview.jpg">
 <meta property="og:url" content="https://fimi.viajeinteligencia.com/research.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -1929,11 +1929,11 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 <main>
   <div class="hero">
     <h1>FIMI Radar · Research</h1>
-    <p class="sub">Notas de investigación del observatorio de amplificación:
+    <p class="sub">Notas de investigación del FIMI Radar de amplificación:
       lo que queremos medir, los datos que observamos, cómo lo medimos, qué hemos
       encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
       puede descargar. Herramienta OSINT <b>agnóstica al actor</b>: nunca atribuimos
-      sin evidencia; una banda alta es amplificación, no coordinación confirmada.
+      sin evidencia; un nivel de actividad alto es amplificación, no coordinación confirmada.
       Cifras del último ciclo — generado <b>{_gen}</b>.</p>
   </div>
 
@@ -2087,7 +2087,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
 
   <div class="card">
     <h2><span class="num">09 —</span> Data for research: ¿cómo reutilizarlo?</h2>
-    <p>El observatorio está pensado para que otros lo auditen y lo reutilicen. Para investigación:</p>
+    <p>El FIMI Radar está pensado para que otros lo auditen y lo reutilicen. Para investigación:</p>
     <ul>
       <li><b>Datos:</b> API v1 read-only (<a href="/api.html">/api/v1/…</a>, con OpenAPI) y export por
         clúster en <b>CSV, JSON y GEXF/GraphML</b> (grafo cuenta-cuenta para Gephi):
@@ -2108,7 +2108,7 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
     </ul>
     <p class="caption">Cómo citar: FIMI Radar (ámbito FIMI), M. Castillo, 2026,
       https://fimi.viajeinteligencia.com · DOI <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a>
-      (AGPL-3.0; datos CC BY 4.0). Una banda alta es amplificación medida, no coordinación confirmada.</p>
+      (AGPL-3.0; datos CC BY 4.0). Un nivel de actividad alto es amplificación medida, no coordinación confirmada.</p>
   </div>
 
   <div class="footer">
@@ -2164,10 +2164,10 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
     for r in rows:
         tema = r["tema_id"] or "frontera_sur"
         tname = (temas_cfg.get(tema) or {}).get("nombre") or tema
-        band = _band(r["overall_score"] or 0)
-        title = f"[{tname}] {band} {(r['overall_score'] or 0):.0f}/100 — {r['cluster_label']}"
+        _lvl = "alta" if (r["overall_score"] or 0) >= 60 else "moderada" if (r["overall_score"] or 0) >= 40 else "baja"
+        title = f"[{tname}] Detección · intensidad {_lvl} · {(r['overall_score'] or 0):.0f}/100"
         link = f"{base_url}/#{tema}"
-        desc = str(r["assessment"] or "")[:400]
+        desc = f"Grupo de cuentas con intensidad {_lvl} en el ciclo actual. Evidencia disponible en la API."
         items.append(
             "    <item>\n"
             f"      <title>{_html.escape(title)}</title>\n"
@@ -2185,8 +2185,8 @@ def render_alerts_rss(db_path, temas_cfg, base_url="https://fimi.viajeinteligenc
         "    <title>FIMI Radar — Detecciones</title>\n"
         f"    <link>{base_url}/</link>\n"
         f'    <atom:link href="{base_url}/alerts.xml" rel="self" type="application/rss+xml"/>\n'
-        "    <description>Amplificación en banda alta (HIGH o CRITICAL, score ≥ 60). "
-        "El radar mide propagación, no confirma coordinación ni atribuye actores (UNKNOWN es un resultado válido).</description>\n"
+        "    <description>Detecciones con intensidad alta en el ciclo actual. "
+        "El radar mide patrones de difusión; no confirma coordinación ni atribuye actores.</description>\n"
         "    <language>es</language>\n"
         f"    <lastBuildDate>{now}</lastBuildDate>\n"
         + "\n".join(items) + "\n"
@@ -3134,13 +3134,13 @@ def main():
         if _estado_dial == "recopilando":
             _frase = "sin datos suficientes aún (se está acumulando histórico)"
         elif _estado_dial == "subiendo":
-            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
+            _frase = f"{_pl(_tr['hoy'],'detección','detecciones')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
             if _tr["high_hoy"] > _tr["high_48"]:
                 _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
         elif _estado_dial == "bajando":
-            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
+            _frase = f"{_pl(_tr['hoy'],'detección','detecciones')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
         else:
-            _frase = f"{_pl(_tr['hoy'],'hallazgo','hallazgos')} en 24 h, sin cambio frente a las 24 h anteriores"
+            _frase = f"{_pl(_tr['hoy'],'detección','detecciones')} en 24 h, sin cambio frente a las 24 h anteriores"
         if _estado_cfg == "piloto":
             _frase = "piloto en calibración — lectura con cautela · " + _frase
         return _estado_dial, _estilo, _frase
@@ -3643,10 +3643,10 @@ def main():
                     f'<div style="display:flex;flex-wrap:wrap;gap:10px;width:100%">' + "".join([
                         kpi("Eventos", d["eventos"], "del tema", "#eff6ff"),
                         kpi("Fuentes", d["fuentes"], "del tema", "#f0fdf4"),
-                        kpi("Clusters", len(_tema_cl), _cl_sub, "#fafaf9"),
-                        kpi("Cuentas", _tot_cuentas, "implicadas en clusters", "#f1f5f9"),
+                        kpi("Grupos de cuentas", len(_tema_cl), _cl_sub, "#fafaf9"),
+                        kpi("Cuentas", _tot_cuentas, "implicadas en grupos", "#f1f5f9"),
                         kpi_banda_alerta(_tema_cl),
-                    ]) + '</div>' + _distrib_tema_html)
+                    ]) + '</div>')
         # stats por tema para el texto de compartir (se genera en el momento)
         _n_high_t = sum(1 for _cc in _tema_cl
                         if (_cc["overall_score"] or 0) >= 60)
@@ -4111,7 +4111,7 @@ def main():
         _dims = f"{len(_cli_t)} grupos exclusivos"
         if _n_al:
             _dims += f", {_n_al} con intensidad alta"
-        return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {_band_top}." + _top_txt
+        return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {BAND_LEVEL.get(_band_top, _band_top)}." + _top_txt
 
     dial_cards = ""
     _board_rows = ""
@@ -4176,11 +4176,11 @@ def main():
         if _hoy_top > 0:
             _dial_color = BAND_COLORS[band_of(_hoy_top)]
             _num_txt = f"{_hoy_top:.0f}"
-            _num_band = band_of(_hoy_top)
+            _num_band = BAND_LEVEL.get(band_of(_hoy_top), "—")
         else:
             _dial_color = _estilo['color']
             _num_txt = "—"
-            _num_band = "sin cluster"
+            _num_band = "sin grupo de cuentas"
         # línea de contexto: Hoy X · media 14d · máx 30d (destaca si bate máx)
         _ctx_bits = []
         if _hoy_top > 0:
@@ -4209,7 +4209,7 @@ def main():
                               f"observada ({_lb_dias}d); base corta para declararlo récord</span>")
         elif _banda and _hoy_top > _p75:
             _ctx_extra = ("<span style='color:#d97706;font-weight:700'> ⚠ fuera "
-                          "de la banda normal (p75)</span>")
+                          "de la nivel habitual (p75)</span>")
         # estado direccional pasa a chip (la aguja ya no lo representa)
         _chip_estado = (f"<span style='display:inline-block;font-size:.68rem;"
                         f"font-weight:700;color:{_estilo['color']};background:#f8fafc;"
@@ -4265,8 +4265,8 @@ def main():
             f"border-radius:8px;padding:6px 10px;margin:0 0 8px;text-align:left;line-height:1.5'>"
             f"<span style='font-weight:700'>📈 {_ctx_html}</span>{_ctx_extra}</div>{_transp_note}"
             f"<div style='font-size:.72rem;color:#94a3b8;text-align:left;margin:0 0 8px;line-height:1.4'>"
-            f"Zona verde = rango normal del tema (p25-p75 de los picos diarios) · "
-            f"muesca roja = umbral de alerta (≥{_ALERTA_UMBRAL}). La aguja señala el score top de hoy "
+            f"Zona verde = rango habitual del tema (p25-p75 de los picos diarios) · "
+            f"muesca roja = umbral de intensidad alta (≥{_ALERTA_UMBRAL}). La aguja señala la intensidad máxima de hoy "
             f"sobre su propia línea base.</div>"
             f"<div style='font-size:.78rem;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;"
             f"border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:left;line-height:1.45'>"
@@ -4612,7 +4612,6 @@ def main():
         f"{kpi('Con intensidad alta', _n_alerta, 'intensidad alta', '#fff7ed')}"
         f"{kpi('Temas', len(temas), 'monitorizados', '#f8fafc')}"
         f"</div>"
-        f"{_band_dist}"
         f"<div style='margin-top:12px'>{_board_rows}</div>"
         f"{_bubble_html}"
         f"<div style='font-size:.72rem;color:#94a3b8;margin-top:10px'>Resumen aditivo — el detalle "
@@ -4630,7 +4629,6 @@ def main():
         f"</div>"
          f"<div id='estado' style='display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:6px'>"
          f"{dial_cards}</div>"
-        f"{bulos_card_html}"
         f"{_share_resumen_buttons}"
         f"{newsletter_form}"
         f"{sugerir_form}"
@@ -5157,7 +5155,7 @@ def main():
         'amplificación y anomalías en temas en español (ámbito FIMI). Mide propagación; no confirma coordinación ni atribuye."},'
         '{"@type": "Dataset", "@id": "https://fimi.viajeinteligencia.com/#dataset", '
         '"url": "https://fimi.viajeinteligencia.com/", "name": "FIMI Radar (ámbito FIMI) — eventos y clusters", '
-        f'"description": "Eventos y clusters de amplificación con señal del ciclo actual (6h) del observatorio.", '
+        f'"description": "Eventos y clusters de amplificación con señal del ciclo actual (6h) del FIMI Radar.", '
         '"isAccessibleForFree": true, "inLanguage": "es", '
         '"license": "https://creativecommons.org/licenses/by/4.0/", '
         f'"temporalCoverage": "{_fecha_snapshot_iso}T00:00:00Z/..", '
@@ -5214,7 +5212,7 @@ window.fimiDrawerClose=function(){
     h+='<a href="/api/export?cluster='+encodeURIComponent(label)+'&fmt=gexf" style="'+btn()+'">&#128376; GEXF</a>';
     if(d.lineage&&d.lineage.lineage_id){h+='<button onclick="var u=location.origin+String.fromCharCode(47,110,47)+encodeURIComponent('+JSON.stringify(lid)+');if(navigator.clipboard){navigator.clipboard.writeText(u);this.textContent=String.fromCharCode(10003,32,67,111,112,105,97,100,111);}" style="'+btn()+'">&#128279; Copiar enlace</button>';}
     h+='</div>';
-    h+='<div style="margin-top:12px;font-size:.72rem;color:#94a3b8;line-height:1.5">&#9878; Senal, no atribucion. Una banda alta = amplificacion medida, <b>no</b> coordinacion confirmada. Los identificadores de cluster no son estables entre ciclos.</div>';
+    h+='<div style="margin-top:12px;font-size:.72rem;color:#94a3b8;line-height:1.5">&#9878; Senal, no atribucion. Un nivel de actividad alto = amplificacion medida, <b>no</b> coordinacion confirmada. Los identificadores de cluster no son estables entre ciclos.</div>';
     h+='</div>';
     return h;
   }
@@ -5577,7 +5575,7 @@ a{{color:#c2410c}}
   <details style="margin:10px 0 4px">
     <summary style="cursor:pointer;font-weight:700;font-size:.9rem;color:#0f172a">Preguntas frecuentes</summary>
     <div style="font-size:.85rem;color:#334155;line-height:1.6;margin-top:6px">
-      <p><b>¿Esto prueba una campaña?</b> No. Mide <b>amplificación</b>: cuándo varias cuentas repiten lo mismo a la vez. Una banda alta <b>no</b> es coordinación confirmada.</p>
+      <p><b>¿Esto prueba una campaña?</b> No. Mide <b>amplificación</b>: cuándo varias cuentas repiten lo mismo a la vez. Un nivel de actividad alto <b>no</b> es coordinación confirmada.</p>
       <p><b>¿Quién está detrás?</b> No se atribuye. La identidad y la intención <b>no se miden</b>; el resultado por defecto es <b>UNKNOWN</b>. Se describe comportamiento, no autoría.</p>
       <p><b>¿Puedo citarlo?</b> Sí, con el matiz: «amplificación medida; 0 coordinación confirmada». Datos en la <a href="/api/v1/temas">API</a>, método en <a href="/metodo.html">/metodo.html</a> y el caso en <a href="/casos/ceuta/">/casos/ceuta/</a>.</p>
     </div>
@@ -5586,6 +5584,12 @@ a{{color:#c2410c}}
  {resumen_html}
 
  {detalle_wrap_open}
+ {_band_dist}
+ {bulos_card_html}
+ {_COBERTURA_HTML}
+ {_salud_temas_html}
+ {_validacion_html}
+ {bitacora_cards}
  {funnel_html}
  {_GUIA_HTML}
 
@@ -5699,7 +5703,6 @@ Las conclusiones deben leerse siempre con esta limitación presente.
 
 </div>
 
-{_COBERTURA_HTML}
 
 <div class="card">
 <h3 id="fuentes">Fuentes y búsquedas activas</h3>
@@ -5836,7 +5839,6 @@ Detalle completo (umbrales y variables configurables):
 
 {sistema_html}
 
-{_salud_temas_html}
 
 {bitacora_html}
 
@@ -5846,14 +5848,13 @@ Detalle completo (umbrales y variables configurables):
 
 {_trans_html}
 
-{_validacion_html}
 
 {_kpi_alerta_html}
 
 <div class="card" id="licencia">
 <h3>Licencia: datos CC BY 4.0 · código AGPL-3.0</h3>
 <p class="caption" style="font-size:.85rem;color:#334155;line-height:1.6">
-Los <b>datos</b> del observatorio (eventos, clusters, exportaciones y permalinks de la API) se publican
+Los <b>datos</b> del FIMI Radar (eventos, clusters, exportaciones y permalinks de la API) se publican
 bajo <b>Creative Commons Attribution 4.0 (CC BY 4.0)</b>: puedes reutilizarlos citando la fuente
 (<code>fimi.viajeinteligencia.com</code>).
 </p>
@@ -5914,7 +5915,7 @@ if ('serviceWorker' in navigator) {{
     '<div style="background:#c2410c;color:#fff;padding:18px 22px;font-weight:700;font-size:1.05rem">📡 Qué mide el Radar FIMI</div>' +
     '<div style="padding:20px 22px;line-height:1.6;color:#1e293b">' +
     '<p><b>Señal, no atribución.</b> Observamos <b>comportamiento coordinado</b> (cuentas que publican lo mismo a la vez, comparten enlaces, infraestructura). <b>No</b> identificamos actores ni probamos campañas.</p>' +
-    '<p><b>Bandas (0–100):</b> Normal · En observación · Amplificación anómala · Amplificación alta · Amplificación muy alta. Una banda alta = amplificación medida, <b>nunca</b> coordinación confirmada.</p>' +
+    '<p><b>Bandas (0–100):</b> Normal · En observación · Amplificación anómala · Amplificación alta · Amplificación muy alta. Un nivel de actividad alto = amplificación medida, <b>nunca</b> coordinación confirmada.</p>' +
     '<p><b>Chips H1–H6:</b> hipótesis de compatibilidad (0–100%), no probabilidades. ⭐ = la que más encaja en ese cluster.</p>' +
     '<p style="margin-top:12px"><b>Prueba ahora:</b> abre un caso real → <a href="/casos/ceuta/" style="color:#c2410c">Caso Ceuta</a> o <a href="/casos/electoral/" style="color:#c2410c">Electoral 2026</a>.</p>' +
     '</div>' +

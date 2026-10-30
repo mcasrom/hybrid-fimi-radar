@@ -13,8 +13,8 @@ from __future__ import annotations
 import json
 
 _TPL = """<div id="captacionFimi" style="margin:22px 0;padding:16px 18px;background:#fff7ed;border:1px solid #fdba74;border-left:5px solid #c2410c;border-radius:10px">
-  <div style="font-weight:800;color:#7c2d12;font-size:1.02rem">📡 Te aviso cuando suba la banda de tus temas</div>
-  <p style="margin:6px 0;color:#475569;font-size:.9rem"><b>Solo cuando hay señal</b> (banda alta) en los temas que elijas, más un <b>resumen cada lunes</b>. Sin ruido; baja en un clic.</p>
+  <div style="font-weight:800;color:#7c2d12;font-size:1.02rem">📡 Te aviso cuando suba el nivel de actividad de tus temas</div>
+  <p style="margin:6px 0;color:#475569;font-size:.9rem"><b>Solo cuando hay señal</b> (nivel de actividad alto) en los temas que elijas, más un <b>resumen cada lunes</b>. Sin ruido; baja en un clic.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <input id="capEmail" type="email" placeholder="tu@correo.com" aria-label="Tu correo electrónico" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:.9rem">
     <button id="capBtn" type="button" onclick="fimiSub()" style="background:#c2410c;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer">Suscribirme</button>
