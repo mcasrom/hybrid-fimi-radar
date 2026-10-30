@@ -1934,7 +1934,8 @@ code{{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:0 4p
       encontrado, qué no sabemos, qué puede equivocarse, cómo repetirlo y qué se
       puede descargar. Herramienta OSINT <b>agnóstica al actor</b>: nunca atribuimos
       sin evidencia; un nivel de actividad alto es amplificación, no coordinación confirmada.
-      Cifras del último ciclo — generado <b>{_gen}</b>.</p>
+      Cifras del último ciclo — generado <b>{_gen}</b>. En el código, <b>cluster</b> se llama
+      <b>grupo de cuentas</b>.</p>
   </div>
 
   <div class="card">
@@ -3136,7 +3137,7 @@ def main():
         elif _estado_dial == "subiendo":
             _frase = f"{_pl(_tr['hoy'],'detección','detecciones')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
             if _tr["high_hoy"] > _tr["high_48"]:
-                _frase = f"{_pl(_tr['high_hoy'],'cluster','clusters')} en alerta alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
+                _frase = f"{_pl(_tr['high_hoy'],'grupo','grupos')} con intensidad alta, +{_tr['high_hoy'] - _tr['high_48']} vs las 24 h anteriores"
         elif _estado_dial == "bajando":
             _frase = f"{_pl(_tr['hoy'],'detección','detecciones')} en 24 h frente a {_tr['hace48']} las 24 h anteriores"
         else:
@@ -4114,6 +4115,7 @@ def main():
         return _dims + f". Top: {_top['cluster_label'].split('_cluster_')[-1] if '_cluster_' in (_top['cluster_label'] or '') else _top['cluster_label']} {_top['overall_score']:.0f}/100 {BAND_LEVEL.get(_band_top, _band_top)}." + _top_txt
 
     dial_cards = ""
+    main_cards = ""
     _board_rows = ""
     _ALERTA_UMBRAL = 60  # donde empieza HIGH (≥60 = "en alerta", banda alta)
     # Señales de gobernanza (promoción/cierre) para el badge de gestión. Opción C:
@@ -4236,6 +4238,12 @@ def main():
         _trend_glyph = {"subiendo": "▲", "bajando": "▼", "estable": "▬", "recopilando": "…"}
         _trend_col = {"subiendo": "#d97706", "bajando": "#16a34a",
                       "estable": "#64748b", "recopilando": "#94a3b8"}
+        main_cards += (
+            f"<article style='flex:1 1 280px;max-width:360px;background:#fff;border:1px solid #e2e8f0;"
+            f"border-left:5px solid {_card_border};border-radius:14px;padding:16px;text-align:left'>"
+            f"<div style='font-size:.78rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.04em'>{_nombre}</div>"
+            f"{_badge_tema}<p style='font-size:.88rem;color:#334155;margin:8px 0 4px'>{_frase}</p>"
+            f"<p style='font-size:.8rem;color:#64748b;margin:0'>{len(_tema_cl)} grupos de cuentas · {_tot_cuentas} cuentas</p></article>")
         _board_rows += (
             f"<div class='sit-row'>"
             f"<span class='sit-dot' style='background:{_dial_color}'></span>"
@@ -5527,7 +5535,6 @@ a{{color:#c2410c}}
 </header>
 <main>
 <div id="tabRadar" class="tab-panel active">
-  {salud_card}
 <section class="fimi-hero">
   <div class="fimi-hero-eyebrow">
     <span><span class="dot" style="background:#c2410c"></span>FIMI Radar · evidencia de patrones de difusión en Bluesky</span>
@@ -5557,6 +5564,13 @@ a{{color:#c2410c}}
     <a href="#estado" class="ghost" onclick="document.getElementById('estado').scrollIntoView({{behavior:'smooth'}});return false">Estado por tema →</a>
   </div>
 </section>
+  <div id="resumenPrincipal" style="margin:6px 0 18px">
+    <p style="font-size:.95rem;color:#334155;margin:0 0 12px"><b>{len(temas)} temas activos.</b> Una tarjeta por tema; el resto del sistema queda en «Ver detalle técnico».</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch">{main_cards}</div>
+    <button type="button" onclick="abrirDetalle()" style="margin-top:14px;cursor:pointer;border:1px solid #c2410c;background:#fff;color:#c2410c;border-radius:999px;padding:9px 18px;font-weight:700;font-family:inherit">Ver detalle técnico</button>
+  </div>
+  {detalle_wrap_open}
+  {salud_card}
   {version_box}
   <div style="margin:10px 0 4px;padding:11px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;color:#334155;line-height:1.5">
     <b>El sistema en una imagen.</b> El pipeline completo (captura → medición → contraste) en un diagrama:
@@ -5583,7 +5597,6 @@ a{{color:#c2410c}}
 
  {resumen_html}
 
- {detalle_wrap_open}
  {_band_dist}
  {bulos_card_html}
  {_COBERTURA_HTML}
@@ -5614,8 +5627,6 @@ de arriba para ver solo un tema; estas secciones son la vista de conjunto.
 {hist_html}
 </details>
 
-{detalle_wrap_close}
-</div><!-- /tabRadar -->
 <div id="tabTransparencia" class="tab-panel">
 
 <div class="card" id="que-es-fimi">
@@ -5880,6 +5891,8 @@ target="_blank" rel="noopener noreferrer" style="color:#c2410c">CONTRIBUTING.md<
 </p>
 </div>
 </div><!-- /tabTransparencia -->
+{detalle_wrap_close}
+</div><!-- /tabRadar -->
 
 <footer style="border-top:1px solid #e5e5e5;margin-top:28px;padding-top:18px;text-align:center">
   <div style="display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:center;text-align:left;font-size:.85rem;color:#666;line-height:2;max-width:920px;margin:0 auto">

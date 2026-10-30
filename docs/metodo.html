@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Método y validación — observatorio de amplificación</title>
-<meta name="description" content="Qué mide (y qué no) el observatorio, cómo funciona y con qué evidencia: validación sintética, curada, ciega, externa y control negativo. Con tasas de error y límites declarados.">
+<title>Método y validación — FIMI Radar de amplificación</title>
+<meta name="description" content="Qué mide (y qué no) el FIMI Radar, cómo funciona y con qué evidencia: validación sintética, curada, ciega, externa y control negativo. Con tasas de error y límites declarados.">
 <link rel="canonical" href="https://fimi.viajeinteligencia.com/metodo.html">
 <link rel="alternate" hreflang="es" href="https://fimi.viajeinteligencia.com/metodo.html">
 <link rel="alternate" hreflang="en" href="https://fimi.viajeinteligencia.com/metodo.en.html">
@@ -19,8 +19,8 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebPage","name":"Método y validación",
 "url":"https://fimi.viajeinteligencia.com/metodo.html",
-"description":"Método, validación y límites del observatorio de amplificación (ámbito FIMI).",
-"isPartOf":{"@type":"WebSite","name":"Observatorio","url":"https://fimi.viajeinteligencia.com/"}}
+"description":"Método, validación y límites del FIMI Radar de amplificación (ámbito FIMI).",
+"isPartOf":{"@type":"WebSite","name":"FIMI Radar","url":"https://fimi.viajeinteligencia.com/"}}
 </script>
 <style>
   :root{--accent:#c2410c;--ink:#1e293b;--mut:#64748b;--bg:#fffaf5;--line:#fde68a}
@@ -48,7 +48,7 @@
 <body>
 <div class="wrap">
   <div class="brand">
-    <span>📡 <b>Observatorio</b></span><span class="sep">·</span>
+    <span>📡 <b>FIMI Radar</b></span><span class="sep">·</span>
     <a href="/">Dashboard</a><span class="sep">·</span>
     <a href="/suscribirse.html">Suscribirse</a><span class="sep">·</span>
     <a href="/research.html">Research</a><span class="sep">·</span>
@@ -59,12 +59,13 @@
   </div>
 
   <p class="tag">Método y validación</p>
-  <h1>Qué mide este observatorio (y qué no)</h1>
+  <h1>Qué mide este FIMI Radar (y qué no)</h1>
   <p class="lead">Instrumento OSINT, <b>abierto</b> (AGPL-3.0) y <b>autoalojado</b> que mide <b>amplificación</b>
   de contenido público en redes y prensa. No detecta «campañas» ni atribuye actores. Aquí explico el método,
-  la evidencia de validación, las <b>tasas de error</b> y los <b>límites</b>.</p>
+  la evidencia de validación, las <b>tasas de error</b> y los <b>límites</b>. En el código,
+  <b>cluster</b> se llama <b>grupo de cuentas</b>.</p>
 
-  <div class="box"><b>Regla que no se cruza:</b> una banda alta es <b>amplificación medida</b>, nunca
+  <div class="box"><b>Regla que no se cruza:</b> una nivel de actividad alto es <b>amplificación medida</b>, nunca
   «coordinación confirmada». «FIMI» es el <b>ámbito</b>, no la promesa.</div>
 
   <h2>1. Qué mide y qué no</h2>
@@ -92,7 +93,7 @@
     <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>n</th><th>Criterio</th><th>Resultado</th><th>Límite</th></tr></thead>
     <tbody>
       <tr><td><code>sintetica_2026</code></td><td>2026</td><td>Sintética</td><td>1.050</td><td>ARI / falsos positivos</td><td><b>ARI 1.000</b> · FP 2/1.050 (0,19 %)</td><td>Mecánica de clustering; no atribución.</td></tr>
-      <tr><td><code>curada_21sep</code></td><td>21-sep-2026</td><td>Curada (banda alta)</td><td>53 (36+2+15)</td><td>Precisión</td><td><b>94,7 %</b> (36/38, excl. dudosos) · <b>67,9 %</b> (36/53 conservadora)</td><td>Un revisor; sin recall; muestra pequeña.</td></tr>
+      <tr><td><code>curada_21sep</code></td><td>21-sep-2026</td><td>Curada (nivel de actividad alto)</td><td>53 (36+2+15)</td><td>Precisión</td><td><b>94,7 %</b> (36/38, excl. dudosos) · <b>67,9 %</b> (36/53 conservadora)</td><td>Un revisor; sin recall; muestra pequeña.</td></tr>
       <tr><td><code>ciega_29sep</code></td><td>29-sep-2026</td><td>Ciega (κ)</td><td>36 (0/40 FIMI)</td><td>Coordinación</td><td><b>3/36 = 8,3 %</b> (7,5 % si dudosos=no) · <b>κ 0,30</b></td><td>Muestra pequeña; sin atribución.</td></tr>
       <tr><td><code>goldset_16oct</code></td><td>16-oct-2026</td><td>Gold set (Frontera Sur)</td><td>160</td><td>Relevancia / categoría / tono</td><td>prec 0,94 · recall 0,57 · κ cat 0,37 · κ tono 0,31 · tone acc 0,80</td><td>Un solo anotador; muestra estratificada.</td></tr>
       <tr><td><code>externa_euvsdisinfo</code></td><td>2026</td><td>Externa (EUvsDisinfo)</td><td>18.249 global / 243 ES</td><td>Precisión / recall</td><td>prec 8,2 % · <b>recall 0 %</b></td><td>Histórico 2015-2023; no cubre temas activos; no comparable.</td></tr>
@@ -101,7 +102,7 @@
   </table>
   </div>
   <p class="lead" style="font-size:.85rem">Lectura honesta: la validez <b>interna</b> es fuerte (sintética, curada);
-  la <b>externa</b> es <b>débil</b> (recall 0 % y κ bajo). Por eso presento esto como <b>observatorio de amplificación</b>
+  la <b>externa</b> es <b>débil</b> (recall 0 % y κ bajo). Por eso presento esto como <b>FIMI Radar de amplificación</b>
   y no como detector de coordinación.</p>
 
   <h2>3 bis. Gold set — validación por anotación humana (caso Frontera Sur, 16-oct-2026)</h2>
@@ -142,19 +143,19 @@
     <li><b>Ceguera de plataformas:</b> sin X / TikTok / Meta / WhatsApp.</li>
     <li><b>Cobertura</b> dependiente de Bluesky y Google News en varios temas.</li>
     <li><b>Sin atribución</b> de autoría, intención ni origen estatal.</li>
-    <li><b>Banda alta ≠ coordinación</b> (ver §3).</li>
+    <li><b>Nivel de actividad alto ≠ coordinación</b> (ver §3).</li>
     <li><b>Ventana de observación: 45 días</b> (configurable <b>por tema</b>: 90 d en Frontera Sur, defensa España y elecciones España). El pipeline solo ve eventos de la ventana:
     las señales viejas <b>caducan</b> y dejan de puntuar. El almacenamiento conserva 90 días.
     <b>Motivo (medido 13-oct-2026):</b> el run más pesado (mayor ventana por tema, <code>oriente_medio</code>,
     56,5 k eventos a 60 d) llegaba a <b>2,27 GB de pico de RAM</b> (~40 KB/evento) en un servidor de 3,8 GB,
     con riesgo de OOM a ~85 k eventos/run; acortar a 45 d reduce el input sin perder señal relevante.</li>
-    <li><b>Antigüedad de la alerta</b> medida hacia delante; el «lead time» frente al mundo no es medible.</li>
+    <li><b>Tiempo activo del grupo</b> medida hacia delante; el «lead time» frente al mundo no es medible.</li>
   </ul>
 
   <h2>6. Trazabilidad y reproducibilidad</h2>
   <ul>
     <li>Código <b>abierto (AGPL-3.0)</b> + <b>API pública</b> (<a href="/api.html">/api/v1/</a>) + <b>export</b> CSV/JSON.</li>
-    <li><b>Permalink estable</b> por linaje (<code>/c/&lt;id&gt;</code>) y <b>registro auditable</b> por cluster en banda alta.</li>
+    <li><b>Permalink estable</b> por linaje (<code>/c/&lt;id&gt;</code>) y <b>registro auditable</b> por cluster en nivel de actividad alto.</li>
     <li>Sistema de <b>tests</b> y generación sintética como puerta de calidad.</li>
     <li><b>Changelog</b> de método/producto/datos (qué cambió y cuándo):
       <a href="https://github.com/mcasrom/hybrid-fimi-radar/blob/main/CHANGELOG.md">CHANGELOG.md</a>.</li>
@@ -165,7 +166,7 @@
   <b>independiente</b>, de una sola persona, sin rastreo ni cookies de terceros.</p>
 
   <footer>
-    Observatorio · proyecto independiente, sin rastreo · datos solo de contenido <b>público</b> ·
+    FIMI Radar · proyecto independiente, sin rastreo · datos solo de contenido <b>público</b> ·
     <a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a><br>
     Método y cifras revisados el <b>6/oct/2026</b> · lo que no mide está en «Límites».
   </footer>
