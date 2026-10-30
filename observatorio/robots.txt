@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Admin y API de escritura no indexables
+Disallow: /observatorio/admin/
+Disallow: /api/
+
+Sitemap: https://fimi.viajeinteligencia.com/sitemap.xml

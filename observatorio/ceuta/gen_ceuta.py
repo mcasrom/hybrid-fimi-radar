@@ -85,7 +85,7 @@ src_html=''.join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t 
 cov=v1.get('cobertura_plataforma',{})
 html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Registro de lo publicado — Frontera Sur (España-Marruecos)</title>
-<meta name="description" content="Registro de lo que publican los medios sobre Ceuta y Marruecos: afirmaciones, fuentes, respuesta oficial y límites.">
+<meta name="description" content="Registro de lo que publican los medios sobre Ceuta y Marruecos: afirmaciones, fuentes, respuesta oficial y límites."><link rel="canonical" href="https://fimi.viajeinteligencia.com/observatorio/ceuta/">
 <style>
 :root{{--accent:#b45309;--ink:#1e293b;--muted:#64748b;--bg:#fffaf5;--line:#fde68a}}
 *{{box-sizing:border-box}}body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,var(--bg));color:var(--ink);line-height:1.6}}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://fimi.viajeinteligencia.com/</loc><lastmod>2026-10-30</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/</loc><lastmod>2026-10-30</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/ceuta/</loc><lastmod>2026-10-30</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/juventud/</loc><lastmod>2026-10-30</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/campana/</loc><lastmod>2026-10-30</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/infraestructuras/</loc><lastmod>2026-10-30</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/metodo/</loc><lastmod>2026-10-30</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/fuentes/</loc><lastmod>2026-10-30</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/datos/</loc><lastmod>2026-10-30</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/ayuda/</loc><lastmod>2026-10-30</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/sobre/</loc><lastmod>2026-10-30</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/suscribirse/</loc><lastmod>2026-10-30</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/privacidad/</loc><lastmod>2026-10-30</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://fimi.viajeinteligencia.com/observatorio/api/</loc><lastmod>2026-10-30</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+</urlset>

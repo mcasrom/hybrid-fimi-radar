@@ -1,0 +1,405 @@
+# Observatorio de amplificación (ámbito FIMI)
+
+*[English](README.en.md) · Español*
+
+## 1. Qué es
+
+**Observatorio de amplificación:** sistema OSINT que mide, con
+datos públicos, **patrones de amplificación** —sincronización, repetición de contenido y
+agrupación estructural— de la conversación en redes sociales y prensa sobre un conjunto
+de temas (frontera sur y Marruecos, Oriente Medio, elecciones, energía, IA, Sahel,
+defensa y amenazas híbridas…). Mira **quién empuja el mismo mensaje, a la vez
+y de la misma forma**, y lo publica como **amplificación medida**. Una banda alta
+**no** equivale a coordinación: en la validación ciega del 29/Sep/2026 solo **3 de 36** evaluables
+casos de banda alta (8,3 %) mostraban coordinación. FIMI es el **ámbito** que se observa,
+no una detección: el observatorio **no** confirma campañas ni atribuye actores.
+
+La herramienta **no atribuye actor ni confirma inautenticidad o campaña extranjera por
+sí sola**: sus salidas son **señales conductuales** que requieren validación adicional,
+análisis contextual y evidencia organizativa. No dictamina "qué es verdad o mentira".
+Está pensado para periodistas, investigadores y ciudadanía que quieran comprobar los
+datos por sí mismos.
+
+La **portada** está pensada para leerse **sin jerga**: abre con **«¿Qué es esto?»** (aclara que
+no dice si hay una campaña), **«Para periodistas»** (qué se puede citar y qué no) y
+**«Así se lee esto»** (un ejemplo real, el caso Ceuta); incluye una **FAQ corta** y las
+**bandas** en lenguaje llano —**Amplificación alta**, **Amplificación anómala**…— con el código
+interno (**HIGH**/**CRITICAL**) entre paréntesis. El **glosario** (`/glosario.html`) añade un
+resumen **«En 5 palabras»** (amplificación · banda · clúster · eco de prensa · actor).
+
+## 2. Qué NO hace
+
+- **No es un detector de FIMI.** No demuestra que exista una campaña: produce
+  **candidatos para investigación**. Los clusters HIGH/CRITICAL tienen **explicaciones
+  alternativas plausibles** —y a menudo más parsimoniosas—: eco de prensa, viralidad
+  orgánica, activismo coordinado legítimo, automatización no maliciosa o artefactos del
+  grafo. Sostener "FIMI confirmado" exige **evidencia externa independiente**.
+- **No atribuye autoría ni intención.** La atribución es un módulo aparte y conservador:
+  por defecto el resultado es `UNKNOWN`. El radar no dice "esto lo hace Rusia/China/
+  Marruecos/EEUU/la izquierda/la derecha".
+- **No evalúa ideología**: una opinión nunca se trata como amenaza.
+- **Describe patrones, no intenciones.** Mide forma (sincronía, enlaces repetidos,
+  recurrencia), no el porqué.
+- **No señala a personas.** El radar **sí muestra los identificadores públicos** de las
+  cuentas que forman un cluster (son la prueba de la coordinación), pero **no perfila a
+  nadie**: no infiere datos personales, no evalúa a individuos ni los presenta como
+  culpables. Un cluster describe un comportamiento colectivo, no una acusación.
+- **No decide.** Avisa y sugiere (promover/cerrar un tema); la decisión es siempre humana.
+
+## 3. Cómo funciona (a nivel conceptual)
+
+Cada 6 h captura publicaciones públicas (Bluesky, Telegram, Reddit, Mastodon, Google News
+y RSS), las normaliza y calcula componentes estructurales por **cluster** de cuentas:
+
+- **Sincronización (coordinación):** cuánto coinciden en el tiempo las publicaciones.
+- **Anomalía:** cuánto se desvía el comportamiento de esas cuentas del habitual
+  (detección de valores atípicos, sin conocer antes a la cuenta).
+- **Infraestructura:** enlaces/dominios compartidos entre cuentas.
+- **Similitud de contenido** y **amplificación** (señal global del ciclo).
+
+> La **densidad de red** se calcula y se publica como dato, pero **no pondera en el
+> score**: es una transformación del mismo eje de coordinación (doble conteo) y se
+> retiró el 24/Sep-2026. La usa el módulo de atribución (hipótesis H3).
+>
+> **Cluster publicado = cluster con señal (12/oct/2026):** los titulares cuentan
+> solo clusters de **≥3 cuentas**; las parejas y solitarios se agregan en nota
+> (no llegan a banda alta por las reglas de escala). La distribución de scores
+> se muestra con el muro de escala (39,0/59,0) explicado, no escondido.
+
+Cada cluster publica además **`alternative_explanations`**: explicaciones alternativas con
+estado (`supported` / `plausible` / `ruled_out`) y la **evidencia** que lo motiva. Distingue,
+entre otras, dos situaciones que **no deben confundirse**:
+
+- **`single_source_feed` — «Feed de una sola fuente»**: una **cuenta o un dominio concentran
+  casi todo** (p. ej. alguien que publica su propio sitio). No es coordinación entre cuentas
+  distintas → **prioridad baja**.
+- **`cross_account_synchrony` — «Reproducción coordinada entre cuentas»**: **varias cuentas
+  distintas, ninguna dominante, con el mismo contenido**. Este es el patrón que **sí merece
+  revisión humana** → **prioridad alta**.
+
+Y también eco de prensa, eco de una sola pieza, viralidad orgánica, sincronización sin operador,
+automatización no maliciosa, movilización legítima, artefacto del grafo, **texto repetido entre
+cuentas** (`copypasta_textual`, 5-oct: mismo texto o casi-idéntico por simhash en cuentas distintas
+y en ráfaga) y *sin explicación concluyente*. No es una clasificación de "la verdad": es material para la revisión humana,
+visible en el dashboard, la API y las exportaciones.
+
+**Señales objetivas de automatización/sindicación (30-Sep)**: dos patrones que se detectan de
+forma **objetiva** y que *no* deben leerse como «campaña» (alimentan la capa de explicaciones
+**sin tocar bandas ni score**):
+- **Mismo dominio de handle** (varias cuentas comparten el dominio de su handle; se excluye el
+  PDS universal `*.bsky.social`) → sube **`automated_non_malicious`** (red de bots por locale,
+  bots lúdicos…).
+- **Mismo texto repetido en varios dominios propios** (no prensa establecida) → sube
+  **`syndicated_wire`** (red de blogs con una misma mano).
+
+**Etiquetas de validación humana (30-Sep)**: para que el acuerdo entre revisores (**κ**) sea
+medible, la validación usa **dos etiquetas objetivas** en vez de la ambigua «coordinación»
+(rúbrica completa: [`docs/RUBRICA-VALIDACION.md`](docs/RUBRICA-VALIDACION.md)):
+- **`burst`** (≤24 h): la misma pieza en **≥2 cuentas distintas e independientes**;
+- **`sustained`** (>72 h **con volumen**: ≥10 eventos en ≥3 días) → eco sostenido.
+Se miden **por separado** (κ propio). En la banda alta apenas hay `burst` (≈1 %); dominan `no` (≈76 %) y `sustained` (≈21 %).
+
+Cada cluster publica además un **rol narrativo** (`narrative_subtype`) que separa *hablar de
+FIMI* — `official_response` (respuesta oficial), `incident_report` (reporte de incidente),
+`meta_analysis` (análisis) — de *posible narrativa FIMI* (`potential_narrative`,
+`coordination_signal`). Ayuda a no leer como "operación" lo que es una noticia que la combate
+o la analiza.
+
+Con eso calcula una **puntuación 0-100** y una **banda** (NORMAL→CRITICAL), y evalúa
+**hipótesis alternativas** (anti sesgo de confirmación):
+
+H1 viralización orgánica · H2 campaña coordinada doméstica *con estructura* ·
+**H2b sincronización sin atribución de operador** · H3 operación de influencia extranjera ·
+H4 amplificación mediática · H5 sincronía sostenida con contenido diverso (sin estructura) ·
+H6 sin evidencia concluyente.
+
+Las hipótesis **no cambian la puntuación**; son una lectura informativa.
+
+**Coordinación bruta ≠ H2.** El componente «Coordinación» del radar es el valor bruto
+(`coordination_score`): en el piloto de protestas juveniles, mediana 10 y clúster top 13.
+H2 **no usa ese 13 directamente**: usa `synchronization = min(100, coordinación bruta × 12)`
+y añade estructura (núcleo k≥2 de ≥3 cuentas con URLs/dominios compartidos). Por eso un H2 alto
+(77 en el clúster top) puede convivir con una coordinación bruta baja. H2 es una **compatibilidad
+interna**, no una probabilidad; H2b queda a 0 por construcción cuando hay estructura. El informe
+visual separa ahora ambas filas y lo explica junto al bloque de hipótesis.
+
+### Auditoría de señales altas (HIGH/CRITICAL)
+
+Para que cada señal alta pueda revisarse **sin afirmar que sea FIMI**, `detection/auditoria_high.py`
+genera un registro auditable por cluster con score ≥60: cuentas, eventos, URLs/dominios distintos,
+ventana temporal, componentes, k-core, **rol narrativo** y **explicaciones alternativas**, más la
+**cadena** que separa la *coordinación observable* (medida) de la *inautenticidad*, la *intención* y
+la *dimensión extranjera* (que el radar no puede confirmar por sí solo) y del *FIMI confirmado* (que
+requiere evidencia independiente). Ordena la revisión por prioridad humana.
+
+Es de **solo lectura y ligero**: audita únicamente los clusters ≥ umbral y sus eventos, con límites
+configurables (`auditoria` en `config.yaml`: máx. de clusters, eventos y longitud de texto, timeout,
+semilla). No usa red, LLMs ni dependencias pesadas.
+
+```bash
+python detection/auditoria_high.py --formato csv --out auditoria_high.csv
+python detection/auditoria_high.py --tema <tema> --limite 50
+python detection/auditoria_high.py --formato blind --muestra 40 --seed 7 --out ciego.csv
+```
+
+En `--formato blind` el muestreo se aplica **siempre** (con `--muestra`/`--seed`; si omites
+`--muestra`, se usan **40 filas** por defecto, `auditoria.blind_default_muestra`). El CSV ciego
+**no** incluye rol narrativo, explicación principal, prioridad, hipótesis ni atribución: solo
+evidencia bruta y componentes (cuentas, eventos, URLs/dominios, ventana, k-core, textos y URLs
+de evidencia) más las columnas `label_*` **vacías** para la anotación humana.
+
+## 4. Estado actual
+
+Snapshot (10/Oct/2026, **v0.2.1**; las cifras crecen cada ciclo — el dashboard
+muestra el valor vivo):
+
+- **3 temas con captura** (2 en producción: `frontera_sur` y `espana_elecciones`; 1 piloto: `protestas_juveniles`, `noindex`) y **7 congelados**: `eeuu_politica`, `oriente_medio`, `sahel`, `energia`, `elecciones`, `inteligencia_artificial` y `defensa_espana`. Los congelados conservan datos, casos, informes y API read-only; no se borran URLs. `geopolitica_ue_marruecos` y `espana_amenazas_hibridas` son históricos cerrados.
+  `espana_amenazas_hibridas` se fusionó en `defensa_espana` el 27/Sep (renombrado «España — defensa y amenazas híbridas»).
+- **~367.000 eventos** y **~423 clusters** (3 temas con captura, a 28/Oct/2026): la API
+  (`/api/v1/temas`) cuenta **99 en banda alta** (HIGH/CRITICAL, score ≥60) y **0 CRITICAL**.
+  **Estas cifras cambian en cada ciclo** (el corpus crece): el dashboard muestra siempre el valor vivo.
+- **78 feeds RSS** (5 españoles con `tema: espana_elecciones` desde el 5-oct + `Meneame Portada` desde el 7-oct, sin tema: decide el gate) + 2 búsquedas de plataforma, 6 canales de Telegram público (2 aparcados), subreddits aparcados (429).
+- **Captura por keywords** (`config.yaml`): 139 keywords (137 en Bluesky, 140 en google-news, 3 en Mastodon; una entrada puede ir a varias plataformas). El corpus se gestiona por **volumen reciente**, no por edad: el clustering usa **ventana de 45 días** (`run_fimi --ventana-dias 45`) y el corpus apenas tiene historia previa (primer evento 11-jul-2026). Por eso **archivar eventos fríos no aporta** (solo ~0,5 % supera 45 d). **Recorte 9-oct-2026**: retiradas de la captura las 6 marcas de IA de baja señal (`OpenAI`/`ChatGPT`/`Claude`/`Gemini`/`Nvidia`/`Anthropic`, ~31k matches/30 d con solape); el tema IA conserva los términos conceptuales (inteligencia artificial, artificial intelligence, deepfake, algoritmo, robot).
+- Dashboard en vivo: https://fimi.viajeinteligencia.com · API v1 read-only: `/api/v1/…`.
+- **Actualización 17-oct-2026:**
+  - **`/dominios.html`** — ranking de **dominios enlazados** por tema (agregadores como Google News/dlvr.it excluidos y contados aparte) + **línea base p25–p75** de eventos/día con estado pico/normal/bajo. Regenerado en el ciclo de 6 h (`detection/gen_dominios.py`), enlazado en **Documentos ▾**/pie y en el **sitemap** (38 URLs).
+  - **Dato, versión y salud** — la portada abre con una **tarjeta de salud** (fuentes activas/bajas/inactivas, % sin tema, snapshots <6 h) y una caja **«Dato y versión»** (corte, snapshot, ventana, eventos/fuentes/clusters y commit). Se generan del mismo ciclo que el dashboard.
+  - **Tabla única de validación** — `/metodo.html#validacion`: 6 experimentos con **ID, fecha, n, criterio, resultado y límite**; la cifra sintética de FP se corrigió a **2/1.050 (0,19 %)**. Fuente versionada: `docs/metodo.html` + `scripts/sync_metodo.sh`.
+- **Caso documentado (expediente híbrido):** Ceuta / Frontera Sur → https://fimi.viajeinteligencia.com/casos/ceuta/
+- **Caso Ceuta — congelado + live (13-oct):** el **análisis V1** (30-jul→21-sep) está **congelado** e inmutable
+  (con hash SHA-256) en `docs/casos/ceuta-v1.json`; los **datos siguen llegando** (capa *live*, cada 6 h desde
+  `event_temas`). Ambos se publican en **`/datos/casos/ceuta.json`** (+ `ceuta-frozen.csv`) y se enlazan desde
+  la página. Flujo completo: `docs/CASO-CEUTA-CONGELADO.md`.
+  La **prosa** y los **hechos con fuente** están curados a mano; las **cifras vivas** (KPIs por
+  `event_temas` y el clúster sostenido del caso) se **auto-inyectan cada 6 h** desde la BD
+  (`detection/update_caso_ceuta_live.py`, en el cron de 6 h). Análisis **V1** 30-jul→21-sep
+  (snapshot 1-oct): 13.442 eventos · 150 URLs compartidas, dominado por eco de prensa.
+- **Subcaso Frontera Sur (Marruecos) + método abierto (16-oct):** `casos/frontera_sur_hibridos/`
+  (generador `detection/caso_hibridos_frontera.py`) — expediente de **actividad militar y presión
+  fronteriza** con **escalera epistémica** (mención → afirmación publicada → hecho corroborado →
+  interpretación), **episodios** (automáticos + 5 curados a mano con fuente primaria/estado/explicación
+  alternativa/límites), **histórico diario** y **API** (`/api/v1/caso/<slug>` + `datos.csv`/`historial`).
+  **Fase 1** (tras validar un análisis externo contra el código y la BD): la concentración **excluye el
+  agregador de Google News** (top-5 47,5 %→**22,6 %**; Gini 0,53→**0,30**), **licencia CC BY 4.0 + autoría
+  + «cómo citar»**, IDs `AUTO-`/`CUR-` (sin colisión) y «coordinación: **no medida**». **Fase 2**:
+  **pseudonimización RGPD** de cuentas personales (`cuenta-<hash>`, sin enlace al perfil) y **H1**
+  recalculado sobre **serie normalizada por volumen + bootstrap por bloques** (r 0,50→0,33). **Gold set**
+  (`detection/caso_goldset.py`): **κ categoría 0,37 · tono accuracy 0,80** · relevancia precision 0,94 /
+  **recall 0,57** → el límite real es la **cobertura**, no el ruido.
+  La página abre además con una **síntesis visual («bento»)** de la lectura semanal —volumen y actividad,
+  origen de las fuentes, concentración y polaridad, con la **fecha del ciclo** y el **alcance explícito
+  (solo el núcleo)**— generada desde los **mismos datos** que el resto de la página (sin cifras incrustadas),
+  en **CSS puro, sin JavaScript** y responsive. Los dos listados de **episodios** (25 automáticos + 5
+  curados a mano) van **plegados** bajo «Ver los N episodios · clic para abrir»: la misma información
+  **bajo demanda**, menos densidad y nada eliminado (el contenido sigue en el DOM, indexable).
+- **El rastro — serie temporal y seguimiento de una narrativa** (18-oct): cada ciclo guarda el
+  score y la banda de cada clúster (`cluster_snapshots`, retención 60 d con roll diario a
+  `cluster_snapshots_daily`), así que una narrativa se puede **seguir** por su `lineage_id` estable:
+  `GET /api/v1/lineage/<lineage_id>` devuelve la **serie por ciclo**, la banda/score actual, la
+  **tendencia** (7 d), la lectura en llano y los componentes. Hay un **directorio de rastros** en
+  [`/n/`](https://fimi.viajeinteligencia.com/n/) —y por API `GET /api/v1/lineages?limit=&tema=`,
+  último punto de cada linaje—; cada tarjeta del dashboard y el panel del clúster enlazan
+  **«Ver el rastro»**. La serie por ciclo **arranca el 18-oct**, así que hasta acumular varios
+  puntos la página lo dice («N puntos de serie») en vez de simular una tendencia. Read-only: no
+  toca scoring, bandas ni atribución.
+- **Panorama electoral (varios procesos):** mirada de conjunto a los procesos electorales de 2026
+  (Brasil, Alemania, EEUU, España, …), con badge **tema** (datos reales del tema dedicado) vs
+  **palabras** (coincidencia aproximada) y aviso de **cobertura de feeds** →
+  https://fimi.viajeinteligencia.com/casos/electoral/
+- **Datasets abiertos por tema** (5-oct): `/datos/<tema>/clusters.{csv,json}` por cluster
+  (sin textos ni autores) + `datapackage.json` (CC BY 4.0) + `status.json` de frescura →
+  https://fimi.viajeinteligencia.com/datos/index.json
+- **Dataset citable con DOI** (10-oct): snapshot congelado con `sha256` y **DOI Zenodo**
+  [`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710) (datos CC BY 4.0);
+  incluye el **conjunto ciego** de validación (textos redactados). Se regenera con
+  `scripts/build_snapshot.py`; los metadatos de cita están en `CITATION.cff`.
+- **Posibles bulos contrastados** (5-oct, ampliado 6-oct): cruza clusters en banda alta/anómala con
+  piezas recientes de **verificadores** (Maldita/Newtral, 14 d). Se ofrece como **mini-tarjeta con KPIs**
+  en la portada (tras las tarjetas de temas), **feed RSS** (`/datos/bulos.xml`) y **JSON** (`/datos/bulos.json`),
+  accesibles desde el desplegable **«Bulos ▾»** de la barra. Incluye **tarjeta social** `/bulos-og.png`.
+  Es **contraste, no veredicto**: no atribuye actor ni confirma bulo. **Revisión 9-oct**: la tabla se rehace cada ciclo (DELETE+INSERT) y producía 435 filas para solo ~68 piezas; ahora el **panel, el detalle y el feed se deduplican por pieza** (URL), se ordenan por **fecha real de publicación** del verificador (no por `cycle_ts`, idéntico dentro del ciclo), marcan **«nuevo»** (primera vez visto hoy) e indican **con cuántos clústeres casa**; el detalle se muestra como **lista compacta** (no tabla).
+- **Ventana de observación 45 días** (13-oct; antes 60): el pipeline solo ve eventos de los
+  últimos 45 d (`--ventana-dias`); las señales viejas caducan. La ventana es **configurable
+  por tema** (`temas.<tema>.ventana_dias`): **45 d por defecto**, **90 d** en `frontera_sur`
+  (historia del caso Ceuta), `defensa_espana` y `espana_elecciones` (campaña hacia el 29-N), y **30 d en
+  `oriente_medio`** (15-oct: recorta su pico de RAM ~450 MB/run sin quitar el tema; medido). El almacenamiento
+  conserva 90 d (`mantenimiento.py`). **Motivo del cambio (medido, no estimado):** el run más
+  pesado —la mayor ventana por tema, `oriente_medio`, 56,5 k ev a 60 d— consumía **2,27 GB de
+  pico de RAM** (~40 KB/evento) sobre un servidor de 3,8 GB (con 19 apps + Postgres), con
+  **riesgo de OOM a ~85 k ev/run**. Acortar a 45 d reduce el input del mayor run (menos RAM y
+  CPU) sin perder señal relevante; además `check_sistema` ahora avisa por el **run mayor**, no
+  por el corpus total.
+- **API para periodistas** (6-oct): serie diaria por tema (`/api/v1/tema/<slug>/serie?dias=30`,
+  solo agregados) y búsqueda de clusters (`/api/v1/buscar?q=&tema=&limite=`, fragmentos
+  redactados, sin autores). Documentadas en `/api.html` y el OpenAPI.
+- **Consulta de enlace** (14-oct, botón **🔎 Consulta** en la barra del dashboard): pega el
+  **enlace que viste** (una **URL o dominio**) en
+  [fimi.viajeinteligencia.com/consulta.html](https://fimi.viajeinteligencia.com/consulta.html) y
+  obtienes una **lectura en lenguaje llano** —nº de **cuentas distintas**, piezas y el **patrón**
+  (eco de prensa, difusión de una fuente o **amplificación anómala**)—. La misma señal por API:
+  `/api/v1/consulta?url=<url>`. Read-only; **señal, no atribución** (no aparecer ≠ falso).
+- **Export de grafo por clúster** (10-oct): `/api/export?cluster=<label>&fmt=gexf|graphml`
+  (grafo cuenta↔cuenta, nodos anonimizados `cuenta-N`, aristas = misma URL compartida) para
+  Gephi/GraphML; el detalle del clúster enlaza **«GEXF (Gephi)»**.
+- **Sitemap con `/casos/electoral/`** (6-oct, 15 URLs) + `/api/v1/openapi.json` servido tras
+  excepción nginx (antes lo tragaba la regla de extensiones → 404).
+- **Contexto de medios estatales** (10-oct): 31 dominios estatales/financiados (curado, con
+  fuente) marcados con badge **«estatal»** en los chips de dominio del detalle
+  (`data/medios_estatales.json`). Clasificación **descriptiva, no acusación**.
+- **Dashboard más ligero** (10-oct): las barras de clúster se capan a 40 **inline** por tema
+  y el resto se carga **bajo demanda** (`resto.html`); la portada baja de ~2,2 MB a **~1,6 MB**
+  (brotli ~214 KB) sin perder barras.
+- **Informe visual por tema** (10-oct): una página editorial por tema en
+  `/informes/visual/<tema>.html` (3 temas activos + índice; los informes congelados se conservan) con KPIs, **radar de componentes**,
+  cluster de mayor score con sus **hipótesis**, 3 clusters destacados, dominios que
+  amplifican y **conclusión**; botones **Imprimir/Guardar PDF** y export **CSV/JSON/GEXF**.
+  Botón **«Informe visual ↗»** en cada panel del dashboard y desplegable **«Informes ▾»**.
+  Métricas **canónicas compartidas** con el dashboard y el informe semanal
+  (`detection/metricas_tema.py`: eventos del tema · cuentas en clusters · días operando). Incluye
+  **ritmo del cluster + línea base del tema** (eventos/día vs volumen del tema), **cobertura por
+  plataforma**, **bandas cualitativas** y **umbrales**, **accesibilidad** (tabla alternativa al radar)
+  y marca de **muestra pequeña**.
+- **Mapa de burbujas interactivo** (14-oct): cada burbuja del mapa global (nº de cuentas vs score) es
+  **clicable** → abre un **panel lateral** con el detalle del cluster (banda, **5 componentes**, rol,
+  **lecturas alternativas**, **cadena de evidencia**) y acciones: **informe del tema**, export
+  **CSV/GEXF** y **permalink** `/c/<lineage_id>`. La evidencia de las tarjetas se carga **al abrir**
+  (diferida) → la portada baja a **~147 KB brotli** (−12 %) manteniendo toda la funcionalidad.
+- Última release: **v0.2.1** (incluye el snapshot de dataset con DOI).
+
+### Correcciones 26-oct-2026
+
+- **Suscripciones**: `send_email()` registra el id de Resend y los fallos con el correo enmascarado; `FIMI_EMAIL_DRY_RUN=1` permite probar sin enviar; la API devuelve 502 si el envío inmediato falla. Un pendiente con MX nulo o rebote no se reintenta: no se envía recordatorio a direcciones no entregables.
+- **Promoción persistente**: `check_promocion.py` ya no cuenta ciclos desde `fimi.log` (la rotación los borraba). Incrementa `ciclos` y `ultimo_ciclo` en `data/promocion_<tema>.json`, una vez por snapshot. `defensa_espana` sigue en piloto (**3/8**); `elecciones` quedó cerrado y ya no se promociona.
+- **`elecciones` reabierto y estrechado (26-oct-2026)**: es el **núcleo FIMI**, no un duplicado de España. Se mantiene el histórico (77.421 eventos; 11.156 compartidos con `espana_elecciones`, 3.390 con `eeuu_politica`), pero la captura nueva excluye términos genéricos y la ventana de análisis baja a **14 días**. Así se conserva el ámbito de interferencia electoral sin cargar todo el corpus en RAM. Si el volumen sigue siendo alto, el siguiente paso es recortar más consultas, no cerrar el tema.
+
+## 5. Limitaciones conocidas
+
+- **Atribución estructural únicamente:** no consulta evidencia organizativa (salvo una
+  señal débil de dominio vía RDAP). `UNKNOWN` no significa "no hay campaña", sino que la
+  evidencia estructural no basta para atribuir.
+- **El score es una señal conductual, no una condena:** una banda HIGH indica
+  comportamiento coordinado anómalo, no prueba de orquestación.
+- **Validación honesta y experimental.** La separación de grupos se mide con datos
+  **sintéticos** (ARI) y con capas curada/externa; **ninguna demuestra detección de FIMI
+  real**. La validación humana **ciega** —con etiquetas separadas de *coordinación
+  observable*, *comportamiento inauténtico/manipulativo* y *FIMI con evidencia externa
+  independiente*— **ya se ha ejecutado** (`auditoria_high --formato blind`): 40 clusters
+  HIGH etiquetados a mano el 29/Sep/2026 → **8,3 % de coordinación** (3 sí / 33 no /
+  4 dudoso), **0 de 40 FIMI**. Limitaciones: **un solo revisor** (sin κ, pendiente un
+  2.º revisor), definición de *coordinación* más exigente que la del muestreo previo
+  (por eso el 94,7 % de septiembre no es comparable) y muestreo de precisión, sin recall.
+  Ver `docs/README-detallado.md`.
+- **Cobertura limitada:** X/TikTok/Instagram/Facebook/YouTube/WhatsApp no se observan
+  (coste/API o no público); falta análisis multimodal (imagen/vídeo). El corpus depende
+  en ~95 % de Bluesky + Google News. **Ventana de observación 45 días**: lo anterior
+  caduca y deja de puntuar (ver Método).
+- **Qué cuenta hoy como "coordinación" — y qué no.** Medido sobre producción
+  (29/Sep/2026 10:14 UTC, snapshot de 1052 clusters, 20.016 eventos miembro; **los 100 HIGH
+  de ese snapshot incluyen 20 de temas cerrados** — para los 8 temas activos son 88). Verificado
+  de nuevo **después** del ciclo de las 12:56, ya con el filtro de temas activos:
+  **1.050 clusters · 91 HIGH · 0 CRITICAL**):
+  - El grafo de coordinación **solo contiene cuentas sociales por diseño** (los medios se
+    capturan, pero no son miembros de ningún cluster). Que HIGH sea Bluesky es una
+    **tautología del corpus**, no un sesgo medido: las cuentas que clusterizan tienen
+    27.624 eventos y **ninguno de prensa**. No debe citarse como hallazgo.
+  - En **27 de los 100 HIGH** una sola cuenta aporta ≥55 % de los eventos del cluster, y
+    esas cuentas son en su mayoría **agregadores/feeds** (`greasydump`, `news-flows-nl`,
+    `topnewsde`, `cnn-news`, `efe.com`, `worldnewsbriefly`, `afrique.rfi.fr`…). El **23 %**
+    tiene 3 cuentas o menos (mediana 6, media 13).
+  - Repartidos por su **primera explicación `supported`**: 37 `single_source_feed`,
+    25 `sustained_amplification`, 20 `unresolved`, 10 `syndicated_wire`, 4
+    `synchronized_without_operator`, 3 `automated_non_malicious` y **1 solo**
+    `cross_account_synchrony`. Es decir: **de 100 alertas HIGH, 1 cumple la definición
+    propia de ráfaga coordinada entre cuentas distintas.**
+  - Causa: `band_gate` comprueba el **número** de cuentas, no su **peso relativo**, así que
+    un feed con 3 bridged-cuentas satisface el mínimo. Gate B medido (exigir que ninguna
+    cuenta domine y excluir sindicación): HIGH **100 → 63**, y el único
+    `cross_account_synchrony` se conserva. **No aplicado — decisión del dueño.**
+  Medición completa y reproducible: [`docs/composicion-bandas-20260929.md`](docs/composicion-bandas-20260929.md).
+- **⚠️ Una banda alta NO es coordinación (medido a ciegas el 29/Sep/2026).** Sobre los 40
+  clusters HIGH de la muestra ciega, el etiquetado manual dio **8,3 %** de coordinación
+  (3 sí / 33 no / 4 dudoso) y **0 de 40 FIMI**. Los 33 «no» son sobre todo cobertura
+  orgánica de un tema caliente y killbait de fuente única. Consecuencia práctica: el
+  observatorio detecta y **mide amplificación con rigor**, pero **no debe leerse la banda
+  alta como «campaña»** ni como prueba de que exista una. El discriminador que falta es la
+  **ráfaga con ventana temporal real** (hoja §0.-3 de las notas de sprint).
+- **Qué mide el grafo, exactamente.** Reejecutando `build_edges()` sobre producción
+  (29/Sep/2026): las aristas son **la misma URL republicada** (dominante) y **textos casi
+  idénticos**, con mediana de 0,6-6 h entre las dos cuentas (72-94 % dentro de 24 h). La señal
+  que debería distinguir una campaña de una noticia —ráfaga de publicación, `tight_timing`— es
+  **casi nula: 4, 11 y 0 aristas** en tres temas (de 937, 2.387 y 1.363). Y la estructura
+  mayoritaria es una **cadena de enlaces débiles** (mediana: 1 arista por cluster). Por tanto el
+  sistema mide **amplificación simultánea de una misma pieza**, que es un hecho verificable;
+  **la diferencia entre noticia y campaña no está implementada**.
+  Detalle: [`docs/grafo-coordinacion-20260929.md`](docs/grafo-coordinacion-20260929.md).
+- **La banda alta exige ahora un núcleo de cuentas (29/Sep/2026, aplicado).** `band_gate`
+  incluye `min_kcore: 2` en HIGH y CRITICAL: las cuentas deben estar conectadas **mutuamente**
+  (k-core ≥ 2, un ciclo), no solo encadenadas. Sin esta condición, una cadena de enlaces
+  llegaba a HIGH por percolación. El k-core discrimina de forma **monótona** —lo tienen el
+  8 % de WATCH, el 47 % de ANOMALOUS y el 86 % de HIGH—, así que acompaña a la banda alta en
+  lugar de recortarla por gusto. Efecto real: HIGH **100 → 87**. Es el primer paso, no el
+  último: un núcleo grande tampoco convierte un eco de tres semanas en una campaña, y por eso
+  la ráfaga con ventana real sigue pendiente.
+- **El feed de una sola fuente ya no llega a banda alta (2/Oct/2026, aplicado).** Un clúster
+  **pequeño** (≤5 cuentas) en el que **una cuenta o un dominio concentra casi todo**
+  (`dominant_account_frac ≥ 0,55` o `dominant_domain_frac ≥ 0,8` — los mismos umbrales con
+  que `explicaciones.py` marca `single_source_feed` como `supported`) es la amplificación de
+  **una sola voz** (radio, periódico, blog propio, agregador), no una coordinación entre
+  actores distintos: `single_source_feed_cap` lo topa a ANOMALOUS. Con masa (más cuentas) no
+  aplica, porque una fuente dominante puede ser una campaña multicuenta que sí merece banda
+  alta. Es una versión estrecha del "Gate B" medido arriba, limitada a clústeres pequeños.
+  Efecto real (regen 2/Oct): HIGH **108 → 79** (ningún CRITICAL perdido, todo a ANOMALOUS);
+  el caso Ceuta queda intacto —su hallazgo es amplificación sostenida— y solo baja el eco de
+  prensa alemana, coherente con la tesis del propio caso.
+- **La cobertura *sobre* desinformación y el eco de un solo dominio ya no llegan a banda alta (4/Oct/2026, aplicado).** Dos topes nuevos, de la misma familia que los anteriores:
+  - `meta_coverage_cap`: si el **rol narrativo dominante** del clúster es `meta_analysis` (analiza o explica la desinformación, no la produce; `detection/subtipo.py`), es **cobertura sobre el fenómeno**, no una narrativa FIMI → máximo ANOMALOUS.
+  - `single_domain_cap`: si **≥90 % de los enlaces** del clúster apuntan a **un mismo dominio**, es amplificación de una fuente o agregador, no coordinación entre actores distintos → máximo ANOMALOUS, **también con masa** (cambio de política deliberado: una campaña multicuenta suele diversificar dominios). Ambos son configurables y revertibles en `config.yaml` (`scoring.meta_coverage_cap`, `scoring.single_domain_cap`).
+
+  Efecto real (4/Oct): HIGH **93 → 76** (18 topados: 10 `meta_analysis` + 8 dominio único). En el dashboard, además: **zona muerta** en la tendencia (un cambio de volumen <10 % se lee como «Estable»), la **⭐ marca la hipótesis dominante** (no siempre H3) y la **precisión de la validación ciega (8,3 %)** aparece junto a la banda alta. Los títulos de clúster ya no muestran URLs crudas.
+- **Un hueco de calibración ya corregido.** Los cortes de banda son enteros y los scores
+  decimales, así que un score como 59,96 no caía en ninguna banda y acababa degradado a
+  NORMAL en silencio (commit `d52d77c`; 19 clusters afectados, 14 de ellos con score
+  59,2–59,96 que en realidad eran ANOMALOUS). No era un error de pesos, sino de asignación de
+  banda: `band_for()` ahora toma la última banda cuyo límite inferior sea ≤ score.
+
+Detalle completo en [`docs/ATRIBUCION-LIMITACIONES.md`](docs/ATRIBUCION-LIMITACIONES.md).
+El proyecto **documenta y corrige sus propios sesgos**: por ejemplo, el commit `aa5280f`
+separó "campaña coordinada doméstica" (ahora exige estructura real) de "sincronización
+sin operador" y renombró una hipótesis cuyo nombre no correspondía a lo que medía.
+
+## 6. Arquitectura y cómo correrlo
+
+Pipeline: `COLLECTORS → RAW → NORMALIZER → FEATURES → DETECTION → CLUSTERING → SCORING
+→ ATTRIBUTION → SQLITE → REPORT → DASHBOARD`. En producción, un cron lo ejecuta cada 6 h
+sobre todos los temas activos de `config.yaml`; el dashboard se publica como HTML estático.
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python tests/generate_synthetic.py                 # datos sintéticos de validación
+python detection/run_fimi.py --input data/radar.db --tema frontera_sur   # pipeline de un tema
+python detection/gen_fimi_html.py                  # dashboard estático
+```
+
+Estructura: `collectors/` (captura), `normalizer/`, `features/`, `detection/` (pipeline,
+scoring, atribución, dashboard, salud), `tests/`, `docs/`. Modelo de datos en SQLite
+(`data/radar.db`); configuración en `config.yaml` (temas, keywords, pesos, bandas, fuentes).
+
+Documentación en [`docs/`](docs/): `TAXONOMIA.md`, `SCORING.md`, `ATRIBUCION-LIMITACIONES.md`,
+`TRAZABILIDAD.md`, `GOBERNANZA.md`, `RUNBOOK.md`, `FUENTES.md`, `EIPD-DPIA.md`. Versión
+detallada de este README (histórico): [`docs/README-detallado.md`](docs/README-detallado.md).
+Mapa del sistema en una página (A4): [`docs/fimi-wallchart-A4.png`](docs/fimi-wallchart-A4.png) · [`docs/fimi-wallchart-A4.pdf`](docs/fimi-wallchart-A4.pdf) (para imprimir/adjuntar) ·
+demo en vídeo (69 s): https://fimi.viajeinteligencia.com/demo.html.
+Informes semanales por tema (`detection/informe_tema.py`; cron **lunes 09:00** vía `scripts/informes_semanales.sh` para los **temas con captura** + tarjeta visual `gen_informe_visual.py`, que acepta `--semana`): https://fimi.viajeinteligencia.com/informes/`<tema>`/ (HTML+JSON+CSV de contrastes+PNG, con histórico). El **desplegable «Informes ▾»** del dashboard lista los **visuales activos**; los de temas congelados siguen accesibles por URL. Coherencia verificada: la tarjeta se genera del **mismo JSON** que la ficha (el cron las produce seguidas); las semanas antiguas sin tarjeta se pueden regenerar desde su JSON con `--semana`. Las etiquetas narrativas se curan a mano en `data/narrativas.json` desde los títulos reales más repetidos; sin etiqueta, el informe usa términos automáticos marcados `(auto)`. Privacidad: las **@cuentas y los nombres de particulares se enmascaran en sitio** (`[cuenta]`/`[nombre]`, el resto del titular se conserva) y las **amenazas/insultos se anulan** (no se reproducen); todo se audita (`redactados_privacidad`). Marcos narrativos neutros; cada ficha enlaza su **linaje persistente `/c/`** (estable entre ciclos) y los snapshots se congelan en `historial/`. Las bandas de score viven en **una sola fuente** (`detection/bandas.py`).
+La portada lo resume en una tarjeta («El sistema en una imagen», WebP 63 KB lazy) que enlaza al A4 y a la demo.
+
+## 7. Licencia y contacto
+
+**AGPL-3.0** (copyleft de red): quien lo modifique y lo ofrezca como servicio debe publicar
+su código fuente. Ver [`LICENSE`](LICENSE).
+
+- Dudas, correcciones o **derecho de respuesta**: **info-fimi@viajeinteligencia.com**
+- Incidencias y código: [GitHub Issues](https://github.com/mcasrom/hybrid-fimi-radar/issues)
+- Bot de alertas (Telegram): `@Sieg_politica_bot` (nombre visible: RadarFIMI_bot)
+- **Cómo citar:** [`CITATION.cff`](CITATION.cff) — dataset con DOI
+  [`10.5281/zenodo.23282710`](https://doi.org/10.5281/zenodo.23282710).
