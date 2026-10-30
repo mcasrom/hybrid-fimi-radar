@@ -438,6 +438,20 @@ def event_detail(eid):
     d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
     c.close(); return d
 
+def admin_events_payload(params):
+    q=parse_qs(params); topic=(q.get('topic') or ['frontera_sur'])[0].strip()
+    c=data_conn(); rows=c.execute("SELECT * FROM events WHERE topic=? AND needs_review=1 AND COALESCE(review_status,'auto')='auto' ORDER BY last_published DESC LIMIT 100",(topic,)).fetchall()
+    out=[]
+    for r in rows:
+        d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 6',(r['id'],)).fetchall()]; out.append(d)
+    c.close(); return {'ok':True,'count':len(out),'events':out}
+
+def review_event(eid,action):
+    if action not in ('approve','hide'): raise ValueError('action')
+    c=sqlite3.connect(DATA_DB,timeout=15); status='approved' if action=='approve' else 'hidden'
+    cur=c.execute("UPDATE events SET review_status=?,needs_review=0,reviewed_at=? WHERE id=?",(status,now_iso(),eid)); c.commit(); c.close()
+    return cur.rowcount>0
+
 def sources_payload():
     p=DATA_LATEST.parent/'feed_health.json'
     try: return json.loads(p.read_text(encoding='utf-8'))
@@ -485,6 +499,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlsplit(self.path)
+        if parsed.path == API_PREFIX + "/admin/events":
+            try: self.send_json(200,admin_events_payload(parsed.query))
+            except Exception as e: self.send_json(500,{"ok":False,"error":str(e)[:160]})
+            return
         if parsed.path.startswith(API_PREFIX + "/v1/"):
             try:
                 p=parsed.path[len(API_PREFIX)+4:]
@@ -545,6 +563,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         global LAST_PRUNE
         path = urlsplit(self.path).path
+        if path.startswith(API_PREFIX + "/admin/events/"):
+            try: length=int(self.headers.get("Content-Length","0"))
+            except ValueError: length=0
+            if length<=0 or length>MAX_BODY:
+                self.send_json(413,{"ok":False,"error":"body"}); return
+            try: data=json.loads(self.rfile.read(length).decode("utf-8"))
+            except Exception:
+                self.send_json(400,{"ok":False,"error":"json"}); return
+            eid=path[len(API_PREFIX)+len("/admin/events/"):].strip("/")
+            try:
+                ok=review_event(eid,data.get("action"))
+                self.send_json(200,{"ok":ok})
+            except ValueError:
+                self.send_json(400,{"ok":False,"error":"action"})
+            except Exception as e:
+                self.send_json(500,{"ok":False,"error":str(e)[:160]})
+            return
         if path in (API_PREFIX + "/confirm", API_PREFIX + "/unsubscribe"):
             try:
                 length = int(self.headers.get("Content-Length", "0"))
