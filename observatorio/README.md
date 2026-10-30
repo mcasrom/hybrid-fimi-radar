@@ -31,6 +31,10 @@ En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https
 - DOI del conjunto FIMI anterior: [10.5281/zenodo.23282710](https://doi.org/10.5281/zenodo.23282710). Sigue resolviendo; **no es el DOI del observatorio nuevo**.
 - Los DOI `10.5281/zenodo.23282711` y `10.5281/zenodo.23413725` también resuelven.
 
+## Acontecimientos candidatos
+
+`events.py` agrupa publicaciones de Frontera Sur que parecen referirse al mismo episodio. No confirma hechos ni sustituye las fichas. Los candidatos se publican en `/observatorio/eventos/` y en la API `/api/observatorio/v1/events`.
+
 ## Retención
 
 - Titulares: **90 días en caliente** y paso automático a histórico.

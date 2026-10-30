@@ -412,6 +412,29 @@ def item_query(params):
     c.close()
     return {'ok':True,'count':total,'limit':limit,'offset':offset,'items':[dict(r) for r in rows]}
 
+def events_payload(params):
+    q=parse_qs(params); topic=(q.get('topic') or ['frontera_sur'])[0].strip(); status=(q.get('status') or [''])[0].strip()
+    try: limit=max(1,min(100,int((q.get('limit') or ['30'])[0])))
+    except ValueError: limit=30
+    try: offset=max(0,int((q.get('offset') or ['0'])[0]))
+    except ValueError: offset=0
+    c=data_conn(); where=['e.topic=?']; args=[topic]
+    if status: where.append('e.status=?'); args.append(status)
+    w=' AND '.join(where)
+    total=c.execute('SELECT COUNT(*) n FROM events e WHERE '+w,args).fetchone()['n']
+    rows=c.execute('SELECT e.* FROM events e WHERE '+w+' ORDER BY e.last_published DESC LIMIT ? OFFSET ?',args+[limit,offset]).fetchall()
+    out=[]
+    for r in rows:
+        d=dict(r); its=c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC LIMIT 5',(r['id'],)).fetchall(); d['publications']=[dict(x) for x in its]; out.append(d)
+    c.close(); return {'ok':True,'count':total,'limit':limit,'offset':offset,'events':out}
+
+def event_detail(eid):
+    c=data_conn(); r=c.execute('SELECT * FROM events WHERE id=?',(eid,)).fetchone()
+    if not r: c.close(); return None
+    d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
+    d['responses']=[dict(x) for x in c.execute('SELECT actor,response,url,published FROM event_responses WHERE event_id=? ORDER BY published',(eid,)).fetchall()]
+    c.close(); return d
+
 def sources_payload():
     p=DATA_LATEST.parent/'feed_health.json'
     try: return json.loads(p.read_text(encoding='utf-8'))
@@ -464,6 +487,12 @@ class Handler(BaseHTTPRequestHandler):
                 p=parsed.path[len(API_PREFIX)+4:]
                 if p in ("health","health.json"):
                     self.send_json(200,{"ok":True,"service":"observatorio-data","items":topics_payload(),"sources":sources_payload()})
+                elif p in ("events","events.json"):
+                    self.send_json(200,events_payload(parsed.query))
+                elif p.startswith("events/"):
+                    eid=p[len("events/"):].strip("/")
+                    d=event_detail(eid)
+                    self.send_json(200,d) if d else self.send_json(404,{"ok":False,"error":"event_not_found"})
                 elif p in ("items","items.json"):
                     self.send_json(200,item_query(parsed.query))
                 elif p in ("topics","topics.json"):
