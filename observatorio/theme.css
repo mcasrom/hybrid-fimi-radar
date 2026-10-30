@@ -1,0 +1,16 @@
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"] body{background:#0b1220!important;color:#e2e8f0!important}
+html[data-theme="dark"] .wrap{background:transparent!important}
+html[data-theme="dark"] .sitehead,html[data-theme="dark"] .foot{border-color:#334155!important}
+html[data-theme="dark"] .sitehead nav a,html[data-theme="dark"] .foot a,html[data-theme="dark"] a{color:#fbbf24!important}
+html[data-theme="dark"] h1,html[data-theme="dark"] h2,html[data-theme="dark"] h3,html[data-theme="dark"] .brand{color:#f8fafc!important}
+html[data-theme="dark"] p,html[data-theme="dark"] li,html[data-theme="dark"] td,html[data-theme="dark"] th{color:#cbd5e1}
+html[data-theme="dark"] .muted,html[data-theme="dark"] .meta,html[data-theme="dark"] .lead,html[data-theme="dark"] .sparklab,html[data-theme="dark"] .live-note{color:#94a3b8!important}
+html[data-theme="dark"] .tcard,html[data-theme="dark"] .card,html[data-theme="dark"] .event,html[data-theme="dark"] .box,html[data-theme="dark"] .chart,html[data-theme="dark"] .kpi,html[data-theme="dark"] .stat,html[data-theme="dark"] .livebox,html[data-theme="dark"] .spark,html[data-theme="dark"] .offbox,html[data-theme="dark"] .fcbox,html[data-theme="dark"] .narr,html[data-theme="dark"] .fstep{background:#111827!important;border-color:#334155!important;color:#e2e8f0!important}
+html[data-theme="dark"] .nums,html[data-theme="dark"] .spark,html[data-theme="dark"] table,html[data-theme="dark"] th,html[data-theme="dark"] td{border-color:#334155!important}
+html[data-theme="dark"] .claim,html[data-theme="dark"] .box{background:#1e293b!important;color:#e2e8f0!important}
+html[data-theme="dark"] input,html[data-theme="dark"] button{background:#0f172a!important;color:#e2e8f0!important;border-color:#475569!important}
+html[data-theme="dark"] .hero{background:linear-gradient(135deg,#020617,#431407)!important}
+html[data-theme="dark"] .hero p,html[data-theme="dark"] .hero .meta{color:#cbd5e1!important}
+#themeToggle{font:inherit;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:4px 9px;cursor:pointer}
+html[data-theme="dark"] #themeToggle{background:#111827;color:#fbbf24;border-color:#475569}
