@@ -6,12 +6,8 @@ OUT=Path(__file__).with_name('index.html')
 esc=json.loads((Path(__file__).with_name('data')/'escanos_2026.json').read_text(encoding='utf-8'))
 cen=json.loads((Path(__file__).with_name('data')/'censo_2026.json').read_text(encoding='utf-8'))
 def e(x): return html.escape(str(x))
-hitos=[
- ('6-oct-2026','Convocatoria electoral','Publicación del real decreto de disolución y convocatoria.','BOE · RD 806/2026',esc['meta']['url']),
- ('13-nov-2026','Inicio de la campaña electoral','Comienzo del periodo de actos y propaganda electoral.','Calendario de trabajo 29N','https://elecciones29n.pruebapublica.com/'),
- ('24–28-nov-2026','Periodo de reflexión / blackout','No se publicarán sondeos ni contenidos electorales en ese periodo.','Calendario de trabajo 29N','https://elecciones29n.pruebapublica.com/'),
- ('29-nov-2026','Jornada electoral','Elecciones generales.','Calendario de trabajo 29N','https://elecciones29n.pruebapublica.com/'),
-]
+cal=json.loads((Path(__file__).resolve().parent.parent/'calendario'/'calendario_oficial.json').read_text(encoding='utf-8'))
+hitos=[(x['fecha'],x['hito'],x.get('evidencia',''),'BOE · RD 806/2026',x['fuente']) for x in cal['hitos']]
 rows=''.join(f'<tr><td>{e(d)}</td><td><b>{e(t)}</b></td><td>{e(x)}</td><td><a href="{e(u)}" target="_blank" rel="noopener">{e(s)}</a></td></tr>' for d,t,x,s,u in hitos)
 html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Campaña electoral 29N — observatorio de acontecimientos</title>
@@ -24,7 +20,7 @@ html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta na
 <p class="muted">Actualización: 30-oct-2026 · Campaña no iniciada · Jornada: 29-nov-2026</p>
 <div class="box"><b>Estado.</b> A 30-oct-2026 no hay campaña electoral en curso y no consta ningún acto de campaña documentado. Esta página muestra el calendario y las fuentes; los acontecimientos se incorporarán cuando existan y tengan fuente.</div>
 <h2>1. Calendario</h2><table><thead><tr><th>Fecha</th><th>Hito</th><th>Qué significa</th><th>Fuente</th></tr></thead><tbody>{rows}</tbody></table>
-<p class="muted">Las fechas de campaña y blackout son el calendario de trabajo de 29N; el enlace oficial de la JEC se incorporará cuando esté disponible. La convocatoria y los escaños se apoyan en el BOE.</p>
+<p class="muted">Las fechas de campaña, jornada y constitución se extraen del real decreto publicado en el BOE. El periodo de reflexión y el blackout son una política editorial de 29N, no una fecha del BOE.</p>
 <h2>2. Acontecimientos documentados</h2><p><b>No consta.</b> La campaña no ha comenzado. No se inventan actos, sedes, intervinientes ni asistentes.</p>
 <h2>3. Actores</h2><p><b>No consta en los datos locales</b> una lista oficial de candidaturas para el 29N. No se atribuyen actos ni posiciones sin fuente. Los partidos y candidaturas se incorporarán desde la documentación oficial.</p>
 <h2>4. Qué se observará</h2><ul><li>Actos y convocatorias de campaña con fecha, lugar y fuente.</li><li>Declaraciones y documentos oficiales.</li><li>Debates y comparecencias.</li><li>Incidencias documentadas.</li><li>Evolución de la campaña y cobertura, separando hechos de opiniones.</li></ul>
