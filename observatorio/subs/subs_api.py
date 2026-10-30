@@ -419,7 +419,7 @@ def events_payload(params):
     except ValueError: limit=30
     try: offset=max(0,int((q.get('offset') or ['0'])[0]))
     except ValueError: offset=0
-    c=data_conn(); where=['e.topic=?']; args=[topic]
+    c=data_conn(); where=["e.topic=? AND COALESCE(e.review_status,'auto')!='hidden'"]; args=[topic]
     if status: where.append('e.status=?'); args.append(status)
     w=' AND '.join(where)
     total=c.execute('SELECT COUNT(*) n FROM events e WHERE '+w,args).fetchone()['n']
@@ -434,7 +434,7 @@ def events_payload(params):
     c.close(); return {'ok':True,'count':total,'limit':limit,'offset':offset,'events':out}
 
 def event_detail(eid):
-    c=data_conn(); r=c.execute('SELECT * FROM events WHERE id=?',(eid,)).fetchone()
+    c=data_conn(); r=c.execute("SELECT * FROM events WHERE id=? AND COALESCE(review_status,'auto')!='hidden'",(eid,)).fetchone()
     if not r: c.close(); return None
     d=dict(r); d['publications']=[dict(x) for x in c.execute('SELECT i.id,i.title,i.url,i.source,i.source_type,i.published FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? ORDER BY i.published DESC',(eid,)).fetchall()]
     d['daily']=[dict(x) for x in c.execute('SELECT substr(i.published,1,10) d,COUNT(*) n FROM event_items ei JOIN items i ON i.id=ei.item_id WHERE ei.event_id=? GROUP BY substr(i.published,1,10) ORDER BY d',(eid,)).fetchall()]
