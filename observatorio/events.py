@@ -24,6 +24,7 @@ def init(c):
  c.executescript('''
  CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY,topic TEXT NOT NULL,title TEXT NOT NULL,summary TEXT,status TEXT NOT NULL DEFAULT 'publicado_sin_confirmar',first_published TEXT,last_published TEXT,n_publications INTEGER DEFAULT 0,n_sources INTEGER DEFAULT 0,source_kind TEXT NOT NULL DEFAULT 'auto',created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS event_items(event_id TEXT NOT NULL,item_id TEXT NOT NULL,PRIMARY KEY(event_id,item_id));
+ CREATE TABLE IF NOT EXISTS event_aliases(item_id TEXT PRIMARY KEY,event_id TEXT NOT NULL,linked_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS event_responses(id INTEGER PRIMARY KEY AUTOINCREMENT,event_id TEXT NOT NULL,actor TEXT,response TEXT,url TEXT,published TEXT,created_at TEXT NOT NULL);
  CREATE INDEX IF NOT EXISTS idx_events_topic_date ON events(topic,first_published DESC);
  CREATE INDEX IF NOT EXISTS idx_event_items_item ON event_items(item_id);
@@ -53,11 +54,19 @@ def run(apply):
   return 0
  now=datetime.now(timezone.utc).isoformat(timespec='seconds')
  try:
-  decisions={r['signature']:(r['review_status'],r['reviewed_at']) for r in c.execute("SELECT signature,review_status,reviewed_at FROM events WHERE topic=? AND source_kind='auto' AND signature IS NOT NULL",(TOPIC,)).fetchall() if r['review_status'] in ('approved','hidden')}
+  # Alias persistentes: cualquier item ya visto recuerda su evento.
+  c.execute("INSERT OR IGNORE INTO event_aliases(item_id,event_id,linked_at) SELECT ei.item_id,ei.event_id,? FROM event_items ei JOIN events e ON e.id=ei.event_id WHERE e.source_kind='auto'",(now,))
+  old={r['id']:r for r in c.execute("SELECT * FROM events WHERE topic=? AND source_kind='auto'",(TOPIC,)).fetchall()}
   c.execute("DELETE FROM event_items WHERE event_id IN (SELECT id FROM events WHERE topic=? AND source_kind='auto')",(TOPIC,))
-  c.execute("DELETE FROM events WHERE topic=? AND source_kind='auto'",(TOPIC,))
+  used=set()
   for g in candidates:
-   ids=sorted(x['id'] for x in g['items']); eid=hashlib.sha256((TOPIC+'|'+'|'.join(ids)).encode()).hexdigest()[:16]
+   ids=sorted(x['id'] for x in g['items'])
+   found=c.execute("SELECT event_id,COUNT(*) n FROM event_aliases WHERE item_id IN (%s) GROUP BY event_id ORDER BY n DESC" % ','.join('?'*len(ids)),ids).fetchall()
+   eid=None
+   for r in found:
+    if r['event_id'] in old and r['event_id'] not in used: eid=r['event_id']; break
+   if eid is None: eid=hashlib.sha256((TOPIC+'|'+'|'.join(ids)).encode()).hexdigest()[:16]
+   used.add(eid)
    its=sorted(g['items'],key=lambda x:x['published']); title=min((x['title'] for x in its),key=len)
    src=len({x['source'] for x in its if x['source']})
    summary=f'{len(its)} publicaciones de {src} fuentes entre {its[0]["published"][:10]} y {its[-1]["published"][:10]}.'
@@ -66,13 +75,22 @@ def run(apply):
    if src<=1: reasons.append('una sola fuente')
    if coh<0.30: reasons.append('cohesión baja')
    needs=1 if reasons else 0; reason=', '.join(reasons) if reasons else None
-   signature=min(x['id'] for x in its)
-   old=decisions.get(signature)
-   review_status=old[0] if old else 'auto'
-   reviewed_at=old[1] if old else None
-   if old: needs=0; reason=None
-   c.execute('INSERT INTO events(id,topic,title,summary,status,review_status,needs_review,review_reason,signature,reviewed_at,first_published,last_published,n_publications,n_sources,source_kind,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',(eid,TOPIC,title,summary,'publicado_sin_confirmar',review_status,needs,reason,signature,reviewed_at,its[0]['published'],its[-1]['published'],len(its),src,'auto',now,now))
+   prev=old.get(eid)
+   review_status=prev['review_status'] if prev else 'auto'
+   reviewed_at=prev['reviewed_at'] if prev else None
+   if review_status in ('approved','hidden'):
+    needs=0; reason=None
+   signature=min(ids)
+   if prev:
+    c.execute("UPDATE events SET title=?,summary=?,first_published=?,last_published=?,n_publications=?,n_sources=?,signature=?,review_status=?,needs_review=?,review_reason=?,reviewed_at=?,updated_at=? WHERE id=?",(title,summary,its[0]['published'],its[-1]['published'],len(its),src,signature,review_status,needs,reason,reviewed_at,now,eid))
+   else:
+    c.execute('INSERT INTO events(id,topic,title,summary,status,review_status,needs_review,review_reason,signature,reviewed_at,first_published,last_published,n_publications,n_sources,source_kind,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',(eid,TOPIC,title,summary,'publicado_sin_confirmar',review_status,needs,reason,signature,reviewed_at,its[0]['published'],its[-1]['published'],len(its),src,'auto',now,now))
    c.executemany('INSERT OR IGNORE INTO event_items(event_id,item_id) VALUES(?,?)',[(eid,x['id']) for x in its])
+   c.executemany('INSERT OR REPLACE INTO event_aliases(item_id,event_id,linked_at) VALUES(?,?,?)',[(x['id'],eid,now) for x in its])
+  if used:
+   q=','.join('?'*len(used)); c.execute("DELETE FROM events WHERE topic=? AND source_kind='auto' AND id NOT IN (%s)" % q,(TOPIC,*used))
+  else:
+   c.execute("DELETE FROM events WHERE topic=? AND source_kind='auto'",(TOPIC,))
   c.commit(); print('written',len(candidates))
  except Exception as e:
   c.rollback(); print('error',e,file=sys.stderr); return 1
