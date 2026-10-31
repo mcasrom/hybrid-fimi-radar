@@ -843,5 +843,32 @@
     ],
     "idioma": "fr",
     "tipo": "media"
+  },
+  {
+    "name": "Google News ES · transportes.gob.es",
+    "url": "https://news.google.com/rss/search?q=site%3Atransportes.gob.es&hl=es&gl=ES&ceid=ES:es",
+    "topics": [
+      "infraestructuras_espana"
+    ],
+    "idioma": "es",
+    "tipo": "official"
+  },
+  {
+    "name": "Google News ES · adif.es",
+    "url": "https://news.google.com/rss/search?q=site%3Aadif.es&hl=es&gl=ES&ceid=ES:es",
+    "topics": [
+      "infraestructuras_espana"
+    ],
+    "idioma": "es",
+    "tipo": "official"
+  },
+  {
+    "name": "Google News ES · renfe.com",
+    "url": "https://news.google.com/rss/search?q=site%3Arenfe.com&hl=es&gl=ES&ceid=ES:es",
+    "topics": [
+      "infraestructuras_espana"
+    ],
+    "idioma": "es",
+    "tipo": "official"
   }
 ]

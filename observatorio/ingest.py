@@ -21,6 +21,10 @@ TOPICS={
 def now(): return datetime.now(timezone.utc)
 def clean(x): return ' '.join(re.sub(r'<[^>]+>',' ',str(x or '')).split())
 def norm(s): return re.sub(r'[^\w]+',' ',s.lower()).strip()
+STATE_NAMES=('rt','tass','ria novosti','sputnik','cgtn','global times','xinhua','press tv','hispan','trt','anadolu','telesur','cubadebate','granma','irna','tasnim','alalam')
+def source_class(source,source_type):
+ if source_type=='official': return 'official'
+ return 'state' if any(x in (source or '').lower() for x in STATE_NAMES) else 'media'
 def has_term(t,term):
  term=term.lower()
  if any(ord(ch)>127 for ch in term): return term in t
@@ -68,12 +72,14 @@ def load_feeds():
 def gurl(q): return 'https://news.google.com/rss/search?'+urllib.parse.urlencode({'q':q,'hl':'es','gl':'ES','ceid':'ES:es'})
 def run():
     c=db(); added=0; errors=[]; cutoff=now()-timedelta(days=DAYS); feeds=load_feeds(); fm={f['name']:f for f in feeds}
-    for col,typ in [('source_type',"TEXT NOT NULL DEFAULT 'media'"),('source_lang',"TEXT NOT NULL DEFAULT 'es'")]:
+    for col,typ in [('source_type',"TEXT NOT NULL DEFAULT 'media'"),('source_lang',"TEXT NOT NULL DEFAULT 'es'"),('source_class',"TEXT NOT NULL DEFAULT 'media'")]:
         try: c.execute(f'ALTER TABLE items ADD COLUMN {col} {typ}')
         except sqlite3.OperationalError: pass
     # backfill de idioma para fuentes directas ya existentes
     for f in feeds:
-        try: c.execute('UPDATE items SET source_lang=? WHERE source=?',(f.get('idioma') or 'es',f['name']))
+        try:
+            c.execute('UPDATE items SET source_lang=? WHERE source=?',(f.get('idioma') or 'es',f['name']))
+            c.execute('UPDATE items SET source_class=? WHERE source=?',(source_class(f['name'],'official' if f.get('tipo')=='official' else 'media'),f['name']))
         except sqlite3.Error: pass
     health={f['name']:{'name':f['name'],'url':f['url'],'topics':f.get('topics',[]),'status':'pending','items':0,'error':None,'last_attempt':None} for f in feeds}
     jobs=[]
@@ -110,7 +116,7 @@ def run():
                 source=clean(it.findtext('source') or '') if kind=='google' else name
                 iid=hashlib.sha256((tpc+'|'+link).encode()).hexdigest()[:24]
                 try:
-                    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched,source_type,source_lang) VALUES(?,?,?,?,?,?,?,?,?,?)',(iid,tpc,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds'),('official' if (kind=='direct' and fm.get(name,{}).get('tipo')=='official') else 'media'),('es' if kind=='google' else (fm.get(name,{}).get('idioma') or 'es'))))
+                    cur=c.execute('INSERT OR IGNORE INTO items(id,topic,title,url,source,published,query,fetched,source_type,source_lang,source_class) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(iid,tpc,title,link,source,pub.isoformat(),('google:'+name) if kind=='google' else 'direct:'+name,now().isoformat(timespec='seconds'),('official' if (kind=='direct' and fm.get(name,{}).get('tipo')=='official') else 'media'),('es' if kind=='google' else (fm.get(name,{}).get('idioma') or 'es')),source_class(source,('official' if (kind=='direct' and fm.get(name,{}).get('tipo')=='official') else 'media'))))
                     added+=cur.rowcount
                     if kind=='direct' and name in health: health[name]['items']+=1
                 except sqlite3.Error as e: errors.append(f'{name}:db: {e}')
@@ -118,8 +124,8 @@ def run():
     stamp=now().isoformat(timespec='seconds')
     latest={'updated_at':stamp,'source':'Google News RSS + feeds directos','note':'Titulares capturados automáticamente; no son hechos verificados.','topics':{}}
     for topic,meta in TOPICS.items():
-        es=c.execute("SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND source_lang='es' ORDER BY published DESC LIMIT 20",(topic,)).fetchall()
-        intl_all=c.execute("SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? AND source_lang!='es' ORDER BY published DESC LIMIT 100",(topic,)).fetchall()
+        es=c.execute("SELECT id,title,url,source,source_type,source_lang,source_class,published FROM items WHERE topic=? AND source_lang='es' ORDER BY published DESC LIMIT 20",(topic,)).fetchall()
+        intl_all=c.execute("SELECT id,title,url,source,source_type,source_lang,source_class,published FROM items WHERE topic=? AND source_lang!='es' ORDER BY published DESC LIMIT 100",(topic,)).fetchall()
         bylang={}
         for r in intl_all: bylang.setdefault(r['source_lang'] or '?',[]).append(r)
         intl=[]; seen_intl=set()
@@ -131,7 +137,7 @@ def run():
         rows=list(es)+intl
         if len(rows)<40:
             seen={r['id'] for r in rows}
-            extra=c.execute('SELECT id,title,url,source,source_type,source_lang,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 100',(topic,)).fetchall()
+            extra=c.execute('SELECT id,title,url,source,source_type,source_lang,source_class,published FROM items WHERE topic=? ORDER BY published DESC LIMIT 100',(topic,)).fetchall()
             rows += [r for r in extra if r['id'] not in seen][:40-len(rows)]
         rows=sorted(rows,key=lambda r:r['published'],reverse=True)[:40]
         trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]
