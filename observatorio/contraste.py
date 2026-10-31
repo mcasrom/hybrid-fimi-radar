@@ -48,7 +48,7 @@ def run(apply):
  # link factchecks to events by >=2 significant overlapping tokens
  try:
   fcs=[dict(r) for r in c.execute('SELECT url,source,title,published FROM factchecks WHERE published>=?',((now-timedelta(days=RET)).isoformat(),)).fetchall()]
-  evs=c.execute('SELECT id,title FROM events WHERE topic="frontera_sur"').fetchall()
+  evs=c.execute('SELECT id,title,first_published,last_published FROM events WHERE topic="frontera_sur"').fetchall()
   c.execute('DELETE FROM event_factchecks')
   links=0
   for e in evs:
@@ -56,8 +56,12 @@ def run(apply):
    et=toks(e['title']); [et.update(toks(t)) for t in ititles]
    for fc in fcs:
     ft=toks(fc['title']); shared=et&ft
-    if len(shared)>=2 and any(len(x)>=6 for x in shared):
-     c.execute('INSERT OR IGNORE INTO event_factchecks(event_id,factcheck_url,overlap,created_at) VALUES(?,?,?,?)',(e['id'],fc['url'],','.join(sorted(shared))[:200],now.isoformat(timespec='seconds'))); links+=1
+    if len(shared)<3 or not any(len(x)>=6 for x in shared): continue
+    try:
+     fd=datetime.fromisoformat(fc['published']); a=datetime.fromisoformat(e['first_published']); b=datetime.fromisoformat(e['last_published'])
+     if fd < a-timedelta(days=45) or fd > b+timedelta(days=45): continue
+    except Exception: pass
+    c.execute('INSERT OR IGNORE INTO event_factchecks(event_id,factcheck_url,overlap,created_at) VALUES(?,?,?,?)',(e['id'],fc['url'],','.join(sorted(shared))[:200],now.isoformat(timespec='seconds'))); links+=1
   c.commit(); print('factchecks',len(fcs),'links',links,'added',added)
  except Exception as e:
   c.rollback(); print('link error',e,file=sys.stderr); return 1

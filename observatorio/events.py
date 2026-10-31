@@ -24,6 +24,7 @@ def init(c):
  c.executescript('''
  CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY,topic TEXT NOT NULL,title TEXT NOT NULL,summary TEXT,status TEXT NOT NULL DEFAULT 'publicado_sin_confirmar',first_published TEXT,last_published TEXT,n_publications INTEGER DEFAULT 0,n_sources INTEGER DEFAULT 0,source_kind TEXT NOT NULL DEFAULT 'auto',created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS event_items(event_id TEXT NOT NULL,item_id TEXT NOT NULL,PRIMARY KEY(event_id,item_id));
+ CREATE TABLE IF NOT EXISTS event_decisions(event_id TEXT PRIMARY KEY,review_status TEXT,reviewed_at TEXT,needs_review INTEGER,review_reason TEXT,updated_at TEXT);
  CREATE TABLE IF NOT EXISTS event_aliases(item_id TEXT PRIMARY KEY,event_id TEXT NOT NULL,linked_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS event_responses(id INTEGER PRIMARY KEY AUTOINCREMENT,event_id TEXT NOT NULL,actor TEXT,response TEXT,url TEXT,published TEXT,created_at TEXT NOT NULL);
  CREATE INDEX IF NOT EXISTS idx_events_topic_date ON events(topic,first_published DESC);
@@ -57,6 +58,8 @@ def run(apply):
   # Alias persistentes: cualquier item ya visto recuerda su evento.
   c.execute("INSERT OR IGNORE INTO event_aliases(item_id,event_id,linked_at) SELECT ei.item_id,ei.event_id,? FROM event_items ei JOIN events e ON e.id=ei.event_id WHERE e.source_kind='auto'",(now,))
   old={r['id']:r for r in c.execute("SELECT * FROM events WHERE topic=? AND source_kind='auto'",(TOPIC,)).fetchall()}
+  c.execute("INSERT OR REPLACE INTO event_decisions(event_id,review_status,reviewed_at,needs_review,review_reason,updated_at) SELECT id,review_status,reviewed_at,needs_review,review_reason,? FROM events WHERE topic=? AND source_kind='auto' AND review_status IN ('approved','hidden')",(now,TOPIC))
+  decisions={r['event_id']:r for r in c.execute('SELECT * FROM event_decisions').fetchall()}
   c.execute("DELETE FROM event_items WHERE event_id IN (SELECT id FROM events WHERE topic=? AND source_kind='auto')",(TOPIC,))
   used=set()
   for g in candidates:
@@ -76,7 +79,9 @@ def run(apply):
    if coh<0.30: reasons.append('cohesión baja')
    needs=1 if reasons else 0; reason=', '.join(reasons) if reasons else None
    prev=old.get(eid)
-   review_status=prev['review_status'] if prev else 'auto'
+   dec=decisions.get(eid)
+   review_status=(prev['review_status'] if prev else (dec['review_status'] if dec else 'auto'))
+   if not prev and dec: prev={'review_status':dec['review_status'],'reviewed_at':dec['reviewed_at']}
    reviewed_at=prev['reviewed_at'] if prev else None
    if review_status in ('approved','hidden'):
     needs=0; reason=None
