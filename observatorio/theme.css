@@ -19,3 +19,5 @@ html[data-theme="dark"] #themeToggle{background:#111827;color:#fbbf24;border-col
 html[data-theme="dark"] #langToggle{background:#111827;color:#fbbf24;border-color:#475569}
 
 .livefilters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.lfbtn{font:inherit;font-size:.76rem;border:1px solid #e2e8f0;border-radius:999px;padding:4px 9px;background:#fff;color:#64748b;cursor:pointer}.lfbtn.on{background:#fff7ed;border-color:#f59e0b;color:#b45309;font-weight:700}
+
+.support{margin-top:8px}.support b{display:block;margin-bottom:4px}.support a{display:block;font-size:.82rem}
