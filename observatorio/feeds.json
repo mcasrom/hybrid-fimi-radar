@@ -3,34 +3,28 @@
     "name": "El Faro de Ceuta",
     "url": "https://elfarodeceuta.es/feed/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "es",
-    "tipo": "official"
+    "tipo": "media"
   },
   {
     "name": "Ceuta TV",
     "url": "https://ceutatv.com/feed/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "es",
-    "tipo": "official"
+    "tipo": "media"
   },
   {
     "name": "Melilla Hoy",
     "url": "https://www.melillahoy.es/rss",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "es",
-    "tipo": "official"
+    "tipo": "media"
   },
   {
     "name": "El Pais Espana",
@@ -89,9 +83,7 @@
     "name": "Yabiladi Maroc (FR)",
     "url": "https://www.yabiladi.com/rss/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "fr",
     "tipo": "media"
@@ -100,9 +92,7 @@
     "name": "Algerie360 (FR)",
     "url": "https://www.algerie360.com/feed/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "fr",
     "tipo": "media"
@@ -111,9 +101,7 @@
     "name": "Hespress Maroc (FR)",
     "url": "https://fr.hespress.com/feed/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "fr",
     "tipo": "media"
@@ -122,9 +110,7 @@
     "name": "TSA Algerie (FR)",
     "url": "https://www.tsa-algerie.com/feed/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "fr",
     "tipo": "media"
@@ -210,9 +196,7 @@
     "name": "Hespress (AR)",
     "url": "https://www.hespress.com/feed/ar/",
     "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "frontera_sur"
     ],
     "idioma": "ar",
     "tipo": "media"
@@ -242,44 +226,28 @@
   {
     "name": "Malijet (ML)",
     "url": "https://malijet.com/rss/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Koloni (ML)",
     "url": "https://koloni.ml/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Niger Report",
     "url": "https://nigerreport.net/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Burkina24.com",
     "url": "https://burkina24.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
@@ -288,108 +256,72 @@
     "url": "https://www.aib.media/?feed=rss2",
     "topics": [
       "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "elecciones_generales",
+      "infraestructuras_espana"
     ],
     "idioma": "fr",
-    "tipo": "oficial"
+    "tipo": "official"
   },
   {
     "name": "Sahel Horizon",
     "url": "https://sahelhorizon.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "La Nouvelle Tribune",
     "url": "https://lanouvelletribune.info/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "RFI Afrique",
     "url": "https://www.rfi.fr/fr/afrique/rss",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Studio Tamani (ML)",
     "url": "https://www.studiotamani.org/feed",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Sahelien",
     "url": "https://sahelien.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "OilPrice (EN)",
     "url": "https://oilprice.com/rss/main",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "El Periódico de la Energía (ES)",
     "url": "https://elperiodicodelaenergia.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "es",
     "tipo": "media"
   },
   {
     "name": "pv magazine España (ES)",
     "url": "https://www.pv-magazine.es/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "es",
     "tipo": "media"
   },
   {
     "name": "Carbon Brief (EN)",
     "url": "https://www.carbonbrief.org/feed",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
@@ -451,33 +383,21 @@
   {
     "name": "SVT Nyheter (SV)",
     "url": "https://www.svt.se/rss.xml",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "sv",
     "tipo": "media"
   },
   {
     "name": "Dagens Nyheter (SV)",
     "url": "https://www.dn.se/rss/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "sv",
     "tipo": "media"
   },
   {
     "name": "Svenska Dagbladet (SV)",
     "url": "https://www.svd.se/feed/articles.rss",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "sv",
     "tipo": "media"
   },
@@ -528,110 +448,70 @@
   {
     "name": "TechCrunch AI",
     "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "Ars Technica",
     "url": "https://feeds.arstechnica.com/arstechnica/index",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "MIT Technology Review",
     "url": "https://www.technologyreview.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "Numerama",
     "url": "https://www.numerama.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "ActuIA",
     "url": "https://www.actuia.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "fr",
     "tipo": "media"
   },
   {
     "name": "Xataka",
     "url": "https://feeds.weblogssl.com/xataka2",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "es",
     "tipo": "media"
   },
   {
     "name": "El Pais Tecnologia",
     "url": "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/tecnologia/portada",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "es",
     "tipo": "media"
   },
   {
     "name": "The Verge AI",
     "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "The Decoder",
     "url": "https://the-decoder.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
   {
     "name": "Wired AI",
     "url": "https://www.wired.com/feed/tag/ai/latest/rss",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "media"
   },
@@ -682,33 +562,21 @@
   {
     "name": "The Cyberwire",
     "url": "https://feeds.feedburner.com/TheCyberWire",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "rss"
   },
   {
     "name": "Recorded Future",
     "url": "https://www.recordedfuture.com/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "rss"
   },
   {
     "name": "IntelNews",
     "url": "https://www.intelnews.org/feed/",
-    "topics": [
-      "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
-    ],
+    "topics": [],
     "idioma": "en",
     "tipo": "rss"
   },
@@ -764,8 +632,8 @@
     "url": "https://www.boe.es/rss/boe.php",
     "topics": [
       "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "elecciones_generales",
+      "infraestructuras_espana"
     ],
     "idioma": "es",
     "tipo": "official"
@@ -775,8 +643,8 @@
     "url": "https://www.lamoncloa.gob.es/Paginas/rss.aspx",
     "topics": [
       "frontera_sur",
-      "protestas_juveniles",
-      "elecciones_generales"
+      "elecciones_generales",
+      "infraestructuras_espana"
     ],
     "idioma": "es",
     "tipo": "official"
