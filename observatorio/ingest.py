@@ -14,26 +14,37 @@ UA='Mozilla/5.0 (compatible; ObservatorioPublicado/1.0; +https://fimi.viajeintel
 DAYS=45
 TOPICS={
  'frontera_sur':{'label':'Frontera Sur','queries':['Ceuta Marruecos','Melilla Marruecos','frontera sur España Marruecos'],'terms':['ceuta','melilla','marruecos','maroc','morocco','frontera','frontière','frontiere','migracion','migración','migration','migratoire','gibraltar','سبتة','مليلية','المغرب']},
- 'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestas','protestation','manifestation','joven','jovenes','jeune','jeunes','jeunesse','juvenil','juveniles','estudiant','estudiante','estudiantes','étudiant','disturbio','disturbios','emeute','émeute','riot','riots','blocus','movilizacion','movilizaciones','proteste','protesten','jugend','jugendprotest','studenten']},
- 'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','election','élection','electoral','campaña','campagne','29n','voto','vote','candidat','candidate','wahl','wahlen','wahlkampf','kandidat','kandidaten','abstimmung','stimme','elezioni','elezione','campagna','candidato','candidati','scrutin','выборы','кампания','выборах','انتخابات','الحملة']},
- 'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren'],'terms':['infraestructura','transportes','transporte','adif','renfe','autovia','autovía','alta velocidad','tren','cercanias','cercanías','accidente','incidencia','obra','carretera','aeropuerto','puerto','conservacion','conservación','mitms']},
+ 'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestas','protestation','manifestation','manifestacion','manifestación','manifestante','manifestantes','joven','jovenes','jeune','jeunes','jeunesse','juvenil','juveniles','estudiant','estudiante','estudiantes','étudiant','disturbio','disturbios','emeute','émeute','riot','riots','blocus','movilizacion','movilizaciones','proteste','protesten','protestaufruf','protestaufrufe','jugend','jugendprotest','jugendprostesten','schulerprotest','schülerprotest','studenten','studentenbewegung']},
+ 'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','elecciones','election','elections','reelection','reeleccion','élection','electoral','campaña','precampaña','precampana','campagne','29n','voto','vote','candidat','candidate','urnas','wahl','wahlen','wahlkampf','kandidat','kandidaten','abstimmung','stimme','elezioni','elezione','campagna','candidato','candidati','scrutin','выборы','кампания','выборах','انتخابات','الحملة']},
+ 'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren'],'terms':['infraestructura','infraestructuras','transportes','transporte','adif','renfe','autovia','autovías','alta velocidad','tren','trenes','cercanias','cercanías','accidente','accidentes','incidencia','incidencias','obra','obras','carretera','carreteras','aeropuerto','aeropuertos','puerto','puertos','conservacion','conservación','mitms']},
 }
 def now(): return datetime.now(timezone.utc)
 def clean(x): return ' '.join(re.sub(r'<[^>]+>',' ',str(x or '')).split())
 def norm(s): return re.sub(r'[^\w]+',' ',s.lower()).strip()
+def has_term(t,term):
+ term=term.lower()
+ if any(ord(ch)>127 for ch in term): return term in t
+ return re.search(r'(?<!\w)'+re.escape(term)+r'\w{0,4}(?!\w)',t) is not None
 FRONTERA_GEO=['ceuta','melilla','marruecos','morocco','maroc','marocain','marocaine','المغرب','سبتة','مليلية','сеута','мелилья','марокко']
-FRONTERA_CONTEXT=['frontera','frontière','frontiere','fronteriza','migracion','migration','migratoire','migrante','inmigrante','patera','salto','valla','naval','navire','militar','militaire','militaires','dron','armada','guardia civil','estrecho','détroit','detroit','gibraltar','repatri','empadronamiento','menores','diplomatic','rey','reyes','felipe','visita','gobierno','delegacion','policia','interior','crisis migratoria','mena','sahara','pêche','peche','الهجرة','المغرب','سبتة','مليلية','миграция','сеута','марокко']
+FRONTERA_CONTEXT=['frontera','frontière','frontiere','fronteriza','migracion','migration','migratoire','migrante','inmigrante','patera','salto','valla','naval','navire','militar','militaire','militaires','dron','armada','guardia civil','estrecho','détroit','detroit','gibraltar','repatri','empadronamiento','menores','diplomatic','rey','reyes','felipe','visita','gobierno','asalto','cni','actitud','pasiva','contener','amenaza','homenaje','milicia','milicias','rifeño','rifeños','passage','passages','immigration','delegacion','policia','interior','crisis migratoria','mena','sahara','pêche','peche','الهجرة','المغرب','سبتة','مليلية','миграция','сеута','марокко']
+INFRA_EXCLUDE=['futbol','fútbol','liga','entrenador','club','deportivo','baloncesto','judo','partido','cantera','fichaje','voleibol','atletismo']
+INFRA_CONTEXT=['espana','españa','espanol','espanola','espanoles','espanolas','spain','adif','renfe','mitms','dgt','ministerio','madrid','barcelona','valencia','sevilla','bilbao','malaga','zaragoza','alta velocidad','tren','trenes','catenaria','ferroviario','urda','puente','congreso','cortes','junta','diputacion','colau','montero']
 FRONTERA_EXCLUDE=['futbol','fútbol','baloncesto','balonmano','judo','liga','club','deportivo','campeonato','deporte','atletismo','voleibol','u.d.','ud melilla','bm ','bm.','atletico','atlético','filial','preparacion','preparación','u d','c.f.']
-SPAIN_CONTEXT=['espana','españa','spain','espagne','spanien','spagna','espanha','испания','إسبانيا','اسبانيا','29n','29 de noviembre','elecciones generales','campana electoral','campaña electoral','mesas electorales','junta electoral','congreso','senado','moncloa','pedro sanchez','sanchez','feijoo','feijóo','psoe','vox','sumar','podemos','elecciones 2026','sorteo','supremo','tribunal constitucional','audiencia nacional']
+SPAIN_CONTEXT=['espana','españa','spain','spanish','espagne','spanien','spagna','espanha','испания','إسبانيا','اسبانيا','29n','29 de noviembre','elecciones generales','campana electoral','campaña electoral','mesas electorales','junta electoral','congreso','senado','moncloa','pedro sanchez','sanchez','feijoo','feijóo','psoe','vox','sumar','podemos','elecciones 2026','sorteo','supremo','tribunal constitucional','audiencia nacional']
 def relevant(topic,title):
  t=norm(title)
  if topic=='elecciones_generales':
-  return any(c.lower() in t for c in SPAIN_CONTEXT) and any(term.lower() in t for term in TOPICS[topic]['terms'])
+  return any(has_term(t,c) for c in SPAIN_CONTEXT) and any(has_term(t,term) for term in TOPICS[topic]['terms'])
  if topic=='protestas_juveniles' and any(x in t for x in ['patriot','ukrainekrieg','ukraine-krieg','ucrania','misiles','missiles']): return False
  if topic=='frontera_sur':
   if any(x in t for x in FRONTERA_EXCLUDE): return False
-  return any(x in t for x in FRONTERA_GEO) and any(x in t for x in FRONTERA_CONTEXT)
- return any(term.lower() in t for term in TOPICS[topic]['terms'])
+  return any(has_term(t,x) for x in FRONTERA_GEO) and any(has_term(t,x) for x in FRONTERA_CONTEXT)
+ if topic=='infraestructuras_espana':
+  if any(x in t for x in INFRA_EXCLUDE): return False
+  strong=['adif','renfe','mitms','dgt','alta velocidad','autovia','autovía','cercanias','cercanías','accidente','carretera','catenaria','ferroviario','urda','infraestructura','infraestructuras','transporte','movilidad']
+  if any(has_term(t,x) for x in strong): return True
+  return any(has_term(t,x) for x in INFRA_CONTEXT) and any(has_term(t,term) for term in TOPICS[topic]['terms'])
+ return any(has_term(t,term) for term in TOPICS[topic]['terms'])
 def parse_date(s):
  try:
   d=parsedate_to_datetime(s); return d.astimezone(timezone.utc) if d.tzinfo else d.replace(tzinfo=timezone.utc)
