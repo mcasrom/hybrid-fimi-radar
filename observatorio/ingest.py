@@ -143,8 +143,27 @@ def run():
         trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]
         latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'trend':trend,'items':[dict(r) for r in rows]}
     latest['feed_errors']=errors[:15]
-    OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.tmp'); tmp.write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(OUT)
     fh={'updated_at':stamp,'total':len(health),'ok':sum(1 for x in health.values() if x['status']=='ok'),'error':sum(1 for x in health.values() if x['status']=='error'),'pending':sum(1 for x in health.values() if x['status']=='pending'),'feeds':sorted(health.values(),key=lambda x:x['name'])}
+    status_topics={}
+    for topic,meta in TOPICS.items():
+        row=c.execute('''SELECT COUNT(*) n, COUNT(DISTINCT source) sources,
+            SUM(CASE WHEN source_type='official' THEN 1 ELSE 0 END) official,
+            SUM(CASE WHEN source_class='state' THEN 1 ELSE 0 END) state,
+            MAX(published) last_published
+            FROM items WHERE topic=? AND published>=?''',(topic,cutoff.isoformat())).fetchone()
+        langs={r['lang']:r['n'] for r in c.execute("SELECT COALESCE(source_lang,'?') lang,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY COALESCE(source_lang,'?') ORDER BY n DESC",(topic,cutoff.isoformat())).fetchall()}
+        tops=[{'source':r['source'],'n':r['n']} for r in c.execute("SELECT source,COUNT(*) n FROM items WHERE topic=? AND published>=? AND source<>'' GROUP BY source ORDER BY n DESC LIMIT 5",(topic,cutoff.isoformat())).fetchall()]
+        n=row['n'] or 0
+        status_topics[topic]={'label':meta['label'],'count_45d':n,'sources':row['sources'] or 0,
+            'official':row['official'] or 0,'state':row['state'] or 0,
+            'official_pct':round((row['official'] or 0)*100/n,1) if n else 0,
+            'state_pct':round((row['state'] or 0)*100/n,1) if n else 0,
+            'languages':langs,'top_sources':tops,'last_published':row['last_published']}
+    status={'updated_at':stamp,'window_days':DAYS,'topics':status_topics,
+        'feeds':{'total':fh['total'],'ok':fh['ok'],'error':fh['error'],'pending':fh['pending'],'errors':errors[:10]}}
+    latest['status']=status
+    OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.tmp'); tmp.write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(OUT)
+    sp=OUT.parent/'status.json'; tmp=sp.with_suffix('.tmp'); tmp.write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(sp)
     hp=Path(os.environ.get('OBS_HEALTH',OUT.parent/'feed_health.json')); hp.write_text(json.dumps(fh,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     ok=fh['ok']>0
     print(json.dumps({'ok':ok,'feeds':len(feeds),'feed_health':{'ok':fh['ok'],'error':fh['error'],'pending':fh['pending']},'added':added,'topics':{k:v['count'] for k,v in latest['topics'].items()},'errors':errors[:8]},ensure_ascii=False))
