@@ -98,7 +98,9 @@ def run():
                     health[j[2]]['status']='error'; health[j[2]]['error']=msg; health[j[2]]['last_attempt']=now().isoformat(timespec='seconds')
                 errors.append(f'{j[0]}:{j[2]}: {msg}')
     for (kind,topic,name,url),body in raw.items():
-        try: root=ET.fromstring(body)
+        try:
+            body=re.sub(rb"[\x00-\x08\x0b\x0c\x0e-\x1f]", b"", body)
+            root=ET.fromstring(body)
         except Exception as e:
             msg=f'{name}:xml: {str(e)[:100]}'; errors.append(msg)
             if kind=='direct' and name in health:
