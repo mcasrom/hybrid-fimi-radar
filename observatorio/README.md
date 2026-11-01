@@ -1,9 +1,9 @@
 # Observatorio de lo publicado
 
-**Versión del software:** 0.1.0  
-**Última actualización:** 30-oct-2026  
-**Cadencia de captura:** cada 30 minutos  
-**Dependencia manual diaria:** ninguna  
+**Versión del software:** 0.1.0
+**Última actualización:** 01-nov-2026
+**Cadencia de captura:** cada 30 minutos
+**Dependencia manual diaria:** ninguna
 **Programación real:** `/etc/cron.d/observatorio-ingest` (`*/30 * * * *`)
 
 ## Nombres de temas
@@ -36,6 +36,16 @@ No confirma hechos, no atribuye intención ni responsabilidad y no usa clústere
 
 En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https://www.transportes.gob.es/`) es fuente primaria de **su propia documentación**; no es una fuente independiente sobre sus fallos. Para accidentes e incidencias hay que separar versión oficial, investigación técnica y prensa.
 
+En Frontera Sur, la ficha de situación declara **0 fuentes primarias localizadas**. Un enlace de prensa no acredita el hecho por sí solo.
+
+## Ficha de situación y briefing
+
+- **Ficha de situación:** `/observatorio/ceuta/situacion/` — 6 fichas, actores, relaciones documentadas, evidencia, contradicciones y preguntas abiertas.
+- **Briefing de cambios:** `/observatorio/ceuta/situacion/cambios/` — compara snapshots fechados de estados, fuentes, preguntas y contradicciones. Sin IA.
+- **Cron del briefing:** lunes 08:20 (`/etc/cron.d/observatorio-briefing`).
+- **Datos:** `observatorio/situacion/situacion_frontera_sur.json` y `observatorio/situacion/snapshots/`.
+- **Criterio:** un cambio de estado es una corrección editorial, no una prueba nueva; una relación documentada no es coordinación.
+
 ## Software y DOI
 
 - Código: rama `ceuta-observatorio`.
@@ -63,5 +73,6 @@ En Infraestructuras, el Ministerio de Transportes y Movilidad Sostenible (`https
 - `observatorio/ingest.py`: captura automática.
 - `observatorio/feeds.json`: registro de 95 feeds.
 - `observatorio/live.js`: pintado de publicaciones.
+- `observatorio/situacion/`: ficha de situación, snapshots y briefing de cambios.
 - `observatorio/*/index.html`: páginas públicas.
 - `observatorio/admin/`: panel privado de estado.

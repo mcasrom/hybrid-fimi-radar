@@ -1,8 +1,8 @@
 # Observatorio de lo publicado
 
-**Estado:** activo · software v0.1.0  
-**Última actualización:** 30-oct-2026  
-**Web:** https://fimi.viajeinteligencia.com/  
+**Estado:** activo · software v0.1.0
+**Última actualización:** 01-nov-2026
+**Web:** https://fimi.viajeinteligencia.com/
 **API:** https://fimi.viajeinteligencia.com/observatorio/api/
 
 ## Qué es
@@ -14,7 +14,12 @@ Registro automático de titulares publicados sobre cuatro temas:
 - **Elecciones generales**
 - **Infraestructuras España**
 
-Captura cada **30 minutos** desde Google News RSS y **75 feeds directos** (España, Marruecos, Argelia, Francia, Reino Unido, Rusia y China). Cada entrada conserva medio, fecha y enlace.
+Captura cada **30 minutos** desde Google News RSS y **95 feeds directos** (España, Marruecos, Argelia, Francia, Reino Unido, Rusia y China). Cada entrada conserva medio, fecha y enlace.
+
+La capa curada añade:
+
+- **Ficha de situación de Frontera Sur:** [`/observatorio/ceuta/situacion/`](https://fimi.viajeinteligencia.com/observatorio/ceuta/situacion/) — actores, relaciones, evidencia y vacíos.
+- **Briefing de cambios:** [`/observatorio/ceuta/situacion/cambios/`](https://fimi.viajeinteligencia.com/observatorio/ceuta/situacion/cambios/) — comparación semanal determinista, sin IA.
 
 ## Qué no es
 
@@ -26,10 +31,9 @@ El FIMI anterior está **apagado**: su captura y sus servicios están detenidos.
 
 ## Documentación
 
-- [`observatorio/README.md`](observatorio/README.md) — funcionamiento, fuentes y estado.
+- [`observatorio/README.md`](observatorio/README.md) — funcionamiento, fuentes, ficha de situación y briefing.
 - [`observatorio/RETENCION.md`](observatorio/RETENCION.md) — retención de datos.
 - [`observatorio/api/index.html`](observatorio/api/index.html) — API y exportación.
-- [`observatorio/README.md`](observatorio/README.md) — cuatro temas y límites.
 
 ## Retención
 

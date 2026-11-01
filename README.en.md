@@ -1,3 +1,5 @@
+> **Archived English README.** This document describes the former FIMI radar. The active product is the Spanish **Observatorio de lo publicado**; see [`README.md`](README.md).
+
 # Amplification observatory (FIMI domain)
 
 *English · [Español](README.md)*
