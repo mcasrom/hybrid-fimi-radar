@@ -12,8 +12,8 @@ html[data-theme="dark"] .claim,html[data-theme="dark"] .box{background:#1e293b!i
 html[data-theme="dark"] input,html[data-theme="dark"] button{background:#0f172a!important;color:#e2e8f0!important;border-color:#475569!important}
 html[data-theme="dark"] .hero{background:linear-gradient(135deg,#020617,#431407)!important}
 html[data-theme="dark"] .hero p,html[data-theme="dark"] .hero .meta{color:#cbd5e1!important}
-#themeToggle{font:inherit;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:4px 9px;cursor:pointer}
-html[data-theme="dark"] #themeToggle{background:#111827;color:#fbbf24;border-color:#475569}
+#themeToggle{font:inherit;border:1px solid rgba(148,163,184,.45);background:rgba(15,23,42,.35);color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:12px;font-weight:700;cursor:pointer}
+html[data-theme="dark"] #themeToggle{background:rgba(15,23,42,.35);color:#e2e8f0;border-color:rgba(148,163,184,.45)}
 
 #langToggle{font:inherit;font-size:.78rem;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:4px 9px;text-decoration:none;align-self:center}
 html[data-theme="dark"] #langToggle{background:#111827;color:#fbbf24;border-color:#475569}

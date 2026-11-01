@@ -75,7 +75,7 @@ def header(path):
     <div class="obs-utility">
       <span class="obs-live"><i aria-hidden="true"></i> Registro abierto · actualizado cada 30 min</span>
       <span>{fecha} · {nfeeds} feeds · 4 temas</span>
-      <nav aria-label="Accesos rápidos"><a href="/observatorio/api/">API</a><a href="/observatorio/datos/">Estado</a></nav>
+      <nav aria-label="Accesos rápidos"><a href="/observatorio/api/">API</a><a href="/observatorio/datos/">Estado</a><a href="/observatorio/en/" lang="en" hreflang="en">EN</a></nav>
     </div>
     <div class="obs-brandrow">
       <a class="obs-brand" href="/observatorio/" aria-label="Observatorio de lo publicado, inicio">
@@ -83,6 +83,8 @@ def header(path):
         <span><span class="obs-wordmark">Observatorio<em>de lo publicado</em></span><span class="obs-context">Qué se publica, quién lo publica y qué falta.</span></span>
       </a>
       <div class="obs-actions">
+        <a class="obs-btn obs-btn-ghost obs-kofi" href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener">Ko-fi</a>
+        <button id="themeToggle" class="obs-theme" type="button" aria-label="Cambiar tema claro u oscuro">Tema</button>
         <a class="obs-btn obs-btn-ghost" href="/observatorio/datos/">Datos abiertos</a>
         <a class="obs-btn obs-btn-primary" href="/observatorio/suscribirse/">Recibir avisos →</a>
       </div>
@@ -112,6 +114,8 @@ def apply_file(path):
         s2 = s[:m.end()] + "\n" + new + s[m.end():]
     if CSS not in s2:
         s2 = s2.replace("</head>", f'<link rel="stylesheet" href="{CSS}">\n</head>', 1)
+    if "/observatorio/theme.js" not in s2:
+        s2 = s2.replace("</body>", '<script src="/observatorio/theme.js" defer></script>\n</body>', 1)
     if s2 != s:
         path.write_text(s2, encoding="utf-8")
         return True
