@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-01",
+  "situacion_version": "2026-11-01",
+  "episodes": {
+    "CUR-2026-004": "reportado_cifras_prensa",
+    "CUR-2026-006": "reportado_sin_primaria",
+    "CUR-2026-003": "reportado_sin_primaria",
+    "CUR-2026-002": "reportado_sin_primaria",
+    "CUR-2026-005": "declaracion_publica",
+    "CUR-2026-001": "reportado_sin_primaria"
+  },
+  "sources": {
+    "infodefensa.com": "especializada",
+    "theobjective.com": "medio",
+    "elconfidencial.com": "medio",
+    "rt.com": "estatal",
+    "okdiario.com": "medio",
+    "canariasenpleno.com": "local",
+    "elfarodeceuta.es": "local",
+    "melillahoy.es": "local",
+    "elespanol.com": "medio",
+    "larazon.es": "medio",
+    "antena3.com": "medio",
+    "atalayar.com": "especializada",
+    "moroccoworldnews.com": "extranjera",
+    "militarywatchmagazine.com": "especializada",
+    "jpost.com": "extranjera"
+  },
+  "open_questions": [
+    "¿Existe una nota oficial del Ministerio de Defensa o de la Armada sobre el episodio naval?",
+    "¿Han confirmado las FAR o el Ministerio de Defensa israelí la negociación del sistema David's Sling?",
+    "¿Hay registro aeronáutico que acredite la interferencia y la altura del dron?",
+    "¿Qué datos primarios de Interior/UCRIF sostienen las cifras de presión migratoria y empadronamientos?",
+    "¿Qué prensa marroquí o documentación institucional permite contrastar la versión española?"
+  ],
+  "contradictions": {
+    "CUR-2026-001": {
+      "hash": "44cc6f686246",
+      "text": "La cobertura habla de una fragata próxima a Ceuta; la versión oficial citada por El Pueblo de Ceuta la califica de patrullaje ordinario. Ambas versiones deben mantenerse visibles."
+    },
+    "CUR-2026-006": {
+      "hash": "300cad29a94a",
+      "text": "La Razón presentó el 7-sep una «compra»; el 21-oct otros medios hablan de «negociación» o «aceleración». No hay anuncio oficial, importe ni calendario verificables."
+    },
+    "CUR-2026-004": {
+      "hash": "edffbda66209",
+      "text": "Las cifras de presión migratoria y empadronamientos se citan en prensa, pero no se enlaza el dato primario del Interior o de la UCRIF."
+    }
+  }
+}

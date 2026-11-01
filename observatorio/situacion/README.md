@@ -24,3 +24,12 @@ En el servidor, `run_static.sh` lo regenera junto a las páginas estáticas y ap
 - Una relación documentada no es coordinación.
 - Una fuente no es independiente por repetir la noticia.
 - `0 fuentes primarias` es un límite declarado, no un fallo que deba ocultarse.
+
+## Briefing de cambios
+
+`gen_briefing.py` guarda un snapshot fechado de estados, fuentes, preguntas y contradicciones, y compara con el snapshot anterior. Genera `/observatorio/ceuta/situacion/cambios/` sin IA.
+
+- Cron semanal: lunes 08:20 (`/etc/cron.d/observatorio-briefing`).
+- Comando: `run_briefing.sh`.
+- Si no hay snapshot anterior, la página indica «primera edición»; no inventa cambios.
+- Un cambio de estado no es una prueba nueva: sigue siendo una corrección editorial.

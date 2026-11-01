@@ -26,6 +26,7 @@ PAGES = [
 ]
 CURATED = [
     ("ceuta/situacion", "Frontera Sur: situación"),
+    ("ceuta/situacion/cambios", "Qué ha cambiado"),
 ]
 
 
