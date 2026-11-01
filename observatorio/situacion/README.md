@@ -33,3 +33,13 @@ En el servidor, `run_static.sh` lo regenera junto a las páginas estáticas y ap
 - Comando: `run_briefing.sh`.
 - Si no hay snapshot anterior, la página indica «primera edición»; no inventa cambios.
 - Un cambio de estado no es una prueba nueva: sigue siendo una corrección editorial.
+
+## Otras fichas
+
+`situacion_temas.json` y `gen_situacion_temas.py` generan:
+
+- `/observatorio/juventud/situacion/` — 6 episodios, demandas y fuentes; 0 primarias.
+- `/observatorio/campana/situacion/` — calendario BOE y límites; 0 actos inventados.
+- `/observatorio/infraestructuras/situacion/` — cobertura automática y 6 fuentes oficiales.
+
+No se inventan relaciones entre actores: si no hay documento, la ficha muestra «No hay relaciones documentadas».

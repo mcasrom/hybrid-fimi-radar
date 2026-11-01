@@ -27,6 +27,9 @@ PAGES = [
 CURATED = [
     ("ceuta/situacion", "Frontera Sur: situación"),
     ("ceuta/situacion/cambios", "Qué ha cambiado"),
+    ("juventud/situacion", "Protestas juveniles: situación"),
+    ("campana/situacion", "Elecciones generales: situación"),
+    ("infraestructuras/situacion", "Infraestructuras: cobertura y fuentes"),
 ]
 
 

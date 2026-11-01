@@ -1,0 +1,194 @@
+{
+  "_nota": "Contexto curado para las fichas de situación de Protestas juveniles, Elecciones generales e Infraestructuras. No añade hechos: ordena datos existentes y declara vacíos. Las relaciones solo se muestran si están documentadas.",
+  "actualizado": "2026-11-01",
+  "topics": {
+    "juventud": {
+      "kind": "episodios",
+      "titulo": "Protestas juveniles: situación",
+      "subtitulo": "Seis episodios publicados; ninguna relación documentada entre países",
+      "fuente": "data/protestas.yaml",
+      "resumen": [
+        "Seis episodios publicados entre 2025 y octubre de 2026: Barcelona, dos jornadas en Francia, Milán, Tirana y Nepal.",
+        "Las demandas y los detonantes son distintos: educación y coste de vida, corrupción, prohibición de plataformas y malestar juvenil.",
+        "La coincidencia de protestas juveniles en varios países no demuestra una organización internacional común."
+      ],
+      "relations": [],
+      "relation_note": "No hay relaciones documentadas entre los episodios. No se ha localizado un mando, una red o una financiación común.",
+      "preguntas": [
+        "¿Quién convocó cada episodio y quién dirigió los disturbios?",
+        "¿Qué cifras de participación y detenciones tienen confirmación primaria?",
+        "¿Existen vínculos documentados entre convocantes de distintos países?",
+        "¿Qué cambios institucionales siguieron a cada movilización?"
+      ],
+      "limites": [
+        "Un episodio en varios países no es una campaña internacional.",
+        "Una convocatoria en redes no acredita autoría ni coordinación.",
+        "Las cifras de asistentes y detenidos son, en varios casos, declaraciones citadas por prensa.",
+        "No se atribuye una operación de influencia sin evidencia independiente."
+      ],
+      "contradicciones": [
+        "En Francia, las cifras de 400.000 y 800.000 son declaraciones de Gobierno y sindicatos, no un recuento primario.",
+        "En Barcelona, la red de cuentas es una cita periodística; no se ha confirmado organización ni dirección.",
+        "En Albania, la atribución gubernamental de «guerra híbrida» no tiene evidencia pública independiente."
+      ],
+      "source_roles": {
+        "infobae.com": {
+          "role": "medio",
+          "label": "Medio generalista"
+        },
+        "tovima.com": {
+          "role": "extranjera",
+          "label": "Medio extranjero"
+        },
+        "cronicaglobal.elespanol.com": {
+          "role": "medio",
+          "label": "Medio generalista"
+        },
+        "elsaltodiario.com": {
+          "role": "medio",
+          "label": "Medio generalista"
+        },
+        "sudradio.fr": {
+          "role": "medio",
+          "label": "Medio generalista"
+        },
+        "diarioestrategia.cl": {
+          "role": "extranjera",
+          "label": "Medio extranjero"
+        },
+        "news4jax.com": {
+          "role": "extranjera",
+          "label": "Medio extranjero"
+        },
+        "omanobserver.om": {
+          "role": "extranjera",
+          "label": "Medio extranjero"
+        },
+        "en.wikipedia.org": {
+          "role": "referencia",
+          "label": "Referencia secundaria"
+        },
+        "publications.civicus.org": {
+          "role": "organizacion",
+          "label": "Organización / referencia"
+        }
+      }
+    },
+    "campana": {
+      "kind": "calendario",
+      "titulo": "Elecciones generales: situación",
+      "subtitulo": "Calendario oficial del 29N; sin actos de campaña registrados",
+      "fuente": "observatorio/calendario/calendario_oficial.json",
+      "resumen": [
+        "El calendario oficial procede del Real Decreto 806/2026, publicado en el BOE el 6 de octubre de 2026.",
+        "La campaña va del 13 al 27 de noviembre; la jornada electoral es el 29 de noviembre y las Cámaras se constituyen el 23 de diciembre.",
+        "A 1 de noviembre no consta ningún acto de campaña documentado en este registro."
+      ],
+      "relations": [],
+      "relation_note": "No hay relaciones entre actores registradas. El calendario no atribuye actos, candidaturas ni posiciones.",
+      "preguntas": [
+        "¿Qué actos y declaraciones se incorporarán con fecha, lugar y fuente?",
+        "¿Qué narrativas sobre fraude aparecen y cómo evolucionan?",
+        "¿Hay incidencias documentadas o solo denuncias?",
+        "¿Qué documentos oficiales acreditan cada hito?"
+      ],
+      "limites": [
+        "Un hito oficial no es un acto de campaña.",
+        "El calendario no es un pronóstico ni una estimación de voto.",
+        "Una denuncia de fraude no es una irregularidad acreditada.",
+        "No se atribuyen actos a partidos por una mención."
+      ],
+      "contradicciones": [],
+      "source_roles": {
+        "boe.es": {
+          "role": "oficial",
+          "label": "Fuente oficial / BOE"
+        }
+      }
+    },
+    "infraestructuras": {
+      "kind": "cobertura",
+      "titulo": "Infraestructuras: cobertura y fuentes",
+      "subtitulo": "Registro automático; sin causas ni responsabilidades verificadas",
+      "fuente": "observatorio/feeds.json",
+      "resumen": [
+        "La página de Infraestructuras registra titulares automáticos sobre alta velocidad, carreteras, cercanías, aeropuertos y puertos.",
+        "No incorpora datos manuales ni establece causas de las incidencias.",
+        "Las fuentes institucionales acreditan su propia documentación; no son independientes sobre sus fallos."
+      ],
+      "relations": [],
+      "relation_note": "No se registran relaciones entre actores. Una publicación institucional no implica coordinación con un medio.",
+      "preguntas": [
+        "¿Qué incidencias tienen confirmación oficial y cuáles solo cobertura?",
+        "¿Qué causas están documentadas y cuáles son hipótesis?",
+        "¿Qué dependencias estratégicas existen en corredores, puertos y energía?",
+        "¿Qué datos primarios permiten comparar la evolución?"
+      ],
+      "limites": [
+        "Un titular no es una incidencia confirmada.",
+        "Una fuente oficial no es una fuente independiente sobre sus propios fallos.",
+        "No se atribuyen causas ni responsabilidades sin documento.",
+        "No se publican alertas operativas: este registro no sustituye a los servicios oficiales."
+      ],
+      "contradicciones": [],
+      "official_sources": [
+        {
+          "name": "Ministerio de Transportes y Movilidad Sostenible",
+          "url": "https://www.transportes.gob.es/",
+          "role": "oficial"
+        },
+        {
+          "name": "ADIF",
+          "url": "https://www.adif.es/",
+          "role": "oficial"
+        },
+        {
+          "name": "Renfe",
+          "url": "https://www.renfe.com/",
+          "role": "oficial"
+        },
+        {
+          "name": "AENA",
+          "url": "https://www.aena.es/",
+          "role": "oficial"
+        },
+        {
+          "name": "DGT",
+          "url": "https://www.dgt.es/",
+          "role": "oficial"
+        },
+        {
+          "name": "BOE",
+          "url": "https://www.boe.es/",
+          "role": "oficial"
+        }
+      ],
+      "source_roles": {
+        "transportes.gob.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "adif.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "renfe.com": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "aena.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "dgt.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "boe.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        }
+      }
+    }
+  }
+}

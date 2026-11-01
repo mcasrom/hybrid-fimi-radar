@@ -18,7 +18,10 @@ Captura cada **30 minutos** desde Google News RSS y **95 feeds directos** (Espa�
 
 La capa curada añade:
 
-- **Ficha de situación de Frontera Sur:** [`/observatorio/ceuta/situacion/`](https://fimi.viajeinteligencia.com/observatorio/ceuta/situacion/) — actores, relaciones, evidencia y vacíos.
+- **Frontera Sur:** [`/observatorio/ceuta/situacion/`](https://fimi.viajeinteligencia.com/observatorio/ceuta/situacion/) — actores, relaciones, evidencia y vacíos.
+- **Protestas juveniles:** [`/observatorio/juventud/situacion/`](https://fimi.viajeinteligencia.com/observatorio/juventud/situacion/) — episodios, demandas y fuentes.
+- **Elecciones generales:** [`/observatorio/campana/situacion/`](https://fimi.viajeinteligencia.com/observatorio/campana/situacion/) — calendario oficial y límites.
+- **Infraestructuras:** [`/observatorio/infraestructuras/situacion/`](https://fimi.viajeinteligencia.com/observatorio/infraestructuras/situacion/) — cobertura y fuentes oficiales.
 - **Briefing de cambios:** [`/observatorio/ceuta/situacion/cambios/`](https://fimi.viajeinteligencia.com/observatorio/ceuta/situacion/cambios/) — comparación semanal determinista, sin IA.
 
 ## Qué no es
