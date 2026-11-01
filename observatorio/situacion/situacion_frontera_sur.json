@@ -1,0 +1,183 @@
+{
+  "_nota": "Ficha de situación curada. No añade hechos: ordena las seis fichas existentes, clasifica el papel de las fuentes y separa afirmación, evidencia y límites. Los intereses son interpretación analítica, no hechos.",
+  "version": "2026-11-01",
+  "tema": "frontera_sur",
+  "titulo": "Frontera Sur: situación",
+  "subtitulo": "España — Marruecos, Ceuta y Melilla",
+  "actualizado": "2026-11-01",
+  "corte": "2026-11-01",
+  "periodo": "7-sep-2026 → 21-oct-2026",
+  "resumen": [
+    "Las seis fichas reúnen cobertura periodística sobre movimiento naval, drones, presión migratoria, discurso político y una posible compra de defensa aérea israelí.",
+    "No hay fuente primaria localizada para ninguna de las seis afirmaciones. Una ficha recoge una declaración pública; cinco siguen pendientes de contraste documental.",
+    "La coincidencia temporal entre episodios no demuestra una estrategia común. La ficha separa lo publicado, lo declarado y lo que todavía no se puede concluir."
+  ],
+  "status_labels": {
+    "reportado_sin_primaria": "Reportado, sin fuente primaria",
+    "reportado_cifras_prensa": "Reportado; cifras citadas por prensa",
+    "declaracion_publica": "Declaración pública (hecho discursivo)"
+  },
+  "episode_status": {
+    "CUR-2026-001": "reportado_sin_primaria",
+    "CUR-2026-002": "reportado_sin_primaria",
+    "CUR-2026-003": "reportado_sin_primaria",
+    "CUR-2026-004": "reportado_cifras_prensa",
+    "CUR-2026-005": "declaracion_publica",
+    "CUR-2026-006": "reportado_sin_primaria"
+  },
+  "episode_missing": {
+    "CUR-2026-001": "Nota o comunicado del Ministerio de Defensa o de la Armada que acredite el despliegue y la posición de la fragata.",
+    "CUR-2026-002": "Comunicado oficial marroquí o ficha técnica que acredite el programa y su alcance operativo.",
+    "CUR-2026-003": "Registro de AENA/Enaire o de la autoridad aeronáutica sobre la interferencia y la altura del vuelo.",
+    "CUR-2026-004": "Datos primarios del Ministerio del Interior/UCRIF sobre detenciones, empadronamientos y flujos.",
+    "CUR-2026-005": "Enlace directo a la declaración original del actor político, no solo a su cobertura periodística.",
+    "CUR-2026-006": "Anuncio oficial de las FAR, del Ministerio de Defensa israelí o de la industria; contrato, importe y calendario."
+  },
+  "actors": [
+    {
+      "id": "espana",
+      "nombre": "España",
+      "tipo": "Estado",
+      "interes": "Seguridad de Ceuta y Melilla, control fronterizo y relación bilateral con Marruecos.",
+      "cautela": "Interés analítico, no una intención declarada ni una conclusión sobre coordinación."
+    },
+    {
+      "id": "marruecos",
+      "nombre": "Marruecos",
+      "tipo": "Estado",
+      "interes": "Modernización militar, defensa aérea, gestión fronteriza y relación con Israel.",
+      "cautela": "La existencia de programas de defensa no acredita por sí sola una acción hostil contra España."
+    },
+    {
+      "id": "israel",
+      "nombre": "Israel",
+      "tipo": "Estado",
+      "interes": "Exportación de defensa y cooperación militar con Marruecos.",
+      "cautela": "La negociación está reportada por medios; no hay contrato ni confirmación oficial localizada."
+    }
+  ],
+  "relations": [
+    {
+      "desde": "España",
+      "hacia": "Marruecos",
+      "tipo": "Relación bilateral y fronteriza",
+      "estado": "Documentada en declaraciones y cobertura; no equivale a coordinación",
+      "evidencia": [
+        "CUR-2026-001",
+        "CUR-2026-004",
+        "CUR-2026-005"
+      ]
+    },
+    {
+      "desde": "Marruecos",
+      "hacia": "Israel",
+      "tipo": "Negociación de defensa",
+      "estado": "Reportada; sin confirmación oficial ni contrato verificable",
+      "evidencia": [
+        "CUR-2026-006"
+      ]
+    }
+  ],
+  "contradicciones": [
+    {
+      "id": "CUR-2026-001",
+      "texto": "La cobertura habla de una fragata próxima a Ceuta; la versión oficial citada por El Pueblo de Ceuta la califica de patrullaje ordinario. Ambas versiones deben mantenerse visibles."
+    },
+    {
+      "id": "CUR-2026-006",
+      "texto": "La Razón presentó el 7-sep una «compra»; el 21-oct otros medios hablan de «negociación» o «aceleración». No hay anuncio oficial, importe ni calendario verificables."
+    },
+    {
+      "id": "CUR-2026-004",
+      "texto": "Las cifras de presión migratoria y empadronamientos se citan en prensa, pero no se enlaza el dato primario del Interior o de la UCRIF."
+    }
+  ],
+  "open_questions": [
+    "¿Existe una nota oficial del Ministerio de Defensa o de la Armada sobre el episodio naval?",
+    "¿Han confirmado las FAR o el Ministerio de Defensa israelí la negociación del sistema David's Sling?",
+    "¿Qué datos primarios de Interior/UCRIF sostienen las cifras de presión migratoria y empadronamientos?",
+    "¿Hay registro aeronáutico que acredite la interferencia y la altura del dron?",
+    "¿Qué prensa marroquí o documentación institucional permite contrastar la versión española?"
+  ],
+  "changes": [
+    "Primera edición de esta ficha de situación: no hay un corte anterior con el que comparar.",
+    "El cambio observado está en la cobertura: el 21-oct varios medios reencuadran David's Sling como negociación o aceleración. No se observa un cambio documentado de capacidad."
+  ],
+  "limites": [
+    "Una ficha con varias fuentes no tiene varias fuentes independientes: los enlaces se clasifican por papel, no por independencia editorial.",
+    "Un titular no es una incursión, un contrato ni una capacidad desplegada.",
+    "La coincidencia temporal entre migración, movimiento naval y cobertura no demuestra coordinación ni intención.",
+    "No se afirma que las publicaciones sean falsas: se indica qué está documentado y qué falta.",
+    "La ausencia de una operación de influencia no se deduce de estos datos; tampoco se confirma."
+  ],
+  "source_roles": {
+    "infodefensa.com": {
+      "role": "especializada",
+      "label": "Prensa especializada en defensa"
+    },
+    "theobjective.com": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "elconfidencial.com": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "rt.com": {
+      "role": "estatal",
+      "label": "Medio estatal extranjero"
+    },
+    "okdiario.com": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "canariasenpleno.com": {
+      "role": "local",
+      "label": "Medio local"
+    },
+    "elfarodeceuta.es": {
+      "role": "local",
+      "label": "Medio local"
+    },
+    "melillahoy.es": {
+      "role": "local",
+      "label": "Medio local"
+    },
+    "elespanol.com": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "larazon.es": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "antena3.com": {
+      "role": "medio",
+      "label": "Medio generalista"
+    },
+    "atalayar.com": {
+      "role": "especializada",
+      "label": "Prensa especializada"
+    },
+    "moroccoworldnews.com": {
+      "role": "extranjera",
+      "label": "Medio extranjero"
+    },
+    "militarywatchmagazine.com": {
+      "role": "especializada",
+      "label": "Publicación especializada"
+    },
+    "jpost.com": {
+      "role": "extranjera",
+      "label": "Medio extranjero"
+    }
+  },
+  "episode_order": [
+    "CUR-2026-004",
+    "CUR-2026-006",
+    "CUR-2026-003",
+    "CUR-2026-002",
+    "CUR-2026-005",
+    "CUR-2026-001"
+  ]
+}

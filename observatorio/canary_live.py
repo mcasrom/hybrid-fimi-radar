@@ -24,6 +24,9 @@ PAGES = [
     ("juventud", "protestas_juveniles"),
     ("campana", "elecciones_generales"),
 ]
+CURATED = [
+    ("ceuta/situacion", "Frontera Sur: situación"),
+]
 
 
 def load_env():
@@ -102,10 +105,23 @@ def check_pages(errors):
         browser.close()
 
 
+def check_curated(errors):
+    for slug, needle in CURATED:
+        try:
+            req = urllib.request.Request(f"{BASE}/observatorio/{slug}/", headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                text = resp.read().decode("utf-8", "replace")
+            if resp.status != 200 or needle not in text:
+                errors.append(f"{slug}: página curada incompleta")
+        except Exception as e:
+            errors.append(f"{slug}: {str(e)[:120]}")
+
+
 def main():
     errors = []
     check_latest(errors)
     check_pages(errors)
+    check_curated(errors)
     previous = "up"
     try:
         previous = json.loads(STATE.read_text(encoding="utf-8")).get("status", "up")
