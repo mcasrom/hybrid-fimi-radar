@@ -1,0 +1,65 @@
+:root{
+  --obs-navy:#0b1220;
+  --obs-navy2:#111b2e;
+  --obs-amber:#f59e0b;
+  --obs-amber2:#b45309;
+  --obs-line:#dbe3ee;
+  --obs-muted:#64748b;
+  --obs-paper:#fffaf5;
+  --obs-serif:Georgia,"Times New Roman",serif;
+  --obs-sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+.obs-masthead{
+  background:linear-gradient(160deg,var(--obs-navy) 0%,var(--obs-navy2) 64%,#16213a 100%);
+  color:#f8fafc;
+  border-top:5px solid var(--obs-amber);
+  font-family:var(--obs-sans);
+  line-height:1.5;
+}
+.obs-masthead *{box-sizing:border-box}
+.obs-inner{max-width:1180px;margin:0 auto;padding:0 22px}
+.obs-utility{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;min-height:38px;border-bottom:1px solid rgba(148,163,184,.18);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#a9b6ca}
+.obs-live{display:inline-flex;align-items:center;gap:7px;color:#d7e2f1}
+.obs-live i{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.12)}
+.obs-utility nav a{color:#cbd5e1;text-decoration:none;margin-left:14px}
+.obs-utility nav a:hover{color:#fff}
+.obs-brandrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:26px;align-items:center;padding:24px 0 18px}
+.obs-brand{display:flex;align-items:center;gap:15px;text-decoration:none;color:#fff;min-width:0}
+.obs-mark{width:52px;height:52px;border:1px solid rgba(245,158,11,.65);border-radius:50%;display:grid;place-items:center;position:relative;flex:0 0 auto;background:radial-gradient(circle at 50% 40%,rgba(245,158,11,.18),transparent 62%)}
+.obs-mark:before,.obs-mark:after{content:"";position:absolute;border:1px solid rgba(245,158,11,.34);border-radius:50%}
+.obs-mark:before{inset:7px}
+.obs-mark:after{inset:15px}
+.obs-mark b{font-family:var(--obs-serif);font-size:22px;color:var(--obs-amber);line-height:1}
+.obs-wordmark{display:block;font-family:var(--obs-serif);font-size:clamp(26px,3.2vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.02}
+.obs-wordmark em{display:block;font-family:var(--obs-sans);font-style:normal;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;font-weight:700;margin-top:7px}
+.obs-context{display:block;margin-top:5px;color:#9fb0c7;font-size:12px}
+.obs-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.obs-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:750;font-size:13px;border:1px solid transparent}
+.obs-btn-primary{background:var(--obs-amber);color:#1a1200}
+.obs-btn-primary:hover{background:#fbbf24}
+.obs-btn-ghost{color:#e2e8f0;border-color:rgba(148,163,184,.35)}
+.obs-btn-ghost:hover{border-color:#cbd5e1}
+.obs-nav{border-top:1px solid rgba(148,163,184,.18);padding:0 0 13px}
+.obs-navgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px 28px;align-items:start}
+.obs-navgroup{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}
+.obs-navlabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7f91aa;font-weight:800;margin-right:6px;padding-top:12px}
+.obs-navlink{position:relative;display:inline-flex;align-items:center;min-height:40px;padding:7px 9px;border-radius:6px;text-decoration:none;color:#c8d4e6;font-size:13px;font-weight:600;white-space:nowrap}
+.obs-navlink:hover{color:#fff;background:rgba(148,163,184,.1)}
+.obs-navlink[aria-current="page"]{color:#fff}
+.obs-navlink[aria-current="page"]:after{content:"";position:absolute;left:9px;right:9px;bottom:2px;height:2px;border-radius:2px;background:var(--obs-amber)}
+.obs-navlink.obs-alert{color:#fde68a;border:1px solid rgba(245,158,11,.42);padding-inline:10px;margin-left:4px}
+.obs-navlink.obs-alert:hover{background:rgba(245,158,11,.12);color:#fff}
+@media(max-width:800px){
+  .obs-brandrow{grid-template-columns:1fr;gap:14px;padding:20px 0 14px}
+  .obs-actions{justify-content:flex-start}
+  .obs-navgrid{grid-template-columns:1fr;gap:2px}
+  .obs-navgroup{padding-bottom:6px}
+  .obs-navlabel{padding-top:9px}
+  .obs-navlink{min-height:36px;font-size:12.5px;padding:6px 8px}
+}
+@media(max-width:620px){
+  .obs-utility{font-size:10px}
+  .obs-utility nav{display:none}
+  .obs-mark{width:44px;height:44px}
+  .obs-wordmark{font-size:28px}
+}
