@@ -100,7 +100,7 @@ def kpi_strip(kpis, fallback=None):
     else:
         detail = f'{ev.get("reported_pending", 0)} sin documento público'
     return f'''<div class="kpis">
-<div class="kpi"><b>{fmt_num(act["total"])}</b><span>publicaciones · {kpis["period"]["days"]} d</span><small>{act["days_with_data"]} días con datos</small></div>
+<div class="kpi"><b>{fmt_num(act["total"])}</b><span>publicaciones dedup · {kpis["period"]["days"]} d</span><small>{act["days_with_data"]} días con datos</small></div>
 <div class="kpi"><b>{fmt_num(src["distinct"])}</b><span>dominios directos</span><small>top-3: {fmt_pct(src.get("top3_share"))}</small></div>
 <div class="kpi"><b>{e(lang.get("lang", "s/d"))}</b><span>idioma principal</span><small>{fmt_num(lang.get("n", 0))} publicaciones</small></div>
 <div class="kpi"><b>{fmt_num(ev.get("primary_sources", 0))}</b><span>{e(label)}</span><small>{e(detail)}</small></div>
