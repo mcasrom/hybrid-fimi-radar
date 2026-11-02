@@ -83,7 +83,63 @@
     "documented_relations": 0,
     "open_questions": 4,
     "note": "Ninguno de los seis episodios tiene fuente primaria localizada; las cifras y la autoría siguen siendo afirmaciones de prensa."
-   }
+   },
+   "reivindicaciones": [
+    {
+     "id": "ESP-BARCELONA-2026-10-24",
+     "institucional": false,
+     "economica": false,
+     "educativa": false,
+     "libertades": false,
+     "territorial_ambiental": false,
+     "nota": "Sin pliego público de demandas; convocatoria digital anónima y disturbios."
+    },
+    {
+     "id": "FRA-2026-10-24",
+     "institucional": false,
+     "economica": true,
+     "educativa": true,
+     "libertades": false,
+     "territorial_ambiental": false,
+     "nota": "Profesorado, aulas y coste de vida."
+    },
+    {
+     "id": "FRA-2026-10-17",
+     "institucional": false,
+     "economica": true,
+     "educativa": true,
+     "libertades": true,
+     "territorial_ambiental": false,
+     "nota": "Prohibiciones de manifestación, educación y coste de vida."
+    },
+    {
+     "id": "ITA-MILAN-2026-10-17",
+     "institucional": false,
+     "economica": true,
+     "educativa": false,
+     "libertades": false,
+     "territorial_ambiental": false,
+     "nota": "Encarecimiento de la vida y malestar juvenil."
+    },
+    {
+     "id": "ALB-2026-10-13",
+     "institucional": true,
+     "economica": false,
+     "educativa": true,
+     "libertades": false,
+     "territorial_ambiental": true,
+     "nota": "Dimisión, universidad y complejo hotelero en reserva natural."
+    },
+    {
+     "id": "NPL-2025-09",
+     "institucional": true,
+     "economica": false,
+     "educativa": false,
+     "libertades": true,
+     "territorial_ambiental": false,
+     "nota": "Prohibición de plataformas; corrupción y nepotismo."
+    }
+   ]
   },
   "campana": {
    "kind": "calendario",

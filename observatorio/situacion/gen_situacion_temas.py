@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from kpi_render import charts_block, kpi_strip
+from kpi_render import charts_block, fmt_num, fmt_pct, kpi_strip
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -87,17 +87,35 @@ def youth(topic, protestas_path, kpis=None):
     fallback = {"label": "fuentes primarias", "primary_sources": 0, "reported_pending": len(eps)}
     kpi_html = kpi_strip(kpis, fallback) if kpis else f'''<div class="kpis"><div class="kpi"><b>{len(eps)}</b><span>episodios</span></div><div class="kpi"><b>{source_count}</b><span>enlaces únicos</span></div><div class="kpi"><b>0</b><span>fuentes primarias</span></div><div class="kpi"><b>0</b><span>relaciones documentadas</span></div></div>'''
     charts = charts_block(kpis, "2") if kpis else ""
+    labels = [("institucional","Institucional"),("economica","Económica"),("educativa","Educativa"),("libertades","Libertades"),("territorial_ambiental","Territorial / ambiental")]
+    matrix_rows = []
+    for r in topic.get("reivindicaciones", []):
+        cells = "".join("<td>" + ("●" if r.get(k) else "—") + "</td>" for k, _ in labels)
+        matrix_rows.append(f'<tr><td><a href="#{e(r["id"])}"><b>{e(r["id"])}</b></a></td>{cells}<td class="muted">{e(r.get("nota",""))}</td></tr>')
+    matrix = (
+        '<h2>3. Reivindicaciones</h2>'
+        '<p class="muted">Clasificación editorial a partir de las demandas y detonantes publicados en cada ficha. No se infiere automáticamente ni se usa para atribuir coordinación.</p>'
+        '<div style="overflow-x:auto"><table><thead><tr><th>Episodio</th>' + "".join(f"<th>{label}</th>" for _, label in labels) + '<th>Nota</th></tr></thead><tbody>' + "".join(matrix_rows) + '</tbody></table></div>'
+    )
+    warning = ""
+    if kpis:
+        a = kpis["activity"]
+        d = a.get("delta_pct")
+        dtxt = "sin base" if d is None else f"{d:+.1f} %".replace(".", ",")
+        warning = f'''<div class="box warn"><b>Advertencia de lectura.</b> Los últimos 7 días completos registran <b>{fmt_num(a["last7_complete"]["n"])}</b> publicaciones frente a <b>{fmt_num(a["previous7_complete"]["n"])}</b> en los 7 anteriores ({dtxt}). Esto mide cobertura publicada, no movilizaciones: puede reflejar cobertura nueva, información judicial, atención internacional, cambios de captura o repetición de episodios anteriores.</div>'''
     body = f'''<div class="hero"><p class="muted">Ficha de situación · {e(topic["fuente"])}</p><h1>{e(topic["titulo"])}</h1><p class="lead">{e(topic["subtitulo"])}. Qué se publica, qué se sabe y qué falta.</p><p class="muted">Actualizada: {e(topic["actualizado"]) if "actualizado" in topic else "2026-11-01"} · Sin relaciones documentadas entre episodios.</p></div>
 {kpi_html}
 <div class="box"><b>Qué es.</b> Una ficha de situación de los episodios ya curados. No añade hechos, no atribuye autoría y no convierte la coincidencia internacional en coordinación.</div>
 <h2>1. Qué se publica</h2>{''.join(f'<p>{e(x)}</p>' for x in topic["resumen"])}
 {charts}
-<h2>3. Episodios</h2>{''.join(cards)}
-<h2>4. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
-<h2>5. Contradicciones y cifras</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["contradicciones"])}</ul>
-<h2>6. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
-<h2>7. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
-<h2>8. Fuentes y papel documental</h2>{source_table(topic, domains)}<p class="muted">{source_count} enlaces únicos en {len(domains)} dominios · 0 fuentes primarias · la clasificación describe el tipo de pieza, no su independencia editorial.</p>
+{warning}
+{matrix}
+<h2>4. Episodios</h2>{''.join(cards)}
+<h2>5. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
+<h2>6. Contradicciones y cifras</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["contradicciones"])}</ul>
+<h2>7. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
+<h2>8. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
+<h2>9. Fuentes y papel documental</h2>{source_table(topic, domains)}<p class="muted">{source_count} enlaces únicos en {len(domains)} dominios · 0 fuentes primarias · la clasificación describe el tipo de pieza, no su independencia editorial.</p>
 <p><a href="/observatorio/juventud/"><b>← Volver al registro de Protestas juveniles</b></a> · <a href="/observatorio/situacion/ceuta/situacion/">Ficha de Frontera Sur</a></p>'''
     return page(topic["titulo"], topic["subtitulo"] + ". Sin relaciones documentadas.", "/observatorio/juventud/situacion/", body, "#0f766e")
 

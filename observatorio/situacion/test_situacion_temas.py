@@ -69,6 +69,8 @@ class TestSituacionTemas(unittest.TestCase):
         self.assertIn("Indicadores de situación", html)
         self.assertIn("Actividad diaria", html)
         self.assertIn("fuentes primarias", html)
+        self.assertIn("Advertencia de lectura", html)
+        self.assertIn("3. Reivindicaciones", html)
         self.assertIn("Episodios", html)
 
     def test_infra_page_has_official_sources_not_evidence(self):
