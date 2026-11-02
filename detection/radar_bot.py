@@ -75,12 +75,23 @@ def send(chat_id, text, reply_markup=None):
     api_get("sendMessage", **data)
 
 
-def keyboard():
-    rows = [[{"text": f"▪ {label}", "callback_data": f"tema:{key}"}]
-            for key, label, _ in TOPICS]
-    rows.append([{"text": "✅ Confirmar", "callback_data": "conf"},
+def keyboard(selected=None):
+    selected = set(selected or [])
+    rows = [[{"text": ("✅ " if key in selected else "▫ ") + label,
+              "callback_data": f"tema:{key}"}] for key, label, _ in TOPICS]
+    rows.append([{"text": "✅ Todos", "callback_data": "all"},
+                 {"text": "✅ Confirmar", "callback_data": "conf"},
                  {"text": "✖ Cancelar", "callback_data": "can"}])
     return {"inline_keyboard": rows}
+
+
+def edit(chat, message_id, text, reply_markup=None):
+    data = {"chat_id": chat, "message_id": message_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup is not None:
+        data["reply_markup"] = json.dumps(reply_markup)
+    r = api_get("editMessageText", **data)
+    if not r or not r.get("ok"):
+        send(chat, text, reply_markup)
 
 
 def sid(chat):
@@ -177,23 +188,27 @@ def main():
                 chat = cb["message"]["chat"]["id"]
                 data = cb.get("data", "")
                 cur = sel.get(chat, set())
+                m_id = cb["message"]["message_id"]
                 if data.startswith("tema:"):
                     key = data.split(":", 1)[1]
                     if key in TOPIC:
                         cur.symmetric_difference_update({key})
                     sel[chat] = cur
                     labels = ", ".join(TOPIC[t][0] for t in sorted(cur)) or "ninguno"
-                    send(chat, f"Selección: {e(labels)}", keyboard())
+                    edit(chat, m_id, f"Selección: <b>{e(labels)}</b>\nPulsa ✅ Confirmar para guardar.", keyboard(cur))
+                elif data == "all":
+                    sel[chat] = {k for k, _, _ in TOPICS}
+                    edit(chat, m_id, "Selección: <b>los cuatro temas</b>\nPulsa ✅ Confirmar para guardar.", keyboard(sel[chat]))
                 elif data == "conf":
                     final = sorted(cur)
                     save_subs(chat, final)
                     sel.pop(chat, None)
-                    send(chat, "✅ Suscrito a: " + (", ".join(TOPIC[t][0] for t in final) or "ninguno"))
+                    edit(chat, m_id, "✅ Suscrito a: <b>" + (", ".join(TOPIC[t][0] for t in final) or "ninguno") + "</b>")
                 elif data == "can":
                     sel.pop(chat, None)
-                    send(chat, "Cancelado. No se cambió nada.")
+                    edit(chat, m_id, "Cancelado. No se cambió nada.")
                 else:
-                    send(chat, "Ese botón es del FIMI anterior. Usa /temas.")
+                    edit(chat, m_id, "Ese botón es del FIMI anterior. Usa /temas.")
                 continue
             msg = u.get("message") or {}
             chat = msg.get("chat", {}).get("id")
@@ -210,7 +225,7 @@ def main():
                      "/sugerir TEXTO — proponer una corrección\n/baja — darte de baja")
             elif low.startswith("/temas") or low.startswith("/radar"):
                 sel[chat] = set(subs(chat))
-                send(chat, "Marca los temas que quieres seguir:", keyboard())
+                send(chat, f"Selección: <b>{e(', '.join(TOPIC[t][0] for t in sorted(sel[chat])) or 'ninguno')}</b>\nMarca los temas y pulsa ✅ Confirmar:", keyboard(sel[chat]))
             elif low.startswith("/mis"):
                 mine = subs(chat)
                 send(chat, "Tus temas: " + (", ".join(TOPIC[t][0] for t in mine) if mine else "ninguno (usa /temas)"))
