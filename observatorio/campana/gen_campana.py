@@ -14,11 +14,42 @@ rows=''.join(f'<tr><td>{e(d)}</td><td><b>{e(t)}</b></td><td>{e(x)}</td><td><a hr
 from datetime import date as _date
 _h=sorted(cal['hitos'],key=lambda x:x['fecha'])
 _d0=_date.fromisoformat(_h[0]['fecha']); _d1=_date.fromisoformat(_h[-1]['fecha']); _span=max(1,(_d1-_d0).days)
+def _short(text, n=22):
+    text = str(text or "")
+    if len(text) <= n:
+        return text
+    cut = text[:n].rsplit(" ", 1)[0]
+    return (cut or text[:n]).rstrip(" ,.;:") + "…"
+
 _dots=[]
+_rows=[-1e9, -1e9, -1e9]
+_used=0
 for x in _h:
     px=50+((_date.fromisoformat(x['fecha'])-_d0).days/_span)*660
-    _dots.append(f'<circle cx="{px:.1f}" cy="56" r="7" fill="#b45309"/><text x="{px:.1f}" y="80" text-anchor="middle" font-size="10" fill="#64748b">{e(x["fecha"])}</text><text x="{px:.1f}" y="95" text-anchor="middle" font-size="9" fill="#b45309">{e(x["hito"][:22])}</text>')
-timeline_svg=f'<svg viewBox="0 0 760 105" width="100%" height="105" role="img" aria-label="Calendario oficial"><line x1="40" y1="56" x2="720" y2="56" stroke="#fde68a" stroke-width="3"/>{"".join(_dots)}</svg>'
+    label=_short(x['hito'], 22)
+    # Ancho aproximado de la etiqueta más larga (fecha o leyenda), con margen.
+    width=max(len(x['fecha'])*6.0, len(label)*5.2, 54.0) + 8
+    row=next((i for i, end in enumerate(_rows) if px-width/2 > end+6), None)
+    if row is None:
+        row=min(range(len(_rows)), key=lambda i: _rows[i])
+    _rows[row]=px+width/2
+    _used=max(_used,row)
+    y_date=80+row*30
+    y_label=95+row*30
+    if px < 80:
+        anchor, lx, dx = "start", px, 0
+    elif px > 680:
+        anchor, lx, dx = "end", px, 0
+    else:
+        anchor, lx, dx = "middle", px, 0
+    _dots.append(
+        f'<g><title>{e(x["fecha"])} — {e(x["hito"])}</title>'
+        f'<circle cx="{px:.1f}" cy="56" r="7" fill="#b45309"/>'
+        f'<text x="{px:.1f}" y="{y_date}" text-anchor="middle" font-size="10" fill="#64748b">{e(x["fecha"])}</text>'
+        f'<text x="{lx:.1f}" y="{y_label}" text-anchor="{anchor}" font-size="9" fill="#b45309">{e(label)}</text></g>'
+    )
+_height=105+_used*30
+timeline_svg=f'<svg viewBox="0 0 760 {_height}" width="100%" height="{_height}" role="img" aria-label="Calendario oficial"><line x1="40" y1="56" x2="720" y2="56" stroke="#fde68a" stroke-width="3"/>{"".join(_dots)}</svg>'
 _days=(_date(2026,11,13)-_date(2026,10,30)).days
 html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>España — elecciones generales (29N) — observatorio de acontecimientos</title>
