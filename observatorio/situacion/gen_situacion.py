@@ -229,9 +229,17 @@ def main():
         delta_txt = f"{delta_txt} ({delta_abs:+d})" if delta is not None else delta_txt
         if act["previous7_complete"]["n"] < 50:
             delta_txt += " · base baja"
+        q = kpis.get("quality") or {}
+        quality = (
+            f'{fmt_num(q.get("raw_publications", 0))} capturas · '
+            f'{fmt_num(q.get("dedup_publications", act["total"]))} tras dedup · '
+            f'{fmt_num(q.get("duplicates_removed", 0))} duplicadas · '
+            f'{fmt_num(q.get("empty_titles", 0))} sin título · '
+            f'{fmt_pct(q.get("aggregator_share"))} Google News'
+        )
         kpi_html = f'''<div class="kpis">
 <div class="kpi"><b>{fmt_num(act["total"])}</b><span>publicaciones · {kpis["period"]["days"]} d</span><small>{act["days_with_data"]} días con datos</small></div>
-<div class="kpi"><b>{fmt_num(src["distinct"])}</b><span>fuentes distintas</span><small>top-3: {fmt_pct(src.get("top3_share"))}</small></div>
+<div class="kpi"><b>{fmt_num(src["distinct"])}</b><span>dominios directos</span><small>top-3: {fmt_pct(src.get("top3_share"))}</small></div>
 <div class="kpi"><b>{e(lang.get("lang", "s/d"))}</b><span>idioma principal</span><small>{fmt_num(lang.get("n", 0))} publicaciones</small></div>
 <div class="kpi"><b>{fmt_num(ev.get("primary_sources", primary_count))}</b><span>fuentes primarias</span><small>{ev.get("reported_pending", pending_count)} fichas pendientes</small></div>
 </div>'''
@@ -239,8 +247,9 @@ def main():
 <p class="muted">Serie de publicaciones capturadas, no de hechos confirmados. Periodo: {e(kpis["period"]["from"])} → {e(kpis["period"]["to"])}; hoy es un día parcial.</p>
 <section class="charts">
 <article class="chart"><h3>Actividad diaria</h3><p class="muted">Barras: publicaciones. Línea: media móvil de 7 días. Últimos 7 días completos: <b>{fmt_num(act["last7_complete"]["n"])}</b> frente a <b>{fmt_num(act["previous7_complete"]["n"])}</b> ({delta_txt}).</p>{svg_activity(act)}<div class="legend"><span><i class="swatch bar"></i> publicaciones</span><span><i class="swatch line"></i> media 7 d</span></div></article>
-<article class="chart"><h3>Fuentes con más publicaciones</h3><p class="muted">{fmt_num(src["distinct"])} fuentes distintas; la primera concentra el {fmt_pct(src.get("top1_share"))} y las tres primeras el {fmt_pct(src.get("top3_share"))}. Etiqueta de captura, no independencia editorial.</p>{svg_sources(src)}</article>
+<article class="chart"><h3>Dominios directos con más publicaciones</h3><p class="muted">{fmt_num(src["distinct"])} dominios directos; el primero concentra el {fmt_pct(src.get("top1_share"))} y los tres primeros el {fmt_pct(src.get("top3_share"))}. Google News se mide aparte como agregador.</p>{svg_sources(src)}</article>
 </section>
+<div class="box neutral"><b>Calidad de la captura.</b> {e(quality)}. La deduplicación solo une la misma fecha, título normalizado y fuente; no colapsa medios distintos.</div>
 <div class="box neutral"><b>Cómo leer estos indicadores.</b> Miden actividad y procedencia, no coordinación, intención ni gravedad. Un pico puede ser un acontecimiento real, una decisión editorial o una consulta que captura más. El denominador y los días sin datos quedan visibles.</div>'''
     else:
         kpi_html = f'''<div class="kpis"><div class="kpi"><b>{len(ordered)}</b><span>fichas</span></div><div class="kpi"><b>{len(all_urls)}</b><span>enlaces únicos</span></div><div class="kpi"><b>{primary_count}</b><span>fuentes primarias</span></div><div class="kpi"><b>{len(sit["open_questions"])}</b><span>preguntas abiertas</span></div></div>'''

@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """Genera los KPI de situación de un tema desde observatorio.db.
 
-No interpreta: cuenta publicaciones, fuentes, idiomas y evidencia curada.
+No interpreta: cuenta publicaciones, dominios, idiomas y evidencia curada.
 La unidad es la publicación, no el hecho. Los vacíos se publican como vacíos.
 """
 import argparse
+import html
 import json
+import re
 import sqlite3
+import unicodedata
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 DEFAULT_DB = ROOT / "observatorio/data/observatorio.db"
 DEFAULT_CURATED = HERE / "situacion_frontera_sur.json"
 DEFAULT_OUT = HERE / "situacion_kpis.json"
+AGGREGATOR = "news.google.com"
 
 
 def load(path):
@@ -34,45 +39,52 @@ def window(start, end):
     }
 
 
-def query_daily(con, topic, start, end):
-    rows = con.execute(
-        """SELECT substr(published,1,10) AS d, COUNT(*) AS n
-           FROM items
-           WHERE topic = ? AND published IS NOT NULL AND published >= ? AND published < ?
-           GROUP BY d ORDER BY d""",
-        (topic, start.isoformat(), (end + timedelta(days=1)).isoformat()),
-    ).fetchall()
-    return {r[0]: int(r[1]) for r in rows}
+def norm_title(value):
+    value = html.unescape(str(value or "")).lower()
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
 
 
-def query_sources(con, topic, start, end):
+def domain(url):
+    host = (urlsplit(url or "").hostname or "").lower().removeprefix("www.")
+    return host or "sin dominio"
+
+
+def query_rows(con, topic, start, end):
     return con.execute(
-        """SELECT COALESCE(NULLIF(TRIM(source), ''), 'sin fuente') AS s, COUNT(*) AS n
+        """SELECT title, url, source, published, source_lang, source_class
            FROM items
            WHERE topic = ? AND published IS NOT NULL AND published >= ? AND published < ?
-           GROUP BY s ORDER BY n DESC, s""",
+           ORDER BY published""",
         (topic, start.isoformat(), (end + timedelta(days=1)).isoformat()),
     ).fetchall()
 
 
-def query_languages(con, topic, start, end):
-    return con.execute(
-        """SELECT COALESCE(NULLIF(TRIM(source_lang), ''), 'sin idioma') AS l, COUNT(*) AS n
-           FROM items
-           WHERE topic = ? AND published IS NOT NULL AND published >= ? AND published < ?
-           GROUP BY l ORDER BY n DESC, l""",
-        (topic, start.isoformat(), (end + timedelta(days=1)).isoformat()),
-    ).fetchall()
+def dedup_rows(rows):
+    """Deduplica solo la misma pieza de la misma fuente el mismo día.
 
-
-def query_classes(con, topic, start, end):
-    return con.execute(
-        """SELECT COALESCE(NULLIF(TRIM(source_class), ''), 'sin clase') AS c, COUNT(*) AS n
-           FROM items
-           WHERE topic = ? AND published IS NOT NULL AND published >= ? AND published < ?
-           GROUP BY c ORDER BY n DESC, c""",
-        (topic, start.isoformat(), (end + timedelta(days=1)).isoformat()),
-    ).fetchall()
+    No colapsa dos medios distintos que publican el mismo titular: eso es
+    distribución entre fuentes, no un enlace duplicado.
+    """
+    seen = set()
+    kept = []
+    duplicates = 0
+    invalid = 0
+    for r in rows:
+        title = norm_title(r["title"])
+        day = (r["published"] or "")[:10]
+        source = (r["source"] or "").strip()
+        if not title:
+            invalid += 1
+            continue
+        key = (day, title, source)
+        if key in seen:
+            duplicates += 1
+            continue
+        seen.add(key)
+        kept.append(r)
+    return kept, duplicates, invalid
 
 
 def evidence(curated_path, curated_key=None):
@@ -115,14 +127,15 @@ def main():
     start = end - timedelta(days=args.days - 1)
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
     try:
-        counts = query_daily(con, args.topic, start - timedelta(days=6), end)
-        sources = query_sources(con, args.topic, start, end)
-        languages = query_languages(con, args.topic, start, end)
-        classes = query_classes(con, args.topic, start, end)
+        rows = query_rows(con, args.topic, start - timedelta(days=6), end)
     finally:
         con.close()
 
+    kept, duplicate_count, invalid_count = dedup_rows(rows)
+    counts = Counter((r["published"] or "")[:10] for r in kept)
+    period_rows = [r for r in kept if start.isoformat() <= (r["published"] or "")[:10] <= end.isoformat()]
     daily = []
     for i in range(args.days):
         d = start + timedelta(days=i)
@@ -141,11 +154,22 @@ def main():
     days_with_data = sum(1 for x in daily if x["n"])
     nonempty = [x["date"] for x in daily if x["n"]]
 
-    src_total = sum(int(n) for _, n in sources)
-    top = [{"source": s, "n": int(n), "share": pct(int(n), src_total)} for s, n in sources[:10]]
-    top3 = sum(int(n) for _, n in sources[:3])
-    lang = [{"lang": l, "n": int(n), "share": pct(int(n), total)} for l, n in languages]
-    class_mix = [{"class": c, "n": int(n), "share": pct(int(n), total)} for c, n in classes]
+    raw_period = [r for r in rows if start.isoformat() <= (r["published"] or "")[:10] <= end.isoformat()]
+    raw_total = len(raw_period)
+    period_valid = [r for r in raw_period if norm_title(r["title"])]
+    period_empty = len(raw_period) - len(period_valid)
+    period_dups = len(period_valid) - len(period_rows)
+    direct_rows = [r for r in period_rows if domain(r["url"]) != AGGREGATOR]
+    agg = len(period_rows) - len(direct_rows)
+    domains = Counter(domain(r["url"]) for r in direct_rows)
+    src_total = len(direct_rows)
+    top = [
+        {"source": d, "domain": d, "n": n, "share": pct(n, src_total)}
+        for d, n in domains.most_common(10)
+    ]
+    top3 = sum(n for _, n in domains.most_common(3))
+    langs = Counter((r["source_lang"] or "sin idioma").strip() for r in period_rows)
+    classes = Counter((r["source_class"] or "sin clase").strip() for r in period_rows)
 
     data = {
         "version": "2026-11-02",
@@ -169,25 +193,44 @@ def main():
             "daily": daily,
         },
         "sources": {
-            "distinct": len(sources),
+            "distinct": len(domains),
             "total_publications": src_total,
-            "top1_share": pct(int(sources[0][1]), src_total) if sources else None,
+            "top1_share": pct(domains.most_common(1)[0][1], src_total) if domains else None,
             "top3_share": pct(top3, src_total),
             "top": top,
         },
-        "languages": {"distinct": len(languages), "top": lang},
-        "source_classes": class_mix,
+        "languages": {
+            "distinct": len(langs),
+            "top": [{"lang": l, "n": n, "share": pct(n, total)} for l, n in langs.most_common()],
+        },
+        "source_classes": [
+            {"class": c, "n": n, "share": pct(n, total)}
+            for c, n in classes.most_common()
+        ],
+        "quality": {
+            "raw_publications": raw_total,
+            "valid_titles": len(period_valid),
+            "dedup_publications": total,
+            "duplicates_removed": period_dups,
+            "empty_titles": period_empty,
+            "aggregator_publications": agg,
+            "aggregator_share": pct(agg, total),
+            "direct_publications": src_total,
+            "direct_domains": len(domains),
+            "dedup_rule": "misma fecha + mismo título normalizado + misma fuente; no se colapsan medios distintos",
+        },
         "evidence": evidence(args.curated, args.curated_key),
         "notes": [
-            "La unidad es la publicación capturada, no el hecho confirmado.",
+            "La unidad es la publicación deduplicada, no el hecho confirmado.",
             "El día de hoy es parcial; la variación usa los 7 días completos anteriores.",
-            "Fuente es la etiqueta de captura; no mide independencia editorial.",
+            "Google News se separa como agregador: no se usa para la concentración de dominios.",
+            "Una misma noticia en medios distintos no se colapsa: es distribución entre fuentes.",
             "La evidencia solo se calcula donde hay fichas curadas.",
         ],
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"{args.out} · {total} publicaciones · {len(sources)} fuentes · delta {delta}%")
+    print(f"{args.out} · {total} dedup · {raw_total} raw · {len(domains)} dominios directos · delta {delta}%")
 
 
 if __name__ == "__main__":

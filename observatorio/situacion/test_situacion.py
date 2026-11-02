@@ -65,6 +65,11 @@ class TestSituacion(unittest.TestCase):
             self.assertEqual(data["evidence"]["primary_sources"], 0)
             self.assertEqual(data["evidence"]["documented_relations"], 2)
             self.assertGreater(data["sources"]["distinct"], 0)
+            self.assertGreaterEqual(data["quality"]["raw_publications"], data["quality"]["dedup_publications"])
+            self.assertEqual(
+                data["quality"]["dedup_publications"] + data["quality"]["duplicates_removed"] + data["quality"]["empty_titles"],
+                data["quality"]["raw_publications"],
+            )
 
     def test_page_is_generated(self):
         with tempfile.TemporaryDirectory() as tmp:

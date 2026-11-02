@@ -39,7 +39,7 @@ python3 observatorio/situacion/gen_situacion.py \
 
 En el servidor, `run_static.sh` genera primero los KPI y después la ficha.
 
-## Indicadores
+## Deduplicación y calidad\n\nEl KPI deduplica solo la misma pieza de la misma fuente el mismo día. No colapsa medios distintos que publican el mismo titular. Google News se mide aparte: no entra en la concentración de dominios directos. Los títulos vacíos se cuentan como vacío de calidad, no como publicación válida.\n\n## Indicadores
 
 La ficha muestra cuatro KPI y dos gráficos reutilizables:
 
