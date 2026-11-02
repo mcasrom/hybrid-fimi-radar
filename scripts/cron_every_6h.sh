@@ -61,7 +61,7 @@ done
 /usr/bin/python3 detection/gen_wallchart.py >> logs/fimi.log 2>&1
 # 4) Avisos a suscriptores de Telegram si cambiaron los diales (solo on_change).
 #    Sin FIMI_TELEGRAM_BOT_TOKEN no envía nada; idempotente, sin spam.
-.venv/bin/python detection/notify_subs_telegram.py >> logs/fimi.log 2>&1
+.venv/bin/python detection/notify_observatorio.py >> logs/fimi.log 2>&1
 # 4b) Alerta proactiva de salud de fuentes: avisa al administrador SOLO cuando una fuente
 #    empeora (activa->baja/inactiva). Estado guardado => sin repeticiones.
 .venv/bin/python detection/notify_fuentes.py >> logs/fimi.log 2>&1

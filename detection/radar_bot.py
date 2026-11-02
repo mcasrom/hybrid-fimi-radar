@@ -1,28 +1,16 @@
 #!/usr/bin/env python3
-"""radar_bot.py — Bot de Telegram para suscripciones al radar FIMI.
+"""radar_bot.py — Bot de Telegram del Observatorio de lo publicado.
 
-Bot dedicado (no comparte polling con nearme_status_bot). Comandos:
-  /start o /help -> ayuda
-  /radar         -> teclado inline multi-selección de temas (elige los que quieras)
-  /mis           -> ver sus temas y frecuencia acutales
-  /baja          -> borra la suscripción de Telegram de este chat
-  /sugerir TEXTO -> guarda una sugerencia de tema nuevo y la reenvía al administrador
-
-Alta: tras /radar, el usuario marca los temas y pulsa "Confirmar". La fila
-se guarda en la tabla `suscripciones` (canal='telegram', destino=chat_id).
-
-El ENVÍO de avisos (on_change) NO lo hace este bot: lo hace el cron
-notify_subs_telegram.py al detectar cambios en los diales. Este script solo
-atiende los comandos (long-poll) para no duplicar lógica.
-
-Token: se lee de FIMI_TELEGRAM_BOT_TOKEN (env/PM2) o de .env
-(/home/deploy/hybrid-fimi-radar/.env). NO hardcodeado.
+Menú de 4 temas y consulta de publicaciones recientes desde observatorio.db.
+No usa clusters, bandas, diales ni atribución.
 """
-import csv
 import hashlib
+import html
 import json
 import os
 import socket
+import sqlite3
+import sys
 import time
 from pathlib import Path
 
@@ -30,56 +18,53 @@ import urllib3.util.connection
 urllib3.util.connection.allowed_gai_family = lambda: socket.AF_INET
 
 ROOT = Path(__file__).resolve().parent.parent
-sys_path = str(ROOT)
-import sys
-if sys_path not in sys.path:
-    sys.path.insert(0, sys_path)
+sys.path.insert(0, str(ROOT))
 
 import requests  # noqa: E402
 from schema_suscripciones import init  # noqa: E402
-from schema_feedback import init as _init_feedback  # noqa: E402
-from radar_trend import _cargar_temas_activos, NOMBRE_TEMA  # noqa: E402
 
 ENV_FILE = ROOT / ".env"
+OBS_DB = Path("/home/deploy/observatorio/data/observatorio.db")
+BASE = "https://fimi.viajeinteligencia.com"
+TOPICS = [
+    ("frontera_sur", "Frontera Sur", "/observatorio/ceuta/"),
+    ("protestas_juveniles", "Protestas juveniles", "/observatorio/juventud/"),
+    ("elecciones_generales", "Elecciones generales", "/observatorio/campana/"),
+    ("infraestructuras_espana", "Infraestructuras", "/observatorio/infraestructuras/"),
+]
+TOPIC = {k: (label, path) for k, label, path in TOPICS}
 
 
 def load_env(filepath: Path):
     try:
-        with open(filepath) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
+        for line in filepath.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
     except Exception:
         pass
 
 
 load_env(ENV_FILE)
-TOKEN = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "") or os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TOKEN = os.environ.get("FIMI_TELEGRAM_BOT_TOKEN", "")
 API = f"https://api.telegram.org/bot{TOKEN}"
 
-# temas del catálogo real (orden estable)
-TEMAS = _cargar_temas_activos()
+
+def e(x):
+    return html.escape(str(x or ""))
 
 
-def _short_id(canal: str, destino: str) -> str:
-    return hashlib.sha256(f"{canal}:{destino}".encode()).hexdigest()[:20]
-
-
-def api_get(method: str, client_timeout: int = 20, **params):
+def api_get(method, client_timeout=20, **params):
     try:
         r = requests.post(f"{API}/{method}", data=params, timeout=(10, client_timeout))
         return r.json()
-    except Exception as e:
-        print(f"[bot] api {method} error: {e}")
+    except Exception as exc:
+        print(f"[bot] api {method} error: {type(exc).__name__}", file=sys.stderr)
         return {"ok": False}
 
 
-def get_updates(offset: int, timeout: int = 25):
-    # El long-poll del servidor dura `timeout` s; el cliente debe esperar MÁS
-    # (timeout+20) o la lectura caduca justo antes de que Telegram responda.
-    # Bug 29-Sep: ambos eran 30 -> 0 mensajes procesados en 3 días.
+def get_updates(offset, timeout=25):
     return api_get("getUpdates", client_timeout=timeout + 20, offset=offset, timeout=timeout)
 
 
@@ -90,174 +75,95 @@ def send(chat_id, text, reply_markup=None):
     api_get("sendMessage", **data)
 
 
-def build_keyboard():
-    kbd = []
-    row = []
-    for i, t in enumerate(TEMAS):
-        row.append({"text": f"🔴 {NOMBRE_TEMA.get(t, t)}", "callback_data": f"tema:{t}"})
-        if len(row) == 2:
-            kbd.append(row)
-            row = []
-    if row:
-        kbd.append(row)
-    kbd.append([{"text": "✅ Confirmar", "callback_data": "conf"},
-                {"text": "✖ Cancelar", "callback_data": "can"}])
-    return {"inline_keyboard": kbd}
+def keyboard():
+    rows = [[{"text": f"▪ {label}", "callback_data": f"tema:{key}"}]
+            for key, label, _ in TOPICS]
+    rows.append([{"text": "✅ Confirmar", "callback_data": "conf"},
+                 {"text": "✖ Cancelar", "callback_data": "can"}])
+    return {"inline_keyboard": rows}
 
 
-def upsert_sub(destino, temas):
-    conn = init()
-    sid = _short_id("telegram", str(destino))
-    raw = conn.execute("SELECT temas FROM suscripciones WHERE id=?", (sid,)).fetchone()
-    actual = set(json.loads(raw[0])) if raw else set()
-    actual |= set(temas)
-    if not raw:
-        conn.execute(
-            "INSERT INTO suscripciones (id, canal, destino, temas, frecuencia)"
-            " VALUES (?,?,?,?,?)",
-            (sid, "telegram", str(destino), json.dumps(sorted(actual)), "on_change"))
-    else:
-        conn.execute("UPDATE suscripciones SET temas=?, ultimo_estado=NULL WHERE id=?",
-                     (json.dumps(sorted(actual)), sid))
-    conn.commit()
-    conn.close()
-    return sorted(actual)
+def sid(chat):
+    return hashlib.sha256(f"telegram:{chat}".encode()).hexdigest()[:20]
 
 
-def set_subs(destino, temas):
-    conn = init()
-    sid = _short_id("telegram", str(destino))
-    if temas:
-        conn.execute("UPDATE suscripciones SET temas=? WHERE id=?",
-                     (json.dumps(sorted(temas)), sid))
-    else:
-        conn.execute("DELETE FROM suscripciones WHERE id=?", (sid,))
-    conn.commit()
-    conn.close()
-
-
-def my_subs(destino):
-    conn = init()
-    sid = _short_id("telegram", str(destino))
-    row = conn.execute("SELECT temas FROM suscripciones WHERE id=?", (sid,)).fetchone()
-    conn.close()
-    return sorted(json.loads(row[0])) if row else []
-
-
-def _guardar_sugerencia(chat, texto):
-    """Guarda la sugerencia (tabla sugerencias, canal telegram) y avisa al administrador."""
-    conn = _init_feedback()
-    conn.execute("INSERT INTO sugerencias (texto, canal, ip) VALUES (?,?,?)",
-                 (texto[:500], "telegram", str(chat)))
-    conn.commit()
-    conn.close()
-    owner = int(os.environ.get("FIMI_OWNER_CHAT", "47652516"))
-    send(owner, "📥 <b>Sugerencia de tema</b> para el radar FIMI\n"
-                f"Canal: telegram\n\n{texto}")
-
-
-def _owner():
+def subs(chat):
+    c = init()
+    row = c.execute("SELECT temas FROM suscripciones WHERE id=?", (sid(chat),)).fetchone()
+    c.close()
     try:
-        return int(os.environ.get("FIMI_OWNER_CHAT", "47652516"))
+        vals = json.loads(row[0]) if row else []
     except Exception:
-        return 47652516
+        vals = []
+    return [t for t in vals if t in TOPIC]
 
 
-# ---------- validación curada (etiquetado por Telegram, 2 toques) ----------
-VAL_DIR = ROOT / "data" / "validacion"
-
-
-def _muestra_actual():
-    """Muestra de validación a etiquetar: la más ANTIGUA sin completar.
-    Si todas están completas, la más reciente (para mostrar el resumen)."""
-    if not VAL_DIR.exists():
-        return None, []
-    muestras = sorted(VAL_DIR.glob("muestra_*.csv"))
-    if not muestras:
-        return None, []
-    for path in muestras:
-        try:
-            rows = list(csv.DictReader(open(path, encoding="utf-8")))
-        except Exception:
-            continue
-        if rows and any(not (r.get("label") or "").strip() for r in rows):
-            return path, rows
-    path = muestras[-1]
-    return path, list(csv.DictReader(open(path, encoding="utf-8")))
-
-
-def _siguiente_pendiente(rows, desde=0):
-    for i in range(desde, len(rows)):
-        if not (rows[i].get("label") or "").strip():
-            return i
-    return None
-
-
-def _texto_cluster(rows, i):
-    r = rows[i]
-    n_lab = sum(1 for x in rows if (x.get("label") or "").strip())
-    tit = [t.strip() for t in (r.get("top_titulares") or "").split("||") if t.strip()][:3]
-    tit_txt = "\n".join("• " + t[:110] for t in tit)
-    return (
-        f"🔬 <b>Validación curada</b> — {n_lab}/{len(rows)}\n\n"
-        f"<b>{r.get('banda')}</b> · score {r.get('score')} · {r.get('tema')}\n"
-        f"<code>{r.get('cluster_label')}</code>\n"
-        f"{r.get('n_eventos')} ev · {r.get('n_cuentas')} cuentas · "
-        f"{r.get('n_urls')} urls · {r.get('span_h')}h\n"
-        f"Dominios: {r.get('top_dominios')}\n\n{tit_txt}"
-    )
-
-
-def _kb_validar(i):
-    return {"inline_keyboard": [[
-        {"text": "✅ coordinado", "callback_data": f"val:coordinado:{i}"},
-        {"text": "❌ no", "callback_data": f"val:no_coordinado:{i}"},
-    ], [
-        {"text": "❓ dudoso", "callback_data": f"val:dudoso:{i}"},
-        {"text": "⏭️ saltar", "callback_data": f"val:saltar:{i}"},
-    ]]}
-
-
-def _enviar_cluster(chat, path, rows, i):
-    if i is None:
-        _enviar_resumen(chat, path, rows)
+def save_subs(chat, topics):
+    c = init()
+    i = sid(chat)
+    if topics:
+        c.execute("INSERT OR IGNORE INTO suscripciones (id,canal,destino,temas,frecuencia) VALUES (?,?,?,?,?)",
+                  (i, "telegram", str(chat), "[]", "on_change"))
+        c.execute("UPDATE suscripciones SET temas=?, ultimo_estado=NULL WHERE id=?",
+                  (json.dumps(sorted(set(topics))), i))
     else:
-        send(chat, _texto_cluster(rows, i), _kb_validar(i))
+        c.execute("DELETE FROM suscripciones WHERE id=?", (i,))
+    c.commit()
+    c.close()
 
 
-def _guardar_label(path, rows, i, label):
-    rows[i]["label"] = label
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
+def recent(topic, limit=3):
+    if not OBS_DB.exists():
+        return []
+    c = sqlite3.connect(f"file:{OBS_DB}?mode=ro", uri=True)
+    c.row_factory = sqlite3.Row
+    try:
+        rows = c.execute(
+            "SELECT title,url,source,published FROM items WHERE topic=? "
+            "AND published IS NOT NULL "
+            "ORDER BY published DESC LIMIT ?", (topic, limit)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        c.close()
 
 
-def _enviar_resumen(chat, path, rows):
-    from collections import defaultdict
-    by = defaultdict(lambda: defaultdict(int))
-    for r in rows:
-        lab = (r.get("label") or "").strip().lower()
-        if lab:
-            by[r.get("banda")][lab] += 1
-    lineas = ["✅ <b>Validación curada completada</b>", f"<code>{path.name}</code>", ""]
-    for b in ["CRITICAL", "HIGH", "ANOMALOUS", "WATCH"]:
-        d = by.get(b)
-        if not d:
+def hoy_text(chat):
+    mine = subs(chat) or [k for k, _, _ in TOPICS]
+    lines = ["📰 <b>Observatorio de lo publicado</b>", "Últimas publicaciones capturadas."]
+    for key in mine:
+        label, path = TOPIC[key]
+        lines.append(f"\n<b>{e(label)}</b>")
+        rows = recent(key)
+        if not rows:
+            lines.append("Sin publicaciones recientes.")
             continue
-        co, no, du = d["coordinado"], d["no_coordinado"], d["dudoso"]
-        p = round(100 * co / (co + no), 1) if (co + no) else 0.0
-        lineas.append(f"<b>{b}</b>: {co} coord · {no} no · {du} dud → precisión {p}%")
-    send(chat, "\n".join(lineas))
+        for r in rows:
+            title = e(r["title"])
+            if len(title) > 150:
+                title = title[:147] + "…"
+            lines.append(f"• {title} — {e(r['source'] or 'sin fuente')}")
+        lines.append(f"<a href=\"{BASE}{path}\">Ver registro →</a>")
+    return "\n".join(lines)
+
+
+def sugerir(chat, text):
+    c = init()
+    # La tabla de sugerencias vive en radar.db; se crea si no existe.
+    c.execute("CREATE TABLE IF NOT EXISTS sugerencias (id INTEGER PRIMARY KEY AUTOINCREMENT, texto TEXT, canal TEXT, ip TEXT, fecha TIMESTAMP DEFAULT (strftime('%s','now')))")
+    c.execute("INSERT INTO sugerencias (texto,canal,ip) VALUES (?,?,?)", (text[:500], "telegram", str(chat)))
+    c.commit()
+    c.close()
+    owner = int(os.environ.get("FIMI_OWNER_CHAT", "47652516"))
+    send(owner, f"📥 <b>Sugerencia para el Observatorio</b>\n\n{e(text[:500])}")
 
 
 def main():
     if not TOKEN or ":" not in TOKEN:
-        print("[bot] FIMI_TELEGRAM_BOT_TOKEN no configurado en env/.env — saliendo.")
+        print("[bot] token no configurado", file=sys.stderr)
         return
-    print(f"[bot] arrancando, {len(TEMAS)} temas: {TEMAS}")
+    print(f"[bot] Observatorio: {len(TOPICS)} temas", flush=True)
     offset = 0
-    # estado provisional de selección por chat
     sel = {}
     while True:
         upd = get_updates(offset)
@@ -266,128 +172,66 @@ def main():
             continue
         for u in upd.get("result", []):
             offset = u["update_id"] + 1
-            msg = u.get("message") or {}
             cb = u.get("callback_query") or {}
             if cb:
-                chat_id = cb["message"]["chat"]["id"]
-                m_id = cb["message"]["message_id"]
+                chat = cb["message"]["chat"]["id"]
                 data = cb.get("data", "")
-                cur = sel.get(chat_id, set())
-                if data.startswith("post:"):
-                    print(f"[bot] callback post: accion={data} chat_ok={chat_id == _owner()}", flush=True)
-                    if chat_id != _owner():
-                        print("[bot] callback de un chat que NO es el dueño: ignorado", flush=True)
-                        continue
-                    _, accion, tema = data.split(":", 2)
-                    if accion == "pub":
-                        send(chat_id, f"⏳ Publicando <b>{tema}</b> en Mastodon + Bluesky…")
-                        import subprocess
-                        r = subprocess.run(
-                            [str(ROOT / ".venv/bin/python"),
-                             str(ROOT / "detection/social_rotacion.py"),
-                             # --forzar: la aprobacion del dueño ES la autorizacion;
-                             # sin esto el candado diario puede cortar la publicacion
-                             "--tema", tema, "--publicar", "--forzar"],
-                            capture_output=True, text=True, timeout=300, cwd=str(ROOT))
-                        # rc=0 no basta: el script puede salir 0 sin publicar (candado,
-                        # silencio, fallo parcial). Se exige la marca de publicacion real.
-                        publicado = "OK los dos canales" in (r.stdout or "")
-                        x_txt = ""
-                        try:
-                            if "[X-TEXTO]" in r.stdout:
-                                x_txt = r.stdout.split("[X-TEXTO]", 1)[1].split("[/X-TEXTO]", 1)[0].strip()
-                        except Exception:
-                            pass
-                        print(f"[bot] post:pub {tema} -> publicado={publicado} x_txt={bool(x_txt)}", flush=True)
-                        if publicado:
-                            send(chat_id, f"✅ Publicado <b>{tema}</b> en Mastodon + Bluesky.")
-                            if x_txt:
-                                send(chat_id, "📋 <b>Para X</b> (copia y pega):\n\n" + x_txt)
-                            else:
-                                send(chat_id, "⚠️ Publicado, pero no se pudo recuperar el "
-                                              "texto de X. Revisa el log.")
-                        else:
-                            det = (r.stdout or "")[-300:].strip() or (r.stderr or "")[-300:].strip()
-                            send(chat_id, f"⚠️ <b>No se pudo publicar</b> <b>{tema}</b>.\n\n"
-                                          f"<code>{det}</code>")
-                    else:
-                        send(chat_id, f"❌ Descartado <b>{tema}</b>. No se publica nada.")
-                    continue
+                cur = sel.get(chat, set())
                 if data.startswith("tema:"):
-                    t = data.split(":", 1)[1]
-                    if t in cur:
-                        cur.discard(t)
-                    else:
-                        cur.add(t)
-                    sel[chat_id] = cur
-                    send(chat_id, "Selección: " + (", ".join(sorted(cur)) or "ninguno"), build_keyboard())
+                    key = data.split(":", 1)[1]
+                    if key in TOPIC:
+                        cur.symmetric_difference_update({key})
+                    sel[chat] = cur
+                    labels = ", ".join(TOPIC[t][0] for t in sorted(cur)) or "ninguno"
+                    send(chat, f"Selección: {e(labels)}", keyboard())
                 elif data == "conf":
-                    final = upsert_sub(chat_id, list(cur))
-                    del sel[chat_id]
-                    send(chat_id, f"✅ Suscrito a: {', '.join(final) or 'ninguno'}.\nTe avisaré solo cuando el dial cambie.")
+                    final = sorted(cur)
+                    save_subs(chat, final)
+                    sel.pop(chat, None)
+                    send(chat, "✅ Suscrito a: " + (", ".join(TOPIC[t][0] for t in final) or "ninguno"))
                 elif data == "can":
-                    del sel[chat_id]
-                    send(chat_id, "Cancelado. Nadie borrado.")
-                elif data.startswith("val:"):
-                    if chat_id != _owner():
-                        continue
-                    _, lab, idx = data.split(":", 2)
-                    path, rows = _muestra_actual()
-                    i = int(idx)
-                    if path and 0 <= i < len(rows):
-                        if lab != "saltar":
-                            _guardar_label(path, rows, i, lab)
-                        _enviar_cluster(chat_id, path, rows, _siguiente_pendiente(rows, i + 1))
+                    sel.pop(chat, None)
+                    send(chat, "Cancelado. No se cambió nada.")
+                else:
+                    send(chat, "Ese botón es del FIMI anterior. Usa /temas.")
                 continue
+            msg = u.get("message") or {}
             chat = msg.get("chat", {}).get("id")
             if not chat:
                 continue
             txt = (msg.get("text") or "").strip()
-            if txt.startswith("/start") or txt.startswith("/help"):
-                send(chat, "📡 <b>Radar FIMI</b> — grupos con intensidad alta por tema.\n\n"
-                           "/radar — elegir temas\n/mis — tus temas\n/baja — darte de baja\n"
-                           "/sugerir — proponer un tema nuevo\n/validar — etiquetar la validación (solo admin)\n\n"
-                           "Te aviso SOLO cuando un tema cambia de estado (Subiendo/Bajando/Estable).")
-            elif txt.startswith("/radar"):
-                sel[chat] = set()
-                send(chat, "Marca los temas que quieres seguir y pulsa Confirmar:", build_keyboard())
-            elif txt.startswith("/mis"):
-                mine = my_subs(chat)
-                send(chat, "Tus temas: " + (", ".join(mine) if mine else "ninguno (usa /radar)"))
-            elif txt.startswith("/baja"):
-                set_subs(chat, [])
-                send(chat, "Listo. Te has dado de baja del radar FIMI.")
-            elif txt.startswith("/sugerir"):
-                sugerencia = txt[len("/sugerir"):].strip()
-                if not sugerencia:
-                    send(chat, "¿Qué tema te gustaría que el radar vigile?\n"
-                               "Ej.: <code>/sugerir deporte electoral en América Latina</code>")
+            low = txt.lower()
+            if low.startswith("/start") or low.startswith("/help"):
+                send(chat,
+                     "📡 <b>Observatorio de lo publicado</b>\n"
+                     "Registro de publicaciones sobre cuatro temas. No detecta campañas ni atribuye intenciones.\n\n"
+                     "/temas — elegir temas\n/mis — tus temas\n/hoy — últimas publicaciones\n"
+                     "/evidencia — estado documental\n/fuentes — fuentes y método\n"
+                     "/sugerir TEXTO — proponer una corrección\n/baja — darte de baja")
+            elif low.startswith("/temas") or low.startswith("/radar"):
+                sel[chat] = set(subs(chat))
+                send(chat, "Marca los temas que quieres seguir:", keyboard())
+            elif low.startswith("/mis"):
+                mine = subs(chat)
+                send(chat, "Tus temas: " + (", ".join(TOPIC[t][0] for t in mine) if mine else "ninguno (usa /temas)"))
+            elif low.startswith("/hoy"):
+                send(chat, hoy_text(chat))
+            elif low.startswith("/evidencia"):
+                send(chat, f"🔎 Evidencia y vacíos: {BASE}/observatorio/evidencia/")
+            elif low.startswith("/fuentes"):
+                send(chat, f"📚 Fuentes y método: {BASE}/observatorio/fuentes/")
+            elif low.startswith("/sugerir"):
+                text = txt[len("/sugerir"):].strip()
+                if text:
+                    sugerir(chat, text)
+                    send(chat, "📥 Gracias. La sugerencia ha llegado al administrador.")
                 else:
-                    _guardar_sugerencia(chat, sugerencia)
-                    send(chat, "📥 Gracias, ¡tu sugerencia ha llegado al radar!")
-            elif txt.startswith("/validar"):
-                if chat != _owner():
-                    send(chat, "Solo el administrador puede etiquetar la validación.")
-                else:
-                    path, rows = _muestra_actual()
-                    if not path:
-                        send(chat, "No hay muestras de validación. Genera una con "
-                                   "<code>tests/export_validacion.py</code>.")
-                    else:
-                        _enviar_cluster(chat, path, rows, _siguiente_pendiente(rows))
-            elif txt.startswith("/post"):
-                if chat != _owner():
-                    send(chat, "Solo el administrador puede publicar.")
-                else:
-                    import subprocess
-                    send(chat, "⏳ Preparando borrador del radar…")
-                    r = subprocess.run(
-                        [str(ROOT / ".venv/bin/python"),
-                         str(ROOT / "detection/social_rotacion.py")],
-                        capture_output=True, text=True, timeout=180, cwd=str(ROOT))
-                    if "[silencio]" in (r.stdout or ""):
-                        send(chat, "🔇 Sin señal hoy: no se publica nada.")
-                    # el propio script envía la imagen + botones Publicar/Descartar
+                    send(chat, "Uso: /sugerir una corrección o un enlace")
+            elif low.startswith("/baja"):
+                save_subs(chat, [])
+                send(chat, "Listo. Te has dado de baja del Observatorio.")
+            else:
+                send(chat, "No reconozco ese comando. Usa /start.")
         time.sleep(1)
 
 
