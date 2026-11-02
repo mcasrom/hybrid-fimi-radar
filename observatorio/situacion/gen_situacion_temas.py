@@ -9,11 +9,13 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from kpi_render import charts_block, kpi_strip
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-DEFAULT_PROTESTAS = ROOT / "data/protestas.yaml"
+DEFAULT_PROTESTAS = HERE.parents[1] / "data/protestas.yaml"
 DEFAULT_CALENDARIO = HERE.parent / "calendario/calendario_oficial.json"
-DEFAULT_FEEDS = HERE.parent / "feeds.json"
+DEFAULT_FEEDS = HERE.parents[2] / "observatorio/feeds.json"
 DEFAULT_SIT = HERE / "situacion_temas.json"
 DEFAULT_OUT = HERE.parent
 
@@ -46,7 +48,7 @@ def page(title, desc, path, body, accent="#0f766e"):
 <script type="application/ld+json">{{"@context":"https://schema.org","@type":"Article","headline":"{e(title)}","isPartOf":{{"@type":"WebSite","name":"Observatorio de lo publicado"}}}}</script>
 <style>
 :root{{--a:{accent};--i:#1e293b;--m:#64748b;--l:#e2e8f0}}
-*{{box-sizing:border-box}}body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f8fafc);color:var(--i);line-height:1.6}}a{{color:var(--a)}}.wrap{{max-width:1000px;margin:0 auto;padding:28px 18px 60px}}.sitehead{{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px}}.brand{{font-weight:800;text-decoration:none;font-size:1.05rem}}.sitehead nav{{display:flex;gap:6px;flex-wrap:wrap;font-size:.82rem}}.sitehead nav a{{text-decoration:none;padding:4px 7px;border-radius:6px}}.sitehead nav a:hover{{background:#f8fafc}}h1{{font-size:1.8rem;line-height:1.2;margin:0 0 6px}}h2{{font-size:1.15rem;border-bottom:2px solid var(--l);padding-bottom:5px;margin:28px 0 10px}}h3{{margin:0 0 5px}}.lead{{font-size:1rem;color:#334155;max-width:72ch}}.muted{{color:var(--m);font-size:.84rem}}.hero{{border-left:5px solid var(--a);padding-left:16px;margin:8px 0 18px}}.kpis{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}}.kpi{{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center}}.kpi b{{display:block;font-size:1.5rem;color:var(--a);line-height:1.1}}.kpi span{{font-size:.76rem;color:var(--m)}}.box{{background:#f8fafc;border-left:4px solid var(--a);padding:10px 14px;border-radius:7px;margin:12px 0}}.box.warn{{background:#fff7ed;border-left-color:#b45309}}table{{width:100%;border-collapse:collapse;font-size:.88rem}}th,td{{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;vertical-align:top}}th{{background:#f8fafc;font-size:.78rem;text-transform:uppercase;color:#475569}}ul{{padding-left:20px}}li{{margin:5px 0}}.event{{background:#fff;border:1px solid #e2e8f0;border-left:4px solid var(--a);border-radius:9px;padding:13px 15px;margin:10px 0}}.eventhead{{display:flex;gap:8px;flex-wrap:wrap;font-size:.78rem;color:var(--m);margin-bottom:6px}}.id{{font-weight:800;color:var(--a)}}.chip{{display:inline-block;font-size:.75rem;padding:2px 7px;border-radius:999px;border:1px solid #e2e8f0;background:#fff}}.ro{{background:#e0f2fe;border-color:#7dd3fc}}.rm{{background:#f8fafc}}.rx{{background:#fef3c7;border-color:#fcd34d}}.rg{{background:#f3e8ff;border-color:#d8b4fe}}.rr{{background:#f1f5f9}}.foot{{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:20px;margin-top:40px;border-top:2px solid var(--l);padding-top:22px;color:#334155;font-size:.86rem}}.foot b{{display:block;color:var(--i);margin-bottom:6px}}.foot a{{display:block;text-decoration:none;margin:4px 0}}.foot p{{margin:0 0 8px;color:var(--m)}}@media(max-width:720px){{.kpis,.foot{{grid-template-columns:1fr}}h1{{font-size:1.45rem}}table{{font-size:.82rem}}}}
+*{{box-sizing:border-box}}body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f8fafc);color:var(--i);line-height:1.6}}a{{color:var(--a)}}.wrap{{max-width:1000px;margin:0 auto;padding:28px 18px 60px}}.sitehead{{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px}}.brand{{font-weight:800;text-decoration:none;font-size:1.05rem}}.sitehead nav{{display:flex;gap:6px;flex-wrap:wrap;font-size:.82rem}}.sitehead nav a{{text-decoration:none;padding:4px 7px;border-radius:6px}}.sitehead nav a:hover{{background:#f8fafc}}h1{{font-size:1.8rem;line-height:1.2;margin:0 0 6px}}h2{{font-size:1.15rem;border-bottom:2px solid var(--l);padding-bottom:5px;margin:28px 0 10px}}h3{{margin:0 0 5px}}.lead{{font-size:1rem;color:#334155;max-width:72ch}}.muted{{color:var(--m);font-size:.84rem}}.hero{{border-left:5px solid var(--a);padding-left:16px;margin:8px 0 18px}}.kpis{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}}.kpi{{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center}}.kpi b{{display:block;font-size:1.5rem;color:var(--a);line-height:1.1}}.kpi span{{font-size:.76rem;color:var(--m);display:block;margin-top:3px}}.kpi small{{display:block;font-size:.72rem;color:#475569;margin-top:4px}}.charts{{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin:14px 0}}.chart{{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;min-width:0}}.chart h3{{margin:0 0 4px;font-size:.98rem}}.chart svg{{display:block;width:100%;height:auto;margin-top:8px;overflow:visible}}.legend{{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--m);margin-top:6px}}.swatch{{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}}.swatch.bar{{background:#b45309;opacity:.72}}.swatch.line{{background:#1e293b;height:3px}}.box{{background:#f8fafc;border-left:4px solid var(--a);padding:10px 14px;border-radius:7px;margin:12px 0}}.box.warn{{background:#fff7ed;border-left-color:#b45309}}table{{width:100%;border-collapse:collapse;font-size:.88rem}}th,td{{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left;vertical-align:top}}th{{background:#f8fafc;font-size:.78rem;text-transform:uppercase;color:#475569}}ul{{padding-left:20px}}li{{margin:5px 0}}.event{{background:#fff;border:1px solid #e2e8f0;border-left:4px solid var(--a);border-radius:9px;padding:13px 15px;margin:10px 0}}.eventhead{{display:flex;gap:8px;flex-wrap:wrap;font-size:.78rem;color:var(--m);margin-bottom:6px}}.id{{font-weight:800;color:var(--a)}}.chip{{display:inline-block;font-size:.75rem;padding:2px 7px;border-radius:999px;border:1px solid #e2e8f0;background:#fff}}.ro{{background:#e0f2fe;border-color:#7dd3fc}}.rm{{background:#f8fafc}}.rx{{background:#fef3c7;border-color:#fcd34d}}.rg{{background:#f3e8ff;border-color:#d8b4fe}}.rr{{background:#f1f5f9}}.foot{{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:20px;margin-top:40px;border-top:2px solid var(--l);padding-top:22px;color:#334155;font-size:.86rem}}.foot b{{display:block;color:var(--i);margin-bottom:6px}}.foot a{{display:block;text-decoration:none;margin:4px 0}}.foot p{{margin:0 0 8px;color:var(--m)}}@media(max-width:720px){{.kpis,.charts,.foot{{grid-template-columns:1fr}}h1{{font-size:1.45rem}}table{{font-size:.82rem}}}}
 </style></head><body><div class="wrap">
 <div class="sitehead"><a class="brand" href="/observatorio/">Observatorio de lo publicado</a><nav><a href="/observatorio/">Inicio</a><a href="/observatorio/ceuta/">Frontera Sur</a><a href="/observatorio/juventud/">Protestas juveniles</a><a href="/observatorio/campana/">Elecciones generales</a><a href="/observatorio/infraestructuras/">Infraestructuras</a></nav></div>
 {body}
@@ -62,7 +64,7 @@ def source_table(sit, domains_counts):
     return f'<table><thead><tr><th>Dominio</th><th>Papel</th><th>Enlaces</th></tr></thead><tbody>{rows}</tbody></table>'
 
 
-def youth(topic, protestas_path):
+def youth(topic, protestas_path, kpis=None):
     eps = yaml.safe_load(Path(protestas_path).read_text(encoding="utf-8")) or []
     eps.sort(key=lambda x: str(x.get("fecha")))
     domains = {}
@@ -82,16 +84,20 @@ def youth(topic, protestas_path):
         cards.append(f'''<article class="event"><div class="eventhead"><span class="id">{e(ep.get("id"))}</span><span>{e(ep.get("fecha"))} · {e(ep.get("ciudad"))} · {e(ep.get("pais"))}</span><span>{e(ep.get("tipo_detonante"))}</span></div>
 <h3>{e(ep.get("nombre"))}</h3><p><b>Qué se publica.</b> {e(ep.get("llamada"))}</p><p><b>Detonante.</b> {e(ep.get("detonante"))}</p><p><b>Convocantes citados.</b> {e(ep.get("convocantes") or "No consta")}</p><p><b>Estado.</b> {e(ep.get("estado"))}</p><p><b>Fuente primaria.</b> {e(ep.get("fuente_primaria") or "No localizada")}</p><details><summary>Demandas y fuentes</summary><ul>{demands}</ul><ul>{links}</ul></details></article>''')
     source_count = len(sources_count)
+    fallback = {"label": "fuentes primarias", "primary_sources": 0, "reported_pending": len(eps)}
+    kpi_html = kpi_strip(kpis, fallback) if kpis else f'''<div class="kpis"><div class="kpi"><b>{len(eps)}</b><span>episodios</span></div><div class="kpi"><b>{source_count}</b><span>enlaces únicos</span></div><div class="kpi"><b>0</b><span>fuentes primarias</span></div><div class="kpi"><b>0</b><span>relaciones documentadas</span></div></div>'''
+    charts = charts_block(kpis, "2") if kpis else ""
     body = f'''<div class="hero"><p class="muted">Ficha de situación · {e(topic["fuente"])}</p><h1>{e(topic["titulo"])}</h1><p class="lead">{e(topic["subtitulo"])}. Qué se publica, qué se sabe y qué falta.</p><p class="muted">Actualizada: {e(topic["actualizado"]) if "actualizado" in topic else "2026-11-01"} · Sin relaciones documentadas entre episodios.</p></div>
-<div class="kpis"><div class="kpi"><b>{len(eps)}</b><span>episodios</span></div><div class="kpi"><b>{source_count}</b><span>enlaces únicos</span></div><div class="kpi"><b>0</b><span>fuentes primarias</span></div><div class="kpi"><b>0</b><span>relaciones documentadas</span></div></div>
+{kpi_html}
 <div class="box"><b>Qué es.</b> Una ficha de situación de los episodios ya curados. No añade hechos, no atribuye autoría y no convierte la coincidencia internacional en coordinación.</div>
 <h2>1. Qué se publica</h2>{''.join(f'<p>{e(x)}</p>' for x in topic["resumen"])}
-<h2>2. Episodios</h2>{''.join(cards)}
-<h2>3. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
-<h2>4. Contradicciones y cifras</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["contradicciones"])}</ul>
-<h2>5. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
-<h2>6. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
-<h2>7. Fuentes y papel documental</h2>{source_table(topic, domains)}<p class="muted">{source_count} enlaces únicos en {len(domains)} dominios · 0 fuentes primarias · la clasificación describe el tipo de pieza, no su independencia editorial.</p>
+{charts}
+<h2>3. Episodios</h2>{''.join(cards)}
+<h2>4. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
+<h2>5. Contradicciones y cifras</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["contradicciones"])}</ul>
+<h2>6. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
+<h2>7. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
+<h2>8. Fuentes y papel documental</h2>{source_table(topic, domains)}<p class="muted">{source_count} enlaces únicos en {len(domains)} dominios · 0 fuentes primarias · la clasificación describe el tipo de pieza, no su independencia editorial.</p>
 <p><a href="/observatorio/juventud/"><b>← Volver al registro de Protestas juveniles</b></a> · <a href="/observatorio/situacion/ceuta/situacion/">Ficha de Frontera Sur</a></p>'''
     return page(topic["titulo"], topic["subtitulo"] + ". Sin relaciones documentadas.", "/observatorio/juventud/situacion/", body, "#0f766e")
 
@@ -115,22 +121,26 @@ def campana(topic, calendario_path):
     return page(topic["titulo"], topic["subtitulo"] + ". Sin pronósticos.", "/observatorio/campana/situacion/", body, "#b45309")
 
 
-def infraestructuras(topic, feeds_path):
+def infraestructuras(topic, feeds_path, kpis=None):
     try:
         nfeeds = len(load(feeds_path))
     except Exception:
         nfeeds = 95
     sources = "".join(f'<tr><td><a href="{e(x["url"])}" target="_blank" rel="noopener">{e(x["name"])}</a></td><td>{role_badge(x["role"], "Fuente oficial")}</td></tr>' for x in topic["official_sources"])
     domains = {domain(x["url"]): 1 for x in topic["official_sources"]}
+    fallback = {"label": "fuentes oficiales", "primary_sources": len(topic["official_sources"]), "documented_relations": 0}
+    kpi_html = kpi_strip(kpis, fallback) if kpis else f'''<div class="kpis"><div class="kpi"><b>{nfeeds}</b><span>feeds</span></div><div class="kpi"><b>{len(topic["official_sources"])}</b><span>fuentes oficiales</span></div><div class="kpi"><b>0</b><span>datos manuales</span></div><div class="kpi"><b>0</b><span>relaciones documentadas</span></div></div>'''
+    charts = charts_block(kpis, "2") if kpis else ""
     body = f'''<div class="hero"><p class="muted">Ficha de situación · cobertura automática</p><h1>{e(topic["titulo"])}</h1><p class="lead">{e(topic["subtitulo"])}. Qué cubre el registro y qué no puede afirmar.</p><p class="muted">Actualizada: 2026-11-01 · Captura cada 30 minutos · {nfeeds} feeds.</p></div>
-<div class="kpis"><div class="kpi"><b>{nfeeds}</b><span>feeds</span></div><div class="kpi"><b>{len(topic["official_sources"])}</b><span>fuentes oficiales</span></div><div class="kpi"><b>0</b><span>datos manuales</span></div><div class="kpi"><b>0</b><span>relaciones documentadas</span></div></div>
+{kpi_html}
 <div class="box"><b>Qué es.</b> Una ficha de cobertura: explica qué registra la captura automática y qué fuentes institucionales existen. No confirma incidencias, causas ni responsabilidades.</div>
 <h2>1. Qué cubre</h2>{''.join(f'<p>{e(x)}</p>' for x in topic["resumen"])}
-<h2>2. Fuentes primarias institucionales</h2><table><thead><tr><th>Fuente</th><th>Papel</th></tr></thead><tbody>{sources}</tbody></table><p class="muted">Una fuente oficial acredita su propia documentación; no es independiente sobre sus fallos.</p>
-<h2>3. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
-<h2>4. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
-<h2>5. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
-<h2>6. Papel documental</h2>{source_table(topic, domains)}<p class="muted">{len(topic["official_sources"])} fuentes oficiales enlazadas · {nfeeds} feeds de captura · 0 datos manuales · la captura no es una verificación.</p>
+{charts}
+<h2>3. Fuentes primarias institucionales</h2><table><thead><tr><th>Fuente</th><th>Papel</th></tr></thead><tbody>{sources}</tbody></table><p class="muted">Una fuente oficial acredita su propia documentación; no es independiente sobre sus fallos.</p>
+<h2>4. Relaciones</h2><div class="box warn"><b>No hay relaciones documentadas.</b> {e(topic["relation_note"])}</div>
+<h2>5. Preguntas abiertas</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["preguntas"])}</ul>
+<h2>6. Qué no se puede concluir</h2><ul>{''.join(f'<li>{e(x)}</li>' for x in topic["limites"])}</ul>
+<h2>7. Papel documental</h2>{source_table(topic, domains)}<p class="muted">{len(topic["official_sources"])} fuentes oficiales enlazadas · {nfeeds} feeds de captura · 0 datos manuales · la captura no es una verificación.</p>
 <p><a href="/observatorio/infraestructuras/"><b>← Volver al registro de Infraestructuras</b></a> · <a href="/observatorio/ceuta/situacion/">Ficha de Frontera Sur</a></p>'''
     return page(topic["titulo"], topic["subtitulo"] + ". Sin causas verificadas.", "/observatorio/infraestructuras/situacion/", body, "#b45309")
 
@@ -141,20 +151,22 @@ def main():
     ap.add_argument("--protestas", type=Path, default=DEFAULT_PROTESTAS)
     ap.add_argument("--calendario", type=Path, default=DEFAULT_CALENDARIO)
     ap.add_argument("--feeds", type=Path, default=DEFAULT_FEEDS)
+    ap.add_argument("--kpis-dir", type=Path, default=HERE)
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = ap.parse_args()
     data = load(args.situacion)
     out = args.out
     generated = []
     builders = {
-        "juventud": (youth, args.protestas),
-        "campana": (campana, args.calendario),
-        "infraestructuras": (infraestructuras, args.feeds),
+        "juventud": (youth, args.protestas, "situacion_kpis_juventud.json"),
+        "campana": (campana, args.calendario, None),
+        "infraestructuras": (infraestructuras, args.feeds, "situacion_kpis_infraestructuras.json"),
     }
-    for key, (builder, source_path) in builders.items():
+    for key, (builder, source_path, kpi_name) in builders.items():
         topic = dict(data["topics"][key])
         topic["actualizado"] = data["actualizado"]
-        html_doc = builder(topic, source_path)
+        kpis = load(args.kpis_dir / kpi_name) if kpi_name and (args.kpis_dir / kpi_name).exists() else None
+        html_doc = builder(topic, source_path, kpis) if kpi_name and kpis else builder(topic, source_path)
         path = out / key / "situacion/index.html"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(html_doc, encoding="utf-8")

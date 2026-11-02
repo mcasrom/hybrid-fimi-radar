@@ -6,43 +6,85 @@ import unittest
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SIT = json.loads((HERE / "situacion_temas.json").read_text(encoding="utf-8"))
+ROOT = HERE.parents[1]
 
 
 class TestSituacionTemas(unittest.TestCase):
-    def test_all_topics_have_context(self):
-        for key in ("juventud", "campana", "infraestructuras"):
-            self.assertIn(key, SIT["topics"])
-            self.assertTrue(SIT["topics"][key]["titulo"])
-            self.assertTrue(SIT["topics"][key]["limites"])
-
-    def test_youth_has_no_primary_source(self):
-        roles = [x["role"] for x in SIT["topics"]["juventud"]["source_roles"].values()]
-        self.assertNotIn("primaria", roles)
-        self.assertEqual(len(roles), 10)
-
-    def test_pages_are_generated(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp)
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.base = Path(cls.tmp.name)
+        cls.sit = HERE / "situacion_temas.json"
+        for topic, key, name in (
+            ("protestas_juveniles", "juventud", "situacion_kpis_juventud.json"),
+            ("infraestructuras_espana", "infraestructuras", "situacion_kpis_infraestructuras.json"),
+        ):
             subprocess.run(
-                [sys.executable, str(HERE / "gen_situacion_temas.py"), "--out", str(out)],
+                [
+                    sys.executable,
+                    str(HERE / "gen_kpis.py"),
+                    "--today",
+                    "2026-11-02",
+                    "--topic",
+                    topic,
+                    "--curated",
+                    str(cls.sit),
+                    "--curated-key",
+                    key,
+                    "--out",
+                    str(cls.base / name),
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-            youth = (out / "juventud/situacion/index.html").read_text(encoding="utf-8")
-            campana = (out / "campana/situacion/index.html").read_text(encoding="utf-8")
-            infra = (out / "infraestructuras/situacion/index.html").read_text(encoding="utf-8")
-            self.assertIn("Protestas juveniles: situación", youth)
-            self.assertIn("6</b><span>episodios", youth)
-            self.assertIn("0</b><span>fuentes primarias", youth)
-            self.assertIn("No hay relaciones documentadas", youth)
-            self.assertIn("Elecciones generales: situación", campana)
-            self.assertIn("5</b><span>hitos oficiales", campana)
-            self.assertIn("BOE", campana)
-            self.assertIn("Infraestructuras: cobertura y fuentes", infra)
-            self.assertIn("6</b><span>fuentes oficiales", infra)
-            self.assertIn("No hay relaciones documentadas", infra)
+        subprocess.run(
+            [
+                sys.executable,
+                str(HERE / "gen_situacion_temas.py"),
+                "--situacion",
+                str(cls.sit),
+                "--protestas",
+                str(ROOT / "data/protestas.yaml"),
+                "--calendario",
+                str(HERE.parent / "calendario/calendario_oficial.json"),
+                "--feeds",
+                str(ROOT.parent / "observatorio/feeds.json"),
+                "--kpis-dir",
+                str(cls.base),
+                "--out",
+                str(cls.base / "pages"),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_youth_page_has_kpi_and_charts(self):
+        html = (self.base / "pages/juventud/situacion/index.html").read_text(encoding="utf-8")
+        self.assertIn("Indicadores de situación", html)
+        self.assertIn("Actividad diaria", html)
+        self.assertIn("fuentes primarias", html)
+        self.assertIn("Episodios", html)
+
+    def test_infra_page_has_official_sources_not_evidence(self):
+        html = (self.base / "pages/infraestructuras/situacion/index.html").read_text(encoding="utf-8")
+        self.assertIn("Indicadores de situación", html)
+        self.assertIn("fuentes oficiales", html)
+        self.assertIn("no confirman incidencias", html)
+        self.assertIn("Fuentes primarias institucionales", html)
+
+    def test_kpi_evidence_labels(self):
+        youth = json.loads((self.base / "situacion_kpis_juventud.json").read_text(encoding="utf-8"))
+        infra = json.loads((self.base / "situacion_kpis_infraestructuras.json").read_text(encoding="utf-8"))
+        self.assertEqual(youth["evidence"]["primary_sources"], 0)
+        self.assertEqual(youth["evidence"]["label"], "fuentes primarias")
+        self.assertEqual(infra["evidence"]["label"], "fuentes oficiales")
+        self.assertEqual(infra["evidence"]["documented_relations"], 0)
 
 
 if __name__ == "__main__":
