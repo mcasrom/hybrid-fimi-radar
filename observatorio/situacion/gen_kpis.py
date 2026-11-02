@@ -40,9 +40,10 @@ def window(start, end):
 
 
 def norm_title(value):
-    value = html.unescape(str(value or "")).lower()
-    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
-    value = re.sub(r"[^a-z0-9]+", " ", value)
+    value = html.unescape(str(value or "")).casefold()
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    value = re.sub(r"[^\w\s]+", " ", value, flags=re.UNICODE)
     return re.sub(r"\s+", " ", value).strip()
 
 
