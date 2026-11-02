@@ -43,7 +43,8 @@ En Frontera Sur, la ficha de situación declara **0 fuentes primarias localizada
 - **Frontera Sur:** `/observatorio/ceuta/situacion/` — 6 fichas, actores, relaciones documentadas, evidencia, contradicciones y preguntas abiertas.
 - **Protestas juveniles:** `/observatorio/juventud/situacion/` — 6 episodios, demandas, fuentes y 0 primarias.
 - **Elecciones generales:** `/observatorio/campana/situacion/` — calendario BOE y límites; sin actos inventados.
-- **Infraestructuras:** `/observatorio/infraestructuras/situacion/` — cobertura automática y 6 fuentes oficiales.
+- **Infraestructuras:** `/observatorio/infraestructuras/situacion/` — cobertura automática y 8 fuentes oficiales.
+- **Evidencia:** `/observatorio/evidencia/` — resumen cruzado de documentos primarios, secundarios y vacíos; no evalúa incidencias de Infraestructuras.
 - **Briefing de cambios:** `/observatorio/ceuta/situacion/cambios/` — compara snapshots fechados de estados, fuentes, preguntas y contradicciones. Sin IA.
 - **Cron del briefing:** lunes 08:20 (`/etc/cron.d/observatorio-briefing`).
 - **Datos:** `observatorio/situacion/situacion_frontera_sur.json` y `observatorio/situacion/snapshots/`.
@@ -76,6 +77,6 @@ En Frontera Sur, la ficha de situación declara **0 fuentes primarias localizada
 - `observatorio/ingest.py`: captura automática.
 - `observatorio/feeds.json`: registro de 95 feeds.
 - `observatorio/live.js`: pintado de publicaciones.
-- `observatorio/situacion/`: ficha de situación, snapshots y briefing de cambios.
+- `observatorio/situacion/`: fichas, KPI, evidencia, snapshots y briefing de cambios.
 - `observatorio/*/index.html`: páginas públicas.
 - `observatorio/admin/`: panel privado de estado.

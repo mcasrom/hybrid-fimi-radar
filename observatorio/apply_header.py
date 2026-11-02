@@ -20,6 +20,7 @@ NAV = {
     "metodo": ("Método", "/observatorio/metodo/"),
     "fuentes": ("Fuentes", "/observatorio/fuentes/"),
     "datos": ("Datos", "/observatorio/datos/"),
+    "evidencia": ("Evidencia", "/observatorio/evidencia/"),
     "glosario": ("Glosario", "/observatorio/glosario/"),
     "ayuda": ("Ayuda", "/observatorio/ayuda/"),
     "sobre": ("Sobre", "/observatorio/sobre/"),
@@ -46,6 +47,8 @@ def current_key(path):
         return "fuentes"
     if "/datos/" in rel or rel == "datos.html":
         return "datos"
+    if "/evidencia/" in rel:
+        return "evidencia"
     if "/glosario/" in rel or rel == "glosario.html":
         return "glosario"
     if "/ayuda/" in rel or rel == "ayuda.html":

@@ -1,0 +1,236 @@
+{
+ "generated_at": "2026-11-02T18:18:21+00:00",
+ "unit_warning": "Ficha, episodio, hito y fuente oficial no son la misma unidad. No se suman.",
+ "topics": {
+  "frontera_sur": {
+   "label": "Frontera Sur",
+   "unit": "fichas",
+   "n": 6,
+   "primary": 0,
+   "pending": 5,
+   "declared": 1,
+   "relations": 2,
+   "reviewed": "2026-11-01",
+   "note": "Ninguna de las seis afirmaciones tiene fuente primaria localizada.",
+   "items": [
+    {
+     "id": "CUR-2026-004",
+     "title": "Presión migratoria y empadronamientos en la frontera",
+     "status": "reportado_cifras_prensa",
+     "status_label": "Reportado; cifras citadas por prensa",
+     "missing": "Datos primarios del Ministerio del Interior/UCRIF sobre detenciones, empadronamientos y flujos."
+    },
+    {
+     "id": "CUR-2026-006",
+     "title": "Marruecos negocia el escudo israelí «Honda de David» (David's Sling)",
+     "status": "reportado_sin_primaria",
+     "status_label": "Reportado, sin fuente primaria",
+     "missing": "Anuncio oficial de las FAR, del Ministerio de Defensa israelí o de la industria; contrato, importe y calendario."
+    },
+    {
+     "id": "CUR-2026-003",
+     "title": "Drones marroquíes: interferencia y vigilancia",
+     "status": "reportado_sin_primaria",
+     "status_label": "Reportado, sin fuente primaria",
+     "missing": "Registro de AENA/Enaire o de la autoridad aeronáutica sobre la interferencia y la altura del vuelo."
+    },
+    {
+     "id": "CUR-2026-002",
+     "title": "Desarrollo de un dron «kamikaze» marroquí de largo alcance",
+     "status": "reportado_sin_primaria",
+     "status_label": "Reportado, sin fuente primaria",
+     "missing": "Comunicado oficial marroquí o ficha técnica que acredite el programa y su alcance operativo."
+    },
+    {
+     "id": "CUR-2026-005",
+     "title": "Discurso político: acusaciones de «hostigamiento» a Marruecos",
+     "status": "declaracion_publica",
+     "status_label": "Declaración pública (hecho discursivo)",
+     "missing": "Enlace directo a la declaración original del actor político, no solo a su cobertura periodística."
+    },
+    {
+     "id": "CUR-2026-001",
+     "title": "Fragata marroquí (Mohamed VI) en aguas próximas a Ceuta y despliegue de la Armada",
+     "status": "reportado_sin_primaria",
+     "status_label": "Reportado, sin fuente primaria",
+     "missing": "Nota o comunicado del Ministerio de Defensa o de la Armada que acredite el despliegue y la posición de la fragata."
+    }
+   ]
+  },
+  "juventud": {
+   "label": "Protestas juveniles",
+   "unit": "episodios",
+   "n": 6,
+   "primary": 0,
+   "pending": 6,
+   "declared": 0,
+   "relations": 0,
+   "reviewed": "2026-11-01",
+   "note": "Los seis episodios se sostienen en prensa o agencia; no hay documento primario localizado.",
+   "items": [
+    {
+     "id": "NPL-2025-09",
+     "title": "Protestas tras la prohibición de 26 plataformas",
+     "date": "2025-09-08",
+     "place": "Katmandú · Nepal",
+     "state": "secundaria",
+     "level": "medio",
+     "primary": "No localizada",
+     "limit": "76 según cronología y Kathmandu Post; Reuters solo confirmó 72/74; no hay fuente oficial localizada.",
+     "sources": 2
+    },
+    {
+     "id": "ALB-2026-10-13",
+     "title": "Protestas contra el complejo hotelero y el Gobierno de Rama",
+     "date": "2026-10-13",
+     "place": "Tirana · Albania",
+     "state": "secundaria",
+     "level": "medio",
+     "primary": "No localizada",
+     "limit": "Atribución gubernamental y réplica de expertos citadas por Tovima; sin evidencia pública independiente.",
+     "sources": 3
+    },
+    {
+     "id": "FRA-2026-10-17",
+     "title": "Disturbios y detenciones en la movilización francesa",
+     "date": "2026-10-17",
+     "place": "Varias ciudades · Francia",
+     "state": "secundaria",
+     "level": "medio",
+     "primary": "No localizada",
+     "limit": "Dos fuentes secundarias; no se localizó comunicado de la Prefectura.",
+     "sources": 2
+    },
+    {
+     "id": "ITA-MILAN-2026-10-17",
+     "title": "Disturbios en la segunda jornada de movilizaciones",
+     "date": "2026-10-17",
+     "place": "Milán · Italia",
+     "state": "agencia",
+     "level": "agencia",
+     "primary": "No localizada",
+     "limit": "Europa Press reproducido por Estrategia; no contrastado con el Ministerio del Interior italiano.",
+     "sources": 1
+    },
+    {
+     "id": "ESP-BARCELONA-2026-10-24",
+     "title": "Disturbios tras la convocatoria de Blocus",
+     "date": "2026-10-24",
+     "place": "Barcelona · España",
+     "state": "secundaria",
+     "level": "medio",
+     "primary": "No localizada",
+     "limit": "Cifra policial citada por Infobae; no se localizó comunicado oficial de Mossos.",
+     "sources": 3
+    },
+    {
+     "id": "FRA-2026-10-24",
+     "title": "Marchas nacionales por la escuela y el coste de vida",
+     "date": "2026-10-24",
+     "place": "Varias ciudades · Francia",
+     "state": "secundaria",
+     "level": "medio",
+     "primary": "No localizada",
+     "limit": "Cifras de Gobierno y sindicatos citadas por Tovima; no se localizó acta oficial comparable.",
+     "sources": 1
+    }
+   ]
+  },
+  "campana": {
+   "label": "Elecciones generales",
+   "unit": "hitos",
+   "n": 5,
+   "primary": 1,
+   "pending": 0,
+   "declared": 0,
+   "relations": 0,
+   "reviewed": "2026-11-02",
+   "note": "El calendario está acreditado por el BOE; no hay actos de campaña documentados.",
+   "items": [
+    {
+     "date": "2026-10-06",
+     "title": "Publicación de la convocatoria",
+     "document": "BOE · RD 806/2026",
+     "url": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-20742"
+    },
+    {
+     "date": "2026-11-13",
+     "title": "Inicio de la campaña electoral",
+     "document": "BOE · RD 806/2026",
+     "url": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-20742"
+    },
+    {
+     "date": "2026-11-27",
+     "title": "Fin de la campaña electoral",
+     "document": "BOE · RD 806/2026",
+     "url": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-20742"
+    },
+    {
+     "date": "2026-11-29",
+     "title": "Jornada electoral",
+     "document": "BOE · RD 806/2026",
+     "url": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-20742"
+    },
+    {
+     "date": "2026-12-23",
+     "title": "Constitución de las Cámaras",
+     "document": "BOE · RD 806/2026",
+     "url": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-20742"
+    }
+   ]
+  },
+  "infraestructuras": {
+   "label": "Infraestructuras",
+   "unit": "fuentes oficiales",
+   "n": 8,
+   "primary": 8,
+   "pending": 0,
+   "declared": 0,
+   "relations": 0,
+   "reviewed": "2026-11-01",
+   "note": "Una fuente oficial acredita su propia documentación; no confirma que la incidencia haya ocurrido ni su causa.",
+   "items": [
+    {
+     "name": "Ministerio de Transportes y Movilidad Sostenible",
+     "url": "https://www.transportes.gob.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "ADIF",
+     "url": "https://www.adif.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "Renfe",
+     "url": "https://www.renfe.com/",
+     "role": "oficial"
+    },
+    {
+     "name": "AENA",
+     "url": "https://www.aena.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "DGT",
+     "url": "https://www.dgt.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "BOE",
+     "url": "https://www.boe.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "MITECO",
+     "url": "https://www.miteco.gob.es/",
+     "role": "oficial"
+    },
+    {
+     "name": "Red Eléctrica",
+     "url": "https://www.ree.es/",
+     "role": "oficial"
+    }
+   ]
+  }
+ }
+}
