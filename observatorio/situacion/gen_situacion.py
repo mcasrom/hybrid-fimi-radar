@@ -241,7 +241,7 @@ def main():
 <div class="kpi"><b>{fmt_num(act["total"])}</b><span>publicaciones · {kpis["period"]["days"]} d</span><small>{act["days_with_data"]} días con datos</small></div>
 <div class="kpi"><b>{fmt_num(src["distinct"])}</b><span>dominios directos</span><small>top-3: {fmt_pct(src.get("top3_share"))}</small></div>
 <div class="kpi"><b>{e(lang.get("lang", "s/d"))}</b><span>idioma principal</span><small>{fmt_num(lang.get("n", 0))} publicaciones</small></div>
-<div class="kpi"><b>{fmt_num(ev.get("primary_sources", primary_count))}</b><span>fuentes primarias</span><small>{ev.get("reported_pending", pending_count)} fichas pendientes</small></div>
+<div class="kpi"><b>{fmt_num(ev.get("primary_sources", primary_count))}</b><span>fuentes primarias</span><small>{ev.get("reported_pending", pending_count)} sin documento público</small></div>
 </div>'''
         charts_html = f'''<h2>1. Indicadores de situación</h2>
 <p class="muted">Serie de publicaciones capturadas, no de hechos confirmados. Periodo: {e(kpis["period"]["from"])} → {e(kpis["period"]["to"])}; hoy es un día parcial.</p>
@@ -285,13 +285,13 @@ def main():
 <h2>3. Cronología</h2><ol class="timeline">{timeline}</ol>
 <h2>4. Actores</h2><div class="actors">{actors}</div>
 <h2>5. Relaciones documentadas</h2><table><thead><tr><th>Relación</th><th>Tipo</th><th>Estado</th><th>Fichas</th></tr></thead><tbody>{relations}</tbody></table><p class="muted">Una relación documentada no equivale a una alianza, una orden ni una coordinación.</p>
-<h2>6. Evidencia y vacíos</h2><table><thead><tr><th>Ficha</th><th>Qué se afirma</th><th>Estado</th><th>Qué falta</th></tr></thead><tbody>{evidence}</tbody></table>
+<h2>6. Evidencia y vacíos</h2><table><thead><tr><th>Ficha</th><th>Qué se afirma</th><th>Estado</th><th>Qué falta</th></tr></thead><tbody>{evidence}</tbody></table><p class="muted">{e(sit.get("status_note", ""))}</p>
 <h2>7. Contradicciones</h2><ul>{contradictions}</ul>
 <h2>8. Preguntas abiertas</h2><ul>{questions}</ul>
 <h2>9. Qué no se puede concluir</h2><ul>{limits}</ul>
 <div class="box"><b>Resumen honesto.</b> Hay cobertura periodística suficiente para describir un debate y varias hipótesis; no hay evidencia primaria suficiente para confirmar las afirmaciones, una intención hostil ni una operación de influencia.</div>
-<h2>10. Fuentes y papel documental</h2><table><thead><tr><th>Dominio</th><th>Papel</th><th>Enlaces</th></tr></thead><tbody>{roles}</tbody></table><p class="muted">{len(all_urls)} enlaces únicos en {len(domains)} dominios · {primary_count} fuentes primarias · {official_count} fuentes oficiales enlazadas · {declared_count} declaración pública · {pending_count} pendientes de contraste. La clasificación describe el tipo de pieza, no su independencia editorial.</p>
-<div class="box"><b>Qué no es esta ficha.</b> No es una verificación de los hechos, no identifica a los responsables de una campaña y no usa clústeres, bandas ni puntuaciones internas. Las fuentes primarias siguen pendientes.</div>
+<h2>10. Fuentes y papel documental</h2><table><thead><tr><th>Dominio</th><th>Papel</th><th>Enlaces</th></tr></thead><tbody>{roles}</tbody></table><p class="muted">{len(all_urls)} enlaces únicos en {len(domains)} dominios · {primary_count} fuentes primarias · {official_count} fuentes oficiales enlazadas · {declared_count} declaración pública · {pending_count} sin documento público. La clasificación describe el tipo de pieza, no su independencia editorial.</p>
+<div class="box"><b>Qué no es esta ficha.</b> No es una verificación de los hechos, no identifica a los responsables de una campaña y no usa clústeres, bandas ni puntuaciones internas. No se localizó documento público; no es una tarea abierta.</div>
 <p><a href="/observatorio/ceuta/situacion/cambios/"><b>Ver briefing de cambios →</b></a></p>
 <p><a href="/observatorio/ceuta/"><b>← Volver al registro de Frontera Sur</b></a> · <a href="/observatorio/eventos/">Acontecimientos agrupados</a> · <a href="/observatorio/fuentes/">Fuentes</a> · <a href="/observatorio/metodo/">Método</a></p>
 <footer class="foot"><div><b>Observatorio de lo publicado</b><p>Registro de afirmaciones, episodios y calendario oficial. No confirma hechos ni atribuye intenciones.</p><p>Ficha de situación · {e(sit["version"])}</p></div><div><b>Secciones</b><a href="/observatorio/">Inicio</a><a href="/observatorio/ceuta/">Frontera Sur</a><a href="/observatorio/juventud/">Protestas juveniles</a><a href="/observatorio/campana/">Elecciones generales</a><a href="/observatorio/infraestructuras/">Infraestructuras</a><a href="/observatorio/metodo/">Método</a></div><div><b>Contacto</b><a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a><p>Prensa y correcciones: indica la URL y la fuente.</p><a href="/observatorio/privacidad/">Privacidad</a></div></footer>

@@ -138,7 +138,7 @@ def page(data):
     ca = t["campana"]
     inf = t["infraestructuras"]
 
-    summary = f'''<table><thead><tr><th>Tema</th><th>Unidad</th><th>Registros</th><th>Documento primario</th><th>Pendientes</th><th>Relaciones</th><th>Revisión</th></tr></thead><tbody>
+    summary = f'''<table><thead><tr><th>Tema</th><th>Unidad</th><th>Registros</th><th>Documento primario</th><th>Sin documento público</th><th>Relaciones</th><th>Revisión</th></tr></thead><tbody>
 <tr><td><b>Frontera Sur</b></td><td>fichas</td><td>{fr["n"]}</td><td>{fr["primary"]}</td><td>{fr["pending"]} + {fr["declared"]} declaración</td><td>{fr["relations"]}</td><td>{e(fr["reviewed"])}</td></tr>
 <tr><td><b>Protestas juveniles</b></td><td>episodios</td><td>{yu["n"]}</td><td>{yu["primary"]}</td><td>{yu["pending"]}</td><td>{yu["relations"]}</td><td>{e(yu["reviewed"])}</td></tr>
 <tr><td><b>Elecciones generales</b></td><td>hitos</td><td>{ca["n"]}</td><td>{ca["primary"]} BOE</td><td>0 actos</td><td>{ca["relations"]}</td><td>{e(ca["reviewed"])}</td></tr>

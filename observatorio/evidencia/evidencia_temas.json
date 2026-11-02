@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T19:01:30+00:00",
+ "generated_at": "2026-11-02T19:36:47+00:00",
  "unit_warning": "Ficha, episodio, hito y fuente oficial no son la misma unidad. No se suman.",
  "topics": {
   "frontera_sur": {
@@ -17,28 +17,28 @@
      "id": "CUR-2026-004",
      "title": "Presión migratoria y empadronamientos en la frontera",
      "status": "reportado_cifras_prensa",
-     "status_label": "Reportado; cifras citadas por prensa",
+     "status_label": "Solo prensa; sin documento público",
      "missing": "Datos primarios del Ministerio del Interior/UCRIF sobre detenciones, empadronamientos y flujos."
     },
     {
      "id": "CUR-2026-006",
      "title": "Marruecos negocia el escudo israelí «Honda de David» (David's Sling)",
      "status": "reportado_sin_primaria",
-     "status_label": "Reportado, sin fuente primaria",
+     "status_label": "Sin documento público localizado",
      "missing": "Anuncio oficial de las FAR, del Ministerio de Defensa israelí o de la industria; contrato, importe y calendario."
     },
     {
      "id": "CUR-2026-003",
      "title": "Drones marroquíes: interferencia y vigilancia",
      "status": "reportado_sin_primaria",
-     "status_label": "Reportado, sin fuente primaria",
+     "status_label": "Sin documento público localizado",
      "missing": "Registro de AENA/Enaire o de la autoridad aeronáutica sobre la interferencia y la altura del vuelo."
     },
     {
      "id": "CUR-2026-002",
      "title": "Desarrollo de un dron «kamikaze» marroquí de largo alcance",
      "status": "reportado_sin_primaria",
-     "status_label": "Reportado, sin fuente primaria",
+     "status_label": "Sin documento público localizado",
      "missing": "Comunicado oficial marroquí o ficha técnica que acredite el programa y su alcance operativo."
     },
     {
@@ -52,7 +52,7 @@
      "id": "CUR-2026-001",
      "title": "Fragata marroquí (Mohamed VI) en aguas próximas a Ceuta y despliegue de la Armada",
      "status": "reportado_sin_primaria",
-     "status_label": "Reportado, sin fuente primaria",
+     "status_label": "Sin documento público localizado",
      "missing": "Nota o comunicado del Ministerio de Defensa o de la Armada que acredite el despliegue y la posición de la fragata."
     }
    ]

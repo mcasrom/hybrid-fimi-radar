@@ -9,15 +9,16 @@
   "periodo": "7-sep-2026 → 21-oct-2026",
   "resumen": [
     "Las seis fichas reúnen cobertura periodística sobre movimiento naval, drones, presión migratoria, discurso político y una posible compra de defensa aérea israelí.",
-    "No hay fuente primaria localizada para ninguna de las seis afirmaciones. Una ficha recoge una declaración pública; cinco siguen pendientes de contraste documental.",
+    "No hay documento público localizado para ninguna de las seis afirmaciones. Una ficha recoge una declaración pública; cinco solo tienen prensa. No son tareas pendientes: el estado puede ser definitivo.",
     "La coincidencia temporal entre episodios no demuestra una estrategia común. La ficha separa lo publicado, lo declarado y lo que todavía no se puede concluir."
   ],
   "status_labels": {
-    "reportado_sin_primaria": "Reportado, sin fuente primaria",
-    "reportado_cifras_prensa": "Reportado; cifras citadas por prensa",
+    "reportado_sin_primaria": "Sin documento público localizado",
+    "reportado_cifras_prensa": "Solo prensa; sin documento público",
     "declaracion_publica": "Declaración pública (hecho discursivo)"
   },
-  "episode_status": {
+  "status_note": "Sin documento público localizado no significa pendiente ni falso: significa que no hay documento original localizado. No es una tarea abierta.",
+ "episode_status": {
     "CUR-2026-001": "reportado_sin_primaria",
     "CUR-2026-002": "reportado_sin_primaria",
     "CUR-2026-003": "reportado_sin_primaria",

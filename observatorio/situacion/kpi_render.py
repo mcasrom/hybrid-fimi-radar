@@ -98,7 +98,7 @@ def kpi_strip(kpis, fallback=None):
     if label == "fuentes oficiales":
         detail = f'{ev.get("documented_relations", 0)} relaciones · no confirman incidencias'
     else:
-        detail = f'{ev.get("reported_pending", 0)} fichas pendientes'
+        detail = f'{ev.get("reported_pending", 0)} sin documento público'
     return f'''<div class="kpis">
 <div class="kpi"><b>{fmt_num(act["total"])}</b><span>publicaciones · {kpis["period"]["days"]} d</span><small>{act["days_with_data"]} días con datos</small></div>
 <div class="kpi"><b>{fmt_num(src["distinct"])}</b><span>dominios directos</span><small>top-3: {fmt_pct(src.get("top3_share"))}</small></div>

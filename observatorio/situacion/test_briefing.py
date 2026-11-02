@@ -40,7 +40,7 @@ class TestBriefing(unittest.TestCase):
             page = out.read_text(encoding="utf-8")
             self.assertIn("1 cambio(s)", second.stdout)
             self.assertIn("CUR-2026-002", page)
-            self.assertIn("Reportado, sin fuente primaria", page)
+            self.assertIn("Sin documento público localizado", page)
             self.assertIn("Declaración pública", page)
 
     def test_no_primary_source_is_claimed(self):
