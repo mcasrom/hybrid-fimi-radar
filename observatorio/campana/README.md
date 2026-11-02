@@ -1,24 +1,42 @@
 # Observatorio de campaña 29N
 
-Primera versión local, sin desplegar. Campaña no iniciada a 30-oct-2026.
+Página pública: `https://fimi.viajeinteligencia.com/observatorio/campana/`.
 
 ## Regenerar
 
 ```bash
-cd /home/miguelc/fimi_local/repo
+cd /home/deploy/hybrid-fimi-radar
 python3 observatorio/campana/gen_campana.py
 ```
 
-Genera `observatorio/campana/index.html`.
+También se regenera desde `observatorio-static/run_static.sh` y se copia a `/var/www/fimi/observatorio/campana/index.html`. Para pruebas reproducibles:
+
+```bash
+python3 observatorio/campana/gen_campana.py --today 2026-11-02
+```
+
+## Estado dinámico
+
+La página calcula el estado con la fecha de ejecución:
+
+- **Precampaña:** días hasta el 13-nov.
+- **Campaña:** día de campaña y días hasta el 29N.
+- **Reflexión:** 28-nov.
+- **Jornada electoral:** 29-nov.
+- **Postelectoral:** constitución de las Cámaras, 23-dic.
+
+No se muestran actos inventados: si no hay actos documentados, dice **0 actos documentados**.
 
 ## Datos
 
-- `data/escanos_2026.json` y `data/censo_2026.json`: copias de los datos oficiales de 29N.
-- Fuente: BOE RD 806/2026; INE, Oficina del Censo Electoral.
-- Calendario de campaña: calendario de trabajo de 29N; pendiente de enlace oficial de la JEC.
+- `data/escanos_2026.json` y `data/censo_2026.json`: datos oficiales de contexto.
+- `../calendario/calendario_oficial.json`: hitos del BOE, RD 806/2026.
+- Fuente: BOE; INE, Oficina del Censo Electoral.
+- Sondeos y media electoral: Observatorio 29N, separados de esta página.
 
 ## Límites
 
-- No hay actos de campaña documentados porque la campaña no ha comenzado.
-- No se atribuyen actores ni se inventan sedes, fechas o participantes.
-- Los sondeos y la media electoral están en 29N, separados de esta página.
+- Un hito oficial no es un acto de campaña.
+- Una fecha prevista no es un acto celebrado.
+- No se atribuyen actos, sedes, participantes ni posiciones sin fuente.
+- No se publican pronósticos ni estimaciones propias de voto.

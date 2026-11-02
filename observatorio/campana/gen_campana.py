@@ -1,19 +1,61 @@
 #!/usr/bin/env python3
-import json, html
+import argparse, json, html
+from datetime import date as _date
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 OUT=Path(__file__).with_name('index.html')
 esc=json.loads((Path(__file__).with_name('data')/'escanos_2026.json').read_text(encoding='utf-8'))
 cen=json.loads((Path(__file__).with_name('data')/'censo_2026.json').read_text(encoding='utf-8'))
+_ap=argparse.ArgumentParser()
+_ap.add_argument('--today', type=_date.fromisoformat, default=None)
+args=_ap.parse_args()
 def e(x): return html.escape(str(x))
 cal=json.loads((Path(__file__).resolve().parent.parent/'calendario'/'calendario_oficial.json').read_text(encoding='utf-8'))
 hitos=[(x['fecha'],x['hito'],x.get('evidencia',''),'BOE · RD 806/2026',x['fuente']) for x in cal['hitos']]
 rows=''.join(f'<tr><td>{e(d)}</td><td><b>{e(t)}</b></td><td>{e(x)}</td><td><a href="{e(u)}" target="_blank" rel="noopener">{e(s)}</a></td></tr>' for d,t,x,s,u in hitos)
 
 # datos visibles y cronología
-from datetime import date as _date
 _h=sorted(cal['hitos'],key=lambda x:x['fecha'])
 _d0=_date.fromisoformat(_h[0]['fecha']); _d1=_date.fromisoformat(_h[-1]['fecha']); _span=max(1,(_d1-_d0).days)
+
+def _fecha_hito(term):
+    return _date.fromisoformat(next(x['fecha'] for x in _h if term in x['hito']))
+_start=_fecha_hito('Inicio de la campaña')
+_end=_fecha_hito('Fin de la campaña')
+_election=_fecha_hito('Jornada electoral')
+_constitution=_fecha_hito('Constitución')
+_today=args.today if args.today else _date.today()
+_today_txt=f"{_today.day:02d}-{_today.month:02d}-{_today.year}"
+def _faltan(n, target):
+    return f"falta 1 día para {target}" if n == 1 else f"faltan {n} días para {target}"
+if _today < _start:
+    _phase='precampana'
+    _estado=f"campaña no iniciada; {_faltan((_start-_today).days, 'el inicio (' + _start.isoformat() + ')')}"
+    _days=(_start-_today).days
+    _days_label='días para campaña'
+elif _today <= _end:
+    _phase='campana'
+    _day=(_today-_start).days+1
+    _estado=f"campaña en curso (día {_day} de 15); {_faltan((_election-_today).days, 'el 29N')}"
+    _days=max(0,(_election-_today).days)
+    _days_label='días para el 29N'
+elif _today < _election:
+    _phase='reflexion'
+    _estado=f"jornada de reflexión; {_faltan((_election-_today).days, 'el 29N')}"
+    _days=(_election-_today).days
+    _days_label='días para el 29N'
+elif _today == _election:
+    _phase='jornada'
+    _estado='jornada electoral'
+    _days=0
+    _days_label='jornada electoral'
+else:
+    _phase='post'
+    _estado=f"campaña finalizada; constitución de las Cámaras el {_constitution.isoformat()}"
+    _days=0
+    _days_label='campaña finalizada'
+_next=next((x for x in _h if _date.fromisoformat(x['fecha']) >= _today), None)
+_next_txt=(f"Próximo hito: {_next['fecha']} — {_next['hito']}" if _next else "No quedan hitos en el calendario.")
 def _short(text, n=22):
     text = str(text or "")
     if len(text) <= n:
@@ -50,7 +92,6 @@ for x in _h:
     )
 _height=105+_used*30
 timeline_svg=f'<svg viewBox="0 0 760 {_height}" width="100%" height="{_height}" role="img" aria-label="Calendario oficial"><line x1="40" y1="56" x2="720" y2="56" stroke="#fde68a" stroke-width="3"/>{"".join(_dots)}</svg>'
-_days=(_date(2026,11,13)-_date(2026,10,30)).days
 html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>España — elecciones generales (29N) — observatorio de acontecimientos</title>
 <meta name="description" content="Seguimiento documentado de la campaña electoral del 29N: calendario, actores, acontecimientos y fuentes. Sin pronósticos ni atribuciones."><meta property="og:type" content="website"><meta property="og:title" content="Elecciones generales: calendario y seguimiento"><meta property="og:description" content="Registro de lo publicado; no confirma hechos."><meta property="og:url" content="https://fimi.viajeinteligencia.com/observatorio/campana/"><meta property="og:image" content="https://fimi.viajeinteligencia.com/observatorio/og-elecciones.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://fimi.viajeinteligencia.com/observatorio/og-elecciones.png"><link rel="canonical" href="https://fimi.viajeinteligencia.com/observatorio/campana/">
@@ -60,12 +101,12 @@ html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta na
 <p class="muted">Observatorio · España — elecciones generales</p><h1>España — elecciones generales</h1>
 <p class="lead">Seguimiento de acontecimientos y documentos de la campaña. No es un pronóstico ni una estimación de voto.</p>
 <p><a href="/observatorio/campana/situacion/"><b>Ver ficha de situación →</b></a> <span class="muted">Calendario, límites y vacíos</span></p>
-<p class="muted">Actualización: 30-oct-2026 · Campaña no iniciada · Jornada: 29-nov-2026</p>
-<div class="kpis"><div class="kpi"><b>5</b><span>hitos oficiales</span></div><div class="kpi"><b>0</b><span>actos documentados</span></div><div class="kpi"><b>14</b><span>días para campaña</span></div><div class="kpi"><b>1</b><span>documento BOE</span></div><div class="kpi"><b>350</b><span>escaños</span></div></div>
+<p class="muted">Actualización: {_today_txt} · {e(_estado)} · Jornada: 29-nov-2026</p>
+<div class="kpis"><div class="kpi"><b>{len(_h)}</b><span>hitos oficiales</span></div><div class="kpi"><b>0</b><span>actos documentados</span></div><div class="kpi"><b>{_days}</b><span>{e(_days_label)}</span></div><div class="kpi"><b>1</b><span>documento BOE</span></div><div class="kpi"><b>{e(esc['total_escanos'])}</b><span>escaños</span></div></div>
 <section class="livebox" data-live-topic="elecciones_generales"><h2>Publicaciones capturadas</h2><p class="muted">Cargando captura automática…</p></section>
 <div class="share"><b>Compartir</b><a href="https://twitter.com/intent/tweet?url=https%3A//fimi.viajeinteligencia.com/observatorio/campana/&text=Campa%C3%B1a%20electoral%2029N%3A%20calendario%20y%20seguimiento" target="_blank" rel="noopener">X</a><a href="https://mastodon.social/share?text=Campa%C3%B1a%20electoral%2029N%3A%20calendario%20y%20seguimiento%20https%3A//fimi.viajeinteligencia.com/observatorio/campana/" target="_blank" rel="noopener">Mastodon</a><a href="https://bsky.app/intent/compose?text=Campa%C3%B1a%20electoral%2029N%3A%20calendario%20y%20seguimiento%20https%3A//fimi.viajeinteligencia.com/observatorio/campana/" target="_blank" rel="noopener">Bluesky</a><a href="https://wa.me/?text=Campa%C3%B1a%20electoral%2029N%3A%20calendario%20y%20seguimiento%20https%3A//fimi.viajeinteligencia.com/observatorio/campana/" target="_blank" rel="noopener">WhatsApp</a><button type="button" onclick="navigator.clipboard.writeText(location.href);this.textContent='Copiado'">Copiar enlace</button></div>
-<div class="box"><b>Estado.</b> A 30-oct-2026 no hay campaña electoral en curso y no consta ningún acto de campaña documentado. Esta página muestra el calendario y las fuentes; los acontecimientos se incorporarán cuando existan y tengan fuente.</div>
-<h2>1. Calendario</h2><div class="chart">{timeline_svg}</div><p class="muted">Cronología de los hitos oficiales. No hay actividades de campaña registradas a 30-oct-2026.</p><table><thead><tr><th>Fecha</th><th>Hito</th><th>Qué significa</th><th>Fuente</th></tr></thead><tbody>{rows}</tbody></table>
+<div class="box"><b>Estado.</b> {e(_estado)}. {e(_next_txt)} No consta ningún acto de campaña documentado; los acontecimientos se incorporarán cuando existan y tengan fuente.</div>
+<h2>1. Calendario</h2><div class="chart">{timeline_svg}</div><p class="muted">Cronología de los hitos oficiales. No hay actividades de campaña registradas a {_today_txt}.</p><table><thead><tr><th>Fecha</th><th>Hito</th><th>Qué significa</th><th>Fuente</th></tr></thead><tbody>{rows}</tbody></table>
 <p class="muted">Las fechas de campaña, jornada y constitución se extraen del real decreto publicado en el BOE. El periodo de reflexión y el blackout son una política editorial de 29N, no una fecha del BOE.</p>
 <h2>2. Acontecimientos documentados</h2><p><b>No consta.</b> La campaña no ha comenzado. No se inventan actos, sedes, intervinientes ni asistentes.</p>
 <h2>3. Actores</h2><p><b>No consta en los datos locales</b> una lista oficial de candidaturas para el 29N. No se atribuyen actos ni posiciones sin fuente. Los partidos y candidaturas se incorporarán desde la documentación oficial.</p>
@@ -74,7 +115,7 @@ html_doc=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta na
 <h2>6. Datos oficiales de contexto</h2><ul><li>Escaños: <b>{e(esc['total_escanos'])}</b> en <b>{e(len(esc['provincias']))}</b> provincias. Fuente: <a href="{e(esc['meta']['url'])}" target="_blank" rel="noopener">BOE · RD 806/2026</a>.</li><li>Censo: <b>{cen['total']:,}</b> electores. Fuente: <a href="{e(cen['ficheros']['provincias']['url'])}" target="_blank" rel="noopener">INE · Oficina del Censo Electoral</a>. El total incluye CER y CERA.</li></ul>
 <h2>7. Datos electorales separados</h2><p>La media de sondeos, la participación histórica, el censo y los escaños por provincia están en el <a href="https://elecciones29n.pruebapublica.com/">Observatorio 29N</a>. No se mezclan con los acontecimientos de campaña.</p>
 <h2>8. Fuentes</h2><ul><li><a href="{e(esc['meta']['url'])}" target="_blank" rel="noopener">BOE · Real Decreto 806/2026</a>.</li><li><a href="{e(cen['ficheros']['provincias']['url'])}" target="_blank" rel="noopener">INE · censo electoral 2026</a>.</li><li><a href="https://elecciones29n.pruebapublica.com/" target="_blank" rel="noopener">Observatorio 29N</a> (datos electorales, no campaña).</li></ul>
-<footer class="foot"><div><b>Observatorio de lo publicado</b><p>Registro de afirmaciones, episodios y calendario oficial. No confirma hechos ni atribuye intenciones.</p><p>Actualizado: 30-oct-2026.</p></div><div><b>Secciones</b><a href="/observatorio/">Inicio</a><a href="/observatorio/ceuta/">Frontera Sur</a><a href="/observatorio/juventud/">Protestas juveniles</a><a href="/observatorio/campana/">Elecciones generales</a><a href="/observatorio/infraestructuras/">Infraestructuras</a><a href="/observatorio/metodo/">Método</a><a href="/observatorio/fuentes/">Fuentes</a><a href="/observatorio/datos/">Datos</a><a href="/observatorio/ayuda/">Ayuda</a></div><div><b>Contacto</b><a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a><p>Prensa y correcciones: indica la URL y la fuente.</p><a href="/observatorio/privacidad/">Privacidad</a><a href="/observatorio/admin/" rel="nofollow">Admin</a><p>Software v0.1.0 · DOI anterior: <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a></p></div></footer>
+<footer class="foot"><div><b>Observatorio de lo publicado</b><p>Registro de afirmaciones, episodios y calendario oficial. No confirma hechos ni atribuye intenciones.</p><p>Actualizado: {_today_txt}.</p></div><div><b>Secciones</b><a href="/observatorio/">Inicio</a><a href="/observatorio/ceuta/">Frontera Sur</a><a href="/observatorio/juventud/">Protestas juveniles</a><a href="/observatorio/campana/">Elecciones generales</a><a href="/observatorio/infraestructuras/">Infraestructuras</a><a href="/observatorio/metodo/">Método</a><a href="/observatorio/fuentes/">Fuentes</a><a href="/observatorio/datos/">Datos</a><a href="/observatorio/ayuda/">Ayuda</a></div><div><b>Contacto</b><a href="mailto:info-fimi@viajeinteligencia.com">info-fimi@viajeinteligencia.com</a><p>Prensa y correcciones: indica la URL y la fuente.</p><a href="/observatorio/privacidad/">Privacidad</a><a href="/observatorio/admin/" rel="nofollow">Admin</a><p>Software v0.1.0 · DOI anterior: <a href="https://doi.org/10.5281/zenodo.23282710">10.5281/zenodo.23282710</a></p></div></footer>
 </div><script src="/observatorio/live.js" defer></script><script src="/observatorio/theme.js" defer></script></body></html>'''
 OUT.write_text(html_doc,encoding='utf-8')
 print(OUT)
