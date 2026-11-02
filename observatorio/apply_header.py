@@ -94,7 +94,7 @@ def header(path):
     </div>
     <nav class="obs-nav" aria-label="Principal"><div class="obs-navgrid">
       <div class="obs-navgroup"><span class="obs-navlabel">Temas</span>{nav_link("inicio")}{nav_link("frontera_sur")}{nav_link("protestas")}{nav_link("elecciones")}{nav_link("infraestructuras")}</div>
-      <div class="obs-navgroup"><span class="obs-navlabel">Sistema</span>{nav_link("eventos")}{nav_link("metodo")}{nav_link("fuentes")}{nav_link("datos")}{nav_link("glosario")}{nav_link("ayuda")}{nav_link("sobre")}</div>
+      <div class="obs-navgroup"><span class="obs-navlabel">Sistema</span>{nav_link("eventos")}{nav_link("metodo")}{nav_link("fuentes")}{nav_link("datos")}{nav_link("evidencia")}{nav_link("glosario")}{nav_link("ayuda")}{nav_link("sobre")}</div>
     </div></nav>
   </div>
 </header>'''

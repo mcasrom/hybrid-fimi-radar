@@ -47,7 +47,7 @@ En Frontera Sur, la ficha de situación declara **0 fuentes primarias localizada
 - **Evidencia:** `/observatorio/evidencia/` — resumen cruzado de documentos primarios, secundarios y vacíos; no evalúa incidencias de Infraestructuras.
 - **Briefing de cambios:** `/observatorio/ceuta/situacion/cambios/` — compara snapshots fechados de estados, fuentes, preguntas y contradicciones. Sin IA.
 - **Cron del briefing:** lunes 08:20 (`/etc/cron.d/observatorio-briefing`).
-- **Datos:** `observatorio/situacion/situacion_frontera_sur.json` y `observatorio/situacion/snapshots/`.
+- **API KPI:** `/api/observatorio/v1/kpis` y `/api/observatorio/v1/kpis/<topic>` — actividad, fuentes, idioma y evidencia curada.\n- **Datos:** `observatorio/situacion/situacion_frontera_sur.json` y `observatorio/situacion/snapshots/`.
 - **Criterio:** un cambio de estado es una corrección editorial, no una prueba nueva; una relación documentada no es coordinación.
 
 ## Software y DOI
