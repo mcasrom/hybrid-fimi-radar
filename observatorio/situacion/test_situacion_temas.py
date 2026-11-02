@@ -41,7 +41,7 @@ class TestSituacionTemas(unittest.TestCase):
             self.assertIn("5</b><span>hitos oficiales", campana)
             self.assertIn("BOE", campana)
             self.assertIn("Infraestructuras: cobertura y fuentes", infra)
-            self.assertIn("6</b><span>fuentes oficiales", infra)
+            self.assertIn("8</b><span>fuentes oficiales", infra)
             self.assertIn("No hay relaciones documentadas", infra)
 
 

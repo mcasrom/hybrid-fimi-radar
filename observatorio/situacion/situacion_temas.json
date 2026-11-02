@@ -112,7 +112,7 @@
       "subtitulo": "Registro automático; sin causas ni responsabilidades verificadas",
       "fuente": "observatorio/feeds.json",
       "resumen": [
-        "La página de Infraestructuras registra titulares automáticos sobre alta velocidad, carreteras, cercanías, aeropuertos y puertos.",
+        "La página de Infraestructuras registra titulares automáticos sobre ferrocarril, carreteras, puertos, aeropuertos, agua y energía.",
         "No incorpora datos manuales ni establece causas de las incidencias.",
         "Las fuentes institucionales acreditan su propia documentación; no son independientes sobre sus fallos."
       ],
@@ -161,6 +161,16 @@
           "name": "BOE",
           "url": "https://www.boe.es/",
           "role": "oficial"
+        },
+        {
+          "name": "MITECO",
+          "url": "https://www.miteco.gob.es/",
+          "role": "oficial"
+        },
+        {
+          "name": "Red Eléctrica",
+          "url": "https://www.ree.es/",
+          "role": "oficial"
         }
       ],
       "source_roles": {
@@ -185,6 +195,14 @@
           "label": "Fuente oficial"
         },
         "boe.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "miteco.gob.es": {
+          "role": "oficial",
+          "label": "Fuente oficial"
+        },
+        "ree.es": {
           "role": "oficial",
           "label": "Fuente oficial"
         }

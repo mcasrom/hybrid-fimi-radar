@@ -16,11 +16,30 @@ TOPICS={
  'frontera_sur':{'label':'Frontera Sur','queries':['Ceuta Marruecos','Melilla Marruecos','frontera sur España Marruecos'],'terms':['ceuta','melilla','marruecos','maroc','morocco','frontera','frontière','frontiere','migracion','migración','migration','migratoire','gibraltar','سبتة','مليلية','المغرب']},
  'protestas_juveniles':{'label':'Protestas juveniles','queries':['protestas juveniles España','disturbios jóvenes España','movilización estudiantil España'],'terms':['protesta','protestas','protestation','manifestation','manifestacion','manifestación','manifestante','manifestantes','joven','jovenes','jeune','jeunes','jeunesse','juvenil','juveniles','estudiant','estudiante','estudiantes','étudiant','disturbio','disturbios','emeute','émeute','riot','riots','blocus','movilizacion','movilizaciones','proteste','protesten','protestaufruf','protestaufrufe','jugend','jugendprotest','jugendprostesten','schulerprotest','schülerprotest','studenten','studentenbewegung']},
  'elecciones_generales':{'label':'Elecciones generales','queries':['elecciones generales España 29N','campaña electoral España 2026','elecciones 29 noviembre España'],'terms':['eleccion','elección','elecciones','election','elections','reelection','reeleccion','élection','electoral','campaña','precampaña','precampana','campagne','29n','voto','vote','candidat','candidate','urnas','wahl','wahlen','wahlkampf','kandidat','kandidaten','abstimmung','stimme','elezioni','elezione','campagna','candidato','candidati','scrutin','выборы','кампания','выборах','انتخابات','الحملة']},
- 'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren'],'terms':['infraestructura','infraestructuras','transportes','transporte','adif','renfe','autovia','autovías','alta velocidad','tren','trenes','cercanias','cercanías','accidente','accidentes','incidencia','incidencias','obra','obras','carretera','carreteras','aeropuerto','aeropuertos','puerto','puertos','conservacion','conservación','mitms']},
+ 'infraestructuras_espana':{'label':'Infraestructuras España','queries':['infraestructuras España Ministerio Transportes','alta velocidad incidencia España','autovías España conservación','ADIF Renfe incidencias tren','embalses España reserva hidráulica','presa hidroeléctrica España','vertido embalse España','sequía embalses España'],'terms':['infraestructura','infraestructuras','transportes','transporte','adif','renfe','autovia','autovías','alta velocidad','tren','trenes','cercanias','cercanías','accidente','accidentes','incidencia','incidencias','obra','obras','carretera','carreteras','aeropuerto','aeropuertos','puerto','puertos','conservacion','conservación','mitms','embalse','embalses','presa','presas','pantano','hidroelectrica','hidroeléctrica','hidroelectricas','hidroeléctricas','hidraulica','hidráulica','hidrologico','hidrológico','sequia','sequía','vertido','vertidos','energia hidroelectrica','energía hidroeléctrica']},
 }
 def now(): return datetime.now(timezone.utc)
 def clean(x): return ' '.join(re.sub(r'<[^>]+>',' ',str(x or '')).split())
 def norm(s): return re.sub(r'[^\w]+',' ',s.lower()).strip()
+INFRA_TYPE_RULES=[
+ ('agua',['embalse','embalses','presa','presas','pantano','hidroelectrica','hidroeléctrica','hidroelectricas','hidroeléctricas','hidraulica','hidráulica','hidrologico','hidrológico','sequia','sequía','vertido','vertidos']),
+ ('ferrocarril',['adif','renfe','tren','trenes','cercanias','cercanías','alta velocidad','ave','avlo','avant','catenaria','ferroviario','estacion','estación']),
+ ('carretera',['autovia','autovía','autovias','autovías','carretera','carreteras','dgt','trafico','tráfico','peaje','accidente de trafico','accidente de tráfico']),
+ ('puerto',['puerto','puertos','portuario','portuaria','puertos del estado','autoridad portuaria']),
+ ('aeropuerto',['aeropuerto','aeropuertos','aena']),
+ ('energia',['red electrica','red eléctrica','ree','energia','energía','electricidad','hidroelectrico','hidroeléctrico']),
+]
+INFRA_OPERATORS=[('ADIF',['adif']),('Renfe',['renfe']),('AENA',['aena']),('Puertos del Estado',['puertos del estado','autoridad portuaria']),('MITMS',['mitms','ministerio de transportes','transportes y movilidad']),('MITECO',['miteco','transicion ecologica','transición ecológica','medio ambiente']),('Red Eléctrica',['red electrica','red eléctrica','ree']),('DGT',['dgt'])]
+def infra_type(title):
+ t=norm(title)
+ for label,terms in INFRA_TYPE_RULES:
+  if any(has_term(t,x) for x in terms): return label
+ return 'otro'
+def infra_operator(title):
+ t=norm(title)
+ for label,terms in INFRA_OPERATORS:
+  if any(has_term(t,x) for x in terms): return label
+ return 'No consta'
 STATE_NAMES=('rt','tass','ria novosti','sputnik','cgtn','global times','xinhua','press tv','hispan','trt','anadolu','telesur','cubadebate','granma','irna','tasnim','alalam')
 def source_class(source,source_type):
  if source_type=='official': return 'official'
@@ -45,7 +64,7 @@ def relevant(topic,title):
   return any(has_term(t,x) for x in FRONTERA_GEO) and any(has_term(t,x) for x in FRONTERA_CONTEXT)
  if topic=='infraestructuras_espana':
   if any(x in t for x in INFRA_EXCLUDE): return False
-  strong=['adif','renfe','mitms','dgt','alta velocidad','autovia','autovía','cercanias','cercanías','accidente','carretera','catenaria','ferroviario','urda','infraestructura','infraestructuras','transporte','movilidad']
+  strong=['adif','renfe','mitms','dgt','alta velocidad','autovia','autovía','cercanias','cercanías','accidente','carretera','catenaria','ferroviario','urda','infraestructura','infraestructuras','transporte','movilidad','embalse','embalses','presa','pantano','hidroelectrica','hidroeléctrica','hidraulica','hidráulica','sequia','sequía','vertido']
   if any(has_term(t,x) for x in strong): return True
   return any(has_term(t,x) for x in INFRA_CONTEXT) and any(has_term(t,term) for term in TOPICS[topic]['terms'])
  return any(has_term(t,term) for term in TOPICS[topic]['terms'])
@@ -143,7 +162,12 @@ def run():
             rows += [r for r in extra if r['id'] not in seen][:40-len(rows)]
         rows=sorted(rows,key=lambda r:r['published'],reverse=True)[:40]
         trend=[dict(r) for r in c.execute('SELECT substr(published,1,10) d,COUNT(*) n FROM items WHERE topic=? AND published>=? GROUP BY substr(published,1,10) ORDER BY d',(topic,(now()-timedelta(days=14)).isoformat())).fetchall()]
-        latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'trend':trend,'items':[dict(r) for r in rows]}
+        items=[dict(r) for r in rows]
+        if topic=='infraestructuras_espana':
+            for item in items:
+                item['infra_type']=infra_type(item.get('title') or '')
+                item['operator']=infra_operator(item.get('title') or '')
+        latest['topics'][topic]={'label':meta['label'],'count':len(rows),'sources':len({r['source'] for r in rows if r['source']}),'trend':trend,'items':items}
     latest['feed_errors']=errors[:15]
     fh={'updated_at':stamp,'total':len(health),'ok':sum(1 for x in health.values() if x['status']=='ok'),'error':sum(1 for x in health.values() if x['status']=='error'),'pending':sum(1 for x in health.values() if x['status']=='pending'),'feeds':sorted(health.values(),key=lambda x:x['name'])}
     status_topics={}
