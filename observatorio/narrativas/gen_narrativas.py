@@ -55,6 +55,7 @@ def rows_for(con, topic, today, days=45):
     rows = con.execute(
         """SELECT id, title, url, source, published FROM items
            WHERE topic = ? AND published IS NOT NULL AND published >= ? AND published < ?
+             AND source_lang = 'es' AND url NOT LIKE '%news.google.com%'
            ORDER BY published DESC""",
         (topic, start.isoformat(), (today + timedelta(days=1)).isoformat()),
     ).fetchall()
