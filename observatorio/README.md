@@ -44,7 +44,6 @@ En Frontera Sur, la ficha de situación declara **0 fuentes primarias localizada
 - **Protestas juveniles:** `/observatorio/juventud/situacion/` — 6 episodios, demandas, fuentes y 0 primarias.
 - **Elecciones generales:** `/observatorio/campana/situacion/` — calendario BOE y límites; sin actos inventados.
 - **Infraestructuras:** `/observatorio/infraestructuras/situacion/` — cobertura automática y 8 fuentes oficiales.
-- **Narrativas:** `/observatorio/narrativas/` — código de marcos y muestra ciega para codificación manual; sin etiquetado automático.
 - **Evidencia:** `/observatorio/evidencia/` — resumen cruzado de documentos primarios, secundarios y vacíos; no evalúa incidencias de Infraestructuras.
 - **Briefing de cambios:** `/observatorio/ceuta/situacion/cambios/` — compara snapshots fechados de estados, fuentes, preguntas y contradicciones. Sin IA.
 - **Cron del briefing:** lunes 08:20 (`/etc/cron.d/observatorio-briefing`).

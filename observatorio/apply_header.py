@@ -21,7 +21,6 @@ NAV = {
     "fuentes": ("Fuentes", "/observatorio/fuentes/"),
     "datos": ("Datos", "/observatorio/datos/"),
     "evidencia": ("Evidencia", "/observatorio/evidencia/"),
-    "narrativas": ("Narrativas", "/observatorio/narrativas/"),
     "glosario": ("Glosario", "/observatorio/glosario/"),
     "ayuda": ("Ayuda", "/observatorio/ayuda/"),
     "sobre": ("Sobre", "/observatorio/sobre/"),
@@ -50,8 +49,6 @@ def current_key(path):
         return "datos"
     if "/evidencia/" in rel:
         return "evidencia"
-    if "/narrativas/" in rel:
-        return "narrativas"
     if "/glosario/" in rel or rel == "glosario.html":
         return "glosario"
     if "/ayuda/" in rel or rel == "ayuda.html":
@@ -97,7 +94,7 @@ def header(path):
     </div>
     <nav class="obs-nav" aria-label="Principal"><div class="obs-navgrid">
       <div class="obs-navgroup"><span class="obs-navlabel">Temas</span>{nav_link("inicio")}{nav_link("frontera_sur")}{nav_link("protestas")}{nav_link("elecciones")}{nav_link("infraestructuras")}</div>
-      <div class="obs-navgroup"><span class="obs-navlabel">Sistema</span>{nav_link("eventos")}{nav_link("metodo")}{nav_link("fuentes")}{nav_link("datos")}{nav_link("evidencia")}{nav_link("narrativas")}{nav_link("glosario")}{nav_link("ayuda")}{nav_link("sobre")}</div>
+      <div class="obs-navgroup"><span class="obs-navlabel">Sistema</span>{nav_link("eventos")}{nav_link("metodo")}{nav_link("fuentes")}{nav_link("datos")}{nav_link("evidencia")}{nav_link("glosario")}{nav_link("ayuda")}{nav_link("sobre")}</div>
     </div></nav>
   </div>
 </header>'''
