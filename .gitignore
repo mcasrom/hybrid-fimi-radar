@@ -80,3 +80,5 @@ data/alertas_estado.json
 data/seguimiento_state.json
 
 data/telegram_volume_state.json
+data/digest_semanal.md
+data/digest_semanal.json
