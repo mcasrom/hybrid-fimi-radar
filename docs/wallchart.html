@@ -60,13 +60,13 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
   <div>
     <h1>FIMI RADAR</h1>
     <div class="sub">Observatorio de amplificación · mapa del sistema</div>
-    <div class="meta">github.com/mcasrom/hybrid-fimi-radar · AGPL-3.0 · v0.2 · <b>2026-10-21</b></div>
+    <div class="meta">github.com/mcasrom/hybrid-fimi-radar · AGPL-3.0 · v0.2 · <b>2026-10-30</b></div>
   </div>
   <div class="kpis">
-    <div class="kpi"><b>746</b><span>commits · 51 días</span></div>
-    <div class="kpi"><b>38.214</b><span>líneas · 157 .py</span></div>
-    <div class="kpi"><b>222</b><span>tests</span></div>
-    <div class="kpi"><b>7 + 2</b><span>activos + piloto</span></div>
+    <div class="kpi"><b>799</b><span>commits · 60 días</span></div>
+    <div class="kpi"><b>40.933</b><span>líneas · 169 .py</span></div>
+    <div class="kpi"><b>238</b><span>tests</span></div>
+    <div class="kpi"><b>2 + 8</b><span>activos + piloto</span></div>
     <div class="kpi"><b>6 h</b><span>ciclo de captura</span></div>
   </div>
 </div>
@@ -75,7 +75,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
 <div class="box t1">
   <h2><span class="num">1</span>PIPELINE · se ejecuta cada 6 h <span style="color:#94a3b8;font-weight:400">scripts/cron_every_6h.sh</span></h2>
   <div class="pipe">
-    <div class="stage"><div class="bar">1<small>CAPTURA</small></div><div class="desc">collectors/capture.py<br>RSS (78 feeds), Bluesky, Telegram, Google News</div></div>
+    <div class="stage"><div class="bar">1<small>CAPTURA</small></div><div class="desc">collectors/capture.py<br>RSS (81 feeds), Bluesky, Telegram, Google News</div></div>
     <div class="stage"><div class="bar">2<small>NORMALIZA</small></div><div class="desc">normalizer/ ingesta, etiquetado por tema y esquema SQLite</div></div>
     <div class="stage"><div class="bar">3<small>FEATURES</small></div><div class="desc">features/ tiempos, contenido y señales de bot</div></div>
     <div class="stage"><div class="bar">4<small>DETECCIÓN</small></div><div class="desc">detection/run_fimi.py <b>ventana 45 d</b> (90 d en temas de historia)</div></div>
@@ -91,14 +91,14 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
   <!-- 2 FUENTES Y TEMAS -->
   <div class="box t2" style="flex:1.15">
     <h2><span class="num">2</span>FUENTES Y TEMAS</h2>
-    <li><span class="k">Corpus ≈ 313.521 eventos · 1.938 clusters</span></li>
-    <li>78 feeds RSS + 2 búsquedas de plataforma</li>
+    <li><span class="k">Corpus ≈ 370.781 eventos · 2.116 clusters</span></li>
+    <li>81 feeds RSS + 2 búsquedas de plataforma</li>
     <li>Bluesky + Google News ≈ 95 % del corpus</li>
     <li>Telegram: 6 canales públicos; Reddit aparcado (429)</li>
     <li>Sin X, TikTok, Meta, YouTube ni WhatsApp</li>
-    <li style="margin-top:5px"><b>Temas definidos en config.yaml (7+2+2)</b></li>
-    <div style="margin-top:3px"><span style="color:#065f46;font-weight:700;font-size:9.5px">PRODUCCIÓN · 7</span><br><span class="chip prod">Frontera Sur</span><span class="chip prod">EEUU</span><span class="chip prod">Oriente Medio</span><span class="chip prod">Sahel</span><span class="chip prod">Energía</span><span class="chip prod">Inteligencia artificial</span><span class="chip prod">España elecciones</span></div>
-    <div style="margin-top:3px"><span style="color:#92400e;font-weight:700;font-size:9.5px">PILOTO · 2</span><br><span class="chip pil">Elecciones</span><span class="chip pil">Defensa España</span></div>
+    <li style="margin-top:5px"><b>Temas definidos en config.yaml (2+8+2)</b></li>
+    <div style="margin-top:3px"><span style="color:#065f46;font-weight:700;font-size:9.5px">PRODUCCIÓN · 2</span><br><span class="chip prod">Frontera Sur</span><span class="chip prod">España elecciones</span></div>
+    <div style="margin-top:3px"><span style="color:#92400e;font-weight:700;font-size:9.5px">PILOTO · 8</span><br><span class="chip pil">EEUU</span><span class="chip pil">Oriente Medio</span><span class="chip pil">Sahel</span><span class="chip pil">Energía</span><span class="chip pil">Elecciones</span><span class="chip pil">Inteligencia artificial</span><span class="chip pil">Defensa España</span><span class="chip pil">protestas_juveniles</span></div>
     <div style="margin-top:3px"><span style="color:#64748b;font-weight:700;font-size:9.5px">CERRADOS · 2</span><br><span class="chip cer">UE-Marruecos</span><span class="chip cer">Amenazas híbridas</span></div>
   </div>
 
@@ -180,7 +180,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
     <h2><span class="num">8</span>STACK Y CALIDAD</h2>
     <div style="font-weight:800;font-size:9.5px">Pila</div>
     <div><span class="chip">Python 3.12</span><span class="chip">pandas</span><span class="chip">numpy</span><span class="chip">scikit-learn</span><span class="chip">networkx</span><span class="chip">SQLite · 17 tablas</span></div>
-    <li>Corpus: <b>313.521</b> eventos · <b>1.938</b> clusters · 93 fuentes</li>
+    <li>Corpus: <b>370.781</b> eventos · <b>2.116</b> clusters · 101 fuentes</li>
     <li>Despliegue: cron cada 6 h, nginx tras Cloudflare, RAM 3,8 GB</li>
     <li>CI local (pre-push): compileall, contrato, ruff, pip-audit, pytest</li>
     <li>Licencia AGPL-3.0 · SECURITY.md · código de conducta</li>
@@ -188,7 +188,7 @@ li:before{content:"•";position:absolute;left:0;color:var(--teal);font-weight:8
 </div>
 
 <div class="foot">
-  <span>Fuente: análisis del repositorio github.com/mcasrom/hybrid-fimi-radar (HEAD <b>02c34b6</b>, 2026-10-21) y config.yaml. Cifras vivas: se regeneran con <code>gen_wallchart.py</code>.</span>
+  <span>Fuente: análisis del repositorio github.com/mcasrom/hybrid-fimi-radar (HEAD <b>9232592</b>, 2026-10-30) y config.yaml. Cifras vivas: se regeneran con <code>gen_wallchart.py</code>.</span>
   <span class="wm">Mide comportamiento, no autoría</span>
 </div>
 </div></body></html>

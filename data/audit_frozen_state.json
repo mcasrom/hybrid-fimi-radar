@@ -1,0 +1,38 @@
+{
+  "geopolitica_ue_marruecos": {
+    "event_temas": 16,
+    "clusters": 0
+  },
+  "eeuu_politica": {
+    "event_temas": 25347,
+    "clusters": 408
+  },
+  "oriente_medio": {
+    "event_temas": 80394,
+    "clusters": 291
+  },
+  "sahel": {
+    "event_temas": 22283,
+    "clusters": 195
+  },
+  "energia": {
+    "event_temas": 33134,
+    "clusters": 223
+  },
+  "elecciones": {
+    "event_temas": 79240,
+    "clusters": 163
+  },
+  "inteligencia_artificial": {
+    "event_temas": 38553,
+    "clusters": 302
+  },
+  "espana_amenazas_hibridas": {
+    "event_temas": 714,
+    "clusters": 10
+  },
+  "defensa_espana": {
+    "event_temas": 13232,
+    "clusters": 69
+  }
+}
