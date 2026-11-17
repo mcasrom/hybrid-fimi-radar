@@ -289,6 +289,11 @@ def main():
                 f"✅ <b>Publicado</b> — {elegido} ({d['banda']} {d['score']}) en "
                 f"Mastodon + Bluesky.\n\n📋 <b>Para X</b> (manual):\n\n{texto}",
                 img_path=f"/var/www/fimi/radar-{elegido}.png")
+            try:
+                subprocess.run(["/usr/bin/python3", "/home/deploy/social-poster/x_manual_channel.py"],
+                               input=texto, text=True, timeout=30, check=False)
+            except Exception as ex:
+                print(f"[pub] X manual al canal falló: {ex}", file=sys.stderr)
         else:
             print(f"[pub] FALLO parcial: mastodon={ok[0] if ok else '?'} "
                   f"bluesky={ok[1] if len(ok) > 1 else '?'} · NO se marca como publicado")
